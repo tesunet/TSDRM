@@ -1,0 +1,66 @@
+params 4 I administrator tesunet@2017 E:\initializeDisk.bat 42235748-1025-466d-9ced-eac9ffd6a528
+(vim.vm.FileLayout) {
+   dynamicType = <unset>,
+   dynamicProperty = (vmodl.DynamicProperty) [],
+   configFile = (str) [
+      'testclone.vmxf',
+      'testclone.nvram',
+      'testclone.vmsd'
+   ],
+   logFile = (str) [
+      'vmware-8.log',
+      'vmware-9.log',
+      'vmware-5.log',
+      'vmware-6.log',
+      'vmware-7.log',
+      'vmware-10.log',
+      'vmware.log'
+   ],
+   disk = (vim.vm.FileLayout.DiskLayout) [
+      (vim.vm.FileLayout.DiskLayout) {
+         dynamicType = <unset>,
+         dynamicProperty = (vmodl.DynamicProperty) [],
+         key = 2000,
+         diskFile = (str) [
+            '[datastore1 (3)] testclone/testclone.vmdk',
+            '[datastore1 (3)] testclone/testclone-000001.vmdk'
+         ]
+      },
+      (vim.vm.FileLayout.DiskLayout) {
+         dynamicType = <unset>,
+         dynamicProperty = (vmodl.DynamicProperty) [],
+         key = 2001,
+         diskFile = (str) [
+            '[datastore1 (3)] testclone/testclone_1.vmdk',
+            '[datastore1 (3)] testclone/testclone_1-000001.vmdk'
+         ]
+      },
+      (vim.vm.FileLayout.DiskLayout) {
+         dynamicType = <unset>,
+         dynamicProperty = (vmodl.DynamicProperty) [],
+         key = 2002,
+         diskFile = (str) [
+            '[datastore1 (3)] testclone/testclone_2.vmdk',
+            '[datastore1 (3)] testclone/testclone_2-000001.vmdk'
+         ]
+      }
+   ],
+   snapshot = (vim.vm.FileLayout.SnapshotLayout) [
+      (vim.vm.FileLayout.SnapshotLayout) {
+         dynamicType = <unset>,
+         dynamicProperty = (vmodl.DynamicProperty) [],
+         key = 'vim.vm.Snapshot:snapshot-1094',
+         snapshotFile = (str) [
+            '[datastore1 (3)] testclone/testclone-Snapshot3.vmsn',
+            '[datastore1 (3)] testclone/testclone.vmdk',
+            '[datastore1 (3)] testclone/testclone-000002.vmdk',
+            '[datastore1 (3)] testclone/testclone_1.vmdk',
+            '[datastore1 (3)] testclone/testclone_1-000002.vmdk',
+            '[datastore1 (3)] testclone/testclone_2.vmdk',
+            '[datastore1 (3)] testclone/testclone_2-000002.vmdk'
+         ]
+      }
+   ],
+   swapFile = '[datastore1 (3)] testclone/testclone-6a3261f8.vswp'
+}
+disknum 12

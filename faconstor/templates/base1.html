@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en" class="app">
+<head>
+    <meta charset="utf-8"/>
+    <title>{% block title %}自动化灾难恢复管理平台{% endblock %}</title>
+    <meta name="description"
+          content="app, web app, responsive, admin dashboard, admin, flat, flat ui, ui kit, off screen nav"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+    <link rel="stylesheet" href="/static/new/css/bootstrap.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/animate.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/font-awesome.min.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/icon.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/font.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/app.css" type="text/css"/>
+    <link href="/static/assets/global/css/components.css" rel="stylesheet" id="style_components" type="text/css"/>
+    <!--[if lt IE 9]>
+    <script src="/static/new/js/ie/html5shiv.js"></script>
+    <script src="/static/new/js/ie/respond.min.js"></script>
+    <script src="/static/new/js/ie/excanvas.js"></script>
+
+
+  <![endif]-->
+</head>
+<body class="">
+<section class="vbox">
+    <header class="bg-white header header-md navbar navbar-fixed-top-xs box-shadow">
+        <div class="navbar-header ">
+            <a class="btn btn-link visible-xs" data-toggle="class:nav-off-screen" data-target="#nav">
+                <i class="fa fa-bars"></i>
+            </a>
+            <a href="/index" class="navbar-brand">
+                <img src="/static/new/images/cloud-logo1.png" class="m-r-sm" alt="scale">
+                <span class="hidden-nav-xs">自动化灾难恢复管理平台</span>
+            </a>
+            <a class="btn btn-link visible-xs" data-toggle="dropdown" data-target=".user">
+                <i class="fa fa-cog"></i>
+            </a>
+        </div>
+
+
+        <ul class="nav navbar-nav navbar-right m-n hidden-xs nav-user user">
+
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+            <span class="thumb-sm avatar pull-left">
+              <img src="/static/new/images/a0.png" alt="...">
+            </span>
+                    {{ username }} <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu animated fadeInRight">
+                    <li>
+                        <span class="arrow top"></span>
+                        <a href="/password">修改密码</a>
+                    </li>
+                    <li>
+                        <a href="/login">重新登录</a>
+                    </li>
+
+                </ul>
+            </li>
+        </ul>
+    </header>
+    <section>
+        <section class="hbox stretch">
+            <!-- .aside -->
+            <aside class="bg-black aside-md hidden-print" id="nav">
+                <section class="vbox">
+                    <section class="w-f scrollable">
+                        <div class="slim-scroll" data-height="auto" data-disable-fade-out="true" data-distance="0"
+                             data-size="10px" data-railOpacity="0.2">
+
+
+                            <!-- nav -->
+                            <nav class="nav-primary hidden-xs">
+                                <ul class="nav nav-main" data-ride="collapse">
+                                    <li class="{% if homepage %}active{% endif %}">
+                                        <a href="/index" class="auto">
+                                            <i class="fa fa-home">
+                                            </i>
+                                            <span class="font-bold">首页 </span>
+                                        </a>
+                                    </li>
+                                    <li class="{% if edituserpage %}active{% endif %} {% if childuserpage %}active{% endif %}{% if grouppage %}active{% endif %}">
+                                        <a href="#" class="auto">
+                        <span class="pull-right text-muted">
+                          <i class="i i-circle-sm-o text"></i>
+                          <i class="i i-circle-sm text-active"></i>
+                        </span>
+                                            <i class="fa fa-user">
+                                            </i>
+                                            <span class="font-bold">用户管理</span>
+                                        </a>
+                                        <ul class="nav dk">
+                                            <li class="{% if edituserpage %}active{% endif %}">
+                                                <a href="/useredit" class="auto">
+
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;用户信息修改</span>
+                                                </a>
+                                            </li>
+                                            <li class="{% if childuserpage %}active{% endif %}">
+                                                <a href="/childuser" class="auto">
+
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;子用户管理</span>
+                                                </a>
+                                            </li>
+                                            <li class="{% if grouppage %}active{% endif %}">
+                                                <a href="/group" class="auto">
+
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;角色管理</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    {% if request.session.isadmin %}
+                                        <li class="{% if resourcepoolpage %}active{% endif %}{% if computerresourcepage %}active{% endif %}{% if backupresourcepage %}active{% endif %}{% if schduleresourcepage %}active{% endif %}{% if vmresourcepage %}active{% endif %}{% if vmlistmanagepage %}active{% endif %}">
+                                            <a href="#" class="auto">
+                        <span class="pull-right text-muted">
+                          <i class="i i-circle-sm-o text"></i>
+                          <i class="i i-circle-sm text-active"></i>
+                        </span>
+                                                <i class="i i-folder2">
+                                                </i>
+                                                <span class="font-bold">资源管理</span>
+                                            </a>
+                                            <ul class="nav dk">
+                                                <li class="{% if resourcepoolpage %}active{% endif %}">
+                                                    <a href="/resourcepool" class="auto">
+
+
+                                                        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;资源池管理</span>
+                                                    </a>
+                                                </li>
+
+                                                <li class="{% if backupresourcepage %}active{% endif %}">
+                                                    <a href="/backupresource" class="auto">
+
+
+                                                        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;备份资源管理</span>
+                                                    </a>
+                                                </li>
+                                                <li class="{% if schduleresourcepage %}active{% endif %}">
+                                                    <a href="/schduleresource" class="auto">
+
+
+                                                        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;计划资源管理</span>
+                                                    </a>
+                                                </li>
+                                                <li class="{% if vmresourcepage %}active{% endif %}">
+                                                    <a href="/vmresource" class="auto">
+
+
+                                                        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;虚机模板管理</span>
+                                                    </a>
+                                                </li>
+                                                <li class="{% if vmlistmanagepage %}active{% endif %}">
+                                                    <a href="/vmlistmanage" class="auto">
+
+
+                                                        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;虚机资源管理</span>
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    {% endif %}
+                                    <li class="{% if matchpage %}active{% endif %}{% if serverconfigpage %}active{% endif %}{% if phyproconfigpage %}active{% endif %} {% if vmproconfigpage %}active{% endif %} {% if racproconfigpage %}active{% endif %} {% if harproconfigpage %}active{% endif %}">
+                                        <a href="#" class="auto">
+                        <span class="pull-right text-muted">
+                          <i class="i i-circle-sm-o text"></i>
+                          <i class="i i-circle-sm text-active"></i>
+                        </span>
+                                            <i class="i i-settings">
+                                            </i>
+                                            <span class="font-bold">灾备配置</span>
+                                        </a>
+                                        <ul class="nav dk">
+                                            {% if request.session.isadmin %}
+                                                <li class=" {% if serverconfigpage %}active{% endif %}">
+                                                    <a href="/serverconfig" class="auto">
+
+
+                                                        <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;服务器信息配置</span>
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                            <li class=" {% if matchpage %}active{% endif %}">
+                                                <a href="/match" class="auto">
+
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;同步客户端</span>
+                                                </a>
+                                            </li>
+                                            <li class=" {% if phyproconfigpage %}active{% endif %}">
+                                                <a href="/phyproconfig" class="auto">
+
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;物理主机保护配置</span>
+                                                </a>
+                                            </li>
+                                            <li class=" {% if vmproconfigpage %}active{% endif %}">
+                                                <a href="/vmproconfig" class="autoa">
+
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;虚机保护配置</span>
+                                                </a>
+                                            </li>
+
+                                        </ul>
+                                    </li>
+                                    <li class="{% if step_tree_index_page %}active{% endif %} {% if falconstorsearchpage %}active{% endif %} {% if scriptpage %}active{% endif %} {% if disasterdrillpage %}active{% endif %} {% if manualrecoverypage %}active{% endif %}{% if workflowsetpage %}active{% endif %}{% if falconstorpage %}active{% endif %}{% if step_tree_index %}active{% endif %}">
+                                        <a href="#" class="auto">
+                        <span class="pull-right text-muted">
+                          <i class="i i-circle-sm-o text"></i>
+                          <i class="i i-circle-sm text-active"></i>
+                        </span>
+                                            <i class="i i-docs icon">
+                                            </i>
+                                            <span class="font-bold">灾备操作</span>
+                                        </a>
+                                        <ul class="nav dk">
+                                            <li class="{% if workflowsetpage %}active{% endif %}">
+                                                <a href="/workflowset" class="auto">
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;流程预案</span>
+                                                </a>
+                                            </li>
+                                            <li class="{% if scriptpage %}active{% endif %}">
+                                                <a href="/script" class="auto">
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;脚本管理</span>
+                                                </a>
+                                            </li>
+                                            <li class="{% if manualrecoverypage %}active{% endif %}">
+                                                <a href="/manualrecovery" class="auto">
+
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;自主恢复</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item  {% if disasterdrillpage %}active{% endif %}">
+                                                <a href="/disasterdrill" class="nav-link ">
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;异机恢复</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item  {% if falconstorpage %}active{% endif %}">
+                                                <a href="/falconstorswitch" class="nav-link ">
+                                                    <span >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;飞康切换</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item  {% if falconstorsearchpage %}active{% endif %}">
+                                                <a href="/falconstorsearch" class="nav-link ">
+                                                    <span >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;切换查询</span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item  {% if step_tree_index_page %}active{% endif %}">
+                                                <a href="/step_tree_index" class="nav-link ">
+                                                    <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;流程配置</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </li>
+
+
+                                    <li class="{% if downloadpage %}active{% endif %}">
+                                        <a href="/downloadlist" class="auto">
+                                            <i class="fa fa-cloud-download">
+                                            </i>
+                                            <span class="font-bold">相关下载</span>
+                                        </a>
+                                    </li>
+
+                                    <li class="{% if reportpage %}active{% endif %}">
+                                        <a href="/report" class="nav-link nav-toggle">
+                                            <i class="fa fa-file-text">
+                                            </i>
+                                            <span class="font-bold">报表查询</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </nav>
+                            <!-- / nav -->
+                        </div>
+                    </section>
+
+                    <footer class="footer hidden-xs no-padder text-center-nav-xs">
+
+                        <a href="#nav" data-toggle="class:nav-xs"
+                           class="btn btn-icon icon-muted btn-inactive m-l-xs m-r-xs">
+                            <i class="i i-circleleft text"></i>
+                            <i class="i i-circleright text-active"></i>
+                        </a>
+                    </footer>
+                </section>
+            </aside>
+            <!-- /.aside -->
+            <section id="content">
+                <section class="vbox">
+
+                    {% block content %}{% endblock %}
+                </section>
+                <a href="#" class="hide nav-off-screen-block" data-toggle="class:nav-off-screen" data-target="#nav"></a>
+            </section>
+        </section>
+    </section>
+</section>
+<script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+<script src="/static/assets/global/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+<!-- App -->
+<script src="/static/new/js/app.js"></script>
+<script src="/static/new/js/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="/static/assets/global/plugins/jquery-validation/js/jquery.validate.js" type="text/javascript"></script>
+
+
+</body>
+{% block script %}
+{% endblock %}
+</html>

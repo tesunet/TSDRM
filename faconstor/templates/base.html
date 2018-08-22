@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{% block title %}云灾备{% endblock %}</title>
+
+        <link href="/static/assets/global/plugins/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css" />
+        <link href="/static/assets/global/plugins/simple-line-icons/simple-line-icons.min.css" rel="stylesheet" type="text/css" />
+        <link href="/static/assets/global/plugins/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+        <link href="/static/assets/global/css/components.min.css" rel="stylesheet" id="style_components" type="text/css" />
+
+        <link href="/static/assets/layouts/layout/css/layout.min.css" rel="stylesheet" type="text/css" />
+        <link href="/static/assets/layouts/layout/css/themes/darkblue.min.css" rel="stylesheet" type="text/css" id="style_color" />
+        <link href="/static/assets/layouts/layout/css/custom.min.css" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+
+</head>
+    <!-- END HEAD -->
+    <body class="page-header-fixed page-sidebar-closed-hide-logo  page-content-white {% if sidebarclosed %}page-sidebar-closed{% endif %}">
+        <!-- BEGIN HEADER -->
+        <div class="page-header navbar navbar-fixed-top">
+            <!-- BEGIN HEADER INNER -->
+            <div class="page-header-inner ">
+                <!-- BEGIN LOGO -->
+                <div class="page-logo">
+                    <a href="/index">
+                        <img src="/static/assets/pages/img/logo-big.png"  alt="logo" class="logo-default" /> </a>
+                    <div class="menu-toggler sidebar-toggler "> </div>
+
+                </div>
+                <!-- END LOGO -->
+                <!-- BEGIN RESPONSIVE MENU TOGGLER -->
+                <a href="javascript:;" class="menu-toggler responsive-toggler" data-toggle="collapse" data-target=".navbar-collapse"> </a>
+                <!-- END RESPONSIVE MENU TOGGLER -->
+                <!-- BEGIN TOP NAVIGATION MENU -->
+                <div class="top-menu">
+
+                    <ul class="nav navbar-nav pull-right">
+
+                        <!-- BEGIN USER LOGIN DROPDOWN -->
+                        <!-- DOC: Apply "dropdown-dark" class after below "dropdown-extended" to change the dropdown styte -->
+                        <li class="dropdown dropdown-user">
+                            <a href="javascript:;" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" data-close-others="true">
+
+                                <span class="username username-hide-on-mobile"> {{username}} </span>
+                                <i class="fa fa-angle-down"></i>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-default">
+                                <li>
+                                    <a href="/password">
+                                        <i class="icon-calendar"></i> 修改密码 </a>
+                                </li>
+                                <li>
+                                    <a href="/login">
+                                        <i class="icon-share-alt"></i> 重新登录
+
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <!-- END USER LOGIN DROPDOWN -->
+                        <!-- BEGIN QUICK SIDEBAR TOGGLER -->
+                        <!-- DOC: Apply "dropdown-dark" class after below "dropdown-extended" to change the dropdown styte -->
+                        <li class="dropdown dropdown-quick-sidebar-toggler">
+                            <a href="/login" class="dropdown-toggle">
+                                <i class="icon-logout"></i>
+                            </a>
+                        </li>
+                        <!-- END QUICK SIDEBAR TOGGLER -->
+                    </ul>
+                </div>
+                <!-- END TOP NAVIGATION MENU -->
+            </div>
+            <!-- END HEADER INNER -->
+        </div>
+        <!-- END HEADER -->
+
+        <!-- BEGIN CONTAINER -->
+        <div class="page-container">
+            <!-- BEGIN SIDEBAR -->
+            <div class="page-sidebar-wrapper">
+                <!-- BEGIN SIDEBAR -->
+                <!-- DOC: Set data-auto-scroll="false" to disable the sidebar from auto scrolling/focusing -->
+                <!-- DOC: Change data-auto-speed="200" to adjust the sub menu slide up/down speed -->
+                <div class="page-sidebar navbar-collapse collapse">
+                    <!-- BEGIN SIDEBAR MENU -->
+                    <!-- DOC: Apply "page-sidebar-menu-light" class right after "page-sidebar-menu" to enable light sidebar menu style(without borders) -->
+                    <!-- DOC: Apply "page-sidebar-menu-hover-submenu" class right after "page-sidebar-menu" to enable hoverable(hover vs accordion) sub menu mode -->
+                    <!-- DOC: Apply "page-sidebar-menu-closed" class right after "page-sidebar-menu" to collapse("page-sidebar-closed" class must be applied to the body element) the sidebar sub menu mode -->
+                    <!-- DOC: Set data-auto-scroll="false" to disable the sidebar from auto scrolling/focusing -->
+                    <!-- DOC: Set data-keep-expand="true" to keep the submenues expanded -->
+                    <!-- DOC: Set data-auto-speed="200" to adjust the sub menu slide up/down speed -->
+                    <ul class="page-sidebar-menu  page-header-fixed page-sidebar-menu-light {% if sidebarclosed %}page-sidebar-menu-closed{% endif %}" data-keep-expanded="false" data-auto-scroll="true" data-slide-speed="200" >
+                        <!-- DOC: To remove the sidebar toggler from the sidebar you just need to completely remove the below "sidebar-toggler-wrapper" LI element -->
+                        <li class="sidebar-toggler-wrapper hide">
+                            <!-- BEGIN SIDEBAR TOGGLER BUTTON -->
+                            <div class="sidebar-toggler"> </div>
+                            <!-- END SIDEBAR TOGGLER BUTTON -->
+                        </li>
+                        <!-- DOC: To remove the search box from the sidebar you just need to completely remove the below "sidebar-search-wrapper" LI element -->
+
+                        <li class="{% if homepage %}active open{% endif %}">
+                            <a href="/index" class="nav-link nav-toggle">
+                                <i class="icon-home"></i>
+                                <span class="title">首页</span>
+
+                                <span class="selected"></span>
+                            </a>
+                        </li>
+                        <li class="nav-item {% if edituserpage %}active open{% endif %} {% if childuserpage %}active open{% endif %}">
+                            <a href="javascript:;" class="nav-link nav-toggle">
+                                <i class="icon-user"></i>
+                                <span class="title">用户管理</span>
+                                <span class="arrow {% if edituserpage %}active open{% endif %} {% if childuserpage %}active open{% endif %}"></span>
+                                <span class="selected"></span>
+                            </a>
+                            <ul class="sub-menu">
+                                <li class="nav-item  {% if edituserpage %}active open{% endif %}">
+                                    <a href="/useredit" class="nav-link ">
+                                        <span class="title">用户信息修改</span>
+
+                                    </a>
+                                </li>
+                                {% if request.session.ispuser %}
+                                <li class="nav-item  {% if childuserpage %}active open{% endif %}">
+                                    <a href="/childuser" class="nav-link ">
+                                        <span class="title">子用户管理
+                                            </span>
+                                    </a>
+                                </li>
+                                {% endif %}
+
+
+                            </ul>
+                        </li>
+                        <li class="nav-item {% if serverconfigpage %}active open{% endif %}{% if phyproconfigpage %}active open{% endif %} {% if vmproconfigpage %}active open{% endif %} {% if racproconfigpage %}active open{% endif %} {% if harproconfigpage %}active open{% endif %}">
+                            <a href="javascript:;" class="nav-link nav-toggle">
+                                <i class="icon-settings"></i>
+                                <span class="title">客户端配置</span>
+                                <span class="arrow {% if serverconfigpage %}active open{% endif %}{% if phyproconfigpage %}active open{% endif %} {% if vmproconfigpage %}active open{% endif %} {% if racproconfigpage %}active open{% endif %} {% if harproconfigpage %}active open{% endif %}"></span>
+                                <span class="selected"></span>
+                            </a>
+                            <ul class="sub-menu">
+                                <li class="nav-item  {% if serverconfigpage %}active open{% endif %}">
+                                    <a href="/serverconfig" class="nav-link ">
+                                        <span class="title">服务器信息配置</span>
+
+                                    </a>
+                                </li>
+                                <li class="nav-item  {% if phyproconfigpage %}active open{% endif %}">
+                                    <a href="/phyproconfig" class="nav-link ">
+                                        <span class="title">物理主机保护配置</span>
+
+                                    </a>
+                                </li>
+                                <li class="nav-item  {% if vmproconfigpage %}active open{% endif %}">
+                                    <a href="/vmproconfig" class="nav-link ">
+                                        <span class="title">虚机保护配置
+                                            </span>
+                                    </a>
+                                </li>
+                                <li class="nav-item  {% if racproconfigpage %}active open{% endif %}">
+                                    <a href="/racproconfig" class="nav-link ">
+                                        <span class="title">RAC保护配置
+                                            </span>
+                                    </a>
+                                </li>
+                                <li class="nav-item  {% if harproconfigpage %}active open{% endif %}">
+                                    <a href="/harproconfig" class="nav-link ">
+                                        <span class="title">Hardoop保护配置
+                                            </span>
+                                    </a>
+                                </li>
+
+
+                            </ul>
+                        </li>
+                        <li class="nav-item {% if disasterdrillpage %}active open{% endif %} {% if manualrecoverypage %}active open{% endif %}">
+                            <a href="javascript:;" class="nav-link nav-toggle">
+                                <i class="glyphicon glyphicon-play"></i>
+                                <span class="title">灾备操作</span>
+                                <span class="arrow {% if disasterdrillpage %}active open{% endif %} {% if manualrecoverypage %}active open{% endif %}"></span>
+                                <span class="selected"></span>
+                            </a>
+                            <ul class="sub-menu">
+                                <li class="nav-item  {% if manualrecoverypage %}active open{% endif %}">
+                                    <a href="/manualrecovery" class="nav-link ">
+                                        <span class="title">自主恢复</span>
+
+                                    </a>
+                                </li>
+                                <li class="nav-item  {% if disasterdrillpage %}active open{% endif %}">
+                                    <a href="/disasterdrill" class="nav-link ">
+                                        <span class="title">灾难演练
+                                            </span>
+                                    </a>
+                                </li>
+                                <li class="nav-item  ">
+                                    <a href="#" class="nav-link ">
+                                        <span class="title">灾难接管
+                                            </span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a href="#" class="nav-link ">
+                                        <span class="title">应用迁移
+                                            </span>
+                                    </a>
+                                </li>
+                                <li class="nav-item ">
+                                    <a href="#" class="nav-link ">
+                                        <span class="title">历史任务
+                                            </span>
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </li>
+
+                        {% if request.session.isadmin %}
+                        <li class="nav-item {% if resourcepoolpage %}active open{% endif %}{% if computerresourcepage %}active open{% endif %}{% if backupresourcepage %}active open{% endif %}{% if schduleresourcepage %}active open{% endif %}{% if vmresourcepage %}active open{% endif %}">
+                            <a href="javascript:;" class="nav-link nav-toggle">
+                                <i class="icon-folder"></i>
+                                <span class="title">资源管理</span>
+                                <span class="arrow {% if resourcepoolpage %}active open{% endif %}{% if computerresourcepage %}active open{% endif %}{% if backupresourcepage %}active open{% endif %}{% if schduleresourcepage %}active open{% endif %}{% if vmresourcepage %}active open{% endif %}"></span>
+                                <span class="selected"></span>
+                            </a>
+                            <ul class="sub-menu">
+                                <li class="nav-item {% if resourcepoolpage %}active open{% endif %}">
+                                    <a href="/resourcepool" class="nav-link ">
+                                        <span class="title">资源池管理</span>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item {% if computerresourcepage %}active open{% endif %}">
+                                    <a href="/computerresource" class="nav-link ">
+                                        <span class="title">主机资源管理
+                                            </span>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item {% if vmresourcepage %}active open{% endif %}">
+                                    <a href="/vmresource" class="nav-link ">
+                                        <span class="title">虚机资源管理
+                                            </span>
+                                    </a>
+                                </li>
+
+                                <li class="nav-item  {% if backupresourcepage %}active open{% endif %}">
+                                    <a href="/backupresource" class="nav-link ">
+                                        <span class="title">备份资源管理</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item  {% if schduleresourcepage %}active open{% endif %}">
+                                    <a href="/schduleresource" class="nav-link ">
+                                        <span class="title">计划资源管理</span>
+                                    </a>
+                                </li>
+
+
+                            </ul>
+                        </li>
+                        {% endif %}
+                        <li class="{% if downloadpage %}active open{% endif %}">
+                            <a href="/downloadlist" class="nav-link nav-toggle">
+                                <i class="glyphicon glyphicon-cloud-download"></i>
+                                <span class="title">相关下载</span>
+
+                                <span class="selected"></span>
+                            </a>
+                        </li>
+                        <li class="{% if reportpage %}active open{% endif %}">
+                            <a href="/report" class="nav-link nav-toggle">
+                                <i class="glyphicon glyphicon-list-alt"></i>
+                                <span class="title">报表查询</span>
+                                <span class="selected"></span>
+                            </a>
+                        </li>
+                        <li >
+                            <a href="#" class="nav-link nav-toggle">
+                                <i class="glyphicon glyphicon-th"></i>
+                                <span class="title">问题知识库</span>
+                                <span class="selected"></span>
+                            </a>
+                        </li>
+
+                    </ul>
+                    <!-- END SIDEBAR MENU -->
+                </div>
+                <!-- END SIDEBAR -->
+            </div>
+            <!-- END SIDEBAR -->
+            <!-- BEGIN CONTENT -->
+            {% block content %}{% endblock %}
+            <!-- END CONTENT -->
+        </div>
+        <!-- END CONTAINER -->
+        <!-- BEGIN FOOTER -->
+        <div class="page-footer  col-lg-offset-5" >
+            <div class="page-footer-inner">   CopyRight  &copy;2006-2016
+                    <a href="http://www.tesunet.com/"  target="_blank">Tesunet Inc.</a>
+            </div>
+            <div class="scroll-to-top">
+                <i class="icon-arrow-up"></i>
+            </div>
+        </div>
+        <!-- END FOOTER -->
+        <!--[if lt IE 9]>
+    <script src="/static/assets/global/plugins/respond.min.js"></script>
+    <script src="/static/assets/global/plugins/excanvas.min.js"></script>
+<![endif]-->
+
+        <script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/bootstrap-hover-dropdown/bootstrap-hover-dropdown.min.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/jquery-slimscroll/jquery.slimscroll.min.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/morris/morris.min.js" type="text/javascript"></script>
+        <script src="/static/assets/global/scripts/app.min.js" type="text/javascript"></script>
+        <script src="/static/assets/layouts/layout/scripts/layout.min.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/jquery-validation/js/jquery.validate.js" type="text/javascript"></script>
+
+
+
+    </body>
+{% block script %}
+{% endblock %}
+</html>
