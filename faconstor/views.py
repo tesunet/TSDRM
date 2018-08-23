@@ -1262,6 +1262,11 @@ def scriptdata(request):
 
 
 def scriptdel(request):
+    """
+    当删除脚本管理中的脚本的同时，需要删除预案中绑定的脚本；
+    :param request:
+    :return:
+    """
     if request.user.is_authenticated() and request.session['isadmin']:
         if 'id' in request.POST:
             id = request.POST.get('id', '')
@@ -1272,6 +1277,13 @@ def scriptdel(request):
             script = Script.objects.get(id=id)
             script.state = "9"
             script.save()
+
+            script_code = script.code
+            related_scripts = Script.objects.filter(code=script_code)
+            for related_script in related_scripts:
+                related_script.state = "9"
+                related_script.save()
+
             return HttpResponse(1)
         else:
             return HttpResponse(0)
@@ -5719,10 +5731,19 @@ def setpsave(request):
             raise Http404()
         # 新增步骤
         if id == 0:
-            max_sort_from_pnode = \
-                Step.objects.exclude(state="9").filter(pnode_id=pid).filter(process_id=process_id).aggregate(
-                    Max("sort"))[
-                    "sort__max"]
+            # process_name下右键新增
+            try:
+                pid = int(pid)
+            except:
+                pid = None
+                max_sort_from_pnode = \
+                    Step.objects.exclude(state="9").filter(pnode_id=None, process_id=process_id).aggregate(Max("sort"))[
+                        "sort__max"]
+            else:
+                max_sort_from_pnode = \
+                    Step.objects.exclude(state="9").filter(pnode_id=pid).filter(process_id=process_id).aggregate(
+                        Max("sort"))["sort__max"]
+
             # 当前没有父节点
             if max_sort_from_pnode or max_sort_from_pnode == 0:
                 my_sort = max_sort_from_pnode + 1
@@ -7050,6 +7071,14 @@ def custom_step_tree(request):
         name = request.POST.get('name', "")
         process_id = request.POST.get("process", "")
 
+        current_process = Process.objects.filter(id=process_id)
+        if current_process:
+            current_process = current_process[0]
+        else:
+            return Http404()
+        process_name = current_process.name
+
+
         if id == 0:
             selectid = pid
             title = "新建"
@@ -7083,6 +7112,13 @@ def custom_step_tree(request):
 
         treedata = []
         rootnodes = Step.objects.order_by("sort").filter(process_id=process_id, pnode=None).exclude(state="9")
+
+        all_groups = Group.objects.exclude(state="9")
+        group_string = ""
+        for group in all_groups:
+            id_name_plus = str(group.id) + "+" + str(group.name) + "&"
+            group_string += id_name_plus
+
         if len(rootnodes) > 0:
             for rootnode in rootnodes:
                 root = {}
@@ -7097,19 +7133,17 @@ def custom_step_tree(request):
                 if rootnode.group:
                     group_id = rootnode.group
                     group_name = Group.objects.filter(id=group_id)[0].name
-                all_groups = Group.objects.exclude(state="9")
-                group_string = ""
-                for group in all_groups:
-                    id_name_plus = str(group.id) + "+" + str(group.name) + "&"
-                    group_string += id_name_plus
 
                 root["data"] = {"time": rootnode.time, "approval": rootnode.approval, "skip": rootnode.skip,
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title}
                 root["children"] = get_step_tree(rootnode, selectid)
                 treedata.append(root)
-
-        return JsonResponse({"treedata": treedata})
+        process = {}
+        process["text"] = process_name
+        process["data"] = {"allgroups": group_string, "verify": "first_node"}
+        process["children"] = treedata
+        return JsonResponse({"treedata": process})
     else:
         return HttpResponseRedirect("/login")
 
@@ -7190,11 +7224,11 @@ def move_step(request):
             try:
                 parent = int(parent)
             except:
-                raise Http404()
+                parent = None
             try:
                 old_parent = int(old_parent)
             except:
-                raise Http404()
+                old_parent = None
             try:
                 old_position = int(old_position)
             except:
@@ -7205,7 +7239,8 @@ def move_step(request):
                 raise Http404()
 
             cur_step_obj = \
-                Step.objects.filter(pnode_id=old_parent).filter(sort=old_position).filter(process_id=process_id)[0]
+                Step.objects.filter(pnode_id=old_parent).filter(sort=old_position).filter(
+                    process_id=process_id).exclude(state="9")[0]
             cur_step_obj.sort = position
             cur_step_id = cur_step_obj.id
             cur_step_obj.save()
@@ -7243,7 +7278,10 @@ def move_step(request):
                     step.save()
 
             # pnode
-            parent_step = Step.objects.get(id=parent)
+            if parent:
+                parent_step = Step.objects.get(id=parent)
+            else:
+                parent_step = None
             mystep = Step.objects.get(id=id)
             try:
                 mystep.pnode = parent_step
@@ -7274,8 +7312,12 @@ def move_step(request):
                         step.last_id = last_id
                     last_id = step.id
                     step.save()
+
             if parent != old_parent:
-                return HttpResponse(parent_step.name + "^" + str(parent_step.id))
+                if parent == None:
+                    return HttpResponse(" ^ ")
+                else:
+                    return HttpResponse(parent_step.name + "^" + str(parent_step.id))
             else:
                 return HttpResponse("0")
 
