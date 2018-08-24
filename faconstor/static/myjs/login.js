@@ -109,82 +109,6 @@ var Login = function () {
 
 	}
 
-	var handleRegister = function () {
-
-
-         $('.register-form').validate({
-	            errorElement: 'span', //default input error message container
-	            errorClass: 'help-block', // default input error message class
-	            focusInvalid: false, // do not focus the last invalid input
-	            ignore: "",
-	            rules: {
-
-	                email: {
-	                    required: true,
-	                    email: true
-	                },
-	                phone: {
-	                    required: true,
-	                    phone: true
-	                },
-
-	                username: {
-	                    required: true
-	                },
-
-
-	                tnc: {
-	                    required: true
-	                }
-	            },
-
-	            messages: { // custom messages for radio buttons and checkboxes
-	                tnc: {
-	                    required: "请阅读并同意服务声明。"
-	                }
-	            },
-
-	            invalidHandler: function (event, validator) { //display error alert on form submit   
-
-	            },
-
-	            highlight: function (element) { // hightlight error inputs
-	                $(element)
-	                    .closest('.form-group').addClass('has-error'); // set error class to the control group
-	            },
-
-	            success: function (label) {
-	                label.closest('.form-group').removeClass('has-error');
-	                label.remove();
-	            },
-
-	            errorPlacement: function (error, element) {
-	                if (element.attr("name") == "tnc") { // insert checkbox errors after the container                  
-	                    error.insertAfter($('#register_tnc_error'));
-	                } else if (element.closest('.input-icon').size() === 1) {
-	                    error.insertAfter(element.closest('.input-icon'));
-	                } else {
-	                	error.insertAfter(element);
-	                }
-	            },
-
-	            submitHandler: function (form) {
-	                form.submit();
-	            }
-	        });
-
-
-
-	        jQuery('#register-btn').click(function () {
-	            jQuery('.login-form').hide();
-	            jQuery('.register-form').show();
-	        });
-
-	        jQuery('#register-back-btn').click(function () {
-	            jQuery('.login-form').show();
-	            jQuery('.register-form').hide();
-	        });
-	}
     
     return {
         //main function to initiate the module
@@ -192,7 +116,6 @@ var Login = function () {
         	
             handleLogin();
             handleForgetPassword();
-            handleRegister();    
 
             // init background slide images
 		    /*$.backstretch([
@@ -264,31 +187,4 @@ $('#loginbtn').click(function(){
         });
      else
         alert("请输入正确的邮箱地址。");
- })
-
- $('#register-submit-btn').click(function(){
-
-    if($("#formregister").validate().form())
-        $.ajax({
-            type: "POST",
-            url: "../registUser/",
-            data: $('#formregister').serialize(),
-            success:function(data){
-                if (data=="success1")
-                    window.location.href = '../activate/';
-                else
-                {
-                    alert(data);
-                    $('#register_password').val("");
-                    $('#rpassword').val("");
-                }
-            },
-            error : function(e){
-                $('#register_password').val("");
-                $('#rpassword').val("");
-                alert("注册失败，请于客服联系。");
-            }
-        });
-     else
-        alert("注册信息有误，请检查。");
  })

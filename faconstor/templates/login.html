@@ -62,7 +62,6 @@
                 </div>
                 <div class="create-account">
                     <a style="color: #FFFFFF" href="javascript:;" id="forget-password">找回密码 </a>
-                    <a style="color: #FFFFFF" href="javascript:;" id="register-btn"> 立即注册 </a>
 
                 </div>
             </form>
@@ -83,50 +82,13 @@
             </form>
             <!-- END FORGOT PASSWORD FORM -->
             <!-- BEGIN REGISTRATION FORM -->
-            <form class="register-form" id="formregister" >{% csrf_token %}
-                <h3>注 册</h3>
-                <p> 请输入您的注册信息: </p>
-
-                <div class="form-group">
-                    <label class="control-label visible-ie8 visible-ie9">用户名</label>
-                    <div class="input-icon">
-                        <i class="fa fa-user"></i>
-                        <input class="form-control placeholder-no-fix" type="text" autocomplete="off" placeholder="用户名" name="username" /> </div>
-                </div>
-                <div class="form-group">
-                    <!--ie8, ie9 does not support html5 placeholder, so we just show field title for that-->
-                    <label class="control-label visible-ie8 visible-ie9">邮箱</label>
-                    <div class="input-icon">
-                        <i class="fa fa-envelope"></i>
-                        <input class="form-control placeholder-no-fix" type="text" autocomplete="off" placeholder="邮箱" name="email" /> </div>
-                </div>
-                <div class="form-group">
-                    <!--ie8, ie9 does not support html5 placeholder, so we just show field title for that-->
-                    <label class="control-label visible-ie8 visible-ie9">手机号</label>
-                    <div class="input-icon">
-                        <i class="fa fa-phone"></i>
-                        <input class="form-control placeholder-no-fix" type="text" autocomplete="off" placeholder="手机号" name="phone" /> </div>
-                </div>
-
-                <div class="form-group">
-                    <label>
-                        <input type="checkbox" name="tnc" /> 我已阅读并同意
-                        <a href="javascript:;">服务声明</a>。
-                    </label>
-                    <div id="register_tnc_error"> </div>
-                </div>
-                <div class="form-actions">
-                    <button id="register-back-btn" type="button" class="btn red btn-outline"> 返回 </button>
-                    <button type="button" id="register-submit-btn" class="btn green pull-right"> 注册 </button>
-                </div>
-            </form>
             <!-- END REGISTRATION FORM -->
         </div>
         <!-- END LOGIN -->
         <!-- BEGIN COPYRIGHT -->
-        <div class="copyright"> CopyRight  &copy;2016 Maliang info tech Inc.</div>
+        <div class="copyright"> CopyRight  &copy;2018 上海特速网络科技有限公司</div>
 
-<div class="copyright"> 沪公网安备 31010602000561号</div>
+
         <!-- END COPYRIGHT -->
         <!--[if lt IE 9]>
 <script src="/static/assets/global/plugins/respond.min.js"></script>

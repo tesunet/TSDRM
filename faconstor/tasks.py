@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 from celery import shared_task, task
 import pymssql
-from faconstor.CVApi import *
 from faconstor.models import *
 from django.db import connection
 from xml.dom.minidom import parse, parseString
