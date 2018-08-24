@@ -36,11 +36,12 @@ funlist = []
 info = {"webaddr": "cv-server", "port": "81", "username": "admin", "passwd": "Admin@2017", "token": "",
         "lastlogin": 0}
 
-def getfun(myfunlist,fun):
+
+def getfun(myfunlist, fun):
     try:
         if (fun.pnode_id is not None):
             if fun not in myfunlist:
-                childfun={}
+                childfun = {}
                 if (fun.pnode_id != 1):
                     myfunlist = getfun(myfunlist, fun.pnode)
                 myfunlist.append(fun)
@@ -48,27 +49,32 @@ def getfun(myfunlist,fun):
         pass
     return myfunlist
 
-def childfun(myfun,funid):
+
+def childfun(myfun, funid):
     mychildfun = []
     funs = myfun.children.order_by("sort").all()
-    pisselected=False
+    pisselected = False
     for fun in funs:
         if fun in funlist:
             isselected = False
-            if str(fun.id)==funid:
+            if str(fun.id) == funid:
                 isselected = True
-                pisselected=True
-                mychildfun.append({"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon, "isselected":isselected,"child":[]})
+                pisselected = True
+                mychildfun.append(
+                    {"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon, "isselected": isselected,
+                     "child": []})
             else:
                 returnfuns = childfun(fun, funid)
-                mychildfun.append({"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon, "isselected":returnfuns["isselected"],"child":returnfuns["fun"]})
+                mychildfun.append({"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon,
+                                   "isselected": returnfuns["isselected"], "child": returnfuns["fun"]})
                 if returnfuns["isselected"]:
                     pisselected = returnfuns["isselected"]
-    return {"fun":mychildfun,"isselected":pisselected}
+    return {"fun": mychildfun, "isselected": pisselected}
+
 
 def getpagefuns(funid):
     pagefuns = []
-    mycurfun={}
+    mycurfun = {}
     for fun in funlist:
         if fun.pnode_id == 1:
             isselected = False
@@ -82,12 +88,13 @@ def getpagefuns(funid):
                 pagefuns.append({"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon,
                                  "isselected": returnfuns["isselected"], "child": returnfuns["fun"]})
     curfun = Fun.objects.filter(id=int(funid))
-    if len(curfun)>0:
+    if len(curfun) > 0:
         myurl = curfun[0].url
-        if len(myurl)>0:
+        if len(myurl) > 0:
             myurl = myurl[:-1]
-        mycurfun = {"id":curfun[0].id,"name":curfun[0].name,"url":myurl}
-    return {"pagefuns":pagefuns,"curfun":mycurfun}
+        mycurfun = {"id": curfun[0].id, "name": curfun[0].name, "url": myurl}
+    return {"pagefuns": pagefuns, "curfun": mycurfun}
+
 
 def test(request):
     if request.user.is_authenticated() and request.session['isadmin']:
@@ -98,21 +105,22 @@ def test(request):
         return HttpResponseRedirect("/login")
 
 
-def index(request,funid):
+def index(request, funid):
     if request.user.is_authenticated():
         global funlist
         funlist = []
-        if request.user.is_superuser==1:
+        if request.user.is_superuser == 1:
             allfunlist = Fun.objects.all()
             for fun in allfunlist:
                 funlist.append(fun)
         else:
             cursor = connection.cursor()
-            cursor.execute("select cloud_fun.id from cloud_group,cloud_fun,cloud_userinfo,cloud_userinfo_group,cloud_group_fun "
-                           "where cloud_group.id=cloud_userinfo_group.group_id and cloud_group.id=cloud_group_fun.group_id and "
-                           "cloud_group_fun.fun_id=cloud_fun.id and cloud_userinfo.id=cloud_userinfo_group.userinfo_id and userinfo_id= "
-                           + str(request.user.userinfo.id )+ " order by cloud_fun.sort"
-                           )
+            cursor.execute(
+                "select cloud_fun.id from cloud_group,cloud_fun,cloud_userinfo,cloud_userinfo_group,cloud_group_fun "
+                "where cloud_group.id=cloud_userinfo_group.group_id and cloud_group.id=cloud_group_fun.group_id and "
+                "cloud_group_fun.fun_id=cloud_fun.id and cloud_userinfo.id=cloud_userinfo_group.userinfo_id and userinfo_id= "
+                + str(request.user.userinfo.id) + " order by cloud_fun.sort"
+            )
 
             rows = cursor.fetchall()
 
@@ -125,7 +133,7 @@ def index(request,funid):
         for index, value in enumerate(funlist):
             if value.sort is None:
                 value.sort = 0
-        funlist=sorted(funlist, key=lambda fun: fun.sort)
+        funlist = sorted(funlist, key=lambda fun: fun.sort)
         alltask = []
         mygroup = []
         userinfo = request.user.userinfo
@@ -199,7 +207,8 @@ def index(request,funid):
                                 "process_name": process_name, "send_time": send_time,
                                 "process_run_reason": process_run_reason, "group_name": guoups[0].name})
         return render(request, "index.html",
-                      {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,"pagefuns":getpagefuns(funid)})
+                      {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
+                       "pagefuns": getpagefuns(funid)})
     else:
         return HttpResponseRedirect("/login")
 
@@ -351,30 +360,31 @@ def userpassword(request):
     return HttpResponse(result)
 
 
-def get_fun_tree(parent,selectid):
+def get_fun_tree(parent, selectid):
     nodes = []
     children = parent.children.order_by("sort").all()
     for child in children:
-        node={}
+        node = {}
         node["text"] = child.name
         node["id"] = child.id
         node["type"] = child.type
-        node["data"] = {"url": child.url,"icon": child.icon,"pname":parent.name}
-        node["children"] = get_fun_tree(child,selectid)
+        node["data"] = {"url": child.url, "icon": child.icon, "pname": parent.name}
+        node["children"] = get_fun_tree(child, selectid)
         try:
-            if int(selectid)==child.id:
-                node["state"] = { "selected": True }
+            if int(selectid) == child.id:
+                node["state"] = {"selected": True}
         except:
             pass
         nodes.append(node)
     return nodes
 
-def function(request,funid):
-    if request.user.is_authenticated() :
+
+def function(request, funid):
+    if request.user.is_authenticated():
         try:
             errors = []
-            title="请选择功能"
-            selectid=""
+            title = "请选择功能"
+            selectid = ""
             id = ""
             pid = ""
             pname = ""
@@ -382,10 +392,10 @@ def function(request,funid):
             mytype = ""
             url = ""
             icon = ""
-            hiddendiv="hidden"
+            hiddendiv = "hidden"
 
             if request.method == 'POST':
-                hiddendiv =""
+                hiddendiv = ""
                 id = request.POST.get('id')
                 pid = request.POST.get('pid')
                 pname = request.POST.get('pname')
@@ -420,11 +430,11 @@ def function(request,funid):
                         raise Http404()
                     try:
                         if id == 0:
-                            sort=1
+                            sort = 1
 
                             try:
                                 maxfun = Fun.objects.filter(pnode=pfun).latest('sort')
-                                sort=maxfun.sort+1
+                                sort = maxfun.sort + 1
                             except:
                                 pass
                             funsave = Fun()
@@ -433,14 +443,14 @@ def function(request,funid):
                             funsave.type = mytype
                             funsave.url = url
                             funsave.icon = icon
-                            funsave.sort=sort
+                            funsave.sort = sort
                             funsave.save()
                             title = name
-                            id=funsave.id
-                            selectid=id
+                            id = funsave.id
+                            selectid = id
                         else:
                             funsave = Fun.objects.get(id=id)
-                            if funsave.type=="node" and mytype=="fun" and len(funsave.children.all())>0:
+                            if funsave.type == "node" and mytype == "fun" and len(funsave.children.all()) > 0:
                                 errors.append('节点下还有其他节点或功能，无法修改为功能。')
                             else:
                                 funsave.name = name
@@ -459,7 +469,7 @@ def function(request,funid):
                     root["text"] = rootnode.name
                     root["id"] = rootnode.id
                     root["type"] = "node"
-                    root["data"] = { "url": rootnode.url,"icon": rootnode.icon,"pname":"无"}
+                    root["data"] = {"url": rootnode.url, "icon": rootnode.icon, "pname": "无"}
                     try:
                         if int(selectid) == rootnode.id:
                             root["state"] = {"opened": True, "selected": True}
@@ -467,17 +477,19 @@ def function(request,funid):
                             root["state"] = {"opened": True}
                     except:
                         root["state"] = {"opened": True}
-                    root["children"] = get_fun_tree(rootnode,selectid)
+                    root["children"] = get_fun_tree(rootnode, selectid)
                     treedata.append(root)
             treedata = json.dumps(treedata)
             return render(request, 'function.html',
-                          {'username': request.user.userinfo.fullname,'errors': errors,"id":id,
-                           "pid":pid,"pname":pname,"name":name,"url":url,"icon":icon,"title":title,"mytype":mytype,
-                           "hiddendiv":hiddendiv,"treedata":treedata,"pagefuns":getpagefuns(funid)})
+                          {'username': request.user.userinfo.fullname, 'errors': errors, "id": id,
+                           "pid": pid, "pname": pname, "name": name, "url": url, "icon": icon, "title": title,
+                           "mytype": mytype,
+                           "hiddendiv": hiddendiv, "treedata": treedata, "pagefuns": getpagefuns(funid)})
         except:
             return HttpResponseRedirect("/index")
     else:
         return HttpResponseRedirect("/login")
+
 
 def fundel(request):
     if request.user.is_authenticated():
@@ -493,10 +505,10 @@ def fundel(request):
                 pfun = allfun[0].pnode
                 allfun[0].delete()
                 sortfuns = Fun.objects.filter(pnode=pfun).filter(sort__gt=sort)
-                if len(sortfuns)>0:
+                if len(sortfuns) > 0:
                     for sortfun in sortfuns:
                         try:
-                            sortfun.sort=sortfun.sort-1
+                            sortfun.sort = sortfun.sort - 1
                             sortfun.save()
                         except:
                             pass
@@ -504,14 +516,15 @@ def fundel(request):
             else:
                 return HttpResponse(0)
 
+
 def funmove(request):
     if request.user.is_authenticated():
         if 'id' in request.POST:
-            id= request.POST.get('id', '')
-            parent= request.POST.get('parent', '')
-            old_parent= request.POST.get('old_parent', '')
-            position= request.POST.get('position', '')
-            old_position= request.POST.get('old_position', '')
+            id = request.POST.get('id', '')
+            parent = request.POST.get('parent', '')
+            old_parent = request.POST.get('old_parent', '')
+            position = request.POST.get('position', '')
+            old_position = request.POST.get('old_position', '')
             try:
                 id = int(id)
             except:
@@ -533,20 +546,20 @@ def funmove(request):
             except:
                 raise Http404()
             oldpfun = Fun.objects.get(id=old_parent)
-            oldsort = old_position+1
+            oldsort = old_position + 1
             oldfuns = Fun.objects.filter(pnode=oldpfun).filter(sort__gt=oldsort)
 
             pfun = Fun.objects.get(id=parent)
             sort = position + 1
             funs = Fun.objects.filter(pnode=pfun).filter(sort__gte=sort).exclude(id=id)
 
-            if pfun.type=="fun":
+            if pfun.type == "fun":
                 return HttpResponse("类型")
             else:
                 if (len(oldfuns) > 0):
                     for oldfun in oldfuns:
                         try:
-                            oldfun.sort=oldfun.sort-1
+                            oldfun.sort = oldfun.sort - 1
                             oldfun.save()
                         except:
                             pass
@@ -560,30 +573,31 @@ def funmove(request):
                             pass
                 myfun = Fun.objects.get(id=id)
                 try:
-                    myfun.pnode=pfun
+                    myfun.pnode = pfun
                     myfun.sort = sort
                     myfun.save()
                 except:
                     pass
-                if parent!=old_parent:
-                    return HttpResponse(pfun.name+"^"+str(pfun.id))
+                if parent != old_parent:
+                    return HttpResponse(pfun.name + "^" + str(pfun.id))
                 else:
                     return HttpResponse("0")
 
-def get_org_tree(parent,selectid,allgroup):
+
+def get_org_tree(parent, selectid, allgroup):
     nodes = []
     children = parent.children.order_by("sort").exclude(state="9").all()
     for child in children:
-        node={}
+        node = {}
         node["text"] = child.fullname
         node["id"] = child.id
         node["type"] = child.type
-        if child.type=="org":
-            myallgroup=[]
+        if child.type == "org":
+            myallgroup = []
             for group in allgroup:
                 myallgroup.append({"groupname": group.name, "id": group.id})
-            node["data"] = {"remark": child.remark, "pname": parent.fullname,"myallgroup": myallgroup}
-        if child.type=="user":
+            node["data"] = {"remark": child.remark, "pname": parent.fullname, "myallgroup": myallgroup}
+        if child.type == "user":
             noselectgroup = []
             selectgroup = []
             allselectgroup = child.group.all()
@@ -592,23 +606,25 @@ def get_org_tree(parent,selectid,allgroup):
                     selectgroup.append({"groupname": group.name, "id": group.id})
                 else:
                     noselectgroup.append({"groupname": group.name, "id": group.id})
-            node["data"] = {"pname": parent.fullname, "username": child.user.username,"fullname":child.fullname,
-                            "phone": child.phone,"email": child.user.email, "noselectgroup": noselectgroup, "selectgroup": selectgroup}
-        node["children"] = get_org_tree(child,selectid,allgroup)
+            node["data"] = {"pname": parent.fullname, "username": child.user.username, "fullname": child.fullname,
+                            "phone": child.phone, "email": child.user.email, "noselectgroup": noselectgroup,
+                            "selectgroup": selectgroup}
+        node["children"] = get_org_tree(child, selectid, allgroup)
         try:
-            if int(selectid)==child.id:
-                node["state"] = { "selected": True }
+            if int(selectid) == child.id:
+                node["state"] = {"selected": True}
         except:
             pass
         nodes.append(node)
     return nodes
 
-def organization(request,funid):
+
+def organization(request, funid):
     if request.user.is_authenticated():
         try:
             errors = []
-            title="请选择组织"
-            selectid=""
+            title = "请选择组织"
+            selectid = ""
             id = ""
             pid = ""
             pname = ""
@@ -616,14 +632,14 @@ def organization(request,funid):
             selectgroup = []
             username = ""
             fullname = ""
-            orgname=""
+            orgname = ""
             phone = ""
             email = ""
             password = ""
-            mytype=""
-            remark=""
+            mytype = ""
+            remark = ""
             hiddendiv = "hidden"
-            hiddenuser="hidden"
+            hiddenuser = "hidden"
             hiddenorg = "hidden"
             newpassword = "hidden"
             editpassword = ""
@@ -677,7 +693,7 @@ def organization(request,funid):
                                     errors.append('姓名不能为空。')
                                 else:
                                     if (len(alluser) > 0):
-                                        errors.append('用户名:'+ username + '已存在。')
+                                        errors.append('用户名:' + username + '已存在。')
                                     else:
                                         try:
                                             newuser = User()
@@ -713,7 +729,7 @@ def organization(request,funid):
                                                     raise Http404()
                                             title = fullname
                                             selectid = profile.id
-                                            id=profile.id
+                                            id = profile.id
                                             newpassword = "hidden"
                                             editpassword = ""
                                         except ValueError:
@@ -725,7 +741,7 @@ def organization(request,funid):
                         if username.strip() == '':
                             errors.append('用户名不能为空。')
                         else:
-                            if fullname.strip() == '' :
+                            if fullname.strip() == '':
                                 errors.append('姓名不能为空。')
                             else:
                                 if (len(exalluser) > 0 and exalluser[0].userinfo.id != id):
@@ -766,7 +782,7 @@ def organization(request,funid):
                                 porg = UserInfo.objects.get(id=pid)
                             except:
                                 raise Http404()
-                            allorg = UserInfo.objects.filter(fullname=orgname,pnode=porg)
+                            allorg = UserInfo.objects.filter(fullname=orgname, pnode=porg)
                             if orgname.strip() == '':
                                 errors.append('组织名称不能为空。')
                             else:
@@ -799,7 +815,7 @@ def organization(request,funid):
                                 porg = UserInfo.objects.get(id=pid)
                             except:
                                 raise Http404()
-                            exalluser = UserInfo.objects.filter(fullname=orgname,pnode=porg).exclude(state="9")
+                            exalluser = UserInfo.objects.filter(fullname=orgname, pnode=porg).exclude(state="9")
                             if orgname.strip() == '':
                                 errors.append('组织名称不能为空。')
                             else:
@@ -815,7 +831,7 @@ def organization(request,funid):
                                     except:
                                         errors.append('保存失败。')
             treedata = []
-            rootnodes = UserInfo.objects.order_by("sort").exclude(state="9").filter(pnode=None,type="org")
+            rootnodes = UserInfo.objects.order_by("sort").exclude(state="9").filter(pnode=None, type="org")
             if len(rootnodes) > 0:
                 for rootnode in rootnodes:
                     root = {}
@@ -825,7 +841,7 @@ def organization(request,funid):
                     myallgroup = []
                     for group in allgroup:
                         myallgroup.append({"groupname": group.name, "id": group.id})
-                    root["data"] = {"remark": rootnode.remark,"pname": "无","myallgroup": myallgroup}
+                    root["data"] = {"remark": rootnode.remark, "pname": "无", "myallgroup": myallgroup}
                     try:
                         if int(selectid) == rootnode.id:
                             root["state"] = {"opened": True, "selected": True}
@@ -833,21 +849,24 @@ def organization(request,funid):
                             root["state"] = {"opened": True}
                     except:
                         root["state"] = {"opened": True}
-                    root["children"] = get_org_tree(rootnode,selectid,allgroup)
+                    root["children"] = get_org_tree(rootnode, selectid, allgroup)
                     treedata.append(root)
             treedata = json.dumps(treedata)
             return render(request, 'organization.html',
-                          {'username': request.user.userinfo.fullname,'errors': errors,"id":id,"orgname":orgname,
-                           "pid":pid,"pname":pname,"fullname":fullname,"phone":phone,"myusername":username,
-                           "email":email,"password":password,"noselectgroup":noselectgroup,"selectgroup":selectgroup,"mytype":mytype,
-                           "remark":remark,"title":title,"mytype":mytype,"hiddenuser":hiddenuser,"hiddenorg":hiddenorg,
-                          "newpassword":newpassword,"editpassword":editpassword,"hiddendiv":hiddendiv
-                           ,"treedata":treedata,"pagefuns":getpagefuns(funid)})
+                          {'username': request.user.userinfo.fullname, 'errors': errors, "id": id, "orgname": orgname,
+                           "pid": pid, "pname": pname, "fullname": fullname, "phone": phone, "myusername": username,
+                           "email": email, "password": password, "noselectgroup": noselectgroup,
+                           "selectgroup": selectgroup, "mytype": mytype,
+                           "remark": remark, "title": title, "mytype": mytype, "hiddenuser": hiddenuser,
+                           "hiddenorg": hiddenorg,
+                           "newpassword": newpassword, "editpassword": editpassword, "hiddendiv": hiddendiv
+                              , "treedata": treedata, "pagefuns": getpagefuns(funid)})
 
         except:
             return HttpResponseRedirect("/index")
     else:
         return HttpResponseRedirect("/login")
+
 
 def orgdel(request):
     if request.user.is_authenticated():
@@ -858,25 +877,26 @@ def orgdel(request):
             except:
                 raise Http404()
             userinfo = UserInfo.objects.get(id=id)
-            userinfo.state="9"
+            userinfo.state = "9"
             userinfo.save()
 
-            if userinfo.type=="user":
+            if userinfo.type == "user":
                 user = userinfo.user
-                user.is_active=0
+                user.is_active = 0
                 user.save()
             return HttpResponse(1)
         else:
             return HttpResponse(0)
 
+
 def orgmove(request):
     if request.user.is_authenticated():
         if 'id' in request.POST:
-            id= request.POST.get('id', '')
-            parent= request.POST.get('parent', '')
-            old_parent= request.POST.get('old_parent', '')
-            position= request.POST.get('position', '')
-            old_position= request.POST.get('old_position', '')
+            id = request.POST.get('id', '')
+            parent = request.POST.get('parent', '')
+            old_parent = request.POST.get('old_parent', '')
+            position = request.POST.get('position', '')
+            old_position = request.POST.get('old_position', '')
             try:
                 id = int(id)
             except:
@@ -898,7 +918,7 @@ def orgmove(request):
             except:
                 raise Http404()
             oldpuserinfo = UserInfo.objects.get(id=old_parent)
-            oldsort = old_position+1
+            oldsort = old_position + 1
             olduserinfos = UserInfo.objects.filter(pnode=oldpuserinfo).filter(sort__gt=oldsort)
 
             puserinfo = UserInfo.objects.get(id=parent)
@@ -906,7 +926,7 @@ def orgmove(request):
             userinfos = UserInfo.objects.filter(pnode=puserinfo).filter(sort__gte=sort).exclude(id=id)
 
             myuserinfo = UserInfo.objects.get(id=id)
-            if puserinfo.type=="user":
+            if puserinfo.type == "user":
                 return HttpResponse("类型")
             else:
                 usersame = UserInfo.objects.filter(pnode=puserinfo).filter(fullname=myuserinfo.fullname).exclude(id=id)
@@ -916,7 +936,7 @@ def orgmove(request):
                     if (len(olduserinfos) > 0):
                         for olduserinfo in olduserinfos:
                             try:
-                                olduserinfo.sort=olduserinfo.sort-1
+                                olduserinfo.sort = olduserinfo.sort - 1
                                 olduserinfo.save()
                             except:
                                 pass
@@ -929,15 +949,16 @@ def orgmove(request):
                                 pass
 
                     try:
-                        myuserinfo.pnode=puserinfo
+                        myuserinfo.pnode = puserinfo
                         myuserinfo.sort = sort
                         myuserinfo.save()
                     except:
                         pass
-                    if parent!=old_parent:
-                        return HttpResponse(puserinfo.fullname+"^"+str(puserinfo.id))
+                    if parent != old_parent:
+                        return HttpResponse(puserinfo.fullname + "^" + str(puserinfo.id))
                     else:
                         return HttpResponse("0")
+
 
 def orgpassword(request):
     if request.user.is_authenticated():
@@ -955,18 +976,20 @@ def orgpassword(request):
             except:
                 HttpResponse('修改密码失败，请于管理员联系。')
 
-def group(request,funid):
-    if request.user.is_authenticated() :
+
+def group(request, funid):
+    if request.user.is_authenticated():
         try:
             allgroup = Group.objects.all().exclude(state="9")
 
             return render(request, 'group.html',
                           {'username': request.user.userinfo.fullname,
-                           "allgroup":allgroup,"pagefuns":getpagefuns(funid)})
+                           "allgroup": allgroup, "pagefuns": getpagefuns(funid)})
         except:
             return HttpResponseRedirect("/index")
     else:
         return HttpResponseRedirect("/login")
+
 
 def groupsave(request):
     if 'id' in request.POST:
@@ -979,12 +1002,12 @@ def groupsave(request):
         except:
             raise Http404()
         if name.strip() == '':
-            result["res"]='角色名称不能为空。'
+            result["res"] = '角色名称不能为空。'
         else:
             if id == 0:
                 allgroup = Group.objects.filter(name=name).exclude(state="9")
                 if (len(allgroup) > 0):
-                    result["res"]=name + '已存在。'
+                    result["res"] = name + '已存在。'
                 else:
                     groupsave = Group()
                     groupsave.name = name
@@ -1007,6 +1030,7 @@ def groupsave(request):
                         result["res"] = "修改失败。"
         return HttpResponse(json.dumps(result))
 
+
 def groupdel(request):
     if 'id' in request.POST:
         result = ""
@@ -1019,26 +1043,28 @@ def groupdel(request):
         result = '角色不存在。'
         if (len(allgroup) > 0):
             groupsave = allgroup[0]
-            groupsave.state="9"
+            groupsave.state = "9"
             groupsave.save()
             result = "删除成功。"
         else:
-            result= '角色不存在。'
+            result = '角色不存在。'
         return HttpResponse(result)
 
-def group_get_user_tree(parent,selectusers):
+
+def group_get_user_tree(parent, selectusers):
     nodes = []
     children = parent.children.order_by("sort").exclude(state="9").all()
     for child in children:
-        node={}
+        node = {}
         node["text"] = child.fullname
-        node["id"] = "user_" +str(child.id)
+        node["id"] = "user_" + str(child.id)
         node["type"] = child.type
-        if child.type=="user" and child in selectusers:
+        if child.type == "user" and child in selectusers:
             node["state"] = {"selected": True}
-        node["children"] = group_get_user_tree(child,selectusers)
+        node["children"] = group_get_user_tree(child, selectusers)
         nodes.append(node)
     return nodes
+
 
 def getusertree(request):
     if 'id' in request.POST:
@@ -1052,19 +1078,20 @@ def getusertree(request):
         groupsave = Group.objects.get(id=id)
         selectusers = groupsave.userinfo_set.all()
 
-        rootnodes = UserInfo.objects.order_by("sort").exclude(state="9").filter(pnode=None,type="org")
+        rootnodes = UserInfo.objects.order_by("sort").exclude(state="9").filter(pnode=None, type="org")
 
         if len(rootnodes) > 0:
             for rootnode in rootnodes:
                 root = {}
                 root["text"] = rootnode.fullname
-                root["id"] = "user_" +str(rootnode.id)
+                root["id"] = "user_" + str(rootnode.id)
                 root["type"] = "org"
                 root["state"] = {"opened": True}
-                root["children"] = group_get_user_tree(rootnode,selectusers)
+                root["children"] = group_get_user_tree(rootnode, selectusers)
                 treedata.append(root)
         treedata = json.dumps(treedata)
         return HttpResponse(treedata)
+
 
 def groupsaveusertree(request):
     if 'id' in request.POST:
@@ -1078,29 +1105,31 @@ def groupsaveusertree(request):
             raise Http404()
         groupsave = Group.objects.get(id=id)
         groupsave.userinfo_set.clear()
-        if len(selectedusers)>0:
+        if len(selectedusers) > 0:
             for selecteduser in selectedusers:
                 try:
-                    myuser = UserInfo.objects.get(id=int(selecteduser.replace("user_","")))
-                    if myuser.type=="user":
+                    myuser = UserInfo.objects.get(id=int(selecteduser.replace("user_", "")))
+                    if myuser.type == "user":
                         myuser.group.add(groupsave)
                 except:
                     pass
         return HttpResponse("保存成功。")
 
-def group_get_fun_tree(parent,selectfuns):
+
+def group_get_fun_tree(parent, selectfuns):
     nodes = []
     children = parent.children.order_by("sort").all()
     for child in children:
-        node={}
+        node = {}
         node["text"] = child.name
-        node["id"] = "fun_" +str(child.id)
+        node["id"] = "fun_" + str(child.id)
         node["type"] = child.type
-        if child.type=="fun" and child in selectfuns:
+        if child.type == "fun" and child in selectfuns:
             node["state"] = {"selected": True}
-        node["children"] = group_get_fun_tree(child,selectfuns)
+        node["children"] = group_get_fun_tree(child, selectfuns)
         nodes.append(node)
     return nodes
+
 
 def getfuntree(request):
     if 'id' in request.POST:
@@ -1114,19 +1143,20 @@ def getfuntree(request):
         groupsave = Group.objects.get(id=id)
         selectfuns = groupsave.fun.all()
 
-        rootnodes = Fun.objects.order_by("sort").filter(pnode=None,type="node")
+        rootnodes = Fun.objects.order_by("sort").filter(pnode=None, type="node")
 
         if len(rootnodes) > 0:
             for rootnode in rootnodes:
                 root = {}
                 root["text"] = rootnode.name
-                root["id"] = "fun_" +str(rootnode.id)
+                root["id"] = "fun_" + str(rootnode.id)
                 root["type"] = "node"
                 root["state"] = {"opened": True}
-                root["children"] = group_get_fun_tree(rootnode,selectfuns)
+                root["children"] = group_get_fun_tree(rootnode, selectfuns)
                 treedata.append(root)
         treedata = json.dumps(treedata)
         return HttpResponse(treedata)
+
 
 def groupsavefuntree(request):
     if 'id' in request.POST:
@@ -1140,18 +1170,18 @@ def groupsavefuntree(request):
             raise Http404()
         groupsave = Group.objects.get(id=id)
         groupsave.fun.clear()
-        if len(selectedfuns)>0:
+        if len(selectedfuns) > 0:
             for selectedfun in selectedfuns:
                 try:
-                    myfun = Fun.objects.get(id=int(selectedfun.replace("fun_","")))
-                    if myfun.type=="fun":
+                    myfun = Fun.objects.get(id=int(selectedfun.replace("fun_", "")))
+                    if myfun.type == "fun":
                         groupsave.fun.add(myfun)
                 except:
                     pass
         return HttpResponse("保存成功。")
 
 
-def script(request,funid):
+def script(request, funid):
     if request.user.is_authenticated() and request.session['isadmin']:
         errors = []
         if request.method == 'POST':
@@ -1576,7 +1606,6 @@ def processscriptsave(request):
             return HttpResponse(json.dumps(result))
 
 
-
 def get_script_data(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         if 'id' in request.POST:
@@ -1757,7 +1786,6 @@ def custom_step_tree(request):
             return Http404()
         process_name = current_process.name
 
-
         if id == 0:
             selectid = pid
             title = "新建"
@@ -1827,14 +1855,15 @@ def custom_step_tree(request):
         return HttpResponseRedirect("/login")
 
 
-def processconfig(request,funid):
+def processconfig(request, funid):
     if request.user.is_authenticated():
         processes = Process.objects.exclude(state="9").order_by("sort")
         processlist = []
         for process in processes:
             processlist.append({"id": process.id, "code": process.code, "name": process.name})
         return render(request, 'processconfig.html',
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid), "processlist": processlist})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
+                       "processlist": processlist})
 
 
 def del_step(request):
@@ -2013,7 +2042,7 @@ def get_all_groups(request):
         return JsonResponse({"data": all_group_list})
 
 
-def falconstorswitch(request,funid):
+def falconstorswitch(request, funid):
     if request.user.is_authenticated():
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
@@ -2129,7 +2158,7 @@ def falconstorrun(request):
         return HttpResponse(json.dumps(result))
 
 
-def falconstor(request, offset,funid):
+def falconstor(request, offset, funid):
     if request.user.is_authenticated():
         id = 0
         try:
@@ -2907,7 +2936,8 @@ def custom_pdf_report(request):
 
                                     if current_scriptrun_obj[0].endtime and current_scriptrun_obj[0].starttime:
 
-                                        delta_time = (current_scriptrun_obj[0].endtime - current_scriptrun_obj[0].starttime)
+                                        delta_time = (current_scriptrun_obj[0].endtime - current_scriptrun_obj[
+                                            0].starttime)
                                         delta_time_str = str(delta_time)
 
                                         end_time = current_scriptrun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
@@ -2919,13 +2949,16 @@ def custom_pdf_report(request):
 
                                         if delta_time.total_seconds() > 0:
                                             if "," in delta_time_str:
-                                                delta_time_example = str(delta_time.total_seconds() // 60 // 60).split(".")[0]
+                                                delta_time_example = \
+                                                    str(delta_time.total_seconds() // 60 // 60).split(".")[0]
                                                 delta_time_list = delta_time_str.split(",")[-1].split(":")
-                                                delta_time = "{0}时{1}分{2}秒".format(delta_time_example, delta_time_list[1],
+                                                delta_time = "{0}时{1}分{2}秒".format(delta_time_example,
+                                                                                   delta_time_list[1],
                                                                                    delta_second if delta_second else "")
                                             else:
                                                 delta_time_list = delta_time_str.split(":")
-                                                delta_time = "{0}时{1}分{2}秒".format(delta_time_list[0], delta_time_list[1],
+                                                delta_time = "{0}时{1}分{2}秒".format(delta_time_list[0],
+                                                                                   delta_time_list[1],
                                                                                    delta_second if delta_second else "")
                                         elif delta_time.total_seconds() == 0:
                                             delta_time = ""
@@ -2967,7 +3000,7 @@ def custom_pdf_report(request):
             return response
 
 
-def falconstorsearch(request,funid):
+def falconstorsearch(request, funid):
     if request.user.is_authenticated():
         nowtime = datetime.datetime.now()
         endtime = nowtime.strftime("%Y-%m-%d")
@@ -3006,30 +3039,37 @@ def falconstorsearchdata(request):
         start_time = datetime.datetime.strptime(startdate, '%Y-%m-%d')
         end_time = datetime.datetime.strptime(enddate, '%Y-%m-%d') + datetime.timedelta(days=1) - datetime.timedelta(
             seconds=1)
-        all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(starttime__range=[start_time, end_time]).order_by("-starttime")
+        all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(
+            starttime__range=[start_time, end_time]).order_by("-starttime")
 
         if runperson:
             if processname != "" and runstate != "":
-                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
-                                                                                   process__name=processname,
-                                                                                   state=runstate, creatuser=runperson).order_by("-starttime")
+                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(
+                    starttime__range=[start_time, end_time],
+                    process__name=processname,
+                    state=runstate, creatuser=runperson).order_by("-starttime")
             if processname == "" and runstate != "":
-                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
-                                                                                   state=runstate, creatuser=runperson).order_by("-starttime")
+                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(
+                    starttime__range=[start_time, end_time],
+                    state=runstate, creatuser=runperson).order_by("-starttime")
             if processname != "" and runstate == "":
-                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
-                                                                               process__name=processname, creatuser=runperson).order_by("-starttime")
+                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(
+                    starttime__range=[start_time, end_time],
+                    process__name=processname, creatuser=runperson).order_by("-starttime")
         else:
             if processname != "" and runstate != "":
-                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
-                                                                                   process__name=processname,
-                                                                                   state=runstate).order_by("-starttime")
+                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(
+                    starttime__range=[start_time, end_time],
+                    process__name=processname,
+                    state=runstate).order_by("-starttime")
             if processname == "" and runstate != "":
-                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
-                                                                                   state=runstate).order_by("-starttime")
+                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(
+                    starttime__range=[start_time, end_time],
+                    state=runstate).order_by("-starttime")
             if processname != "" and runstate == "":
-                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
-                                                                               process__name=processname).order_by("-starttime")
+                all_processrun_objs = ProcessRun.objects.exclude(state="9").filter(
+                    starttime__range=[start_time, end_time],
+                    process__name=processname).order_by("-starttime")
         state_dict = {
             "DONE": "已完成",
             "EDIT": "未执行",
@@ -3053,9 +3093,10 @@ def falconstorsearchdata(request):
         return HttpResponse(json.dumps({"data": result}))
 
 
-def downloadlist(request,funid):
+def downloadlist(request, funid):
     if request.user.is_authenticated():
-        return render(request, "downloadlist.html", {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
+        return render(request, "downloadlist.html",
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
     else:
         return HttpResponseRedirect("/login")
 
