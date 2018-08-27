@@ -189,7 +189,7 @@ $.ajax({
                 }
 
 
-            });
+            })
         // context-menu
         $('#se_1').contextmenu({
             target: '#context-menu2',

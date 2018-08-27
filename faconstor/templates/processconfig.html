@@ -3,12 +3,12 @@
 {% block content %}
         <header class="panel-heading" style="height:40px;">
             <div class="row" style="margin-top: -7px">
-                <div class="col-md-2 col-lg-2" style="margin-top: 5px">流程配置</div>
+                <div class="col-md-2 col-lg-2" style="margin-top: 5px"></div>
                 <div class="col-md-10 col-lg-10">
 
                     <select class="form-control" id="process" name="process" style="width:250px; float:right;">
                         {% for process in processlist %}
-                            <option value="{{ process.id }}">{{ process.name }} </option>
+                            <option value="{{ process.id }}" {% if process_id == process.id %}selected{% endif %}>{{ process.name }} </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -369,7 +369,8 @@
                 </div>
             </div>
 
-{% endblock %} {% block script %}
+{% endblock %}
+{% block script %}
     <script>
         $.ajaxSetup({
             data: {

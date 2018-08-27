@@ -1845,11 +1845,13 @@ def custom_step_tree(request):
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title}
                 root["children"] = get_step_tree(rootnode, selectid)
+                root["state"] = {"opened": True}
                 treedata.append(root)
         process = {}
         process["text"] = process_name
         process["data"] = {"allgroups": group_string, "verify": "first_node"}
         process["children"] = treedata
+        process["state"] = {"opened": True}
         return JsonResponse({"treedata": process})
     else:
         return HttpResponseRedirect("/login")
@@ -1857,13 +1859,17 @@ def custom_step_tree(request):
 
 def processconfig(request, funid):
     if request.user.is_authenticated():
+        process_id = request.GET.get("process_id", "")
+        if process_id:
+            process_id = int(process_id)
+
         processes = Process.objects.exclude(state="9").order_by("sort")
         processlist = []
         for process in processes:
             processlist.append({"id": process.id, "code": process.code, "name": process.name})
         return render(request, 'processconfig.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
-                       "processlist": processlist})
+                       "processlist": processlist, "process_id": process_id})
 
 
 def del_step(request):
@@ -2040,6 +2046,130 @@ def get_all_groups(request):
             }
             all_group_list.append(group_info_dict)
         return JsonResponse({"data": all_group_list})
+
+
+def process_design(request, funid):
+    if request.user.is_authenticated():
+        return render(request, "processdesign.html", {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
+
+
+def process_data(request):
+    if request.user.is_authenticated() and request.session['isadmin']:
+        result = []
+        all_process = Process.objects.exclude(state="9")
+        if (len(all_process) > 0):
+            for process in all_process:
+                result.append({
+                    "process_id": process.id,
+                    "process_code": process.code,
+                    "process_name": process.name,
+                    "process_remark": process.remark,
+                    "process_sign": process.sign,
+                    "process_rto": process.rto,
+                    "process_rpo": process.rpo,
+                    "process_sort": process.sort,
+                })
+        return JsonResponse({"data": result})
+
+
+def process_save(request):
+    if request.user.is_authenticated() and request.session['isadmin']:
+        if 'id' in request.POST:
+            result = {}
+            id = request.POST.get('id', '')
+            code = request.POST.get('code', '')
+            name = request.POST.get('name', '')
+            remark = request.POST.get('remark', '')
+            sign = request.POST.get('sign', '')
+            rto = request.POST.get('rto', '')
+            rpo = request.POST.get('rpo', '')
+            sort = request.POST.get('sort', '')
+            try:
+                id = int(id)
+            except:
+                raise Http404()
+            if code.strip() == '':
+                result["res"] = '预案编码不能为空。'
+            else:
+                if name.strip() == '':
+                    result["res"] = '预案名称不能为空。'
+                else:
+                    if remark.strip() == '':
+                        result["res"] = '预案描述不能为空。'
+                    else:
+                        if sign.strip() == '':
+                            result["res"] = '是否签到不能为空。'
+                        else:
+                            try:
+                                rto = str(rto)
+                            except:
+                                result["res"] = 'rto不能为空。'
+                            else:
+                                try:
+                                    rpo = str(rpo)
+                                except:
+                                    result["res"] = 'rpo不能为空。'
+                                else:
+                                    try:
+                                        sort = str(sort)
+                                    except:
+                                        result["res"] = '排序不能为空。'
+                                    else:
+                                        if id == 0:
+                                            all_process = Process.objects.filter(code=code).exclude(
+                                                state="9")
+                                            if (len(all_process) > 0):
+                                                result["res"] = '预案编码:' + code + '已存在。'
+                                            else:
+                                                processsave = Process()
+                                                processsave.code = code
+                                                processsave.name = name
+                                                processsave.remark = remark
+                                                processsave.sign = sign
+                                                processsave.rto = rto
+                                                processsave.rpo = rpo
+                                                processsave.sort = sort
+                                                processsave.save()
+                                                result["res"] = "保存成功。"
+                                                result["data"] = processsave.id
+                                        else:
+                                            all_process = Script.objects.filter(code=code).exclude(
+                                                id=id).exclude(state="9")
+                                            if (len(all_process) > 0):
+                                                result["res"] = '预案编码:' + code + '已存在。'
+                                            else:
+                                                try:
+                                                    processsave = Process.objects.get(id=id)
+                                                    processsave.code = code
+                                                    processsave.name = name
+                                                    processsave.remark = remark
+                                                    processsave.sign = sign
+                                                    processsave.rto = rto
+                                                    processsave.rpo = rpo
+                                                    processsave.sort = sort
+                                                    processsave.save()
+                                                    result["res"] = "保存成功。"
+                                                    result["data"] = processsave.id
+                                                except:
+                                                    result["res"] = "修改失败。"
+            return HttpResponse(json.dumps(result))
+
+
+def process_del(request):
+    if request.user.is_authenticated():
+        if 'id' in request.POST:
+            id = request.POST.get('id', '')
+            try:
+                id = int(id)
+            except:
+                raise Http404()
+            process = Process.objects.get(id=id)
+            process.state = "9"
+            process.save()
+
+            return HttpResponse(1)
+        else:
+            return HttpResponse(0)
 
 
 def falconstorswitch(request, funid):
