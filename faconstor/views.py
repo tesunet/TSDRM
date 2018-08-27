@@ -2050,6 +2050,7 @@ def get_all_groups(request):
 
 def process_design(request, funid):
     if request.user.is_authenticated():
+        
         return render(request, "processdesign.html", {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
 
 
