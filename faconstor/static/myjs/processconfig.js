@@ -42,7 +42,7 @@ $.ajax({
                                 obj = inst.get_node(data.reference);
                             $("#se_1").empty();
                             $("#group").empty();
-                            $("#group").attr("disabled", false);
+                            // $("#group").attr("disabled", false);
                             $("#title").text("新建");
                             $("#id").val("0");
                             $("#pid").val(obj.id);
@@ -143,6 +143,7 @@ $.ajax({
                     $("#formdiv").show();
                 }
                 $("#se_1").empty();
+                $("#se_2").empty();
                 $("#group").empty();
                 $("#title").text(data.node.text);
                 $("#id").val(data.node.id);
@@ -153,18 +154,18 @@ $.ajax({
                 $("#skip option:selected").removeProp("selected");
                 var groupInfoList = data.node.data.allgroups.split("&");
                 // all_groups
-                if (data.node.data.approval == "1") {
-                    for (var i = 0; i < groupInfoList.length - 1; i++) {
-                        var singlegroupInfoList = groupInfoList[i].split("+");
-                        if (singlegroupInfoList[0] == data.node.data.group) {
-                            $("#group").append('<option value="' + singlegroupInfoList[0] + '" selected>' + singlegroupInfoList[1] + '</option>')
-                        } else {
-                            $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
-                        }
+                // if (data.node.data.approval == "1") {
+                for (var i = 0; i < groupInfoList.length - 1; i++) {
+                    var singlegroupInfoList = groupInfoList[i].split("+");
+                    if (singlegroupInfoList[0] == data.node.data.group) {
+                        $("#group").append('<option value="' + singlegroupInfoList[0] + '" selected>' + singlegroupInfoList[1] + '</option>')
+                    } else {
+                        $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
                     }
-                } else {
-                    $("#group").attr("disabled", true)
                 }
+                // } else {
+                //     $("#group").attr("disabled", true)
+                // }
                 $("#approval").find("option[value='" + data.node.data.approval + "']").prop("selected", true);
                 $("#skip").find("option[value='" + data.node.data.skip + "']").prop("selected", true);
                 if (data.node.data.verify != "first_node") {
@@ -174,6 +175,15 @@ $.ajax({
                         $("#se_1").append('<option value="' + singleScriptInfoList[0] + '">' + singleScriptInfoList[1] + '</option>')
                     }
                 }
+                if (data.node.data.verify != "first_node") {
+                    var verifyItemsList = data.node.data.verify_items.split("&");
+                    for (var i = 0; i < verifyItemsList.length - 1; i++) {
+                        var singleVerifyItemsList = verifyItemsList[i].split("+");
+                        $("#se_2").append('<option value="' + singleVerifyItemsList[0] + '">' + singleVerifyItemsList[1] + '</option>')
+                    }
+                }
+
+
                 var eventNodeName = event.target.nodeName;
                 if (eventNodeName == 'INS') {
                     return;
@@ -224,10 +234,11 @@ $.ajax({
                                 url: "../get_script_data/",
                                 data: {
                                     id: $("#id").val(),
-                                    script_id: $("#se_1").find('option:selected').val()
+                                    script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
                                 },
                                 dataType: "json",
                                 success: function (data) {
+                                    var script_id = $("#se_1").find('option:selected').val();
                                     $("#scriptid").val(data["id"]);
                                     $("#scriptcode").val(data["code"]);
                                     $("#script_name").val(data["name"]);
@@ -267,7 +278,7 @@ $.ajax({
                                 type: "POST",
                                 url: "../../remove_script/",
                                 data: {
-                                    script_id: $("#se_1").find('option:selected').val(),
+                                    script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
                                 },
                                 success: function (data) {
                                     if (data["status"] == 1) {
@@ -286,6 +297,80 @@ $.ajax({
 
             }
         });
+
+        // context-menu for verify
+        $('#se_2').contextmenu({
+            target: '#context-menu3',
+            onItem: function (context, e) {
+                if ($(e.target).text() == "新增") {
+                    $("#verify_id").val("0");
+                    $("#verify_name").val("");
+                    $("#verify_state").val("");
+
+                    document.getElementById("edit").click();
+                }
+                if ($(e.target).text() == "修改") {
+                    if ($("#se_2").find('option:selected').length == 0)
+                        alert("请选择要修改的脚本。");
+                    else {
+                        if ($("#se_2").find('option:selected').length > 1)
+                            alert("修改时请不要选择多条记录。");
+                        else {
+                            $.ajax({
+                                type: "POST",
+                                url: "../get_verify_items_data/",
+                                data: {
+                                    id: $("#id").val(),
+                                    verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                },
+                                dataType: "json",
+                                success: function (data) {
+                                    $("#verify_id").val(data["id"]);
+                                    $("#verify_name").val(data["name"]);
+                                },
+                                error: function (e) {
+                                    alert("数据读取失败，请于客服联系。");
+                                }
+                            });
+
+
+                            document.getElementById("edit").click();
+                        }
+                    }
+
+                }
+
+
+                if ($(e.target).text() == "删除") {
+                    if ($("#se_2").find('option:selected').length == 0)
+                        alert("请选择要删除的脚本。");
+                    else {
+                        if (confirm("确定要删除该脚本吗？")) {
+                            $.ajax({
+                                type: "POST",
+                                url: "../../remove_verify_item/",
+                                data: {
+                                    verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                },
+                                success: function (data) {
+                                    if (data["status"] == 1) {
+                                        $("#se_2").find('option:selected').remove();
+                                        alert("删除成功！");
+                                    } else
+                                        alert("删除失败，请于管理员联系。");
+                                },
+                                error: function (e) {
+                                    alert("删除失败，请于管理员联系。");
+                                }
+                            });
+                        }
+                    }
+                }
+
+            }
+        });
+
+
         // dataTable
         $("#sample_1").dataTable().fnDestroy();
         $('#sample_1').dataTable({
@@ -443,7 +528,7 @@ $("#process").change(function () {
                                     obj = inst.get_node(data.reference);
                                 $("#se_1").empty();
                                 $("#group").empty();
-                                $("#group").attr("disabled", false);
+                                // $("#group").attr("disabled", false);
                                 $("#title").text("新建");
                                 $("#id").val("0");
                                 $("#pid").val(obj.id);
@@ -543,8 +628,9 @@ $("#process").change(function () {
                         $("#formdiv").show();
                     }
                     $("#se_1").empty();
+                    $("#se_2").empty();
                     $("#group").empty();
-                    $("#group").attr("disabled", false);
+                    // $("#group").attr("disabled", false);
                     $("#title").text(data.node.text);
                     $("#id").val(data.node.id);
                     $("#pid").val(data.node.parent);
@@ -554,18 +640,18 @@ $("#process").change(function () {
                     $("#skip option:selected").removeProp("selected");
                     // all_groups
                     var groupInfoList = data.node.data.allgroups.split("&");
-                    if (data.node.data.approval == "1") {
-                        for (var i = 0; i < groupInfoList.length - 1; i++) {
-                            var singlegroupInfoList = groupInfoList[i].split("+");
-                            if (singlegroupInfoList[0] == data.node.data.group) {
-                                $("#group").append('<option value="' + singlegroupInfoList[0] + '" selected>' + singlegroupInfoList[1] + '</option>')
-                            } else {
-                                $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
-                            }
+                    // if (data.node.data.approval == "1") {
+                    for (var i = 0; i < groupInfoList.length - 1; i++) {
+                        var singlegroupInfoList = groupInfoList[i].split("+");
+                        if (singlegroupInfoList[0] == data.node.data.group) {
+                            $("#group").append('<option value="' + singlegroupInfoList[0] + '" selected>' + singlegroupInfoList[1] + '</option>')
+                        } else {
+                            $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
                         }
-                    } else {
-                        $("#group").attr("disabled", true)
                     }
+                    // } else {
+                    //     $("#group").attr("disabled", true)
+                    // }
                     $("#approval").find("option[value='" + data.node.data.approval + "']").prop("selected", true);
                     $("#skip").find("option[value='" + data.node.data.skip + "']").prop("selected", true);
                     if (data.node.data.verify != "first_node") {
@@ -573,6 +659,14 @@ $("#process").change(function () {
                         for (var i = 0; i < scriptInfoList.length - 1; i++) {
                             var singleScriptInfoList = scriptInfoList[i].split("+");
                             $("#se_1").append('<option value="' + singleScriptInfoList[0] + '">' + singleScriptInfoList[1] + '</option>')
+                        }
+                    }
+
+                    if (data.node.data.verify != "first_node") {
+                        var verifyItemsList = data.node.data.verifyitems.split("&");
+                        for (var i = 0; i < verifyItemsList.length - 1; i++) {
+                            var singleVerifyItemsList = verifyItemsList[i].split("+");
+                            $("#se_2").append('<option value="' + singleVerifyItemsList[0] + '">' + singleVerifyItemsList[1] + '</option>')
                         }
                     }
 
@@ -614,6 +708,7 @@ $("#process").change(function () {
                         document.getElementById("edit").click();
                     }
                     if ($(e.target).text() == "修改") {
+                        alert($("#se_1").find('option:selected').val())
                         if ($("#se_1").find('option:selected').length == 0)
                             alert("请选择要修改的脚本。");
                         else {
@@ -625,10 +720,11 @@ $("#process").change(function () {
                                     url: "../get_script_data/",
                                     data: {
                                         id: $("#id").val(),
-                                        script_id: $("#se_1").find('option:selected').val()
+                                        script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
                                     },
                                     dataType: "json",
                                     success: function (data) {
+                                        var script_id = $("#se_1").find('option:selected').val();
                                         $("#scriptid").val(data["id"]);
                                         $("#scriptcode").val(data["code"]);
                                         $("#script_name").val(data["name"]);
@@ -668,7 +764,7 @@ $("#process").change(function () {
                                     type: "POST",
                                     url: "../../remove_script/",
                                     data: {
-                                        script_id: $("#se_1").find('option:selected').val(),
+                                        script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
                                     },
                                     success: function (data) {
                                         if (data["status"] == 1) {
@@ -687,6 +783,78 @@ $("#process").change(function () {
 
                 }
             });
+
+            // context-menu for verify
+            $('#se_2').contextmenu({
+                target: '#context-menu3',
+                onItem: function (context, e) {
+                    if ($(e.target).text() == "新增") {
+                        $("#verify_id").val("0");
+                        $("#verify_name").val("");
+                        $("#verify_state").val("");
+                        document.getElementById("edit").click();
+                    }
+                    if ($(e.target).text() == "修改") {
+                        if ($("#se_2").find('option:selected').length == 0)
+                            alert("请选择要修改的脚本。");
+                        else {
+                            if ($("#se_2").find('option:selected').length > 1)
+                                alert("修改时请不要选择多条记录。");
+                            else {
+                                $.ajax({
+                                    type: "POST",
+                                    url: "../get_verify_items_data/",
+                                    data: {
+                                        id: $("#id").val(),
+                                        verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                    },
+                                    dataType: "json",
+                                    success: function (data) {
+                                        $("#verify_id").val(data["id"]);
+                                        $("#verify_name").val(data["name"]);
+                                    },
+                                    error: function (e) {
+                                        alert("数据读取失败，请于客服联系。");
+                                    }
+                                });
+
+
+                                document.getElementById("edit").click();
+                            }
+                        }
+
+                    }
+
+
+                    if ($(e.target).text() == "删除") {
+                        if ($("#se_2").find('option:selected').length == 0)
+                            alert("请选择要删除的脚本。");
+                        else {
+                            if (confirm("确定要删除该脚本吗？")) {
+                                $.ajax({
+                                    type: "POST",
+                                    url: "../../remove_verify_item/",
+                                    data: {
+                                        verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                    },
+                                    success: function (data) {
+                                        if (data["status"] == 1) {
+                                            $("#se_2").find('option:selected').remove();
+                                            alert("删除成功！");
+                                        } else
+                                            alert("删除失败，请于管理员联系。");
+                                    },
+                                    error: function (e) {
+                                        alert("删除失败，请于管理员联系。");
+                                    }
+                                });
+                            }
+                        }
+                    }
+
+                }
+            });
+
             // dataTable
             $("#sample_1").dataTable().fnDestroy();
             $('#sample_1').dataTable({
@@ -776,32 +944,6 @@ $("#process").change(function () {
     });
 });
 
-// approval_change事件
-$("#approval").change(function () {
-    $("#group").attr("disabled", false);
-    $("#group").empty();
-    // default selected
-    var defaultSelectedApproval = $("#approval").val();
-    if (defaultSelectedApproval == 0) {
-        $("#group").attr("disabled", true);
-        $("#group").val("")
-    } else {
-        // get_all_groups
-        $.ajax({
-            type: "POST",
-            url: "../get_all_groups/",
-            data: {},
-            success: function (data) {
-                for (var i = 0; i < data.data.length - 1; i++) {
-                    $("#group").append('<option value="' + data.data[i]["group_id"] + '" selected>' + data.data[i]["group_name"] + '</option>')
-                }
-            },
-            error: function (e) {
-                alert("获取用户组失败。");
-            }
-        });
-    }
-});
 
 // 脚本
 $('#scriptsave').click(function () {
@@ -834,11 +976,46 @@ $('#scriptsave').click(function () {
             var mydata = data["data"];
             if (myres == "新增成功。") {
                 $("#scriptid").val(data["data"]);
-                $("#se_1").append("<option id='" + "script_" + mydata + "'>" + $("#scriptcode").val() + "</option>");
+                $("#se_1").append("<option value='" + "script_" + mydata + "'>" + $("#scriptcode").val() + "</option>");
                 $('#static01').modal('hide');
             }
             if (myres == "修改成功。") {
+                var script_id = $("#scriptid").val();
+                $("#se_1").find('option[value="script_id"]'.replace("script_id", script_id)).text($("#scriptcode").val());
                 $('#static01').modal('hide');
+            }
+        },
+        error: function (e) {
+            alert("页面出现错误，请于管理员联系。");
+        }
+    });
+})
+
+
+// 确认项
+$('#verify_items_save').click(function () {
+    $.ajax({
+        type: "POST",
+        dataType: 'json',
+        url: "../../verify_items_save/",
+        data: {
+            processid: $("#process option:selected").val(),
+            id: $("#verify_id").val().replace("verify_", ""),
+            name: $("#verify_name").val(),
+            step_id: $("#id").val(),
+        },
+        success: function (data) {
+            var myres = data["res"];
+            var mydata = data["data"];
+            if (myres == "新增成功。") {
+                $("#verify_id").val(data["data"]);
+                $("#se_2").append("<option value='" + "verify_" + mydata + "'>" + $("#verify_name").val() + "</option>");
+                $('#static02').modal('hide');
+            }
+            if (myres == "修改成功。") {
+                var verify_id = $("#verify_id").val();
+                $("#se_2").find('option[value="verify_id"]'.replace("verify_id", verify_id)).text($("#verify_name").val());
+                $('#static02').modal('hide');
             }
             alert(myres);
         },
@@ -846,7 +1023,8 @@ $('#scriptsave').click(function () {
             alert("页面出现错误，请于管理员联系。");
         }
     });
-})
+});
+
 
 $('#save').click(function () {
     $.ajax({
@@ -925,7 +1103,7 @@ $('#save').click(function () {
                                             obj = inst.get_node(data.reference);
                                         $("#se_1").empty();
                                         $("#group").empty();
-                                        $("#group").attr("disabled", false);
+                                        // $("#group").attr("disabled", false);
                                         $("#title").text("新建");
                                         $("#id").val("0");
                                         $("#pid").val(obj.id);
@@ -1024,8 +1202,9 @@ $('#save').click(function () {
                                 $("#formdiv").show();
                             }
                             $("#se_1").empty();
+                            $("#se_2").empty();
                             $("#group").empty();
-                            $("#group").attr("disabled", false);
+                            // $("#group").attr("disabled", false);
                             $("#title").text(data.node.text);
                             $("#id").val(data.node.id);
                             $("#pid").val(data.node.parent);
@@ -1035,18 +1214,18 @@ $('#save').click(function () {
                             $("#skip option:selected").removeProp("selected");
                             // all_groups
                             var groupInfoList = data.node.data.allgroups.split("&");
-                            if (data.node.data.approval == "1") {
-                                for (var i = 0; i < groupInfoList.length - 1; i++) {
-                                    var singlegroupInfoList = groupInfoList[i].split("+");
-                                    if (singlegroupInfoList[0] == data.node.data.group) {
-                                        $("#group").append('<option value="' + singlegroupInfoList[0] + '" selected>' + singlegroupInfoList[1] + '</option>')
-                                    } else {
-                                        $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
-                                    }
+                            // if (data.node.data.approval == "1") {
+                            for (var i = 0; i < groupInfoList.length - 1; i++) {
+                                var singlegroupInfoList = groupInfoList[i].split("+");
+                                if (singlegroupInfoList[0] == data.node.data.group) {
+                                    $("#group").append('<option value="' + singlegroupInfoList[0] + '" selected>' + singlegroupInfoList[1] + '</option>')
+                                } else {
+                                    $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
                                 }
-                            } else {
-                                $("#group").attr("disabled", true)
                             }
+                            // } else {
+                            //     $("#group").attr("disabled", true)
+                            // }
                             $("#approval").find("option[value='" + data.node.data.approval + "']").prop("selected", true);
                             $("#skip").find("option[value='" + data.node.data.skip + "']").prop("selected", true);
                             if (data.node.data.verify != "first_node") {
@@ -1056,6 +1235,16 @@ $('#save').click(function () {
                                     $("#se_1").append('<option value="' + singleScriptInfoList[0] + '">' + singleScriptInfoList[1] + '</option>')
                                 }
                             }
+
+                            if (data.node.data.verify != "first_node") {
+                                var verifyItemsList = data.node.data.verify_items.split("&");
+                                for (var i = 0; i < verifyItemsList.length - 1; i++) {
+                                    var singleVerifyItemsList = verifyItemsList[i].split("+");
+                                    $("#se_2").append('<option value="' + singleVerifyItemsList[0] + '">' + singleVerifyItemsList[1] + '</option>')
+                                }
+                            }
+
+
                             var eventNodeName = event.target.nodeName;
                             if (eventNodeName == 'INS') {
                                 return;
@@ -1094,10 +1283,11 @@ $('#save').click(function () {
                                 document.getElementById("edit").click();
                             }
                             if ($(e.target).text() == "修改") {
-                                if ($("#se_1").find('option:selected').length == 0)
+                                alert($("#se_1").find('option:selected').val())
+                                if ($("#se_2").find('option:selected').length == 0)
                                     alert("请选择要修改的脚本。");
                                 else {
-                                    if ($("#se_1").find('option:selected').length > 1)
+                                    if ($("#se_2").find('option:selected').length > 1)
                                         alert("修改时请不要选择多条记录。");
                                     else {
                                         $.ajax({
@@ -1105,10 +1295,11 @@ $('#save').click(function () {
                                             url: "../get_script_data/",
                                             data: {
                                                 id: $("#id").val(),
-                                                script_id: $("#se_1").find('option:selected').val()
+                                                script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
                                             },
                                             dataType: "json",
                                             success: function (data) {
+                                                var script_id = $("#se_1").find('option:selected').val();
                                                 $("#scriptid").val(data["id"]);
                                                 $("#scriptcode").val(data["code"]);
                                                 $("#script_name").val(data["name"]);
@@ -1148,7 +1339,7 @@ $('#save').click(function () {
                                             type: "POST",
                                             url: "../../remove_script/",
                                             data: {
-                                                script_id: $("#se_1").find('option:selected').val(),
+                                                script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
                                             },
                                             success: function (data) {
                                                 if (data["status"] == 1) {
@@ -1167,6 +1358,78 @@ $('#save').click(function () {
 
                         }
                     });
+
+                    // context-menu for verify
+                    $('#se_2').contextmenu({
+                        target: '#context-menu3',
+                        onItem: function (context, e) {
+                            if ($(e.target).text() == "新增") {
+                                $("#verify_id").val("0");
+                                $("#verify_name").val("");
+                                $("#verify_state").val("");
+                                document.getElementById("edit").click();
+                            }
+                            if ($(e.target).text() == "修改") {
+                                if ($("#se_1").find('option:selected').length == 0)
+                                    alert("请选择要修改的脚本。");
+                                else {
+                                    if ($("#se_1").find('option:selected').length > 1)
+                                        alert("修改时请不要选择多条记录。");
+                                    else {
+                                        $.ajax({
+                                            type: "POST",
+                                            url: "../get_verify_items_data/",
+                                            data: {
+                                                id: $("#id").val(),
+                                                verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                            },
+                                            dataType: "json",
+                                            success: function (data) {
+                                                $("#verify_id").val(data["id"]);
+                                                $("#verify_name").val(data["name"]);
+                                            },
+                                            error: function (e) {
+                                                alert("数据读取失败，请于客服联系。");
+                                            }
+                                        });
+
+
+                                        document.getElementById("edit").click();
+                                    }
+                                }
+
+                            }
+
+
+                            if ($(e.target).text() == "删除") {
+                                if ($("#se_2").find('option:selected').length == 0)
+                                    alert("请选择要删除的脚本。");
+                                else {
+                                    if (confirm("确定要删除该脚本吗？")) {
+                                        $.ajax({
+                                            type: "POST",
+                                            url: "../../remove_verify_item/",
+                                            data: {
+                                                verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                            },
+                                            success: function (data) {
+                                                if (data["status"] == 1) {
+                                                    $("#se_2").find('option:selected').remove();
+                                                    alert("删除成功！");
+                                                } else
+                                                    alert("删除失败，请于管理员联系。");
+                                            },
+                                            error: function (e) {
+                                                alert("删除失败，请于管理员联系。");
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+
+                        }
+                    });
+
                     // dataTable
                     $("#sample_1").dataTable().fnDestroy();
                     $('#sample_1').dataTable({

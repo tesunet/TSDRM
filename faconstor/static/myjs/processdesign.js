@@ -17,9 +17,9 @@ $(document).ready(function () {
         ],
 
         "columnDefs": [{
-            "targets": 0,
+            "targets": 2,
             "render": function (data, type, full) {
-                return "<td><a href='/processconfig/?process_id=processid'>data</a></td>".replace("processid", full.process_id).replace("data", full.process_id)
+                return "<td><a href='/processconfig/?process_id=processid'>data</a></td>".replace("processid", full.process_id).replace("data", full.process_name)
             }
         },{
             "targets": 4,

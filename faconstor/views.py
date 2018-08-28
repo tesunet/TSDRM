@@ -144,6 +144,7 @@ def index(request, funid):
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
             "-starttime").all()
+        print(allprosstasks)
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 send_time = task.starttime
@@ -1606,6 +1607,73 @@ def processscriptsave(request):
             return HttpResponse(json.dumps(result))
 
 
+def verify_items_save(request):
+    if request.user.is_authenticated() and request.session['isadmin']:
+        if 'id' in request.POST:
+            result = {}
+            id = request.POST.get('id', '')
+            name = request.POST.get('name', '')
+            process_id = request.POST.get('processid', '')
+            step_id = request.POST.get('step_id', '')
+            try:
+                id = int(id)
+            except:
+                raise Http404()
+
+            if name.strip() == '':
+                result["res"] = '名称不能为空。'
+            else:
+                if id == 0:
+                    verify_save = VerifyItems()
+                    verify_save.name = name
+                    verify_save.step_id = step_id
+                    verify_save.save()
+                    result["res"] = "新增成功。"
+                    result["data"] = verify_save.id
+                else:
+                    try:
+                        verify_save = VerifyItems.objects.get(id=id)
+                        verify_save.name = name
+                        verify_save.save()
+                        result["res"] = "修改成功。"
+                        result["data"] = verify_save.id
+                    except:
+                        result["res"] = "修改失败。"
+            return HttpResponse(json.dumps(result))
+
+
+def get_verify_items_data(request):
+    if request.user.is_authenticated() and request.session['isadmin']:
+        if 'id' in request.POST:
+            id = request.POST.get('id', '')
+            try:
+                id = int(id)
+            except:
+                raise Http404()
+            verify_id = request.POST.get("verify_id", "")
+            all_verify_items = VerifyItems.objects.exclude(state="9").filter(id=verify_id)
+            verify_data = ""
+            if (len(all_verify_items) > 0):
+                verify_data = {"id": all_verify_items[0].id, "name": all_verify_items[0].name}
+            return HttpResponse(json.dumps(verify_data))
+
+
+def remove_verify_item(request):
+    if request.user.is_authenticated() and request.session['isadmin']:
+        # 移除当前步骤中的脚本关联
+        verify_id = request.POST.get("verify_id", "")
+        try:
+            current_verify_item = VerifyItems.objects.filter(id=verify_id)[0]
+        except:
+            pass
+        else:
+            current_verify_item.step_id = None
+            current_verify_item.save()
+        return JsonResponse({
+            "status": 1
+        })
+
+
 def get_script_data(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         if 'id' in request.POST:
@@ -1748,6 +1816,12 @@ def get_step_tree(parent, selectid):
             id_code_plus = str(script.id) + "+" + str(script.code) + "&"
             script_string += id_code_plus
 
+        verify_items_string = ""
+        verify_items = child.verifyitems_set.exclude(state="9")
+        for verify_item in verify_items:
+            id_name_plus = str(verify_item.id) + "+" + str(verify_item.name) + "&"
+            verify_items_string += id_name_plus
+
         group_name = ""
         if child.group:
             group_id = child.group
@@ -1760,7 +1834,8 @@ def get_step_tree(parent, selectid):
             group_string += id_name_plus
 
         node["data"] = {"time": child.time, "approval": child.approval, "skip": child.skip, "group_name": group_name,
-                        "group": child.group, "scripts": script_string, "allgroups": group_string}
+                        "group": child.group, "scripts": script_string, "allgroups": group_string,
+                        "verifyitems": verify_items_string}
         try:
             if int(selectid) == child.id:
                 node["state"] = {"selected": True}
@@ -1834,6 +1909,12 @@ def custom_step_tree(request):
                 for script in scripts:
                     id_code_plus = str(script.id) + "+" + str(script.code) + "&"
                     script_string += id_code_plus
+
+                verify_items_string = ""
+                verify_items = rootnode.verifyitems_set.exclude(state="9")
+                for verify_item in verify_items:
+                    id_name_plus = str(verify_item.id) + "+" + str(verify_item.name) + "&"
+                    verify_items_string += id_name_plus
                 root["text"] = rootnode.name
                 root["id"] = rootnode.id
                 group_name = ""
@@ -1843,7 +1924,8 @@ def custom_step_tree(request):
 
                 root["data"] = {"time": rootnode.time, "approval": rootnode.approval, "skip": rootnode.skip,
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
-                                "scripts": script_string, "errors": errors, "title": title}
+                                "scripts": script_string, "errors": errors, "title": title,
+                                "verifyitems": verify_items_string}
                 root["children"] = get_step_tree(rootnode, selectid)
                 root["state"] = {"opened": True}
                 treedata.append(root)
@@ -2050,8 +2132,8 @@ def get_all_groups(request):
 
 def process_design(request, funid):
     if request.user.is_authenticated():
-        
-        return render(request, "processdesign.html", {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
+        return render(request, "processdesign.html",
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
 
 
 def process_data(request):
@@ -2095,65 +2177,47 @@ def process_save(request):
                 if name.strip() == '':
                     result["res"] = '预案名称不能为空。'
                 else:
-                    if remark.strip() == '':
-                        result["res"] = '预案描述不能为空。'
+                    if sign.strip() == '':
+                        result["res"] = '是否签到不能为空。'
                     else:
-                        if sign.strip() == '':
-                            result["res"] = '是否签到不能为空。'
+                        if id == 0:
+                            all_process = Process.objects.filter(code=code).exclude(
+                                state="9")
+                            if (len(all_process) > 0):
+                                result["res"] = '预案编码:' + code + '已存在。'
+                            else:
+                                processsave = Process()
+                                processsave.code = code
+                                processsave.name = name
+                                processsave.remark = remark
+                                processsave.sign = sign
+                                processsave.rto = rto
+                                processsave.rpo = rpo
+                                processsave.sort = sort
+                                processsave.save()
+                                result["res"] = "保存成功。"
+                                result["data"] = processsave.id
                         else:
-                            try:
-                                rto = str(rto)
-                            except:
-                                result["res"] = 'rto不能为空。'
+                            all_process = Script.objects.filter(code=code).exclude(
+                                id=id).exclude(state="9")
+                            if (len(all_process) > 0):
+                                result["res"] = '预案编码:' + code + '已存在。'
                             else:
                                 try:
-                                    rpo = str(rpo)
+                                    processsave = Process.objects.get(id=id)
+                                    processsave.code = code
+                                    processsave.name = name
+                                    processsave.remark = remark
+                                    processsave.sign = sign
+                                    processsave.rto = rto if rto else None
+                                    processsave.rpo = rpo if rpo else None
+                                    processsave.sort = sort if sort else None
+                                    processsave.save()
+                                    result["res"] = "保存成功。"
+                                    result["data"] = processsave.id
                                 except:
-                                    result["res"] = 'rpo不能为空。'
-                                else:
-                                    try:
-                                        sort = str(sort)
-                                    except:
-                                        result["res"] = '排序不能为空。'
-                                    else:
-                                        if id == 0:
-                                            all_process = Process.objects.filter(code=code).exclude(
-                                                state="9")
-                                            if (len(all_process) > 0):
-                                                result["res"] = '预案编码:' + code + '已存在。'
-                                            else:
-                                                processsave = Process()
-                                                processsave.code = code
-                                                processsave.name = name
-                                                processsave.remark = remark
-                                                processsave.sign = sign
-                                                processsave.rto = rto
-                                                processsave.rpo = rpo
-                                                processsave.sort = sort
-                                                processsave.save()
-                                                result["res"] = "保存成功。"
-                                                result["data"] = processsave.id
-                                        else:
-                                            all_process = Script.objects.filter(code=code).exclude(
-                                                id=id).exclude(state="9")
-                                            if (len(all_process) > 0):
-                                                result["res"] = '预案编码:' + code + '已存在。'
-                                            else:
-                                                try:
-                                                    processsave = Process.objects.get(id=id)
-                                                    processsave.code = code
-                                                    processsave.name = name
-                                                    processsave.remark = remark
-                                                    processsave.sign = sign
-                                                    processsave.rto = rto
-                                                    processsave.rpo = rpo
-                                                    processsave.sort = sort
-                                                    processsave.save()
-                                                    result["res"] = "保存成功。"
-                                                    result["data"] = processsave.id
-                                                except:
-                                                    result["res"] = "修改失败。"
-            return HttpResponse(json.dumps(result))
+                                    result["res"] = "修改失败。"
+        return HttpResponse(json.dumps(result))
 
 
 def process_del(request):
