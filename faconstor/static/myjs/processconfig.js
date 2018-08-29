@@ -234,11 +234,10 @@ $.ajax({
                                 url: "../get_script_data/",
                                 data: {
                                     id: $("#id").val(),
-                                    script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
+                                    script_id: $("#se_1").find('option:selected').val(),
                                 },
                                 dataType: "json",
                                 success: function (data) {
-                                    var script_id = $("#se_1").find('option:selected').val();
                                     $("#scriptid").val(data["id"]);
                                     $("#scriptcode").val(data["code"]);
                                     $("#script_name").val(data["name"]);
@@ -278,7 +277,7 @@ $.ajax({
                                 type: "POST",
                                 url: "../../remove_script/",
                                 data: {
-                                    script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
+                                    script_id: $("#se_1").find('option:selected').val(),
                                 },
                                 success: function (data) {
                                     if (data["status"] == 1) {
@@ -321,7 +320,7 @@ $.ajax({
                                 url: "../get_verify_items_data/",
                                 data: {
                                     id: $("#id").val(),
-                                    verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                    verify_id: $("#se_2").find('option:selected').val(),
                                 },
                                 dataType: "json",
                                 success: function (data) {
@@ -350,7 +349,7 @@ $.ajax({
                                 type: "POST",
                                 url: "../../remove_verify_item/",
                                 data: {
-                                    verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                    verify_id: $("#se_2").find('option:selected').val(),
                                 },
                                 success: function (data) {
                                     if (data["status"] == 1) {
@@ -720,11 +719,10 @@ $("#process").change(function () {
                                     url: "../get_script_data/",
                                     data: {
                                         id: $("#id").val(),
-                                        script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
+                                        script_id: $("#se_1").find('option:selected').val(),
                                     },
                                     dataType: "json",
                                     success: function (data) {
-                                        var script_id = $("#se_1").find('option:selected').val();
                                         $("#scriptid").val(data["id"]);
                                         $("#scriptcode").val(data["code"]);
                                         $("#script_name").val(data["name"]);
@@ -764,7 +762,7 @@ $("#process").change(function () {
                                     type: "POST",
                                     url: "../../remove_script/",
                                     data: {
-                                        script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
+                                        script_id: $("#se_1").find('option:selected').val(),
                                     },
                                     success: function (data) {
                                         if (data["status"] == 1) {
@@ -806,7 +804,7 @@ $("#process").change(function () {
                                     url: "../get_verify_items_data/",
                                     data: {
                                         id: $("#id").val(),
-                                        verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                        verify_id: $("#se_2").find('option:selected').val(),
                                     },
                                     dataType: "json",
                                     success: function (data) {
@@ -835,7 +833,7 @@ $("#process").change(function () {
                                     type: "POST",
                                     url: "../../remove_verify_item/",
                                     data: {
-                                        verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                        verify_id: $("#se_2").find('option:selected').val(),
                                     },
                                     success: function (data) {
                                         if (data["status"] == 1) {
@@ -947,6 +945,7 @@ $("#process").change(function () {
 
 // 脚本
 $('#scriptsave').click(function () {
+    alert($("#id").val());
     $.ajax({
         type: "POST",
         dataType: 'json',
@@ -954,7 +953,7 @@ $('#scriptsave').click(function () {
         data: {
             processid: $("#process option:selected").val(),
             pid: $("#id").val().replace("demo_node_", ""),
-            id: $("#scriptid").val().replace("script_", ""),
+            id: $("#scriptid").val(),
             code: $("#scriptcode").val(),
             name: $("#script_name").val(),
             ip: $("#scriptip").val(),
@@ -976,7 +975,7 @@ $('#scriptsave').click(function () {
             var mydata = data["data"];
             if (myres == "新增成功。") {
                 $("#scriptid").val(data["data"]);
-                $("#se_1").append("<option value='" + "script_" + mydata + "'>" + $("#scriptcode").val() + "</option>");
+                $("#se_1").append("<option value='"+ mydata + "'>" + $("#scriptcode").val() + "</option>");
                 $('#static01').modal('hide');
             }
             if (myres == "修改成功。") {
@@ -1000,7 +999,7 @@ $('#verify_items_save').click(function () {
         url: "../../verify_items_save/",
         data: {
             processid: $("#process option:selected").val(),
-            id: $("#verify_id").val().replace("verify_", ""),
+            id: $("#verify_id").val(),
             name: $("#verify_name").val(),
             step_id: $("#id").val(),
         },
@@ -1009,7 +1008,7 @@ $('#verify_items_save').click(function () {
             var mydata = data["data"];
             if (myres == "新增成功。") {
                 $("#verify_id").val(data["data"]);
-                $("#se_2").append("<option value='" + "verify_" + mydata + "'>" + $("#verify_name").val() + "</option>");
+                $("#se_2").append("<option value='" + mydata + "'>" + $("#verify_name").val() + "</option>");
                 $('#static02').modal('hide');
             }
             if (myres == "修改成功。") {
@@ -1295,11 +1294,10 @@ $('#save').click(function () {
                                             url: "../get_script_data/",
                                             data: {
                                                 id: $("#id").val(),
-                                                script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
+                                                script_id: $("#se_1").find('option:selected').val(),
                                             },
                                             dataType: "json",
                                             success: function (data) {
-                                                var script_id = $("#se_1").find('option:selected').val();
                                                 $("#scriptid").val(data["id"]);
                                                 $("#scriptcode").val(data["code"]);
                                                 $("#script_name").val(data["name"]);
@@ -1339,7 +1337,7 @@ $('#save').click(function () {
                                             type: "POST",
                                             url: "../../remove_script/",
                                             data: {
-                                                script_id: $("#se_1").find('option:selected').val().replace("script_", ""),
+                                                script_id: $("#se_1").find('option:selected').val(),
                                             },
                                             success: function (data) {
                                                 if (data["status"] == 1) {
@@ -1381,7 +1379,7 @@ $('#save').click(function () {
                                             url: "../get_verify_items_data/",
                                             data: {
                                                 id: $("#id").val(),
-                                                verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                                verify_id: $("#se_2").find('option:selected').val(),
                                             },
                                             dataType: "json",
                                             success: function (data) {
@@ -1410,7 +1408,7 @@ $('#save').click(function () {
                                             type: "POST",
                                             url: "../../remove_verify_item/",
                                             data: {
-                                                verify_id: $("#se_2").find('option:selected').val().replace("verify_", ""),
+                                                verify_id: $("#se_2").find('option:selected').val(),
                                             },
                                             success: function (data) {
                                                 if (data["status"] == 1) {
@@ -1429,7 +1427,6 @@ $('#save').click(function () {
 
                         }
                     });
-
                     // dataTable
                     $("#sample_1").dataTable().fnDestroy();
                     $('#sample_1').dataTable({
