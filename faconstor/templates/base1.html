@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>
       {% if homepage %}
-          上海特速自动化灾难恢复管理平台
+          自动化灾备管理平台
       {% else %}
           {% for  fun in pagefuns.pagefuns %}
             {% if fun.isselected %}
@@ -57,35 +57,134 @@
         </a>
         <a href="/index" class="navbar-brand">
           <img src="/static/new/images/cloud-logo1.png" class="m-r-sm" alt="scale">
-          <span class="hidden-nav-xs">TSDRM</span>
+          <span class="hidden-nav-xs">自动化灾备管理平台TSDRM</span>
         </a>
         <a class="btn btn-link visible-xs" data-toggle="dropdown" data-target=".user">
           <i class="fa fa-cog"></i>
         </a>
       </div>
+        <div class="top-menu">
+            <ul class="nav navbar-nav pull-right">
+                <!-- BEGIN NOTIFICATION DROPDOWN -->
+                <!-- DOC: Apply "dropdown-dark" class after below "dropdown-extended" to change the dropdown styte -->
+                <li class="dropdown dropdown-extended dropdown-notification" id="header_notification_bar">
+                    <a href="javascript:;" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" data-close-others="true">
+                              <i style="font-size:18px" class="fa fa-bell-o"></i><span class="badge badge-default" style="background-color: #36c6d3"> 7 </span>
+                    </a>
+                    <ul class="dropdown-menu">
+
+                        <li>
+                            <div class="scroller" style="height: 620px;" data-always-visible="1" data-rail-visible="0">
+                                <ul class="feeds">
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-info">
+                                                        <i class="fa fa-check"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> <span class="label label-sm " style="background-color: #3598dc"> 系统1
+                                                        </span>You have 4 pending tasks.
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> Just now </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <a href="javascript:;">
+                                            <div class="col1">
+                                                <div class="cont">
+                                                    <div class="cont-col1">
+                                                        <div class="label label-sm label-success">
+                                                            <i class="fa fa-bar-chart-o"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="cont-col2">
+                                                        <div class="desc"> Finance Report for year 2013 has been released. </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col2">
+                                                <div class="date"> 20 mins </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-danger">
+                                                        <i class="fa fa-user"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> You have 5 pending membership that requires a quick review. </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 24 mins </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-info">
+                                                        <i class="fa fa-shopping-cart"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> New order received with
+                                                        <span class="label label-sm label-success"> Reference Number: DR23923 </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 30 mins </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li style="text-align: right" class="external">
+                            <a href="#">更多</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <li class="dropdown dropdown-user">
+                    <ul class="nav navbar-nav navbar-right m-n hidden-xs nav-user user">
+
+                        <li class="dropdown">
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            {{username}} <b class="caret"></b>
+                          </a>
+                          <ul class="dropdown-menu animated fadeInRight">
+                            <li>
+                              <span class="arrow top"></span>
+                              <a href="/password">修改密码</a>
+                            </li>
+                            <li>
+                              <a href="/login">重新登录</a>
+                            </li>
+
+                          </ul>
+                        </li>
+                    </ul>
+                </li>
+
+        </div>
 
 
-      <ul class="nav navbar-nav navbar-right m-n hidden-xs nav-user user">
 
-        <li class="dropdown">
-          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-            <span class="thumb-sm avatar pull-left">
-              <img src="/static/new/images/a0.png" alt="...">
-            </span>
-            {{username}} <b class="caret"></b>
-          </a>
-          <ul class="dropdown-menu animated fadeInRight">
-            <li>
-              <span class="arrow top"></span>
-              <a href="/password">修改密码</a>
-            </li>
-            <li>
-              <a href="/login">重新登录</a>
-            </li>
-
-          </ul>
-        </li>
-      </ul>
     </header>
     <section>
       <section class="hbox stretch">
@@ -99,7 +198,7 @@
                 <nav class="nav-primary hidden-xs " >
                   <ul class="nav nav-main" data-ride="collapse">
                     {% for  fun in pagefuns.pagefuns %}
-                      <li class="{% if fun.isselected %}active{% endif %} " >
+                      <li  style="font-size:16px" class="{% if fun.isselected %}active{% endif %} " >
                         <a href="{{fun.url}}" class="auto">
                           {% if fun.child %}
                             <span class="pull-right text-muted">
@@ -107,7 +206,7 @@
                               <i class="i i-circle-sm text-active"></i>
                             </span>
                           {% endif %}
-                          <i class="{{fun.icon}}">
+                          <i style="font-size:16px" class="{{fun.icon}}">
                           </i>
                           <span  >{{fun.name}} </span>
                          </a>

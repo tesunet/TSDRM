@@ -5,328 +5,725 @@
 {% block contenthome %}
 
     {% csrf_token %}
+
     <section class="scrollable wrapper">
         <!-- BEGIN CONTENT BODY -->
         <div class="page-content">
             <!-- BEGIN PAGE HEADER-->
             <!-- BEGIN THEME PANEL -->
+
             <div class="row">
-                <div class="col-md-6 col-sm-12 col-lg-6">
-                    <div class="portlet light">
-                        <div class="portlet-title tabbable-line">
+                <div class="col-md-12">
+                    <div class="portlet light portlet-fit bordered">
+                        <div class="portlet-title">
                             <div class="caption">
-                                <span class="caption-subject bold uppercase font-green">作业监控</span>
+                                <i class=" icon-layers font-green"></i>
+                                <span class="caption-subject font-green bold uppercase">正在切换</span>
                             </div>
-                            <div class="actions">
-                                <div class="btn-group btn-group-devided" data-toggle="buttons">
-                                    <label id="backup_task"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm active">
-                                        <input type="radio" class="toggle">备份作业</label>
-                                    <label id="restore_task"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" class="toggle">恢复作业</label>
+                        </div>
+                        <div class="portlet-body">
+                            <div class="mt-element-step">
+                                <div class="row step-line">
+                                    <div class="mt-step-desc">
+                                        <div class="font-dark bold uppercase">系统1</div>
+                                        <div class="caption-desc font-grey-cascade"> 启动时间: <span class="timeline-body-alerttitle font-green-haze">2018-08-12 08:00</span>，已运行 <span class="timeline-body-alerttitle font-green-haze">2小时12分钟6秒</span> ，当前阶段 <span class="timeline-body-alerttitle font-green-haze">步骤1</span> ，当前负责角色 <span class="timeline-body-alerttitle font-green-haze">角色1(黄展翔)。</span></div>
+                                        <br/> </div>
+                                    <div class="col-md-8">
+
+                                        <div class="row">
+                                            <div class="col-md-4 mt-step-col  done">
+                                                <div class="mt-step-number bg-white">2</div>
+                                                <div class="mt-step-title uppercase font-grey-cascade">灾备服务启用</div>
+                                                <div class="mt-step-content font-grey-cascade"></div>
+                                            </div>
+                                            <div class="col-md-4 mt-step-col active">
+                                                <div class="mt-step-number bg-white">3</div>
+                                                <div class="mt-step-title uppercase font-grey-cascade">启动应用服务</div>
+                                                <div class="mt-step-content font-grey-cascade"></div>
+                                            </div>
+                                            <div class="col-md-4 mt-step-col ">
+                                                <div class="mt-step-number bg-white">4</div>
+                                                <div class="mt-step-title uppercase font-grey-cascade">验证数据</div>
+                                                <div class="mt-step-content font-grey-cascade"></div>
+                                            </div>
+                                            <div class="col-md-12" style="text-align:center">
+                                                <div class="progress progress-striped active">
+                                                    <div class="progress-bar progress-bar-success" role="progressbar"
+                                                         aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"
+                                                         style="width: 40%;">
+                                                        <span class="sr-only">40% 完成</span>
+                                                    </div>
+                                                </div>
+                                                <div style="font-size:18px" class="text-success">总体进度:40%</div>
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                    <div class="col-md-4">
+                                        <ul class="feeds">
+                                            <li>
+                                                <div class="col1">
+                                                    <div class="cont">
+                                                        <div class="cont-col1">
+                                                            <div class="label label-sm label-info">
+                                                                <i class="fa fa-check"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="cont-col2">
+                                                            <div class="desc"> You have 4 pending tasks.
+
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col2">
+                                                    <div class="date"> Just now </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <a href="javascript:;">
+                                                    <div class="col1">
+                                                        <div class="cont">
+                                                            <div class="cont-col1">
+                                                                <div class="label label-sm label-success">
+                                                                    <i class="fa fa-bar-chart-o"></i>
+                                                                </div>
+                                                            </div>
+                                                            <div class="cont-col2">
+                                                                <div class="desc"> Finance Report for year 2013 has been released. </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col2">
+                                                        <div class="date"> 20 mins </div>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <div class="col1">
+                                                    <div class="cont">
+                                                        <div class="cont-col1">
+                                                            <div class="label label-sm label-danger">
+                                                                <i class="fa fa-user"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="cont-col2">
+                                                            <div class="desc"> You have 5 pending membership that  a quick review. </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col2">
+                                                    <div class="date"> 24 mins </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <div class="col1">
+                                                    <div class="cont">
+                                                        <div class="cont-col1">
+                                                            <div class="label label-sm label-info">
+                                                                <i class="fa fa-shopping-cart"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="cont-col2">
+                                                            <div class="desc"> New order received with
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col2">
+                                                    <div class="date"> 30 mins </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <div class="col1">
+                                                    <div class="cont">
+                                                        <div class="cont-col1">
+                                                            <div class="label label-sm label-success">
+                                                                <i class="fa fa-user"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="cont-col2">
+                                                            <div class="desc"> You have 5 pending  that requires a quick review. </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col2">
+                                                    <div class="date"> 24 mins </div>
+                                                </div>
+                                            </li>
+                                            <li>
+                                                <div class="col1">
+                                                    <div class="cont">
+                                                        <div class="cont-col1">
+                                                            <div class="label label-sm label-default">
+                                                                <i class="fa fa-bell-o"></i>
+                                                            </div>
+                                                        </div>
+                                                        <div class="cont-col2">
+                                                            <div class="desc"> 系统启动
+
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col2">
+                                                    <div class="date"> 2 hours </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="portlet-body" id="backup_info">
-                            <div class="scroller" style="height: 339px;">
-                                <ul class="feeds">
-                                    {% for task in backup_task_list %}
-                                        <li>
-                                            <div class="col1">
-                                                <div class="cont">
-                                                    <div class="cont-col1">
-                                                        <div class="label label-sm label-info">
-                                                            <i class="fa fa-bullhorn"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="cont-col2">
-                                                        <div class="desc">
-                                                            <font style="vertical-align: inherit;">
-                                                                <font style="vertical-align: inherit;">客户机：{{ task.83 }}(类型：{{ task.84 }})
-                                                                </font>
-                                                            </font>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col2">
-                                                <div class="date">
-                                                <span class="progress-bar" role="progressbar" aria-valuenow="60"
-                                                      aria-valuemin="0" aria-valuemax="100"
-                                                      style="width: {{ task.42 }}%;">{{ task.42 }}%</span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div class="portlet-body" id="restore_info" hidden>
-                            <div class="scroller" style="height: 339px;">
-                                <ul class="feeds">
-                                    {% for task in restore_task_list %}
-                                        <li>
-                                            <div class="col1">
-                                                <div class="cont">
-                                                    <div class="cont-col1">
-                                                        <div class="label label-sm label-info">
-                                                            <i class="fa fa-bullhorn"></i>
-                                                        </div>
-                                                    </div>
-                                                    <div class="cont-col2">
-                                                        <div class="desc">
-                                                            <font style="vertical-align: inherit;">
-                                                                <font style="vertical-align: inherit;">客户机：{{ task.51 }}(类型：{{ task.52 }})
-                                                                </font>
-                                                            </font>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col2">
-                                                <div class="date">
-                                                <span class="progress-bar" role="progressbar" aria-valuenow="60"
-                                                      aria-valuemin="0" aria-valuemax="100"
-                                                      style="width: {{ task.35 }}%;">{{ task.35 }}%</span>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
-                <div class="col-md-6 col-sm-12 col-lg-6">
+            </div>
+          <div class="container-fluid">
+            <div class="row" >
+
+                <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                    <div class="dashboard-stat blue" style="padding-bottom: 15px">
+                        <div class="visual">
+                            <i class="fa fa-comments"></i>
+                        </div>
+                        <div class="details">
+                            <div class="number">
+                                <span data-counter="counterup" data-value="0">100%</span>
+                            </div>
+                            <div class="desc"> 成功率 </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                    <div class="dashboard-stat red"  style="padding-bottom: 15px">
+                        <div class="visual">
+                            <i class="fa fa-bar-chart-o"></i>
+                        </div>
+                        <div class="details">
+                            <div class="number">
+                                <span data-counter="counterup" data-value="0">32次</span></div>
+                            <div class="desc"> 恢复次数</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                    <div class="dashboard-stat green"  style="padding-bottom: 15px">
+                        <div class="visual">
+                            <i class="fa fa-shopping-cart"></i>
+                        </div>
+                        <div class="details">
+                            <div class="number">
+                                <span data-counter="counterup" data-value="0">0小时15分12秒</span>
+                            </div>
+                            <div class="desc"> 平均RTO</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                    <div class="dashboard-stat purple"  style="padding-bottom: 15px">
+                        <div class="visual">
+                            <i class="fa fa-globe"></i>
+                        </div>
+                        <div class="details">
+                            <div class="number">
+                                <span data-counter="counterup" data-value="0">2018-08-26</span> </div>
+                            <div class="desc"> 最新切换 </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+          </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="portlet light portlet-fit bordered">
+
+                        <div class="portlet-body">
+                            <div id="highchart_1" style="height:500px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-body easypiechart-panel">
+                            <div class="col-md-12">
+                                <span class="caption-subject bold uppercase font-green" style="font-size:16px">切换成功率</span>
+                            </div>
+                            <div class="col-md-3" align="center">
+                                <h4>系统1</h4>
+                                <input class="knob" data-width="200" data-fgcolor="#3598dc" data-min="-100" data-displayprevious=true value="90">
+                            </div>
+                            <div class="col-md-3" align="center">
+                                <h4>系统2</h4>
+                                <input class="knob" data-width="200" data-fgcolor="#e7505a" data-min="-100" data-displayprevious=true value="100">
+                            </div>
+                            <div class="col-md-3" align="center">
+                                <h4>系统3</h4>
+                                <input class="knob" data-width="200" data-fgcolor="#32c5d2" data-min="-100" data-displayprevious=true value="80">
+                            </div>
+                            <div class="col-md-3" align="center">
+                                <h4>系统4</h4>
+                                <input class="knob" data-width="200" data-fgcolor="#8e44ad" data-min="-100" data-displayprevious=true value="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="portlet light portlet-fit  calendar">
+                        <div class="portlet-title">
+                            <div class="caption">
+                                <i class=" icon-layers font-green"></i>
+                                <span class="caption-subject font-green sbold uppercase">恢复日历</span>
+                            </div>
+                        </div>
+                        <div class="portlet-body">
+                            <div id="calendar" class="has-toolbar"> </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
                     <div class="portlet light ">
                         <div class="portlet-title tabbable-line">
                             <div class="caption">
                                 <i class="fa fa-bell-o font-green-sharp"></i>
                                 <a href="/task"><span
-                                        class="caption-subject font-green-sharp bold uppercase">待办任务</span></a>
+                                        class="caption-subject font-green-sharp bold uppercase">最新操作</span></a>
                             </div>
-                            </ul>
                         </div>
                         <div class="portlet-body">
-                            <div class="scroller" style="height: 339px;" data-always-visible="1" data-rail-visible="0">
-                                <ul class="feeds" id="locate_task">
-                                    {% for task in alltask %}
-                                        <li id="{{ task.task_id }}">
-                                            {% if task.pop %}
-                                                <a href="" data-toggle="modal" data-target="#static01">
-                                                <input id="task_id" type="text" value="{{ task.task_id }}" hidden>
-                                                <input id="process_name" type="text" value="{{ task.process_name }}"
-                                                       hidden>
-                                                <input id="send_time" type="text" value="{{ task.send_time }}" hidden>
-                                                <input id="sign_role" type="text" value="{{ task.group_name }}" hidden>
-                                                <input id="process_run_reason" type="text"
-                                                       value="{{ task.process_run_reason }}" hidden>
-                                            {% else %}
-                                                <a href="{{ task.myurl }}">
-                                            {% endif %}
+                            <div class="scroller" style="height: 620px;" data-always-visible="1" data-rail-visible="0">
+                                <ul class="feeds">
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-info">
+                                                        <i class="fa fa-check"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> You have 4 pending tasks.
+                                                        <span class="label label-sm " style="background-color: #3598dc"> 系统1
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> Just now </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <a href="javascript:;">
                                             <div class="col1">
                                                 <div class="cont">
                                                     <div class="cont-col1">
                                                         <div class="label label-sm label-success">
-                                                            <i class="fa fa-bell-o"></i>
+                                                            <i class="fa fa-bar-chart-o"></i>
                                                         </div>
                                                     </div>
                                                     <div class="cont-col2">
-                                                        <div class="desc"> {{ task.content }}
-                                                        </div>
+                                                        <div class="desc"> Finance Report for year 2013 has been released. </div>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="col2">
-                                                <div class="date"> {{ task.time }} </div>
+                                                <div class="date"> 20 mins </div>
                                             </div>
-                                            </a>
-                                        </li>
-
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 col-sm-6">
-                    <div class="portlet light bordered">
-                        <div class="portlet-title">
-                            <div class="caption">
-                                <span class="caption-subject bold uppercase font-green">备份任务完成情况</span>
-                                <input id="type_4" hidden type="text" value="1">
-                            </div>
-                            <div class="actions">
-                                <div class="btn-group btn-group-devided" data-toggle="buttons">
-                                    <label id="option4_1"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm active">
-                                        <input type="radio" name="options" class="toggle">7天</label>
-                                    <label id="option4_2"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">月</label>
-                                    <label id="option4_3"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">半年</label>
-                                    <label id="option4_4"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">年</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="portlet-body">
-                            <div id="dashboard_amchart_4" class="CSSAnimationChart"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-sm-6">
-                    <div class="portlet light bordered">
-                        <div class="portlet-title">
-                            <div class="caption font-green">
-                                <span class="caption-subject bold uppercase">每日备份量</span>
-                                <input id="type_1" hidden type="text" value="1">
-                            </div>
-                            <div class="actions">
-                                <div class="btn-group btn-group-devided" data-toggle="buttons">
-                                    <label id="option1_1"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm active">
-                                        <input type="radio" name="options" class="toggle">7天</label>
-                                    <label id="option1_2"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">月</label>
-                                    <label id="option1_3"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">半年</label>
-                                    <label id="option1_4"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">年</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="portlet-body">
-                            <div id="dashboard_amchart_1" class="CSSAnimationChart"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 col-sm-6">
-                    <!-- BEGIN PORTLET-->
-                    <div class="portlet light bordered">
-                        <div class="portlet-title">
-                            <div class="caption">
-
-                                <span class="caption-subject font-green bold uppercase">客户端统计</span>
-                                <input id="type_2" hidden type="text" value="1">
-                            </div>
-                            <div class="actions">
-                                <div class="btn-group btn-group-devided" data-toggle="buttons">
-                                    <label id="option2_1"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm active">
-                                        <input type="radio" name="options" class="toggle">7天</label>
-                                    <label id="option2_2"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">月</label>
-                                    <label id="option2_3"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">半年</label>
-                                    <label id="option2_4"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">年</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="portlet-body">
-                            <div id="dashboard_amchart_2" class="CSSAnimationChart"></div>
-                        </div>
-                    </div>
-                    <!-- END PORTLET-->
-                </div>
-                <div class="col-md-6 col-sm-6">
-                    <!-- BEGIN PORTLET-->
-                    <div class="portlet light bordered">
-                        <div class="portlet-title">
-                            <div class="caption">
-
-                                <span class="caption-subject font-green bold uppercase">用户容量信息</span>
-                                <input id="type_3" hidden type="text" value="1">
-                            </div>
-                            <div class="actions">
-                                <div class="btn-group btn-group-devided" data-toggle="buttons">
-                                    <label id="option3_1"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm active">
-                                        <input type="radio" name="options" class="toggle">7天</label>
-                                    <label id="option3_2"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">月</label>
-                                    <label id="option3_3"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">半年</label>
-                                    <label id="option3_4"
-                                           class="btn btn-transparent green btn-outline btn-circle btn-sm">
-                                        <input type="radio" name="options" class="toggle">年</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="portlet-body">
-                            <div id="dashboard_amchart_3" class="CSSAnimationChart"></div>
-                        </div>
-                    </div>
-                    <!-- END PORTLET-->
-                </div>
-            </div>
-
-
-            <div class="row">
-                <div class="col-md-6 col-sm-12 col-lg-6">
-                    <div class="portlet light">
-                        <div class="portlet-title tabbable-line">
-                            <div class="caption">
-                                <span class="caption-subject bold uppercase font-green">告警信息(每月)</span>
-                            </div>
-                        </div>
-                        <div class="portlet-body" id="backup_info">
-                            <div class="scroller" style="height: 339px;">
-                                <ul class="feeds" id="locate">
-                                    {% for error_job in display_error_joblist %}
-                                        <li id="{{ error_job.jobid }}">
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-danger">
+                                                        <i class="fa fa-user"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> You have 5 pending membership that requires a quick review. </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 24 mins </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-info">
+                                                        <i class="fa fa-shopping-cart"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> New order received with
+                                                        <span class="label label-sm label-success"> Reference Number: DR23923 </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 30 mins </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-success">
+                                                        <i class="fa fa-user"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> You have 5 pending membership that requires a quick review. </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 24 mins </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-default">
+                                                        <i class="fa fa-bell-o"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> Web server hardware needs to be upgraded.
+                                                        <span class="label label-sm label-default "> Overdue </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 2 hours </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <a href="javascript:;">
+                                            <div class="col1">
+                                                <div class="cont">
+                                                    <div class="cont-col1">
+                                                        <div class="label label-sm label-default">
+                                                            <i class="fa fa-briefcase"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="cont-col2">
+                                                        <div class="desc"> IPO Report for year 2013 has been released. </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col2">
+                                                <div class="date"> 20 mins </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-info">
+                                                        <i class="fa fa-check"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> You have 4 pending tasks.
+                                                        <span class="label label-sm label-warning "> Take action
+                                                            <i class="fa fa-share"></i>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> Just now </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <a href="javascript:;">
+                                            <div class="col1">
+                                                <div class="cont">
+                                                    <div class="cont-col1">
+                                                        <div class="label label-sm label-danger">
+                                                            <i class="fa fa-bar-chart-o"></i>
+                                                        </div>
+                                                    </div>
+                                                    <div class="cont-col2">
+                                                        <div class="desc"> Finance Report for year 2013 has been released. </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col2">
+                                                <div class="date"> 20 mins </div>
+                                            </div>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-default">
+                                                        <i class="fa fa-user"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> You have 5 pending membership that requires a quick review. </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 24 mins </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-info">
+                                                        <i class="fa fa-shopping-cart"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> New order received with
+                                                        <span class="label label-sm label-success"> Reference Number: DR23923 </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 30 mins </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-success">
+                                                        <i class="fa fa-user"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> You have 5 pending membership that requires a quick review. </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 24 mins </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <div class="col1">
+                                            <div class="cont">
+                                                <div class="cont-col1">
+                                                    <div class="label label-sm label-warning">
+                                                        <i class="fa fa-bell-o"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="cont-col2">
+                                                    <div class="desc"> Web server hardware needs to be upgraded.
+                                                        <span class="label label-sm label-default "> Overdue </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col2">
+                                            <div class="date"> 2 hours </div>
+                                        </div>
+                                    </li>
+                                    <li>
+                                        <a href="javascript:;">
                                             <div class="col1">
                                                 <div class="cont">
                                                     <div class="cont-col1">
                                                         <div class="label label-sm label-info">
-                                                            <i class="fa fa-bullhorn"></i>
+                                                            <i class="fa fa-briefcase"></i>
                                                         </div>
                                                     </div>
                                                     <div class="cont-col2">
-                                                        <div class="desc">
-                                                            <a href="#" data-toggle="modal" data-target="#static">
-                                                                <font style="vertical-align: inherit;">
-                                                                    <font style="vertical-align: inherit;">{{ error_job.jobfailedreason }}
-                                                                    </font>
-                                                                </font>
-                                                            </a>
-                                                            <input id="clientname_tag" type="text"
-                                                                   value="{{ error_job.clientname }}" hidden>
-                                                            <input id="idataagent_tag" type="text"
-                                                                   value="{{ error_job.idataagent }}" hidden>
-                                                            <input id="jobfailedreason_tag" type="text"
-                                                                   value="{{ error_job.jobfailedreason }}" hidden>
-                                                        </div>
+                                                        <div class="desc"> IPO Report for year 2013 has been released. </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </li>
-                                    {% endfor %}
+                                            <div class="col2">
+                                                <div class="date"> 20 mins </div>
+                                            </div>
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="row">
+                <div class="col-md-3" >
+                        <!-- BEGIN UNORDERED LISTS PORTLET-->
+                        <div class="portlet box blue" >
+                            <div class="portlet-title">
+                                <div class="caption">
+                                    一.灾备服务器环境检查 (角色)</div>
+                            </div>
+                            <div class="portlet-body" style="height: 300px">
+                                <ol>
+                                    <li> 基础环境检查(角色)
+                                        <ul>
+                                            <li> 网络连通性检查 </li>
+                                            <li> SSH服务状态检查 </li>
+                                            <li> ISCSI服务状态检查 </li>
+                                        </ul>
+                                    </li>
+                                    <li> 数据库运行环境检查(角色)
+                                        <ul>
+                                            <li> 数据库程序是否安装 </li>
+                                            <li> 数据库实例名是否正确 </li>
+                                            <li> 数据库服务是否停止 </li>
+                                            <li> 数据卷是否卸载 </li>
+                                        </ul>
+                                    </li>
+                                    <li> 飞康保护状态检查(角色)
+                                        <ul>
+                                            <li> 数据保护是否正常 </li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                </div>
+                <div class="col-md-1" style="height: 340px;line-height:340px;font-size: 60px;text-align: center">
+                        <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
+                </div>
+                <div class="col-md-3">
+                        <!-- BEGIN UNORDERED LISTS PORTLET-->
+                        <div class="portlet box blue">
+                            <div class="portlet-title">
+                                <div class="caption">
+                                    二.灾备服务启用 </div>
+                            </div>
+                            <div class="portlet-body" style="height: 300px">
+
+                            </div>
+                        </div>
+                </div>
+                <div class="col-md-1" style="height: 340px;line-height:340px;font-size: 60px;text-align: center">
+                        <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
+                </div>
+                <div class="col-md-3">
+                        <!-- BEGIN UNORDERED LISTS PORTLET-->
+                        <div class="portlet box blue">
+                            <div class="portlet-title">
+                                <div class="caption">
+                                    三.启动应用服务 </div>
+                            </div>
+                            <div class="portlet-body" style="height: 300px">
+                                <ol>
+                                    <li> 基础环境检查(角色)
+                                        <ul>
+                                            <li> 网络连通性检查 </li>
+                                            <li> SSH服务状态检查 </li>
+                                            <li> ISCSI服务状态检查 </li>
+                                        </ul>
+                                    </li>
+                                    <li> 数据库运行环境检查(角色)
+                                        <ul>
+                                            <li> 数据库程序是否安装 </li>
+                                            <li> 数据库实例名是否正确 </li>
+                                            <li> 数据库服务是否停止 </li>
+                                            <li> 数据卷是否卸载 </li>
+                                        </ul>
+                                    </li>
+                                    <li> 飞康保护状态检查(角色)
+                                        <ul>
+                                            <li> 数据保护是否正常 </li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                </div>
+                <div class="col-md-1" style="height: 340px;line-height:340px;font-size: 60px;text-align: center">
+                        <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
+                </div>
+                <div class="col-md-3">
+                        <!-- BEGIN UNORDERED LISTS PORTLET-->
+                        <div class="portlet box blue">
+                            <div class="portlet-title">
+                                <div class="caption">
+                                    四.验证数据 </div>
+                            </div>
+                            <div class="portlet-body" style="height: 300px">
+                                <ol>
+                                    <li> 基础环境检查(角色)
+                                        <ul>
+                                            <li> 网络连通性检查 </li>
+                                            <li> SSH服务状态检查 </li>
+                                            <li> ISCSI服务状态检查 </li>
+                                        </ul>
+                                    </li>
+                                    <li> 数据库运行环境检查(角色)
+                                        <ul>
+                                            <li> 数据库程序是否安装 </li>
+                                            <li> 数据库实例名是否正确 </li>
+                                            <li> 数据库服务是否停止 </li>
+                                            <li> 数据卷是否卸载 </li>
+                                        </ul>
+                                    </li>
+                                    <li> 飞康保护状态检查(角色)
+                                        <ul>
+                                            <li> 数据保护是否正常 </li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                </div>
+                <div class="col-md-1" style="height: 340px;line-height:340px;font-size: 60px;text-align: center">
+                        <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
+                </div>
+                <div class="col-md-3">
+                        <!-- BEGIN UNORDERED LISTS PORTLET-->
+                        <div class="portlet box blue">
+                            <div class="portlet-title">
+                                <div class="caption">
+                                    五.灾备环境关闭 </div>
+                            </div>
+                            <div class="portlet-body" style="height: 300px">
+                                <ol>
+                                    <li> 基础环境检查(角色)
+                                        <ul>
+                                            <li> 网络连通性检查 </li>
+                                            <li> SSH服务状态检查 </li>
+                                            <li> ISCSI服务状态检查 </li>
+                                        </ul>
+                                    </li>
+                                    <li> 数据库运行环境检查(角色)
+                                        <ul>
+                                            <li> 数据库程序是否安装 </li>
+                                            <li> 数据库实例名是否正确 </li>
+                                            <li> 数据库服务是否停止 </li>
+                                            <li> 数据卷是否卸载 </li>
+                                        </ul>
+                                    </li>
+                                    <li> 飞康保护状态检查(角色)
+                                        <ul>
+                                            <li> 数据保护是否正常 </li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+                </div>
+            </div>
+
             <div id="static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -457,8 +854,7 @@
             </div>
 
             <div style="text-align:center">
-                <div class="copyright"> CopyRight &copy;2016 Maliang info tech Inc.</div>
-                <div class="copyright"> 沪公网安备 31010602000561号</div>
+                <div class="copyright"> CopyRight  &copy;2018 上海特速网络科技有限公司</div>
             </div>
         </div>
 
@@ -489,8 +885,32 @@
     <script src="/static/assets/global/plugins/amcharts/amcharts/pie.js" type="text/javascript"></script>
     <script src="/static/assets/global/plugins/amcharts/amcharts/themes/light.js" type="text/javascript"></script>
     <script src="/static/assets/global/plugins/amcharts/amcharts/serial.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/highcharts/js/highcharts.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/highcharts/js/highcharts-3d.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/highcharts/js/highcharts-more.js" type="text/javascript"></script>
+        <script src="/static/assets/pages/scripts/charts-highcharts.js" type="text/javascript"></script>
 
 
+        <!-- BEGIN PAGE LEVEL PLUGINS -->
+        <script src="/static/assets/global/plugins/jquery-knob/js/jquery.knob.js" type="text/javascript"></script>
+        <script src="/static/assets/pages/scripts/components-knob-dials.min.js" type="text/javascript"></script>
+
+
+
+
+
+
+
+        <!-- END CORE PLUGINS -->
+        <!-- BEGIN PAGE LEVEL PLUGINS -->
+        <script src="/static/assets/global/plugins/moment.min.js" type="text/javascript"></script>
+        <script src="/static/assets/global/plugins/fullcalendar/fullcalendar.min.js" type="text/javascript"></script>
+        <link href="/static/assets/global/plugins/fullcalendar/fullcalendar.min.css" rel="stylesheet" type="text/css" />
+
+
+
+
+        <!-- END PAGE LEVEL SCRIPTS -->
 
 
 
