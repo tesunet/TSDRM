@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>pdf</title>
+	{# <link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet"> #}
+</head>
+<body>
+		{{ele_xml01}}
+		<ul>
+			<li>开始时间：{{ first_el_dict.start_time }}</li>
+			<li>结束时间：{{ first_el_dict.end_time }}</li>
+			<li>RTO：{{ first_el_dict.rto }}</li>
+			<li>发起人：{{ first_el_dict.create_user }}</li>
+			<li>签字人：{{ first_el_dict.receiveuser }}</li>
+			<li>参与人：{{ first_el_dict.operator }}</li>
+			<li>切换原因：</li>
+		</ul>
+
+
+		{{ele_xml02}}
+		<ul>
+
+		{% for step in step_info_list %}
+			<li>  {{step.step_name}}</li>
+			<li>&nbsp&nbsp 开始时间：{{step.start_time}}</li>
+			<li>&nbsp&nbsp 结束时间：{{step.end_time}}</li>
+			<li>&nbsp&nbsp RTO：{{step.rto}}</li>
+			<li>&nbsp&nbsp 负责人： {{ step.operator}} </li>
+			<li>&nbsp&nbsp 脚本：
+				<ul>
+					{% for script in step.script_list_wrapper %}
+					<li>  {{ script.script_name }}</li>
+					<li>&nbsp&nbsp 开始时间：{{ script.start_time }}</li>
+					<li>&nbsp&nbsp 结束时间：{{ script.end_time }}</li>
+					<li>&nbsp&nbsp RTO：{{ script.rto }}</li>
+					<li>&nbsp&nbsp 状态：{{ script.state }}</li>
+					<li>&nbsp&nbsp 执行结果：{{ script.explain }}</li>
+					{% endfor %}
+				</ul>
+			</li>
+			<ul>
+				{% for inner_step in step.inner_step_list%}
+				<li>  {{ inner_step.step_name }}</li>
+				<li>&nbsp&nbsp 开始时间：{{ inner_step.start_time }}</li>
+				<li>&nbsp&nbsp 结束时间：{{ inner_step.end_time }}</li>
+				<li>&nbsp&nbsp RTO：{{ inner_step.rto }}</li>
+				<li>&nbsp&nbsp 负责人：{{ inner_step.operator }}</li>
+				<li>&nbsp&nbsp 脚本：
+					<ul>  
+						{% for script_inner in inner_step.script_list_inner%}
+						<li>  {{ script_inner.script_name }}</li>
+						<li>&nbsp&nbsp 开始时间：{{ script_inner.start_time }}</li>
+						<li>&nbsp&nbsp 结束时间：{{ script_inner.end_time }}</li>
+						<li>&nbsp&nbsp RTO：{{ script_inner.rto }}</li>
+						<li>&nbsp&nbsp 状态：{{ script_inner.state }}</li>
+						<li>&nbsp&nbsp 执行结果：{{ script_inner.explain }}</li>
+						{% endfor %}
+					</ul>
+				</li>
+				{% endfor %}
+			</ul>
+		{% endfor %}
+		</ul>
+</body>
+</html>
