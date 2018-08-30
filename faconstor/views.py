@@ -1723,6 +1723,10 @@ def setpsave(request):
         skip = request.POST.get('skip', '')
         approval = request.POST.get('approval', '')
         group = request.POST.get('group', '')
+        print(group)
+        if group == " ":
+            group = None
+
         process_id = request.POST.get('process_id', '')
         try:
             id = int(id)
@@ -1825,10 +1829,13 @@ def get_step_tree(parent, selectid):
         group_name = ""
         if child.group:
             group_id = child.group
+            print(group_id, type(group_id))
+            if not group_id:
+                group_id = None
             group_name = Group.objects.filter(id=group_id)[0].name
 
         all_groups = Group.objects.exclude(state="9")
-        group_string = ""
+        group_string = " " + "+" + " -------------- " + "&"
         for group in all_groups:
             id_name_plus = str(group.id) + "+" + str(group.name) + "&"
             group_string += id_name_plus
@@ -1896,11 +1903,10 @@ def custom_step_tree(request):
         rootnodes = Step.objects.order_by("sort").filter(process_id=process_id, pnode=None).exclude(state="9")
 
         all_groups = Group.objects.exclude(state="9")
-        group_string = ""
+        group_string = "" + "+" + " -------------- " + "&"
         for group in all_groups:
             id_name_plus = str(group.id) + "+" + str(group.name) + "&"
             group_string += id_name_plus
-
         if len(rootnodes) > 0:
             for rootnode in rootnodes:
                 root = {}
@@ -2121,7 +2127,13 @@ def get_all_groups(request):
     if request.user.is_authenticated():
         all_group_list = []
         all_groups = Group.objects.exclude(state="9")
-        for group in all_groups:
+        for num, group in enumerate(all_groups):
+            # if num == 0:
+            #     group_info_dict = {
+            #         "group_id": None,
+            #         "group_name": "-----------------",
+            #     }
+            # else:
             group_info_dict = {
                 "group_id": group.id,
                 "group_name": group.name,
@@ -2237,10 +2249,82 @@ def process_del(request):
             return HttpResponse(0)
 
 
-def falconstorswitch(request, funid):
+def falconstorswitch(request, funid, process_id):
     if request.user.is_authenticated():
+        all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None)
+        wrapper_step_list = []
+        num_to_char_choices = {
+            "1": "一",
+            "2": "二",
+            "3": "三",
+            "4": "四",
+            "5": "五",
+            "6": "六",
+            "7": "七",
+            "8": "八",
+            "9": "九",
+        }
+        for num, wrapper_step in enumerate(all_wrapper_steps):
+            wrapper_step_dict = {}
+            wrapper_step_dict["wrapper_step_name"] = num_to_char_choices[
+                                                         "{0}".format(str(num + 1))] + "." + wrapper_step.name
+            wrapper_step_group_id = wrapper_step.group
+            try:
+                wrapper_step_group_id = int(wrapper_step_group_id)
+            except:
+                wrapper_step_group_id = None
+            wrapper_step_group = Group.objects.filter(id=wrapper_step_group_id)
+            if wrapper_step_group:
+                wrapper_step_group_name = wrapper_step_group[0].name
+            else:
+                wrapper_step_group_name = ""
+            wrapper_step_dict["wrapper_step_group_name"] = wrapper_step_group_name
+
+            wrapper_script_list = []
+            all_wrapper_scripts = wrapper_step.script_set.exclude(state="9")
+            for wrapper_script in all_wrapper_scripts:
+                wrapper_script_dict = {
+                    "wrapper_script_name": wrapper_script.name
+                }
+                wrapper_script_list.append(wrapper_script_dict)
+                wrapper_step_dict["wrapper_script_list"] = wrapper_script_list
+
+            pnode_id = wrapper_step.id
+            inner_step_list = []
+            all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id)
+            for inner_step in all_inner_steps:
+                inner_step_dict = {}
+                inner_step_dict["inner_step_name"] = inner_step.name
+
+                inner_step_group_id = inner_step.group
+                try:
+                    inner_step_group_id = int(inner_step_group_id)
+                except:
+                    inner_step_group_id = None
+                inner_step_group = Group.objects.filter(id=inner_step_group_id)
+                if inner_step_group:
+                    inner_step_group_name = inner_step_group[0].name
+                else:
+                    inner_step_group_name = ""
+                inner_step_dict["inner_step_group_name"] = inner_step_group_name
+
+                inner_script_list = []
+                all_inner_scripts = inner_step.script_set.exclude(state="9")
+                for inner_script in all_inner_scripts:
+                    inner_script_dict = {
+                        "inner_script_name": inner_script.name
+                    }
+                    inner_script_list.append(inner_script_dict)
+
+                inner_step_dict["inner_script_list"] = inner_script_list
+                inner_step_list.append(inner_step_dict)
+
+            wrapper_step_dict["inner_step_list"] = inner_step_list
+
+            wrapper_step_list.append(wrapper_step_dict)
         return render(request, 'falconstorswitch.html',
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
+                       "wrapper_step_list": wrapper_step_list, "process_id": process_id})
     else:
         return HttpResponseRedirect("/login")
 
@@ -2248,18 +2332,31 @@ def falconstorswitch(request, funid):
 def falconstorswitchdata(request):
     if request.user.is_authenticated():
         result = []
-        allprocess = Process.objects.exclude(state="9").filter(type="falconstor")
-        if (len(allprocess) > 0):
-            for process in allprocess:
-                code = process.code
-                name = process.name
-                rto = process.rto
-                rpo = process.rpo
-                remark = process.remark
-                result.append(
-                    {"code": code, "name": name, "rto": rto, "rpo": rpo,
-                     "remark": remark, "id": process.id})
-        return HttpResponse(json.dumps({"data": result}))
+        all_processrun_objs = ProcessRun.objects.exclude(state="9").order_by("-starttime")
+
+        state_dict = {
+            "DONE": "已完成",
+            "EDIT": "未执行",
+            "RUN": "执行中",
+            "ERROR": "执行失败",
+            "IGNORE": "忽略",
+            "": "",
+        }
+        for processrun_obj in all_processrun_objs:
+            if processrun_obj.process.type == "falconstor":
+                result.append({
+                    "starttime": processrun_obj.starttime.strftime(
+                        '%Y-%m-%d %H:%M:%S') if processrun_obj.starttime else "",
+                    "endtime": processrun_obj.endtime.strftime('%Y-%m-%d %H:%M:%S') if processrun_obj.endtime else "",
+                    "createuser": processrun_obj.creatuser if processrun_obj.creatuser else "",
+                    "state": state_dict["{0}".format(processrun_obj.state)] if processrun_obj.state else "",
+                    "process_id": processrun_obj.process_id if processrun_obj.process_id else "",
+                    "processrun_id": processrun_obj.id if processrun_obj.id else "",
+                    "run_reason": processrun_obj.run_reason[:20] if processrun_obj.run_reason else "",
+                    "process_name": processrun_obj.process.name if processrun_obj.process.name else "",
+                    "process_url": processrun_obj.process.url if processrun_obj.process.url else ""
+                })
+        return JsonResponse({"data": result})
 
 
 def falconstorrun(request):
@@ -2303,7 +2400,6 @@ def falconstorrun(request):
                         myscript = step.script_set.exclude(state="9")
                         # print(myscript)
                         for script in myscript:
-                            # print(1)
                             myscriptrun = ScriptRun()
                             myscriptrun.script = script
                             myscriptrun.steprun = mysteprun
@@ -2769,8 +2865,8 @@ def custom_pdf_report(request):
             step=pstep)
         if pnode_steprun:
             second_el_dict["start_time"] = pnode_steprun[0].starttime.strftime("%Y-%m-%d %H:%M:%S") if \
-            pnode_steprun[
-                0].starttime else ""
+                pnode_steprun[
+                    0].starttime else ""
             second_el_dict["end_time"] = pnode_steprun[0].endtime.strftime("%Y-%m-%d %H:%M:%S") if pnode_steprun[
                 0].endtime else ""
 
@@ -2805,11 +2901,14 @@ def custom_pdf_report(request):
                 second_el_dict["rto"] = ""
 
         # ...需要审批时，添加负责人
-        if pstep.approval == "1":
-            users = User.objects.filter(username=pnode_steprun[0].operator)
-            if users:
-                operator = users[0].userinfo.fullname
-                second_el_dict["operator"] = operator
+        # if pstep.approval == "1":
+        # 步骤负责人
+        users = User.objects.filter(username=pnode_steprun[0].operator)
+        if users:
+            operator = users[0].userinfo.fullname
+            second_el_dict["operator"] = operator
+        else:
+            second_el_dict["operator"] = ""
 
         # 当前步骤下脚本
         state_dict = {
@@ -2828,7 +2927,7 @@ def custom_pdf_report(request):
                 script_el_dict = dict()
                 # title
                 script_name = "{0}.{1}".format("i" * (snum + 1), current_script.name)
-                script_el_dict["script_name"]
+                script_el_dict["script_name"] = script_name
                 # content
                 steprun_id = pnode_steprun[0].id
                 script_id = current_script.id
@@ -2930,11 +3029,14 @@ def custom_pdf_report(request):
                         inner_second_el_dict["rto"] = ""
 
                     # ...需要审批时
-                    if step.approval == "1":
-                        users = User.objects.filter(username=steprun_obj[0].operator)
-                        if users:
-                            operator = users[0].userinfo.fullname
-                            inner_second_el_dict["operator"] = operator
+                    # if step.approval == "1":
+                    # 步骤负责人
+                    users = User.objects.filter(username=steprun_obj[0].operator)
+                    if users:
+                        operator = users[0].userinfo.fullname
+                        inner_second_el_dict["operator"] = operator
+                    else:
+                        inner_second_el_dict["operator"] = ""
 
                     # 当前步骤下脚本
                     current_scripts = Script.objects.exclude(state="9").filter(step_id=step.id)
@@ -3030,7 +3132,7 @@ def custom_pdf_report(request):
     css = [r"{0}".format(css_path)]
 
     pdfkit.from_string(t.content.decode(encoding="utf-8"), r"falconstor.pdf", configuration=config,
-                              options=options, css=css)
+                       options=options, css=css)
 
     def file_iterator(file_name, chunk_size=512):
         with open(file_name, "rb") as f:

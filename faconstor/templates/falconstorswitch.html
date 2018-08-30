@@ -3,79 +3,153 @@
 
 {% block content %}
 
-            <div style="height:10px"></div>
+    <div style="height:10px"></div>
 
-            <table class="table table-striped table-bordered table-hover table-checkable order-column" id="sample_1">
-                <thead>
-                <tr>
-                    <th> 名称</th>
-                    <th> RTO</th>
-                    <th> RPO</th>
-                    <th> 说明</th>
-                    <th style="width:55px;"> 启动</th>
-                </tr>
-                </thead>
+    <div class="row">
 
-                <tbody>
 
-                </tbody>
-            </table>
-            <input type="text" hidden id="process_id">
-            <div id="static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                            <h4 class="modal-title">飞康启动流程</h4>
-                            <input hidden id="id" type="text" name="id">
+        {% for wrapper_step in wrapper_step_list %}
+            <div class="col-md-3">
+                <!-- BEGIN UNORDERED LISTS PORTLET-->
+                <div class="portlet box blue">
+                    <div class="portlet-title">
+                        <div class="caption">
+                            {{ wrapper_step.wrapper_step_name }}{% if wrapper_step.wrapper_step_group_name %}(
+                                {{ wrapper_step.wrapper_step_group_name }}) {% endif %}
                         </div>
-                        <div class="panel-body">
-
-                            <form class="bs-example form-horizontal activate-form">{% csrf_token %}
-
-                                <div class="form-body">
-                                    <div class="form-group">
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; ">*</span>启动人</label>
-                                        <div class="col-md-10">
-                                            <input id="run_person" type="text" name="run_person" class="form-control "
-                                                   placeholder="" value="{{ request.user.userinfo.fullname }}" readonly>
-
-                                            <div class="form-control-focus"></div>
-
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; ">*</span>启动时间</label>
-                                        <div class="col-md-10">
-                                            <input id="run_time" type="text" name="run_time" class="form-control"
-                                                   placeholder="" readonly>
-                                            <div class="form-control-focus"></div>
-
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; ">*</span>启动原因</label>
-                                        <div class="col-md-10">
-                                            <textarea class="form-control" placeholder="最大限制2500个汉字" rows="6"
-                                                      id="run_reason" name="run_reason"></textarea>
-                                            <div class="form-control-focus"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="form-actions ">
-                                    <div class="modal-footer">
-                                        <button type="button" id="confirm" name="confirm" class="btn green">确认</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
+                    </div>
+                    <div class="portlet-body" style="height: 300px">
+                        {% for wrapper_script in wrapper_step.wrapper_script_list %}
+                            <ul>
+                                {{ wrapper_script.wrapper_script_name }}
+                            </ul>
+                        {% endfor %}
+                        <ol>
+                            {% for inner_step in wrapper_step.inner_step_list %}
+                                <li>{{ inner_step.inner_step_name }}{% if inner_step.inner_step_group_name %}(
+                                    {{ inner_step.inner_step_group_name }}){% endif %}
+                                    <ul>
+                                        {% for inner_script in inner_step.inner_script_list %}
+                                            <li> {{ inner_script.inner_script_name }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                            {% endfor %}
+                        </ol>
                     </div>
                 </div>
             </div>
+            {% if not forloop.last %}
+                <div class="col-md-1" style="height: 340px;line-height:340px;font-size: 60px;text-align: center">
+                    <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+
+    <div class="table-toolbar">
+        <div id="error">
+            {% if errors %}
+                {% for error in errors %}
+                    <div class="alert alert-danger ">{{ error }}</div>
+                    <span> {% endfor %}</span>
+
+            {% endif %}</div>
+        <div class="row">
+            <div class="col-md-6">
+                <div>
+                    <button id="run" type="button" class="btn  green">
+                        启动
+                        <i class="fa fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <table class="table table-striped table-bordered table-hover table-checkable order-column" id="sample_1">
+        <thead>
+        <tr>
+            <th> 任务ID</th>
+            <th> 流程名称</th>
+            <th> 启动人</th>
+            <th> 状态</th>
+            <th> 启动原因</th>
+            <th> 开始时间</th>
+            <th> 结束时间</th>
+            <th> 流程ID</th>
+            <th> 流程url</th>
+            <th style="width:50px;"> 报表查询</th>
+        </tr>
+        </thead>
+
+        <tbody>
+
+        </tbody>
+    </table>
+
+
+    <input type="text" hidden id="process_id" value="{{ process_id }}">
+    <div id="static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">飞康启动流程</h4>
+                    <input hidden id="id" type="text" name="id">
+                    <input hidden id="processid" type="text" name="processid">
+                </div>
+                <div class="panel-body">
+
+                    <form class="bs-example form-horizontal activate-form">{% csrf_token %}
+
+                        <div class="form-body">
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>启动人</label>
+                                <div class="col-md-10">
+                                    <input id="run_person" type="text" name="run_person" class="form-control "
+                                           placeholder="" value="{{ request.user.userinfo.fullname }}" readonly>
+
+                                    <div class="form-control-focus"></div>
+
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>启动时间</label>
+                                <div class="col-md-10">
+                                    <input id="run_time" type="text" name="run_time" class="form-control"
+                                           placeholder="" readonly>
+                                    <div class="form-control-focus"></div>
+
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>启动原因</label>
+                                <div class="col-md-10">
+                                            <textarea class="form-control" placeholder="最大限制2500个汉字" rows="6"
+                                                      id="run_reason" name="run_reason"></textarea>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions ">
+                            <div class="modal-footer">
+                                <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
+                                </button>
+                                <button type="button" id="confirm" name="confirm" class="btn green">确认</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
 {% endblock %}

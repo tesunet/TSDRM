@@ -21,19 +21,19 @@ $(document).ready(function () {
             "render": function (data, type, full) {
                 return "<td><a href='/processconfig/?process_id=processid'>data</a></td>".replace("processid", full.process_id).replace("data", full.process_name)
             }
-        },{
+        }, {
             "targets": 4,
             "render": function (data, type, full) {
                 var process_sign = "否"
-                if (full.process_sign=="1"){
+                if (full.process_sign == "1") {
                     var process_sign = "是"
                 }
                 return "<td>process_sign</td>".replace("process_sign", process_sign);
             }
-        },{
+        }, {
             "targets": -1,
             "data": null,
-            "width": "60px",
+            "width": "100px",
             "defaultContent": "<button  id='edit' title='编辑' data-toggle='modal'  data-target='#static'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>"
         }],
         "oLanguage": {

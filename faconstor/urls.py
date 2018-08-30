@@ -3,20 +3,21 @@ from faconstor.views import *
 from django.conf import settings
 
 urlpatterns = [
-    url(r'^$', index,{'funid':'2'}),
+    url(r'^$', index, {'funid': '2'}),
     url(r'^test/$', test),
-    url(r'^index/$', index,{'funid':'2'}),
+    url(r'^index/$', index, {'funid': '2'}),
 
-    #用户登录
+    # 用户登录
     url(r'^login/$', login),
     url(r'^userlogin/$', userlogin),
     url(r'^forgetPassword/$', forgetPassword),
-    url(r'^resetpassword/([0-9a-zA-Z]{8}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12})/$',resetpassword),
+    url(r'^resetpassword/([0-9a-zA-Z]{8}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{12})/$',
+        resetpassword),
     url(r'^reset/$', reset),
     url(r'^password/$', password),
     url(r'^userpassword/$', userpassword),
 
-    #系统维护
+    # 系统维护
     url(r'^organization/$', organization, {'funid': '61'}),
     url(r'^orgdel/$', orgdel),
     url(r'^orgmove/$', orgmove),
@@ -32,8 +33,8 @@ urlpatterns = [
     url(r'^fundel/$', fundel),
     url(r'^funmove/$', funmove),
 
-    #预案管理
-    url(r'^script/$', script,{'funid':'32'}),
+    # 预案管理
+    url(r'^script/$', script, {'funid': '32'}),
     url(r'^scriptdata/$', scriptdata),
     url(r'^scriptdel/$', scriptdel),
     url(r'^scriptsave/$', scriptsave),
@@ -56,8 +57,8 @@ urlpatterns = [
     url(r'^get_verify_items_data/$', get_verify_items_data),
     url(r'^remove_verify_item/$', remove_verify_item),
 
-    #切换演练
-    url(r'^falconstorswitch/$', falconstorswitch, {'funid': '41'}),
+    # 切换演练
+    url(r'^falconstorswitch/$', falconstorswitch, {'funid': '41', "process_id": 12}),
     url(r'^falconstorswitchdata/$', falconstorswitchdata),
     url(r'^falconstorrun/$', falconstorrun),
     url(r'^falconstor/(\d+)/$', falconstor, {'funid': '49'}),
@@ -67,14 +68,13 @@ urlpatterns = [
     url(r'^get_current_scriptinfo/$', get_current_scriptinfo),
     url(r'^ignore_current_script/$', ignore_current_script),
 
-    #历史查询
+    # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
-    url(r'^falconstorsearch/$', falconstorsearch,{'funid': '5'}),
+    url(r'^falconstorsearch/$', falconstorsearch, {'funid': '5'}),
     url(r'^falconstorsearchdata/$', falconstorsearchdata),
 
-    #其他
-    url(r'^downloadlist/$', downloadlist,{'funid': '7'}),
+    # 其他
+    url(r'^downloadlist/$', downloadlist, {'funid': '7'}),
     url(r'^download/$', download),
-
 
 ]

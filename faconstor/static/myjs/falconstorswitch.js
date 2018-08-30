@@ -5,19 +5,37 @@ $(document).ready(function () {
         "bProcessing": true,
         "ajax": "../falconstorswitchdata/",
         "columns": [
-            {"data": "name"},
-            {"data": "rto"},
-            {"data": "rpo"},
-            {"data": "remark"},
+            {"data": "processrun_id"},
+            {"data": "process_name"},
+            {"data": "createuser"},
+            {"data": "state"},
+            {"data": "run_reason"},
+            {"data": "starttime"},
+            {"data": "endtime"},
+            {"data": "process_id"},
+            {"data": "process_url"},
             {"data": null},
-
         ],
-
         "columnDefs": [{
-            "targets": -1,
+            "targets": 1,
+            "render": function (data, type, full) {
+                return "<td><a href='process_url'>data</a></td>".replace("data", full.process_name).replace("process_url", full.process_url + "/" + full.processrun_id)
+            }
+        }, {
+            "visible": false,
+            "targets": -2  // 倒数第一列
+        }, {
+            "visible": false,
+            "targets": -3  // 倒数第一列
+        }, {
+            "targets": -1,  // 指定最后一列添加按钮；
             "data": null,
-            "defaultContent": "<button title='启动'  id='runrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-play'></i></button>"
+            "width": "60px",  // 指定列宽；
+            "render": function (data, type, full) {
+                return "<td><a href='/custom_pdf_report/?processrunid&processid'></td><i class='fa fa-arrow-down'></i></a>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
+            }
         }],
+
         "oLanguage": {
             "sLengthMenu": "&nbsp;&nbsp;每页显示 _MENU_ 条记录",
             "sZeroRecords": "抱歉， 没有找到",
@@ -36,19 +54,8 @@ $(document).ready(function () {
         }
     });
 
-
-    $('#sample_1 tbody').on('click', 'button#runrow', function () {
-        var table = $('#sample_1').DataTable();
-        var data = table.row($(this).parents('tr')).data();
-        $("#process_id").val(data.id);
-        $("#static").modal({backdrop: "static"});
-        // 写入当前时间
-        var myDate = new Date();
-        $("#run_time").val(myDate.toLocaleString());
-    });
-
     $("#confirm").click(function () {
-        var processid = $("#process_id").val();
+        var processid = $("#processid").val();
         $.ajax({
             type: "POST",
             dataType: 'json',
@@ -72,4 +79,13 @@ $(document).ready(function () {
             }
         });
     });
+
+    $("#run").click(function () {
+        var process_id = $("#process_id").val();
+        $("#processid").val(process_id);
+        $("#static").modal({backdrop: "static"});
+        // 写入当前时间
+        var myDate = new Date();
+        $("#run_time").val(myDate.toLocaleString());
+    })
 });

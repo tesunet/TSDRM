@@ -37,9 +37,12 @@
                                 <div class="form-group ">
                                     <label class="col-md-3 control-label">流程名称</label>
                                     <div class="col-md-7">
-                                        <input id="processname" autocomplete="off" name="processname"
-                                               class="form-control" value="飞康自动化恢复流程" disabled>
-                                        <div class="form-control-focus"></div>
+                                        <select class="form-control" id="processname" name="processname">
+                                            <option selected value="">全部</option>
+                                            {% for process_name in processname_list %}
+                                                <option value="{{ process_name }}">{{ process_name }} </option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                 </div>
                             </div>

@@ -27,7 +27,7 @@ $(document).ready(function () {
         "columnDefs": [{
             "targets": -1,
             "data": null,
-            "width": "60px",
+            "width": "100px",
             "defaultContent": "<button  id='edit' title='编辑' data-toggle='modal'  data-target='#static'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>"
         },
             //     {
