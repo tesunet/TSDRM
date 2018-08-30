@@ -88,4 +88,32 @@ $(document).ready(function () {
         var myDate = new Date();
         $("#run_time").val(myDate.toLocaleString());
     })
+    $("#invite").click(function () {
+        $("#person_invited").empty();
+        $("#invite_reason").val("");
+        var process_id = $("#process_id").val();
+        $("#processid").val(process_id);
+        $("#static01").modal({backdrop: "static"});
+        // 写入当前时间
+        var myDate = new Date();
+        $("#invite_time").val(myDate.toLocaleString());
+
+        $.ajax({
+            type: "POST",
+            dataType: 'json',
+            url: "../get_all_users/",
+            data: {},
+            success: function (data) {
+                var userList = data.data.split("&");
+                for (var i = 0; i < userList.length - 1; i++) {
+                    var user = userList[i];
+                    $("#person_invited").append('<option value="' + user + '">' + user + '</option>')
+                }
+            },
+            error: function (e) {
+                alert("流程启动失败，请于管理员联系。");
+            }
+        });
+
+    })
 });

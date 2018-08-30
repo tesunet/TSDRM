@@ -58,7 +58,7 @@ urlpatterns = [
     url(r'^remove_verify_item/$', remove_verify_item),
 
     # 切换演练
-    url(r'^falconstorswitch/$', falconstorswitch, {'funid': '41', "process_id": 12}),
+    url(r'^falconstorswitch/(?P<process_id>\d+)$', falconstorswitch, {'funid': '41'}),
     url(r'^falconstorswitchdata/$', falconstorswitchdata),
     url(r'^falconstorrun/$', falconstorrun),
     url(r'^falconstor/(\d+)/$', falconstor, {'funid': '49'}),
@@ -76,5 +76,9 @@ urlpatterns = [
     # 其他
     url(r'^downloadlist/$', downloadlist, {'funid': '7'}),
     url(r'^download/$', download),
+
+    # 邀请
+    url(r'^invite/$', invite),
+    url(r'^get_all_users/$', get_all_users),
 
 ]

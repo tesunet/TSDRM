@@ -131,7 +131,7 @@ def exec_script(steprunid, username, fullname):
 
         script.endtime = datetime.datetime.now()
         script.result = result["exec_tag"]
-        script.explain = result['data'] if result['data'] <= 5000 else result['data'][:5000]
+        script.explain = result['data'] if len(result['data']) <= 5000 else result['data'][-4999:]
 
         # 处理脚本执行失败问题
         if result["exec_tag"] == 1:
@@ -216,7 +216,7 @@ def runstep(steprun):
 
             script.endtime = datetime.datetime.now()
             script.result = result['exec_tag']
-            script.explain = result['data'] if result['data'] <= 5000 else result['data'][:5000]
+            script.explain = result['data'] if len(result['data']) <= 5000 else result['data'][-4999:]
 
             # 处理脚本执行失败问题
             if result["exec_tag"] == 1:

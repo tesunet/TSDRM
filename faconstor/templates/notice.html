@@ -1,21 +1,22 @@
 <!DOCTYPE html>
 <html lang="en" class="app">
 <head>
-  <meta charset="utf-8" />
-  <title>
-          自动化灾备管理平台
+    <meta charset="utf-8"/>
+    <title>
+        自动化灾备管理平台
 
-  </title>
-  <meta name="description" content="app, web app, responsive, admin dashboard, admin, flat, flat ui, ui kit, off screen nav" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    </title>
+    <meta name="description"
+          content="app, web app, responsive, admin dashboard, admin, flat, flat ui, ui kit, off screen nav"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
 
-  <link rel="stylesheet" href="/static/new/css/bootstrap.css" type="text/css" />
-  <link rel="stylesheet" href="/static/new/css/animate.css" type="text/css" />
-  <link rel="stylesheet" href="/static/new/css/font-awesome.min.css" type="text/css" />
-  <link rel="stylesheet" href="/static/new/css/icon.css" type="text/css" />
-  <link rel="stylesheet" href="/static/new/css/font.css" type="text/css" />
-  <link rel="stylesheet" href="/static/new/css/app.css" type="text/css" />
-  <link href="/static/assets/global/css/components.css" rel="stylesheet" id="style_components" type="text/css" />
+    <link rel="stylesheet" href="/static/new/css/bootstrap.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/animate.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/font-awesome.min.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/icon.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/font.css" type="text/css"/>
+    <link rel="stylesheet" href="/static/new/css/app.css" type="text/css"/>
+    <link href="/static/assets/global/css/components.css" rel="stylesheet" id="style_components" type="text/css"/>
     <!--[if lt IE 9]>
     <script src="/static/new/js/ie/html5shiv.js"></script>
     <script src="/static/new/js/ie/respond.min.js"></script>
@@ -25,237 +26,100 @@
   <![endif]-->
 </head>
 <body class="">
-  <section class="vbox">
+<section class="vbox">
     <section>
-      <section class="hbox stretch">
-        <section id="content">
-          <section class="vbox">
-            <section class="scrollable wrapper">
-                <!-- BEGIN CONTENT BODY -->
-                <div class="page-content">
-                    <div class="row">
-                        <div class="col-md-8 col-md-offset-2" >
-                            <div>
-                                <div style="text-align: center">
-                                    <h1>关于XX系统容灾演练的通知</h1>
-                                    <h3>2018年8月22日</h3>
-                                </div>
-                                <br>
-                                <p>XXX</p>
-                                <p>您好，</p>
-                                <p style="line-height:36px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;为验证容灾系统的可靠性和丰富业务人员的应急经验，现定于<b>2018年9月1日12:00:00</b>对<b>XX系统</b>进行容灾演练，现特邀请您作为<b>角色1、角色2、角色3</b>参与本次演练，请届时务必参加。感谢您的支持与理解。</p>
-                                <p style="text-align: right;">太平资产管理有限公司信息部</p>
-
-                                <p style="text-align: right;">2018年8月22日</p>
-
-                            </div>
-
+        <section class="hbox stretch">
+            <section id="content">
+                <section class="vbox">
+                    <section class="scrollable wrapper">
+                        <!-- BEGIN CONTENT BODY -->
+                        <div class="page-content">
                             <div class="row">
-                                <div class="col-md-3" >
-                                    <div class="row">
-                                        <div class="col-md-10" >
-                                        <!-- BEGIN UNORDERED LISTS PORTLET-->
-                                            <div class="portlet box blue" >
-                                                <div class="portlet-title" style="height: 60px">
-                                                    <div class="caption">
-                                                        一.灾备服务器环境检查 (角色)</div>
-                                                </div>
-                                                <div class="portlet-body" style="height: 300px">
-                                                    <ol style="margin:5px;padding:0;">
-                                                        <li> 基础环境检查(角色)
-                                                            <ul>
-                                                                <li> 网络连通性检查 </li>
-                                                                <li> SSH服务状态检查 </li>
-                                                                <li> ISCSI服务状态检查 </li>
-                                                            </ul>
-                                                        </li>
-                                                        <li> 数据库运行环境检查(角色)
-                                                            <ul>
-                                                                <li> 数据库程序是否安装 </li>
-                                                                <li> 数据库实例名是否正确 </li>
-                                                                <li> 数据库服务是否停止 </li>
-                                                                <li> 数据卷是否卸载 </li>
-                                                            </ul>
-                                                        </li>
-                                                        <li> 飞康保护状态检查(角色)
-                                                            <ul>
-                                                                <li> 数据保护是否正常 </li>
-                                                            </ul>
-                                                        </li>
-                                                    </ol>
-                                                </div>
-                                            </div>
+                                <div class="col-md-8 col-md-offset-2">
+                                    <div>
+                                        <div style="text-align: center">
+                                            <h1>关于XX系统容灾演练的通知</h1>
+                                            <h3>{{ invite_time }}</h3>
                                         </div>
-                                        <div class="col-md-2" style="height: 340px;line-height:340px;font-size: 30px;text-align: center">
-                                        <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
-                                </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3" >
-                                    <div class="row">
-                                        <div class="col-md-10">
-                                                <!-- BEGIN UNORDERED LISTS PORTLET-->
-                                                <div class="portlet box blue">
-                                                    <div class="portlet-title" style="height: 60px">
-                                                        <div class="caption">
-                                                            二.灾备服务启用 (角色)</div>
-                                                    </div>
-                                                    <div class="portlet-body" style="height: 300px">
+                                        <br>
+                                        <p>{{ person_invited }}</p>
+                                        <p>您好，</p>
+                                        <p style="line-height:36px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;为验证容灾系统的可靠性和丰富业务人员的应急经验，现定于<b>{{ invite_time }}</b>对<b>XX系统</b>进行容灾演练，现特邀请您作为<b>角色1、角色2、角色3</b>参与本次演练，请届时务必参加。感谢您的支持与理解。
+                                        </p>
+                                        <p style="text-align: right;">太平资产管理有限公司信息部</p>
 
-                                                    </div>
-                                                </div>
-                                        </div>
-                                        <div class="col-md-2" style="height: 340px;line-height:340px;font-size: 30px;text-align: center">
-                                        <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
-                                </div>
+                                        <p style="text-align: right;">{{ invite_time }}</p>
+
                                     </div>
-                                </div>
-                                <div class="col-md-3" >
+
                                     <div class="row">
-                                        <div class="col-md-10">
+
+
+                                        {% for wrapper_step in wrapper_step_list %}
+                                            <div class="col-md-3">
                                                 <!-- BEGIN UNORDERED LISTS PORTLET-->
                                                 <div class="portlet box blue">
-                                                    <div class="portlet-title" style="height: 60px">
+                                                    <div class="portlet-title">
                                                         <div class="caption">
-                                                            三.启动应用服务 (角色)</div>
+                                                            {{ wrapper_step.wrapper_step_name }}
+                                                                    {% if wrapper_step.wrapper_step_group_name %}(
+                                                                        {{ wrapper_step.wrapper_step_group_name }}
+                                                                        ) {% endif %}
+                                                        </div>
                                                     </div>
                                                     <div class="portlet-body" style="height: 300px">
-                                                        <ol style="margin:5px;padding:0;">
-                                                            <li> 基础环境检查(角色)
-                                                                <ul>
-                                                                    <li> 网络连通性检查 </li>
-                                                                    <li> SSH服务状态检查 </li>
-                                                                    <li> ISCSI服务状态检查 </li>
-                                                                </ul>
-                                                            </li>
-                                                            <li> 数据库运行环境检查(角色)
-                                                                <ul>
-                                                                    <li> 数据库程序是否安装 </li>
-                                                                    <li> 数据库实例名是否正确 </li>
-                                                                    <li> 数据库服务是否停止 </li>
-                                                                    <li> 数据卷是否卸载 </li>
-                                                                </ul>
-                                                            </li>
-                                                            <li> 飞康保护状态检查(角色)
-                                                                <ul>
-                                                                    <li> 数据保护是否正常 </li>
-                                                                </ul>
-                                                            </li>
+                                                        {% for wrapper_script in wrapper_step.wrapper_script_list %}
+                                                            <ul>
+                                                                {{ wrapper_script.wrapper_script_name }}
+                                                            </ul>
+                                                        {% endfor %}
+                                                        <ol>
+                                                            {% for inner_step in wrapper_step.inner_step_list %}
+                                                                <li>{{ inner_step.inner_step_name }}
+                                                                        {% if inner_step.inner_step_group_name %}(
+                                                                            {{ inner_step.inner_step_group_name }}
+                                                                            ){% endif %}
+                                                                    <ul>
+                                                                        {% for inner_script in inner_step.inner_script_list %}
+                                                                            <li> {{ inner_script.inner_script_name }}</li>
+                                                                        {% endfor %}
+                                                                    </ul>
+                                                                </li>
+                                                            {% endfor %}
                                                         </ol>
                                                     </div>
                                                 </div>
-                                        </div>
-                                        <div class="col-md-2" style="height: 340px;line-height:340px;font-size: 30px;text-align: center">
-                                        <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
-                                </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3" >
-                                    <div class="row">
-                                        <div class="col-md-10">
-                                                <!-- BEGIN UNORDERED LISTS PORTLET-->
-                                                <div class="portlet box blue">
-                                                    <div class="portlet-title" style="height: 60px">
-                                                        <div class="caption">
-                                                            四.验证数据 (角色)</div>
-                                                    </div>
-                                                    <div class="portlet-body" style="height: 300px">
-                                                        <ol style="margin:5px;padding:0;">
-                                                            <li> 基础环境检查(角色)
-                                                                <ul>
-                                                                    <li> 网络连通性检查 </li>
-                                                                    <li> SSH服务状态检查 </li>
-                                                                    <li> ISCSI服务状态检查 </li>
-                                                                </ul>
-                                                            </li>
-                                                            <li> 数据库运行环境检查(角色)
-                                                                <ul>
-                                                                    <li> 数据库程序是否安装 </li>
-                                                                    <li> 数据库实例名是否正确 </li>
-                                                                    <li> 数据库服务是否停止 </li>
-                                                                    <li> 数据卷是否卸载 </li>
-                                                                </ul>
-                                                            </li>
-                                                            <li> 飞康保护状态检查(角色)
-                                                                <ul>
-                                                                    <li> 数据保护是否正常 </li>
-                                                                </ul>
-                                                            </li>
-                                                        </ol>
-                                                    </div>
+                                            </div>
+                                            {% if not forloop.last %}
+                                                <div class="col-md-1"
+                                                     style="height: 340px;line-height:340px;font-size: 60px;text-align: center">
+                                                    <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
                                                 </div>
-                                        </div>
-                                        <div class="col-md-2" style="height: 340px;line-height:340px;font-size: 30px;text-align: center">
-                                        <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
-                                </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3" >
-                                    <div class="row">
-                                        <div class="col-md-10">
-                                        <!-- BEGIN UNORDERED LISTS PORTLET-->
-                                        <div class="portlet box blue">
-                                            <div class="portlet-title" style="height: 60px">
-                                                <div class="caption">
-                                                    五.灾备环境关闭 (角色)</div>
-                                            </div>
-                                            <div class="portlet-body" style="height: 300px">
-                                                <ol style="margin:5px;padding:0;">
-                                                    <li> 基础环境检查(角色)
-                                                        <ul>
-                                                            <li> 网络连通性检查 </li>
-                                                            <li> SSH服务状态检查 </li>
-                                                            <li> ISCSI服务状态检查 </li>
-                                                        </ul>
-                                                    </li>
-                                                    <li> 数据库运行环境检查(角色)
-                                                        <ul>
-                                                            <li> 数据库程序是否安装 </li>
-                                                            <li> 数据库实例名是否正确 </li>
-                                                            <li> 数据库服务是否停止 </li>
-                                                            <li> 数据卷是否卸载 </li>
-                                                        </ul>
-                                                    </li>
-                                                    <li> 飞康保护状态检查(角色)
-                                                        <ul>
-                                                            <li> 数据保护是否正常 </li>
-                                                        </ul>
-                                                    </li>
-                                                </ol>
-                                            </div>
-                                        </div>
-                                </div>
-                                        <div class="col-md-2" style="height: 340px;line-height:340px;font-size: 30px;text-align: center">
-
-                                        </div>
+                                            {% endif %}
+                                        {% endfor %}
                                     </div>
                                 </div>
                             </div>
+
+
                         </div>
-                    </div>
 
-
-                </div>
-
-        <!-- END CONTENT BODY -->
-    </section>
-          </section>
+                        <!-- END CONTENT BODY -->
+                    </section>
+                </section>
+            </section>
         </section>
-      </section>
     </section>
-  </section>
-        <script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
-        <script src="/static/assets/global/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
-  <!-- App -->
-  <script src="/static/new/js/app.js"></script>
-  <script src="/static/new/js/slimscroll/jquery.slimscroll.min.js"></script>
-  <script src="/static/assets/global/plugins/jquery-validation/js/jquery.validate.js" type="text/javascript"></script>
-
-
+</section>
+<script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+<script src="/static/assets/global/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+<!-- App -->
+<script src="/static/new/js/app.js"></script>
+<script src="/static/new/js/slimscroll/jquery.slimscroll.min.js"></script>
+<script src="/static/assets/global/plugins/jquery-validation/js/jquery.validate.js" type="text/javascript"></script>
 
 
 </body>
-
 
 
 </html>

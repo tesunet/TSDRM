@@ -27,6 +27,7 @@ import pythoncom
 import pymssql
 from lxml import etree
 from django.forms.models import model_to_dict
+import re
 
 pythoncom.CoInitialize()
 import wmi
@@ -90,9 +91,14 @@ def getpagefuns(funid):
     curfun = Fun.objects.filter(id=int(funid))
     if len(curfun) > 0:
         myurl = curfun[0].url
+        jsurl = curfun[0].url
         if len(myurl) > 0:
             myurl = myurl[:-1]
-        mycurfun = {"id": curfun[0].id, "name": curfun[0].name, "url": myurl}
+            jsurl = jsurl[:-1]
+            if "falconstorswitch" in myurl:
+                compile_obj = re.compile(r"/.*/")
+                jsurl = compile_obj.findall(myurl)[0][:-1]
+        mycurfun = {"id": curfun[0].id, "name": curfun[0].name, "url": myurl, "jsurl": jsurl}
     return {"pagefuns": pagefuns, "curfun": mycurfun}
 
 
@@ -2322,6 +2328,8 @@ def falconstorswitch(request, funid, process_id):
             wrapper_step_dict["inner_step_list"] = inner_step_list
 
             wrapper_step_list.append(wrapper_step_dict)
+
+
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id})
@@ -2344,11 +2352,18 @@ def falconstorswitchdata(request):
         }
         for processrun_obj in all_processrun_objs:
             if processrun_obj.process.type == "falconstor":
+                create_user = processrun_obj.creatuser
+                create_user_fullname = ""
+                if create_user:
+                    try:
+                        create_user_fullname = UserInfo.objects.filter(user__username=create_user)[0].fullname
+                    except:
+                        create_user_fullname = ""
                 result.append({
                     "starttime": processrun_obj.starttime.strftime(
                         '%Y-%m-%d %H:%M:%S') if processrun_obj.starttime else "",
                     "endtime": processrun_obj.endtime.strftime('%Y-%m-%d %H:%M:%S') if processrun_obj.endtime else "",
-                    "createuser": processrun_obj.creatuser if processrun_obj.creatuser else "",
+                    "createuser": create_user_fullname,
                     "state": state_dict["{0}".format(processrun_obj.state)] if processrun_obj.state else "",
                     "process_id": processrun_obj.process_id if processrun_obj.process_id else "",
                     "processrun_id": processrun_obj.id if processrun_obj.id else "",
@@ -2711,7 +2726,7 @@ def get_current_scriptinfo(request):
             except:
                 pass
             try:
-                endtime = scriptrun_obj.starttime.strftime("%Y-%m-%d %H:%M:%S")
+                endtime = scriptrun_obj.endtime.strftime("%Y-%m-%d %H:%M:%S")
             except:
                 pass
             script_info = {
@@ -2752,8 +2767,6 @@ def custom_pdf_report(request):
     """
     processrun_id = request.GET.get("processrunid", "")
     process_id = request.GET.get("processid", "")
-    # processrun_id = 68
-    # process_id = 12
 
     # 构造数据
     # 1.获取当前流程对象
@@ -2903,12 +2916,14 @@ def custom_pdf_report(request):
         # ...需要审批时，添加负责人
         # if pstep.approval == "1":
         # 步骤负责人
-        users = User.objects.filter(username=pnode_steprun[0].operator)
-        if users:
-            operator = users[0].userinfo.fullname
-            second_el_dict["operator"] = operator
-        else:
-            second_el_dict["operator"] = ""
+        try:
+            users = User.objects.filter(username=pnode_steprun[0].operator)
+        except:
+            if users:
+                operator = users[0].userinfo.fullname
+                second_el_dict["operator"] = operator
+            else:
+                second_el_dict["operator"] = ""
 
         # 当前步骤下脚本
         state_dict = {
@@ -3114,8 +3129,7 @@ def custom_pdf_report(request):
 
     # 指定wkhtmltopdf运行程序路径
     current_path = os.getcwd()
-    wkhtmltopdf_path = current_path + os.sep + "cloud" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
-    # path_wk = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+    wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
     config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
 
     options = {
@@ -3127,8 +3141,7 @@ def custom_pdf_report(request):
         'encoding': "UTF-8",
         'no-outline': None
     }
-    css_path = current_path + os.sep + "cloud" + os.sep + "static" + os.sep + "new" + os.sep + "css" + os.sep + "bootstrap.css"
-    # css = [r"D:\Projects\Tesunet\cloud\static\new\css\bootstrap.css"]
+    css_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "new" + os.sep + "css" + os.sep + "bootstrap.css"
     css = [r"{0}".format(css_path)]
 
     pdfkit.from_string(t.content.decode(encoding="utf-8"), r"falconstor.pdf", configuration=config,
@@ -3273,3 +3286,131 @@ def download(request):
             return HttpResponseRedirect("/downloadlist")
     else:
         return HttpResponseRedirect("/login")
+
+
+def invite(request):
+    if request.user.is_authenticated():
+        # process_id = 12
+        process_id = request.GET.get("processid", "")
+        person_invited = request.GET.get("person_invited", "")
+        invite_reason = request.GET.get("invite_reason", "")
+        invite_time = request.GET.get("invite_time", "")
+
+        all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None)
+        wrapper_step_list = []
+        num_to_char_choices = {
+            "1": "一",
+            "2": "二",
+            "3": "三",
+            "4": "四",
+            "5": "五",
+            "6": "六",
+            "7": "七",
+            "8": "八",
+            "9": "九",
+        }
+        for num, wrapper_step in enumerate(all_wrapper_steps):
+            wrapper_step_dict = {}
+            wrapper_step_dict["wrapper_step_name"] = num_to_char_choices[
+                                                         "{0}".format(str(num + 1))] + "." + wrapper_step.name
+            wrapper_step_group_id = wrapper_step.group
+            try:
+                wrapper_step_group_id = int(wrapper_step_group_id)
+            except:
+                wrapper_step_group_id = None
+            wrapper_step_group = Group.objects.filter(id=wrapper_step_group_id)
+            if wrapper_step_group:
+                wrapper_step_group_name = wrapper_step_group[0].name
+            else:
+                wrapper_step_group_name = ""
+            wrapper_step_dict["wrapper_step_group_name"] = wrapper_step_group_name
+
+            wrapper_script_list = []
+            all_wrapper_scripts = wrapper_step.script_set.exclude(state="9")
+            for wrapper_script in all_wrapper_scripts:
+                wrapper_script_dict = {
+                    "wrapper_script_name": wrapper_script.name
+                }
+                wrapper_script_list.append(wrapper_script_dict)
+                wrapper_step_dict["wrapper_script_list"] = wrapper_script_list
+
+            pnode_id = wrapper_step.id
+            inner_step_list = []
+            all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id)
+            for inner_step in all_inner_steps:
+                inner_step_dict = {}
+                inner_step_dict["inner_step_name"] = inner_step.name
+
+                inner_step_group_id = inner_step.group
+                try:
+                    inner_step_group_id = int(inner_step_group_id)
+                except:
+                    inner_step_group_id = None
+                inner_step_group = Group.objects.filter(id=inner_step_group_id)
+                if inner_step_group:
+                    inner_step_group_name = inner_step_group[0].name
+                else:
+                    inner_step_group_name = ""
+                inner_step_dict["inner_step_group_name"] = inner_step_group_name
+
+                inner_script_list = []
+                all_inner_scripts = inner_step.script_set.exclude(state="9")
+                for inner_script in all_inner_scripts:
+                    inner_script_dict = {
+                        "inner_script_name": inner_script.name
+                    }
+                    inner_script_list.append(inner_script_dict)
+
+                inner_step_dict["inner_script_list"] = inner_script_list
+                inner_step_list.append(inner_step_dict)
+
+            wrapper_step_dict["inner_step_list"] = inner_step_list
+
+            wrapper_step_list.append(wrapper_step_dict)
+
+        t = TemplateResponse(request, 'notice.html', {"wrapper_step_list": wrapper_step_list, "person_invited":person_invited,"invite_reason": invite_reason, "invite_time": invite_time})
+        t.render()
+
+        # 指定wkhtmltopdf运行程序路径
+        current_path = os.getcwd()
+        wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
+        config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+
+        options = {
+            'page-size': 'A3',
+            'margin-top': '0.75in',
+            'margin-right': '0.75in',
+            'margin-bottom': '0.75in',
+            'margin-left': '0.75in',
+            'encoding': "UTF-8",
+            'no-outline': None
+        }
+        css_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "new" + os.sep + "css" + os.sep + "bootstrap.css"
+        css = [r"{0}".format(css_path)]
+
+        pdfkit.from_string(t.content.decode(encoding="utf-8"), r"invitation.pdf", configuration=config,
+                           options=options, css=css)
+
+        def file_iterator(file_name, chunk_size=512):
+            with open(file_name, "rb") as f:
+                while True:
+                    c = f.read(chunk_size)
+                    if c:
+                        yield c
+                    else:
+                        break
+
+        the_file_name = "invitation.pdf"
+        response = StreamingHttpResponse(file_iterator(the_file_name))
+        response['Content-Type'] = 'application/octet-stream; charset=unicode'
+        response['Content-Disposition'] = 'attachment;filename="{0}"'.format(the_file_name)
+        return response
+
+
+def get_all_users(request):
+    if request.user.is_authenticated():
+        all_users = UserInfo.objects.all()
+        user_string = ""
+        for user in all_users:
+            user_string += user.fullname + "&"
+        return JsonResponse({"data": user_string})
