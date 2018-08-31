@@ -2329,7 +2329,6 @@ def falconstorswitch(request, funid, process_id):
 
             wrapper_step_list.append(wrapper_step_dict)
 
-
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id})
@@ -3290,11 +3289,22 @@ def download(request):
 
 def invite(request):
     if request.user.is_authenticated():
-        # process_id = 12
-        process_id = request.GET.get("processid", "")
+        process_id = request.GET.get("process_id", "")
         person_invited = request.GET.get("person_invited", "")
-        invite_reason = request.GET.get("invite_reason", "")
-        invite_time = request.GET.get("invite_time", "")
+        purpose = request.GET.get("purpose", "")
+        invite_time = request.GET.get("perform_date", "")
+
+        current_processes = Process.objects.filter(id=process_id)
+        process_name = current_processes[0].name if current_processes else ""
+        current_user = UserInfo.objects.filter(fullname=person_invited)
+        all_groups = ""
+        if current_user:
+            current_groups = current_user[0].group.all()
+            for num, current_group in enumerate(current_groups):
+                if num == len(current_groups) - 1:
+                    all_groups += current_group.name
+                else:
+                    all_groups += current_group.name + "、"
 
         all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None)
         wrapper_step_list = []
@@ -3367,8 +3377,12 @@ def invite(request):
             wrapper_step_dict["inner_step_list"] = inner_step_list
 
             wrapper_step_list.append(wrapper_step_dict)
-
-        t = TemplateResponse(request, 'notice.html', {"wrapper_step_list": wrapper_step_list, "person_invited":person_invited,"invite_reason": invite_reason, "invite_time": invite_time})
+        # return render(request, 'notice.html',
+        #                      {"wrapper_step_list": wrapper_step_list, "person_invited": person_invited,
+        #                       "invite_reason": invite_reason, "invite_time": invite_time})
+        t = TemplateResponse(request, 'notice.html',
+                             {"wrapper_step_list": wrapper_step_list, "person_invited": person_invited,
+                              "purpose": purpose, "invite_time": invite_time, "all_groups": all_groups, "process_name": process_name})
         t.render()
 
         # 指定wkhtmltopdf运行程序路径
@@ -3385,11 +3399,18 @@ def invite(request):
             'encoding': "UTF-8",
             'no-outline': None
         }
-        css_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "new" + os.sep + "css" + os.sep + "bootstrap.css"
-        css = [r"{0}".format(css_path)]
+        css_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "new" + os.sep + "css"
+        css_01 = css_path + os.sep + "bootstrap.css"
+        # css_02 = css_path + os.sep + "font-awesome.min.css"
+        css_03 = css_path + os.sep + "icon.css"
+        # css_04 = css_path + os.sep + "font.css"
+        css_05 = css_path + os.sep + "app.css"
+        css_06 = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "assets" + os.sep + "global" + os.sep + "css" + os.sep + "components.css"
 
-        pdfkit.from_string(t.content.decode(encoding="utf-8"), r"invitation.pdf", configuration=config,
-                           options=options, css=css)
+        css = [r"{0}".format(mycss) for mycss in [css_01, css_03, css_05, css_06]]
+
+        pdfkit.from_string(t.content.decode(encoding="utf-8"), r"invitation.pdf", configuration=config, options=options,
+                           css=css)
 
         def file_iterator(file_name, chunk_size=512):
             with open(file_name, "rb") as f:
@@ -3409,7 +3430,7 @@ def invite(request):
 
 def get_all_users(request):
     if request.user.is_authenticated():
-        all_users = UserInfo.objects.all()
+        all_users = UserInfo.objects.exclude(user=None)
         user_string = ""
         for user in all_users:
             user_string += user.fullname + "&"

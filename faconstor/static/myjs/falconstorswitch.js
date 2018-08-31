@@ -89,14 +89,18 @@ $(document).ready(function () {
         $("#run_time").val(myDate.toLocaleString());
     })
     $("#invite").click(function () {
+        $("#person_link").hide();
+        // 清空邀请人，移除邀请pdf链接
         $("#person_invited").empty();
-        $("#invite_reason").val("");
+        $(".select2-selection__rendered").empty();
+        $("#invite_button").empty();
+
+        $("#person_invited").val();
+        $("#purpose").val("");
+        $("#perform_date").val("")
         var process_id = $("#process_id").val();
         $("#processid").val(process_id);
         $("#static01").modal({backdrop: "static"});
-        // 写入当前时间
-        var myDate = new Date();
-        $("#invite_time").val(myDate.toLocaleString());
 
         $.ajax({
             type: "POST",
@@ -115,5 +119,34 @@ $(document).ready(function () {
             }
         });
 
-    })
+    });
+
+    $("#generate").click(function () {
+        // 移除邀请pdf链接
+        $("#invite_button").empty();
+
+        var process_id = $("#process_id").val();
+        var person_invited = $("#person_invited").val();
+        var perform_date = $("#perform_date").val();
+        var purpose = $("#purpose").val();
+        var personList = person_invited;
+        if (person_invited == null) {
+            alert("邀请人必需填写！");
+        } else if (perform_date == "" || null) {
+            alert("演练时间不能为空！");
+        } else {
+            $("#person_link").show();
+            for (var i = 0; i < personList.length; i++) {
+                var person = personList[i];
+                j = i + 1;
+                $("#invite_button").append('<button type="button" class="btn btn-link"><a href="' + '/invite/?process_id=' + process_id + '&person_invited=' + person + '&perform_date=' + perform_date + '&purpose=' + purpose + '">' + '第 ' + j + ' 封' + '</a></button>');
+            }
+        }
+    });
+
+    $('#perform_date').datetimepicker({
+        autoclose: true,
+        minView: "month",
+        format: 'yyyy-mm-dd',
+    });
 });

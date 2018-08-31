@@ -6,44 +6,48 @@
     <div style="height:10px"></div>
 
     <div class="row">
-
-
         {% for wrapper_step in wrapper_step_list %}
             <div class="col-md-3">
-                <!-- BEGIN UNORDERED LISTS PORTLET-->
-                <div class="portlet box blue">
-                    <div class="portlet-title">
-                        <div class="caption">
-                            {{ wrapper_step.wrapper_step_name }}{% if wrapper_step.wrapper_step_group_name %}(
-                                {{ wrapper_step.wrapper_step_group_name }}) {% endif %}
+                <div class="row">
+
+                    <div class="col-md-10">
+                        <div class="portlet box blue">
+                            <div class="portlet-title" style="height: 60px">
+                                <div class="caption">
+                                    {{ wrapper_step.wrapper_step_name }}{% if wrapper_step.wrapper_step_group_name %}(
+                                        {{ wrapper_step.wrapper_step_group_name }}) {% endif %}
+                                </div>
+                            </div>
+                            <div class="portlet-body" style="height: 300px">
+                                {% for wrapper_script in wrapper_step.wrapper_script_list %}
+                                    <ul>
+                                        {{ wrapper_script.wrapper_script_name }}
+                                    </ul>
+                                {% endfor %}
+                                <ol style="margin:5px;padding:0;">
+                                    {% for inner_step in wrapper_step.inner_step_list %}
+                                        <li> {{ inner_step.inner_step_name }}{% if inner_step.inner_step_group_name %}(
+                                            {{ inner_step.inner_step_group_name }}){% endif %}
+                                            <ul>
+                                                {% for inner_script in inner_step.inner_script_list %}
+                                                    <li> {{ inner_script.inner_script_name }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </li>
+                                    {% endfor %}
+                                </ol>
+                            </div>
                         </div>
                     </div>
-                    <div class="portlet-body" style="height: 300px">
-                        {% for wrapper_script in wrapper_step.wrapper_script_list %}
-                            <ul>
-                                {{ wrapper_script.wrapper_script_name }}
-                            </ul>
-                        {% endfor %}
-                        <ol>
-                            {% for inner_step in wrapper_step.inner_step_list %}
-                                <li>{{ inner_step.inner_step_name }}{% if inner_step.inner_step_group_name %}(
-                                    {{ inner_step.inner_step_group_name }}){% endif %}
-                                    <ul>
-                                        {% for inner_script in inner_step.inner_script_list %}
-                                            <li> {{ inner_script.inner_script_name }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                </li>
-                            {% endfor %}
-                        </ol>
-                    </div>
+                    {% if not forloop.last %}
+                        <div class="col-md-2"
+                             style="height: 340px;line-height:340px;font-size: 30px;text-align: center">
+                            <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
+                        </div>
+                    {% endif %}
+
                 </div>
             </div>
-            {% if not forloop.last %}
-                <div class="col-md-1" style="height: 340px;line-height:340px;font-size: 60px;text-align: center">
-                    <i class="fa fa-chevron-circle-right " style="color:#3498db"></i>
-                </div>
-            {% endif %}
         {% endfor %}
     </div>
 
@@ -64,7 +68,7 @@
                         启动
                         <i class="fa fa-plus"></i>
                     </button>
-                    <button id="invite" type="button" class="btn  red">
+                    <button id="invite" type="button" class="btn blue">
                         邀请
                         <i class="fa fa-plus"></i>
                     </button>
@@ -134,8 +138,7 @@
                             </div>
 
                             <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>启动原因</label>
+                                <label class="col-md-2 control-label">启动原因</label>
                                 <div class="col-md-10">
                                             <textarea class="form-control" placeholder="最大限制2500个汉字" rows="6"
                                                       id="run_reason" name="run_reason"></textarea>
@@ -161,7 +164,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                    <h4 class="modal-title">飞康启动流程</h4>
+                    <h4 class="modal-title">飞康邀请函</h4>
                     <input hidden id="id" type="text" name="id">
                     <input hidden id="processid" type="text" name="processid">
                 </div>
@@ -175,28 +178,27 @@
                                         style="color:red; ">*</span>邀请人</label>
                                 <div class="col-md-10">
                                     <select id="person_invited" name="person_invited" placeholder="test test"
-                                            class="form-control select2">
+                                            class="form-control select2" multiple>
 
                                     </select>
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group ">
                                 <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>邀请时间</label>
+                                        style="color:red; ">*</span>演练时间</label>
                                 <div class="col-md-10">
-                                    <input id="invite_time" type="text" name="invite_time" class="form-control"
-                                           placeholder="" readonly>
+                                    <input id="perform_date" value="{{ perform_date }}" autocomplete="off"
+                                           name="perform_date"
+                                           class="form-control">
                                     <div class="form-control-focus"></div>
-
                                 </div>
                             </div>
 
                             <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>邀请原因</label>
+                                <label class="col-md-2 control-label">演练目的</label>
                                 <div class="col-md-10">
                                             <textarea class="form-control" placeholder="最大限制2500个汉字" rows="6"
-                                                      id="invite_reason" name="invite_reason"></textarea>
+                                                      id="purpose" name="purpose"></textarea>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
@@ -205,7 +207,15 @@
                             <div class="modal-footer">
                                 <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
                                 </button>
-                                <button type="button" id="download" name="download" class="btn red"><a href="/invite/"></a>下载</button>
+                                <button type="button" id="generate" name="generate" class="btn blue">生成
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-actions" id="person_link" hidden>
+                            <div class="modal-footer">
+                                <div class="btn-group" id="invite_button">
+
+                                </div>
                             </div>
                         </div>
                     </form>
@@ -241,6 +251,14 @@
     <script src="/static/assets/global/plugins/jstree/dist/jstree.min.js" type="text/javascript"></script>
     <script src="/static/assets/global/plugins/jquery-multi-select/js/jquery.multi-select.js"
             type="text/javascript"></script>
+
+    <link href="/static/assets/global/plugins/jquery-multi-select/css/multi-select.css" rel="stylesheet"
+          type="text/css"/>
+    <script src="/static/assets/global/plugins/jquery-multi-select/js/jquery.quicksearch.js"
+            type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js"
+            type="text/javascript"></script>
+
 
 
 {% endblock %}
