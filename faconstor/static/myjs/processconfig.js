@@ -1236,7 +1236,7 @@ $('#save').click(function () {
                             }
 
                             if (data.node.data.verify != "first_node") {
-                                var verifyItemsList = data.node.data.verify_items.split("&");
+                                var verifyItemsList = data.node.data.verifyitems.split("&");
                                 for (var i = 0; i < verifyItemsList.length - 1; i++) {
                                     var singleVerifyItemsList = verifyItemsList[i].split("+");
                                     $("#se_2").append('<option value="' + singleVerifyItemsList[0] + '">' + singleVerifyItemsList[1] + '</option>')

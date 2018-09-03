@@ -150,7 +150,6 @@ def index(request, funid):
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
             "-starttime").all()
-        print(allprosstasks)
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 send_time = task.starttime
@@ -213,9 +212,87 @@ def index(request, funid):
                 alltask.append({"content": task.content, "myurl": myurl, "time": time, "pop": pop, "task_id": task_id,
                                 "process_name": process_name, "send_time": send_time,
                                 "process_run_reason": process_run_reason, "group_name": guoups[0].name})
+
+        # 成功率，恢复次数，平均RTO，最新切换
+        all_processrun_objs = ProcessRun.objects.filter(state="DONE")
+        successful_processruns = ProcessRun.objects.filter(state="DONE")
+        if all_processrun_objs:
+            success_rate = "%.0f" % (len(successful_processruns) / len(all_processrun_objs) * 100)
+            last_processrun_time = all_processrun_objs.last().starttime
+            all_processruns = len(all_processrun_objs)
+            all_rto = 0
+            for processrun in successful_processruns:
+                end_time = processrun.endtime
+                start_time = processrun.starttime
+                if end_time and start_time:
+                    delta_time = (end_time - start_time)
+                    rto = delta_time.total_seconds()
+                    all_rto += rto
+
+            m, s = divmod(all_rto, 60)
+            h, m = divmod(m, 60)
+            average_rto = "%d时%02d分%02d秒" % (h, m, s)
+
+        else:
+            success_rate = 0
+            last_processrun_time = ""
+            all_processruns = 0
+            average_rto = "0时0分0秒"
+
+        # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
+        current_processrun = ProcessRun.objects.filter(state="RUN")
+        start_time_strftime = ""
+        current_delta_time = ""
+        current_step_name = ""
+        current_process_name = ""
+        current_operator = ""
+        current_step_index = ""
+        all_steps = []
+        if current_processrun:
+            process_id = current_processrun[0].process_id
+            current_process_name = current_processrun[0].process.name
+            start_time = current_processrun[0].starttime.replace(tzinfo=None)
+            start_time_strftime = start_time.strftime('%Y-%m-%d %H:%M:%S')
+            current_time = datetime.datetime.now()
+            current_delta_time = (current_time - start_time).total_seconds()
+            m, s = divmod(current_delta_time, 60)
+            h, m = divmod(m, 60)
+            current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
+            current_processrun_id = current_processrun[0].id
+            all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
+            for num, steprun in enumerate(all_stepruns):
+                if steprun.state == "RUN":
+                    current_step_index = num
+                    current_step_name = steprun.step.name
+                    # 负责角色
+                    group_id = steprun.step.group
+                    if group_id:
+                        group_name = Group.objects.filter(id=int(group_id))[0].name
+
+                        users_from_group = Group.objects.filter(id=int(group_id))[0].userinfo_set.all().values_list("fullname")
+                        users = ""
+                        for num, user in enumerate(users_from_group):
+                            users += user[0] + "、"
+
+                        users = "({0})".format(users[:-1])
+                    else:
+                        group_name = ""
+                        users = ""
+                    break
+
+            all_steps = Step.objects.exclude(state="9").filter(process_id=process_id).values_list("name")
+            # 总体进度
+            process_rate = "%02d" % ((current_step_index + 1) / len(all_steps) * 100)
+
         return render(request, "index.html",
                       {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
-                       "pagefuns": getpagefuns(funid)})
+                       "pagefuns": getpagefuns(funid), "success_rate": success_rate, "all_processruns": all_processruns,
+                       "last_processrun_time": last_processrun_time, "average_rto": average_rto,
+                       "start_time_strftime": start_time_strftime,
+                       "current_delta_time": current_delta_time, "current_step_name": current_step_name,
+                       "current_process_name": current_process_name,
+                       "all_steps": all_steps, "current_step_index": current_step_index, "process_rate": process_rate,
+                       "group_name": group_name, "users": users})
     else:
         return HttpResponseRedirect("/login")
 
@@ -2457,7 +2534,7 @@ def falconstorrun(request):
                             myprocesstask.content = myprocess.name + " 流程已启动，点击查看。"
                             myprocesstask.save()
 
-                            exec_process.delay(myprocessrun.id)
+                            # exec_process.delay(myprocessrun.id)
                             result["res"] = "新增成功。"
                             result["data"] = process[0].url + "/" + str(myprocessrun.id)
         return HttpResponse(json.dumps(result))
@@ -2638,7 +2715,7 @@ def falconstorcontinue(request):
             process = int(process)
         except:
             raise Http404()
-        exec_process.delay(process)
+        # exec_process.delay(process)
         result["res"] = "执行成功。"
         return HttpResponse(json.dumps(result))
 
@@ -2681,7 +2758,7 @@ def processsignsave(request):
                 myprocesstask.senduser = request.user.username
                 myprocesstask.save()
 
-                exec_process.delay(myprocessrun.id)
+                # exec_process.delay(myprocessrun.id)
                 result["res"] = "签字成功,同时启动流程。"
                 result["data"] = myprocess.url + "/" + str(myprocessrun.id)
             else:
@@ -2912,8 +2989,6 @@ def custom_pdf_report(request):
             else:
                 second_el_dict["rto"] = ""
 
-        # ...需要审批时，添加负责人
-        # if pstep.approval == "1":
         # 步骤负责人
         try:
             users = User.objects.filter(username=pnode_steprun[0].operator)
@@ -3382,7 +3457,8 @@ def invite(request):
         #                       "invite_reason": invite_reason, "invite_time": invite_time})
         t = TemplateResponse(request, 'notice.html',
                              {"wrapper_step_list": wrapper_step_list, "person_invited": person_invited,
-                              "purpose": purpose, "invite_time": invite_time, "all_groups": all_groups, "process_name": process_name})
+                              "purpose": purpose, "invite_time": invite_time, "all_groups": all_groups,
+                              "process_name": process_name})
         t.render()
 
         # 指定wkhtmltopdf运行程序路径
