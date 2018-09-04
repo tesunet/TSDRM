@@ -2,7 +2,71 @@ var Dashboard = function () {
 
     return {
 
+        initHighChart: function () {
+            var chart;
+            $(document).ready(function () {
+                chart = new Highcharts.Chart({
+                    chart: {
+                        renderTo: 'highchart_1',
+                        style: {
+                            fontFamily: 'Open Sans'
+                        }
+                    },
+                    title: {
+                        text: '最近切换RTO',
+                        x: -20 //center
+                    },
 
+                    xAxis: {
+                        categories: ['1', '2', '3', '4', '5', '6',
+                            '7', '8', '9', '10', '11', '12']
+                    },
+                    colors: [
+                        '#3598dc',
+                        '#e7505a',
+                        '#32c5d2',
+                        '#8e44ad',
+                    ],
+                    yAxis: {
+                        title: {
+                            text: 'RTO (分钟)'
+                        },
+                        plotLines: [{
+                            value: 0,
+                            width: 1,
+                            color: '#808080'
+                        }]
+                    },
+                    tooltip: {
+                        valueSuffix: '分钟'
+                    },
+                    legend: {
+                        layout: 'vertical',
+                        align: 'right',
+                        verticalAlign: 'middle',
+                        borderWidth: 0
+                    },
+                    series: [{}]
+                })
+            });
+            $.ajax({
+                type: "GET",
+                url: "../get_process_rto/",
+                success: function (data) {
+                    while (chart.series.length > 0) {
+                        chart.series[0].remove(true);
+                    }
+                    for (var i = 0; i < data.data.length; i++) {
+                        chart.addSeries({
+                            "name": data.data[i].process_name,
+                            "data": data.data[i].current_rto_list,
+                            "color": data.data[i].color,
+                        });
+                    }
+                }
+
+            });
+        },
 
         initCalendar: function () {
             if (!jQuery().fullCalendar) {
@@ -38,18 +102,18 @@ var Dashboard = function () {
                 disableDragging: false,
                 header: h,
                 editable: true,
-                monthNames:['一月', '二月', '三月', '四月', '五月', '六月', '七月',
-                            '八月', '九月', '十月', '十一月', '十二月'],
-                dayNames:['星期一', '星期二', '星期三', '星期四',
-                         '星期五', '星期六', '星期天'],
-                dayNamesShort:['星期一', '星期二', '星期三', '星期四',
-                         '星期五', '星期六', '星期天'],
-                buttonText:{
-                    today:    '回到当日',
-                    month:    '月',
-                    week:     '周',
-                    day:      '日',
-                    list:     'list'
+                monthNames: ['一月', '二月', '三月', '四月', '五月', '六月', '七月',
+                    '八月', '九月', '十月', '十一月', '十二月'],
+                dayNames: ['星期一', '星期二', '星期三', '星期四',
+                    '星期五', '星期六', '星期天'],
+                dayNamesShort: ['星期一', '星期二', '星期三', '星期四',
+                    '星期五', '星期六', '星期天'],
+                buttonText: {
+                    today: '回到当日',
+                    month: '月',
+                    week: '周',
+                    day: '日',
+                    list: 'list'
                 },
                 events: [{
                     title: '系统1恢复',
@@ -436,10 +500,10 @@ var Dashboard = function () {
         },
 
 
-
         init: function () {
 
             this.initCalendar();
+            this.initHighChart();
 
             this.initAmChart1();
             this.initAmChart2();
@@ -450,7 +514,7 @@ var Dashboard = function () {
     };
 
 }();
-   
+
 if (App.isAngularJsApp() === false) {
     jQuery(document).ready(function () {
         Dashboard.init(); // init metronic core componets
@@ -595,7 +659,7 @@ $("#sign_save").click(function () {
             }
             else
                 alert(data["res"]);
-                $('#static01').modal('hide');
+            $('#static01').modal('hide');
         },
         error: function (e) {
             alert("流程启动失败，请于管理员联系。");

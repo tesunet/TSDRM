@@ -214,12 +214,15 @@ def index(request, funid):
                                 "process_run_reason": process_run_reason, "group_name": guoups[0].name})
 
         # 成功率，恢复次数，平均RTO，最新切换
-        all_processrun_objs = ProcessRun.objects.filter(state="DONE")
+        all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
         successful_processruns = ProcessRun.objects.filter(state="DONE")
-        if all_processrun_objs:
-            success_rate = "%.0f" % (len(successful_processruns) / len(all_processrun_objs) * 100)
-            last_processrun_time = all_processrun_objs.last().starttime
-            all_processruns = len(all_processrun_objs)
+        processrun_times_obj = ProcessRun.objects.exclude(state="RUN")
+
+        success_rate = "%.0f" % (len(successful_processruns) / len(
+            all_processrun_objs) * 100) if all_processrun_objs and successful_processruns else 0
+        last_processrun_time = successful_processruns.last().starttime if successful_processruns else ""
+        all_processruns = len(processrun_times_obj) if processrun_times_obj else 0
+        if successful_processruns:
             all_rto = 0
             for processrun in successful_processruns:
                 end_time = processrun.endtime
@@ -234,67 +237,163 @@ def index(request, funid):
             average_rto = "%d时%02d分%02d秒" % (h, m, s)
 
         else:
-            success_rate = 0
-            last_processrun_time = ""
-            all_processruns = 0
             average_rto = "0时0分0秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-        current_processrun = ProcessRun.objects.filter(state="RUN")
-        start_time_strftime = ""
-        current_delta_time = ""
-        current_step_name = ""
-        current_process_name = ""
-        current_operator = ""
-        current_step_index = ""
-        all_steps = []
-        if current_processrun:
-            process_id = current_processrun[0].process_id
-            current_process_name = current_processrun[0].process.name
-            start_time = current_processrun[0].starttime.replace(tzinfo=None)
-            start_time_strftime = start_time.strftime('%Y-%m-%d %H:%M:%S')
-            current_time = datetime.datetime.now()
-            current_delta_time = (current_time - start_time).total_seconds()
-            m, s = divmod(current_delta_time, 60)
-            h, m = divmod(m, 60)
-            current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
-            current_processrun_id = current_processrun[0].id
-            all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
-            for num, steprun in enumerate(all_stepruns):
-                if steprun.state == "RUN":
-                    current_step_index = num
-                    current_step_name = steprun.step.name
+        current_processruns = ProcessRun.objects.filter(state="RUN")
+        curren_processrun_info_list = []
+        if current_processruns:
+            for current_processrun in current_processruns:
+                current_processrun_dict = {}
+                start_time_strftime = ""
+                current_delta_time = ""
+                current_step_name = ""
+                current_process_name = ""
+                current_step_index = ""
+                all_steps = []
+                group_name = ""
+                users = ""
+                process_id = current_processrun.process_id
+                current_process_name = current_processrun.process.name
+                start_time = current_processrun.starttime.replace(tzinfo=None)
+                start_time_strftime = start_time.strftime('%Y-%m-%d %H:%M:%S')
+                current_time = datetime.datetime.now()
+                current_delta_time = (current_time - start_time).total_seconds()
+                m, s = divmod(current_delta_time, 60)
+                h, m = divmod(m, 60)
+                current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
+                current_processrun_id = current_processrun.id
+                all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
+
+                if all_stepruns[0].state == "RUN":
+                    current_step_index = 1
+                    for num, steprun in enumerate(all_stepruns[:3]):
+                        if num == 0:
+                            current_step_name = steprun.step.name
+                            # 负责角色
+                            group_id = steprun.step.group
+                            if group_id:
+                                group_name = Group.objects.filter(id=int(group_id))[0].name
+                                users_from_group = Group.objects.filter(id=int(group_id))[
+                                    0].userinfo_set.all().values_list(
+                                    "fullname")
+                                users = ""
+                                for num, user in enumerate(users_from_group):
+                                    users += user[0] + "、"
+                                users = "({0})".format(users[:-1])
+                        all_steps.append(steprun.step.name)
+                elif all_stepruns[len(all_stepruns) - 1].state == "RUN" and all_stepruns[
+                    len(all_stepruns) - 2].state == "DONE":
+                    current_step_index = len(all_stepruns)
+                    for num, steprun in enumerate(all_stepruns[len(all_stepruns) - 3:]):
+                        if num == len(all_stepruns[len(all_stepruns) - 3:]) - 1:
+                            current_step_name = steprun.step.name
+                            # 负责角色
+                            group_id = steprun.step.group
+                            if group_id:
+                                group_name = Group.objects.filter(id=int(group_id))[0].name
+                                users_from_group = Group.objects.filter(id=int(group_id))[
+                                    0].userinfo_set.all().values_list(
+                                    "fullname")
+                                users = ""
+                                for num, user in enumerate(users_from_group):
+                                    users += user[0] + "、"
+                                users = "({0})".format(users[:-1])
+                        all_steps.append(steprun.step.name)
+                else:
+                    currentrun_step = all_stepruns.filter(state="RUN").first()
+                    current_step_name = currentrun_step.step.name
+
                     # 负责角色
-                    group_id = steprun.step.group
+                    group_id = currentrun_step.step.group
                     if group_id:
                         group_name = Group.objects.filter(id=int(group_id))[0].name
-
-                        users_from_group = Group.objects.filter(id=int(group_id))[0].userinfo_set.all().values_list("fullname")
+                        users_from_group = Group.objects.filter(id=int(group_id))[
+                            0].userinfo_set.all().values_list(
+                            "fullname")
                         users = ""
                         for num, user in enumerate(users_from_group):
                             users += user[0] + "、"
-
                         users = "({0})".format(users[:-1])
-                    else:
-                        group_name = ""
-                        users = ""
-                    break
 
-            all_steps = Step.objects.exclude(state="9").filter(process_id=process_id).values_list("name")
-            # 总体进度
-            process_rate = "%02d" % ((current_step_index + 1) / len(all_steps) * 100)
+                    # 前一个后一个名称
+                    current_num = ""
+                    for num, steprun in enumerate(all_stepruns):
+                        if steprun.state == "RUN":
+                            current_num = num
+                            break
+                    for num, steprun in enumerate(all_stepruns):
+                        if num == current_num - 1 or num == current_num + 1 or num == current_num:
+                            all_steps.append(steprun.step.name)
+                    current_step_index = current_num + 1
+
+                total_steps = Step.objects.exclude(state="9").filter(process_id=process_id).values_list("name")
+                # 总体进度
+                process_rate = "%02d" % (current_step_index / len(total_steps) * 100) if current_step_index else ""
+
+                current_processrun_dict["current_processrun_dict"] = current_processrun_dict
+                current_processrun_dict["start_time_strftime"] = start_time_strftime
+                current_processrun_dict["current_delta_time"] = current_delta_time
+                current_processrun_dict["current_process_name"] = current_process_name
+                current_processrun_dict["current_step_index"] = current_step_index
+                current_processrun_dict["all_steps"] = all_steps
+                current_processrun_dict["process_rate"] = process_rate
+                current_processrun_dict["current_step_name"] = current_step_name
+                current_processrun_dict["group_name"] = group_name
+                current_processrun_dict["users"] = users
+                curren_processrun_info_list.append(current_processrun_dict)
+
+        # 系统切换成功率
+        all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
+        process_success_rate_list = []
+        if all_processes:
+            for process in all_processes:
+                process_name = process.name
+                all_processrun_list = process.processrun_set.filter(Q(state="DONE") | Q(state="STOP"))
+                successful_processruns = process.processrun_set.filter(state="DONE")
+                current_process_success_rate = "%.0f" % (len(successful_processruns) / len(
+                    all_processrun_list) * 100) if all_processrun_list and successful_processruns else 0
+
+                process_dict = {
+                    "process_name": process_name,
+                    "current_process_success_rate": current_process_success_rate,
+                    "color": process.color
+                }
+                process_success_rate_list.append(process_dict)
 
         return render(request, "index.html",
                       {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
                        "pagefuns": getpagefuns(funid), "success_rate": success_rate, "all_processruns": all_processruns,
                        "last_processrun_time": last_processrun_time, "average_rto": average_rto,
-                       "start_time_strftime": start_time_strftime,
-                       "current_delta_time": current_delta_time, "current_step_name": current_step_name,
-                       "current_process_name": current_process_name,
-                       "all_steps": all_steps, "current_step_index": current_step_index, "process_rate": process_rate,
-                       "group_name": group_name, "users": users})
+                       "curren_processrun_info_list": curren_processrun_info_list, "process_success_rate_list": process_success_rate_list})
     else:
         return HttpResponseRedirect("/login")
+
+
+def get_process_rto(request):
+    if request.user.is_authenticated():
+        # 不同流程最近的12次切换RTO
+        all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
+        process_rto_list = []
+        if all_processes:
+            for process in all_processes:
+                process_name = process.name
+                processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
+                current_rto_list = []
+                for processrun_rto_obj in processrun_rto_obj_list:
+                    start_time = processrun_rto_obj.starttime
+                    end_time = processrun_rto_obj.endtime
+                    delta_time = (end_time - start_time).total_seconds()
+                    current_rto = int("%.2d" % (delta_time / 60))
+                    current_rto_list.append(current_rto)
+                process_dict = {
+                    "process_name": process_name,
+                    "current_rto_list": current_rto_list,
+                    "color": process.color
+                }
+                process_rto_list.append(process_dict)
+
+        return JsonResponse({"data": process_rto_list if len(process_rto_list) <= 12 else process_rto_list[-12:]})
 
 
 def login(request):

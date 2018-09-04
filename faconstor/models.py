@@ -49,6 +49,7 @@ class Process(models.Model):
     sort = models.IntegerField("排序", blank=True, null=True)
     url = models.CharField("页面链接", blank=True, max_length=100)
     type = models.CharField("预案类型", blank=True, max_length=100, null=True)
+    color = models.CharField("颜色", blank=True, max_length=50)
 
 
 class Step(models.Model):

@@ -11,181 +11,191 @@
         <div class="page-content">
             <!-- BEGIN PAGE HEADER-->
             <!-- BEGIN THEME PANEL -->
-
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="portlet light portlet-fit bordered">
-                        <div class="portlet-title">
-                            <div class="caption">
-                                <i class=" icon-layers font-green"></i>
-                                <span class="caption-subject font-green bold uppercase">正在切换</span>
-                            </div>
-                        </div>
-                        <div class="portlet-body">
-                            <div class="mt-element-step">
-                                <div class="row step-line">
-                                    <div class="mt-step-desc">
-                                        <div class="font-dark bold uppercase">{{ current_process_name }}</div>
-                                        <div class="caption-desc font-grey-cascade"> 启动时间: <span
-                                                class="timeline-body-alerttitle font-green-haze">{{ start_time_strftime }}</span>，已运行
-                                            <span class="timeline-body-alerttitle font-green-haze">{{ current_delta_time }}</span>
-                                            ，当前阶段 <span
-                                                    class="timeline-body-alerttitle font-green-haze">{{ current_step_name }}</span>
-                                            ，当前负责角色 <span
-                                                    class="timeline-body-alerttitle font-green-haze">{{ group_name }}{{ users }}。</span>
-                                        </div>
-                                        <br/></div>
-                                    <div class="col-md-8">
-
-                                        <div class="row">
-                                            {% for step in all_steps %}
-                                                {% if forloop.counter0 >= current_step_index and forloop.counter0|add:-3 < current_step_index %}
-                                                <div class="col-md-4 mt-step-col {% if forloop.counter0 == current_step_index%}done{% endif %}{% if forloop.counter0|add:-1 == current_step_index%}active{% endif %}">
-                                                    <div class="mt-step-number bg-white">{{ forloop.counter }}</div>
-                                                    <div class="mt-step-title uppercase font-grey-cascade">{{ step.0 }}</div>
-                                                    <div class="mt-step-content font-grey-cascade"></div>
-                                                </div>
-                                                {% endif %}
-                                            {% endfor %}
-                                            <div class="col-md-12" style="text-align:center">
-                                                <div class="progress progress-striped active">
-                                                    <div class="progress-bar progress-bar-success" role="progressbar"
-                                                         aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"
-                                                         style="width: {{ process_rate }}%;">
-                                                        <span class="sr-only">{{ process_rate }}% 完成</span>
-                                                    </div>
-                                                </div>
-                                                <div style="font-size:18px" class="text-success">总体进度:{{ process_rate }}%</div>
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-                                    <div class="col-md-4">
-                                        <ul class="feeds">
-                                            <li>
-                                                <div class="col1">
-                                                    <div class="cont">
-                                                        <div class="cont-col1">
-                                                            <div class="label label-sm label-info">
-                                                                <i class="fa fa-check"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="cont-col2">
-                                                            <div class="desc"> You have 4 pending tasks.
-
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col2">
-                                                    <div class="date"> Just now</div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:;">
-                                                    <div class="col1">
-                                                        <div class="cont">
-                                                            <div class="cont-col1">
-                                                                <div class="label label-sm label-success">
-                                                                    <i class="fa fa-bar-chart-o"></i>
-                                                                </div>
-                                                            </div>
-                                                            <div class="cont-col2">
-                                                                <div class="desc"> Finance Report for year 2013 has been
-                                                                    released.
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col2">
-                                                        <div class="date"> 20 mins</div>
-                                                    </div>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <div class="col1">
-                                                    <div class="cont">
-                                                        <div class="cont-col1">
-                                                            <div class="label label-sm label-danger">
-                                                                <i class="fa fa-user"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="cont-col2">
-                                                            <div class="desc"> You have 5 pending membership that a
-                                                                quick review.
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col2">
-                                                    <div class="date"> 24 mins</div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="col1">
-                                                    <div class="cont">
-                                                        <div class="cont-col1">
-                                                            <div class="label label-sm label-info">
-                                                                <i class="fa fa-shopping-cart"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="cont-col2">
-                                                            <div class="desc"> New order received with
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col2">
-                                                    <div class="date"> 30 mins</div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="col1">
-                                                    <div class="cont">
-                                                        <div class="cont-col1">
-                                                            <div class="label label-sm label-success">
-                                                                <i class="fa fa-user"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="cont-col2">
-                                                            <div class="desc"> You have 5 pending that requires a quick
-                                                                review.
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col2">
-                                                    <div class="date"> 24 mins</div>
-                                                </div>
-                                            </li>
-                                            <li>
-                                                <div class="col1">
-                                                    <div class="cont">
-                                                        <div class="cont-col1">
-                                                            <div class="label label-sm label-default">
-                                                                <i class="fa fa-bell-o"></i>
-                                                            </div>
-                                                        </div>
-                                                        <div class="cont-col2">
-                                                            <div class="desc"> 系统启动
-
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col2">
-                                                    <div class="date"> 2 hours</div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                    </div>
+            {% if curren_processrun_info_list %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="portlet light portlet-fit bordered">
+                            <div class="portlet-title">
+                                <div class="caption">
+                                    <i class=" icon-layers font-green"></i>
+                                    <span class="caption-subject font-green bold uppercase">正在切换</span>
                                 </div>
                             </div>
+
+                            {% for current_processrun in curren_processrun_info_list %}
+                                <div class="portlet-body">
+                                    <div class="mt-element-step">
+                                        <div class="row step-line">
+                                            <div class="mt-step-desc">
+                                                <div class="font-dark bold uppercase">{{ current_processrun.current_process_name }}</div>
+                                                <div class="caption-desc font-grey-cascade"> 启动时间: <span
+                                                        class="timeline-body-alerttitle font-green-haze">{{ current_processrun.start_time_strftime }}</span>，已运行
+                                                    <span class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_delta_time }}</span>
+                                                    ，当前阶段 <span
+                                                            class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_step_name }}</span>
+                                                    ，当前负责角色 <span
+                                                            class="timeline-body-alerttitle font-green-haze">{{ current_processrun.group_name }}{{ current_processrun.users }}。</span>
+                                                </div>
+                                                <br/></div>
+                                            <div class="col-md-8">
+
+                                                <div class="row">
+                                                    {% for step in current_processrun.all_steps %}
+                                                        <div class="col-md-4 mt-step-col {% if forloop.counter == 1 %}done{% endif %}{% if forloop.counter == 2 %}active{% endif %}">
+                                                            <div class="mt-step-number bg-white">{{ forloop.counter }}</div>
+                                                            <div class="mt-step-title uppercase font-grey-cascade">{{ step }}</div>
+                                                            <div class="mt-step-content font-grey-cascade"></div>
+                                                        </div>
+                                                    {% endfor %}
+                                                    <div class="col-md-12" style="text-align:center">
+                                                        <div class="progress progress-striped active">
+                                                            <div class="progress-bar progress-bar-success"
+                                                                 role="progressbar"
+                                                                 aria-valuenow="60" aria-valuemin="0"
+                                                                 aria-valuemax="100"
+                                                                 style="width: {{ current_processrun.process_rate }}%;">
+                                                                <span class="sr-only">{{ current_processrun.process_rate }}% 完成</span>
+                                                            </div>
+                                                        </div>
+                                                        <div style="font-size:18px" class="text-success">
+                                                            总体进度:{{ current_processrun.process_rate }}%
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                            <div class="col-md-4">
+                                                <ul class="feeds">
+                                                    <li>
+                                                        <div class="col1">
+                                                            <div class="cont">
+                                                                <div class="cont-col1">
+                                                                    <div class="label label-sm label-info">
+                                                                        <i class="fa fa-check"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="cont-col2">
+                                                                    <div class="desc"> You have 4 pending tasks.
+
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col2">
+                                                            <div class="date"> Just now</div>
+                                                        </div>
+                                                    </li>
+                                                    <li>
+                                                        <a href="javascript:;">
+                                                            <div class="col1">
+                                                                <div class="cont">
+                                                                    <div class="cont-col1">
+                                                                        <div class="label label-sm label-success">
+                                                                            <i class="fa fa-bar-chart-o"></i>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="cont-col2">
+                                                                        <div class="desc"> Finance Report for year 2013
+                                                                            has been
+                                                                            released.
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col2">
+                                                                <div class="date"> 20 mins</div>
+                                                            </div>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <div class="col1">
+                                                            <div class="cont">
+                                                                <div class="cont-col1">
+                                                                    <div class="label label-sm label-danger">
+                                                                        <i class="fa fa-user"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="cont-col2">
+                                                                    <div class="desc"> You have 5 pending membership
+                                                                        that a
+                                                                        quick review.
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col2">
+                                                            <div class="date"> 24 mins</div>
+                                                        </div>
+                                                    </li>
+                                                    <li>
+                                                        <div class="col1">
+                                                            <div class="cont">
+                                                                <div class="cont-col1">
+                                                                    <div class="label label-sm label-info">
+                                                                        <i class="fa fa-shopping-cart"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="cont-col2">
+                                                                    <div class="desc"> New order received with
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col2">
+                                                            <div class="date"> 30 mins</div>
+                                                        </div>
+                                                    </li>
+                                                    <li>
+                                                        <div class="col1">
+                                                            <div class="cont">
+                                                                <div class="cont-col1">
+                                                                    <div class="label label-sm label-success">
+                                                                        <i class="fa fa-user"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="cont-col2">
+                                                                    <div class="desc"> You have 5 pending that requires
+                                                                        a quick
+                                                                        review.
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col2">
+                                                            <div class="date"> 24 mins</div>
+                                                        </div>
+                                                    </li>
+                                                    <li>
+                                                        <div class="col1">
+                                                            <div class="cont">
+                                                                <div class="cont-col1">
+                                                                    <div class="label label-sm label-default">
+                                                                        <i class="fa fa-bell-o"></i>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="cont-col2">
+                                                                    <div class="desc"> 系统启动
+
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col2">
+                                                            <div class="date"> 2 hours</div>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+
                         </div>
                     </div>
                 </div>
-            </div>
+            {% endif %}
             <div class="container-fluid">
                 <div class="row">
 
@@ -260,26 +270,14 @@
                                 <span class="caption-subject bold uppercase font-green"
                                       style="font-size:16px">切换成功率</span>
                             </div>
-                            <div class="col-md-3" align="center">
-                                <h4>系统1</h4>
-                                <input class="knob" data-width="200" data-fgcolor="#3598dc" data-min="-100"
-                                       data-displayprevious=true value="90">
-                            </div>
-                            <div class="col-md-3" align="center">
-                                <h4>系统2</h4>
-                                <input class="knob" data-width="200" data-fgcolor="#e7505a" data-min="-100"
-                                       data-displayprevious=true value="100">
-                            </div>
-                            <div class="col-md-3" align="center">
-                                <h4>系统3</h4>
-                                <input class="knob" data-width="200" data-fgcolor="#32c5d2" data-min="-100"
-                                       data-displayprevious=true value="80">
-                            </div>
-                            <div class="col-md-3" align="center">
-                                <h4>系统4</h4>
-                                <input class="knob" data-width="200" data-fgcolor="#8e44ad" data-min="-100"
-                                       data-displayprevious=true value="100">
-                            </div>
+                            {% for process in process_success_rate_list %}
+                                <div class="col-md-3" align="center">
+                                    <h4>{{ process.process_name }}</h4>
+                                    <input class="knob" data-width="200"
+                                           data-fgcolor="{{ process.color }}" data-min="-100"
+                                    data-displayprevious=true value="{{ process.current_process_success_rate }}">
+                                </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
@@ -759,7 +757,7 @@
     <script src="/static/assets/global/plugins/highcharts/js/highcharts.js" type="text/javascript"></script>
     <script src="/static/assets/global/plugins/highcharts/js/highcharts-3d.js" type="text/javascript"></script>
     <script src="/static/assets/global/plugins/highcharts/js/highcharts-more.js" type="text/javascript"></script>
-    <script src="/static/assets/pages/scripts/charts-highcharts.js" type="text/javascript"></script>
+    {#    <script src="/static/assets/pages/scripts/charts-highcharts.js" type="text/javascript"></script>#}
 
 
     <!-- BEGIN PAGE LEVEL PLUGINS -->
