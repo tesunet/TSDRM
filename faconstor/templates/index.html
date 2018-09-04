@@ -273,7 +273,7 @@
                             {% for process in process_success_rate_list %}
                                 <div class="col-md-3" align="center">
                                     <h4>{{ process.process_name }}</h4>
-                                    <input class="knob" data-width="200"
+                                    <input readonly class="knob" data-width="200"
                                            data-fgcolor="{{ process.color }}" data-min="-100"
                                     data-displayprevious=true value="{{ process.current_process_success_rate }}">
                                 </div>
@@ -762,7 +762,6 @@
 
     <!-- BEGIN PAGE LEVEL PLUGINS -->
     <script src="/static/assets/global/plugins/jquery-knob/js/jquery.knob.js" type="text/javascript"></script>
-    <script src="/static/assets/pages/scripts/components-knob-dials.min.js" type="text/javascript"></script>
 
 
 
