@@ -436,7 +436,6 @@ def userlogin(request):
                 result = "登录失败，请于客服联系。"
         else:
             result = "用户名或密码不正确。"
-
     return HttpResponse(result)
 
 
