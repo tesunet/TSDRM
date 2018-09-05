@@ -2164,7 +2164,7 @@ def processconfig(request, funid):
         if process_id:
             process_id = int(process_id)
 
-        processes = Process.objects.exclude(state="9").order_by("sort")
+        processes = Process.objects.exclude(state="9").order_by("sort").filter(type="falconstor")
         processlist = []
         for process in processes:
             processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -2364,7 +2364,7 @@ def process_design(request, funid):
 def process_data(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         result = []
-        all_process = Process.objects.exclude(state="9")
+        all_process = Process.objects.exclude(state="9").filter(type="falconstor")
         if (len(all_process) > 0):
             for process in all_process:
                 result.append({
@@ -2407,7 +2407,7 @@ def process_save(request):
                     else:
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
-                                state="9")
+                                state="9").filter(type="falconstor")
                             if (len(all_process) > 0):
                                 result["res"] = '预案编码:' + code + '已存在。'
                             else:
@@ -2591,7 +2591,7 @@ def falconstorrun(request):
             processid = int(processid)
         except:
             raise Http404()
-        process = Process.objects.filter(id=processid).exclude(state="9")
+        process = Process.objects.filter(id=processid).exclude(state="9").filter(type="falconstor")
         if (len(process) <= 0):
             result["res"] = '流程启动失败，该流程不存在。'
         else:
@@ -3372,7 +3372,7 @@ def falconstorsearch(request, funid):
         nowtime = datetime.datetime.now()
         endtime = nowtime.strftime("%Y-%m-%d")
         starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-        all_processes = Process.objects.exclude(state="9")
+        all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
         processname_list = []
         for process in all_processes:
             processname_list.append(process.name)
@@ -3499,7 +3499,7 @@ def invite(request):
         purpose = request.GET.get("purpose", "")
         invite_time = request.GET.get("perform_date", "")
 
-        current_processes = Process.objects.filter(id=process_id)
+        current_processes = Process.objects.filter(id=process_id).filter(type="falconstor")
         process_name = current_processes[0].name if current_processes else ""
         current_user = UserInfo.objects.filter(fullname=person_invited)
         all_groups = ""
