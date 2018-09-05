@@ -265,9 +265,15 @@ def index(request, funid):
                 current_processrun_id = current_processrun.id
                 all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
 
+                # 如果步骤小于3个
+                if len(all_stepruns) >= 3:
+                    all_stepruns_display = all_stepruns[:3]
+                else:
+                    all_stepruns_display = all_stepruns[:len(all_stepruns)]
+
                 if all_stepruns[0].state == "RUN":
                     current_step_index = 1
-                    for num, steprun in enumerate(all_stepruns[:3]):
+                    for num, steprun in enumerate(all_stepruns_display):
                         if num == 0:
                             current_step_name = steprun.step.name
                             # 负责角色
@@ -285,7 +291,7 @@ def index(request, funid):
                 elif all_stepruns[len(all_stepruns) - 1].state == "RUN" and all_stepruns[
                     len(all_stepruns) - 2].state == "DONE":
                     current_step_index = len(all_stepruns)
-                    for num, steprun in enumerate(all_stepruns[len(all_stepruns) - 3:]):
+                    for num, steprun in enumerate(all_stepruns[len(all_stepruns) - len(all_stepruns_display):]):
                         if num == len(all_stepruns[len(all_stepruns) - 3:]) - 1:
                             current_step_name = steprun.step.name
                             # 负责角色
@@ -657,7 +663,7 @@ def function(request, funid):
                             funsave.type = mytype
                             funsave.url = url
                             funsave.icon = icon
-                            funsave.sort = sort
+                            funsave.sort = sort if sort else None
                             funsave.save()
                             title = name
                             id = funsave.id
@@ -1839,7 +1845,7 @@ def verify_items_save(request):
                 if id == 0:
                     verify_save = VerifyItems()
                     verify_save.name = name
-                    verify_save.step_id = step_id
+                    verify_save.step_id = step_id if step_id else None
                     verify_save.save()
                     result["res"] = "新增成功。"
                     result["data"] = verify_save.id
@@ -1970,7 +1976,7 @@ def setpsave(request):
             step.skip = skip
             step.approval = approval
             step.group = group
-            step.time = time
+            step.time = time if time else None
             step.name = name
             step.process_id = process_id
             step.pnode_id = pid
@@ -2415,9 +2421,9 @@ def process_save(request):
                                 processsave.name = name
                                 processsave.remark = remark
                                 processsave.sign = sign
-                                processsave.rto = rto
-                                processsave.rpo = rpo
-                                processsave.sort = sort
+                                processsave.rto = rto if rto else None
+                                processsave.rpo = rpo if rpo else None
+                                processsave.sort = sort if sort else None
                                 processsave.save()
                                 result["res"] = "保存成功。"
                                 result["data"] = processsave.id
