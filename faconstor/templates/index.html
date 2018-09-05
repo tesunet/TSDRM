@@ -59,7 +59,7 @@
 
                             {% for current_processrun in curren_processrun_info_list %}
                                 <div class="portlet-body">
-                                    <div class="mt-element-step" onclick="window.open('{{ current_processrun.processrun_url }}','_self');">
+                                    <div class="mt-element-step" onclick="window.open('{{ current_processrun.processrun_url }}','_self');" style="cursor:pointer;">
                                         <div class="row step-line">
                                             <div class="mt-step-desc">
                                                 <div class="font-dark bold uppercase">{{ current_processrun.current_process_name }}</div>

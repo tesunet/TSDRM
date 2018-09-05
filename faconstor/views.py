@@ -2042,7 +2042,6 @@ def get_step_tree(parent, selectid):
         group_name = ""
         if child.group:
             group_id = child.group
-            print(group_id, type(group_id))
             if not group_id:
                 group_id = None
             group_name = Group.objects.filter(id=group_id)[0].name
