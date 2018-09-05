@@ -146,6 +146,6 @@ class VerifyItems(models.Model):
 
 class VerifyItemsRun(models.Model):
     verify_items = models.ForeignKey(VerifyItems)
-    name = models.CharField("确认项", blank=True, null=True, max_length=50)
+    steprun = models.ForeignKey(StepRun, blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=30)
     has_verified = models.CharField("是否确认", blank=True, null=True, max_length=20)

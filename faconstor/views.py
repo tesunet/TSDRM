@@ -331,6 +331,9 @@ def index(request, funid):
                 # 总体进度
                 process_rate = "%02d" % (current_step_index / len(total_steps) * 100) if current_step_index else ""
 
+                # 进程url
+                processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)
+
                 current_processrun_dict["current_processrun_dict"] = current_processrun_dict
                 current_processrun_dict["start_time_strftime"] = start_time_strftime
                 current_processrun_dict["current_delta_time"] = current_delta_time
@@ -341,6 +344,8 @@ def index(request, funid):
                 current_processrun_dict["current_step_name"] = current_step_name
                 current_processrun_dict["group_name"] = group_name
                 current_processrun_dict["users"] = users
+                current_processrun_dict["processrun_url"] = processrun_url
+
                 curren_processrun_info_list.append(current_processrun_dict)
 
         # 系统切换成功率
@@ -436,7 +441,7 @@ def userlogin(request):
                 result = "登录失败，请于客服联系。"
         else:
             result = "用户名或密码不正确。"
-            
+
     return HttpResponse(result)
 
 

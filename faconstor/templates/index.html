@@ -5,6 +5,41 @@
 {% block contenthome %}
 
     {% csrf_token %}
+    <style>
+        /* 五等分 */
+        .col-xs-1-5, .col-sm-1-5, .col-md-1-5, .col-lg-1-5 {
+            min-height: 1px;
+            padding-left: 15px;
+            padding-right: 15px;
+            position: relative;
+        }
+
+        .col-xs-1-5 {
+            width: 20%;
+            float: left;
+        }
+
+        @media (min-width: 768px) {
+            .col-sm-1-5 {
+                width: 20%;
+                float: left;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .col-md-1-5 {
+                width: 20%;
+                float: left;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .col-lg-1-5 {
+                width: 20%;
+                float: left;
+            }
+        }
+    </style>
 
     <section class="scrollable wrapper">
         <!-- BEGIN CONTENT BODY -->
@@ -24,7 +59,7 @@
 
                             {% for current_processrun in curren_processrun_info_list %}
                                 <div class="portlet-body">
-                                    <div class="mt-element-step">
+                                    <div class="mt-element-step" onclick="window.open('{{ current_processrun.processrun_url }}','_self');">
                                         <div class="row step-line">
                                             <div class="mt-step-desc">
                                                 <div class="font-dark bold uppercase">{{ current_processrun.current_process_name }}</div>
@@ -271,11 +306,11 @@
                                       style="font-size:16px">切换成功率</span>
                             </div>
                             {% for process in process_success_rate_list %}
-                                <div class="col-md-3" align="center">
+                                <div class="col-md-1-5" align="center">
                                     <h4>{{ process.process_name }}</h4>
                                     <input readonly class="knob" data-width="200"
                                            data-fgcolor="{{ process.color }}" data-min="-100"
-                                    data-displayprevious=true value="{{ process.current_process_success_rate }}">
+                                           data-displayprevious=true value="{{ process.current_process_success_rate }}">
                                 </div>
                             {% endfor %}
                         </div>
