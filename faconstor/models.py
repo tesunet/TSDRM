@@ -96,6 +96,7 @@ class ProcessRun(models.Model):
     creatuser = models.CharField("发起人", blank=True, max_length=50)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     run_reason = models.CharField("启动原因", blank=True, null=True, max_length=2500)
+    note = models.CharField("记录", blank=True, null=True, max_length=5000)
 
 
 class StepRun(models.Model):
@@ -108,6 +109,7 @@ class StepRun(models.Model):
     result = models.CharField("运行结果", blank=True, null=True, max_length=5000)
     explain = models.CharField("运行说明", blank=True, null=True, max_length=5000)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
+    note = models.CharField("记录", blank=True, null=True, max_length=5000)
 
 
 class ScriptRun(models.Model):
@@ -120,6 +122,7 @@ class ScriptRun(models.Model):
     explain = models.CharField("运行说明", blank=True, null=True, max_length=5000)
     runlog = models.CharField("运行日志", blank=True, null=True, max_length=5000)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
+    note = models.CharField("记录", blank=True, null=True, max_length=5000)
 
 
 class ProcessTask(models.Model):
@@ -136,6 +139,7 @@ class ProcessTask(models.Model):
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     result = models.CharField("处理结果", blank=True, null=True, max_length=5000)
     explain = models.CharField("处理说明", blank=True, null=True, max_length=5000)
+    logtype = models.CharField("日志类型", blank=True, null=True, max_length=20)
 
 
 class VerifyItems(models.Model):
