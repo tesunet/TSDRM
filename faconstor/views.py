@@ -265,9 +265,15 @@ def index(request, funid):
                 current_processrun_id = current_processrun.id
                 all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
 
+                # 如果步骤小于3个
+                if len(all_stepruns) >= 3:
+                    all_stepruns_display = all_stepruns[:3]
+                else:
+                    all_stepruns_display = all_stepruns[:len(all_stepruns)]
+
                 if all_stepruns[0].state == "RUN":
                     current_step_index = 1
-                    for num, steprun in enumerate(all_stepruns[:3]):
+                    for num, steprun in enumerate(all_stepruns_display):
                         if num == 0:
                             current_step_name = steprun.step.name
                             # 负责角色
@@ -285,7 +291,7 @@ def index(request, funid):
                 elif all_stepruns[len(all_stepruns) - 1].state == "RUN" and all_stepruns[
                     len(all_stepruns) - 2].state == "DONE":
                     current_step_index = len(all_stepruns)
-                    for num, steprun in enumerate(all_stepruns[len(all_stepruns) - 3:]):
+                    for num, steprun in enumerate(all_stepruns[len(all_stepruns) - len(all_stepruns_display):]):
                         if num == len(all_stepruns[len(all_stepruns) - 3:]) - 1:
                             current_step_name = steprun.step.name
                             # 负责角色
@@ -657,7 +663,7 @@ def function(request, funid):
                             funsave.type = mytype
                             funsave.url = url
                             funsave.icon = icon
-                            funsave.sort = sort
+                            funsave.sort = sort if sort else None
                             funsave.save()
                             title = name
                             id = funsave.id
@@ -1839,7 +1845,7 @@ def verify_items_save(request):
                 if id == 0:
                     verify_save = VerifyItems()
                     verify_save.name = name
-                    verify_save.step_id = step_id
+                    verify_save.step_id = step_id if step_id else None
                     verify_save.save()
                     result["res"] = "新增成功。"
                     result["data"] = verify_save.id
@@ -1970,7 +1976,7 @@ def setpsave(request):
             step.skip = skip
             step.approval = approval
             step.group = group
-            step.time = time
+            step.time = time if time else None
             step.name = name
             step.process_id = process_id
             step.pnode_id = pid
@@ -2042,7 +2048,6 @@ def get_step_tree(parent, selectid):
         group_name = ""
         if child.group:
             group_id = child.group
-            print(group_id, type(group_id))
             if not group_id:
                 group_id = None
             group_name = Group.objects.filter(id=group_id)[0].name
@@ -2164,7 +2169,7 @@ def processconfig(request, funid):
         if process_id:
             process_id = int(process_id)
 
-        processes = Process.objects.exclude(state="9").order_by("sort")
+        processes = Process.objects.exclude(state="9").order_by("sort").filter(type="falconstor")
         processlist = []
         for process in processes:
             processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -2364,7 +2369,7 @@ def process_design(request, funid):
 def process_data(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         result = []
-        all_process = Process.objects.exclude(state="9")
+        all_process = Process.objects.exclude(state="9").filter(type="falconstor")
         if (len(all_process) > 0):
             for process in all_process:
                 result.append({
@@ -2407,7 +2412,7 @@ def process_save(request):
                     else:
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
-                                state="9")
+                                state="9").filter(type="falconstor")
                             if (len(all_process) > 0):
                                 result["res"] = '预案编码:' + code + '已存在。'
                             else:
@@ -2416,9 +2421,9 @@ def process_save(request):
                                 processsave.name = name
                                 processsave.remark = remark
                                 processsave.sign = sign
-                                processsave.rto = rto
-                                processsave.rpo = rpo
-                                processsave.sort = sort
+                                processsave.rto = rto if rto else None
+                                processsave.rpo = rpo if rpo else None
+                                processsave.sort = sort if sort else None
                                 processsave.save()
                                 result["res"] = "保存成功。"
                                 result["data"] = processsave.id
@@ -2591,7 +2596,7 @@ def falconstorrun(request):
             processid = int(processid)
         except:
             raise Http404()
-        process = Process.objects.filter(id=processid).exclude(state="9")
+        process = Process.objects.filter(id=processid).exclude(state="9").filter(type="falconstor")
         if (len(process) <= 0):
             result["res"] = '流程启动失败，该流程不存在。'
         else:
@@ -3372,7 +3377,7 @@ def falconstorsearch(request, funid):
         nowtime = datetime.datetime.now()
         endtime = nowtime.strftime("%Y-%m-%d")
         starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-        all_processes = Process.objects.exclude(state="9")
+        all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
         processname_list = []
         for process in all_processes:
             processname_list.append(process.name)
@@ -3503,7 +3508,7 @@ def invite(request):
         invite_time = nowtime.strftime("%Y-%m-%d")
 
 
-        current_processes = Process.objects.filter(id=process_id)
+        current_processes = Process.objects.filter(id=process_id).filter(type="falconstor")
         process_name = current_processes[0].name if current_processes else ""
         allgroup = current_processes[0].step_set.exclude(state="9").exclude(Q(approval="0") | Q(approval="")).values(
             "group").distinct()
