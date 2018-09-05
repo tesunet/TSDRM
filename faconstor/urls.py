@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^test/$', test),
     url(r'^index/$', index, {'funid': '2'}),
     url(r'^get_process_rto/$', get_process_rto),
+    url(r'^get_daily_processrun/$', get_daily_processrun),
 
     # 用户登录
     url(r'^login/$', login),

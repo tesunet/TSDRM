@@ -115,48 +115,42 @@ var Dashboard = function () {
                     day: '日',
                     list: 'list'
                 },
-                events: [{
-                    title: '系统1恢复',
-                    start: new Date(y, m, 1),
-                    backgroundColor: App.getBrandColor('yellow')
-                }, {
-                    title: '系统1恢复',
-                    start: new Date(y, m, d - 5),
-                    end: new Date(y, m, d - 2),
-                    backgroundColor: App.getBrandColor('blue')
-                }, {
-                    title: '系统2恢复',
-                    start: new Date(y, m, d - 3, 16, 0),
-                    allDay: false,
-                    backgroundColor: App.getBrandColor('red')
-                }, {
-                    title: '系统3恢复',
-                    start: new Date(y, m, d + 6, 16, 0),
-                    allDay: false,
-                    backgroundColor: App.getBrandColor('green')
-                }, {
-                    title: '系统4恢复',
-                    start: new Date(y, m, d + 9, 10, 30),
-                    allDay: false
-                }, {
-                    title: '系统1恢复',
-                    start: new Date(y, m, d, 14, 0),
-                    end: new Date(y, m, d, 14, 0),
-                    backgroundColor: App.getBrandColor('grey'),
-                    allDay: false
-                }, {
-                    title: '系统2恢复',
-                    start: new Date(y, m, d + 1, 19, 0),
-                    end: new Date(y, m, d + 1, 22, 30),
-                    backgroundColor: App.getBrandColor('purple'),
-                    allDay: false
-                }, {
-                    title: '系统1恢复',
-                    start: new Date(y, m, 28),
-                    end: new Date(y, m, 29),
-                    backgroundColor: App.getBrandColor('yellow'),
-                    url: 'http://www.baidu.com/'
-                }]
+                events: function (start, end, timezone, callback) {
+                    $.ajax({
+                        url: '../get_daily_processrun/',
+                        type: 'post',
+                        data: {},
+                        dataType: 'json',
+                        success: function (data) {
+                            var events = [];
+                            for (var i = 0; i < data.data.length; i++) {
+                                var title = data.data[i].process_name;
+                                var id = data.data[i].process_run_id;
+                                var start = new Date(data.data[i].start_time);
+                                var end = new Date(data.data[i].end_time);
+                                var backgroundColor = data.data[i].process_color;
+                                var url = data.data[i].url;
+
+                                // var allDay = plan.isAllday == 0 ? false : true;
+                                events.push({
+                                    id: id,
+                                    title: title,
+                                    start: start,
+                                    end: end,
+                                    backgroundColor: App.getBrandColor(backgroundColor),
+                                    url: url,
+                                    // allDay: allDay
+                                });
+                            }
+
+                            try {
+                                callback(events);
+                            } catch (e) {
+                                console.info(e);
+                            }
+                        }
+                    });
+                },
             });
         },
         componentsKnobDials: function () {

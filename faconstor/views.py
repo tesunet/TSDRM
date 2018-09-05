@@ -388,7 +388,7 @@ def get_process_rto(request):
                 for processrun_rto_obj in processrun_rto_obj_list:
                     start_time = processrun_rto_obj.starttime
                     end_time = processrun_rto_obj.endtime
-                    delta_time = (end_time - start_time).total_seconds()
+                    delta_time = (end_time - start_time).total_seconds() if start_time and end_time else 0
                     current_rto = int("%.2d" % (delta_time / 60))
                     current_rto_list.append(current_rto)
                 process_dict = {
@@ -399,6 +399,32 @@ def get_process_rto(request):
                 process_rto_list.append(process_dict)
 
         return JsonResponse({"data": process_rto_list if len(process_rto_list) <= 12 else process_rto_list[-12:]})
+
+
+def get_daily_processrun(request):
+    if request.user.is_authenticated():
+        all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
+        process_success_rate_list = []
+        if all_processrun_objs:
+            for process_run in all_processrun_objs:
+                process_name = process_run.process.name
+                start_time = process_run.starttime
+                end_time = process_run.endtime
+                process_color = process_run.process.color
+                process_run_id = process_run.id
+                # 进程url
+                processrun_url = process_run.process.url + "/" + str(process_run.id)
+
+                process_run_dict = {
+                    "process_name": process_name,
+                    "start_time": start_time,
+                    "end_time": end_time,
+                    "process_color": process_color,
+                    "process_run_id": process_run_id,
+                    "url": processrun_url,
+                }
+                process_success_rate_list.append(process_run_dict)
+        return JsonResponse({"data": process_success_rate_list})
 
 
 def login(request):
@@ -3615,3 +3641,5 @@ def get_all_users(request):
         for user in all_users:
             user_string += user.fullname + "&"
         return JsonResponse({"data": user_string})
+
+
