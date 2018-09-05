@@ -140,6 +140,7 @@ def index(request, funid):
             if value.sort is None:
                 value.sort = 0
         funlist = sorted(funlist, key=lambda fun: fun.sort)
+
         alltask = []
         mygroup = []
         userinfo = request.user.userinfo
@@ -148,19 +149,13 @@ def index(request, funid):
             for curguoup in guoups:
                 mygroup.append(str(curguoup.id))
         allprosstasks = ProcessTask.objects.filter(
-            Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
+            Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(
+            Q(state="0") | Q(state="1")).order_by(
             "-starttime").all()
         if len(allprosstasks) > 0:
             for task in allprosstasks:
-                send_time = task.starttime
                 process_name = task.processrun.process.name
-                process_run_reason = task.processrun.run_reason
-                myurl = task.processrun.process.url + "/" + str(task.processrun_id)
                 process_type = task.type
-                if process_type == "SIGN":
-                    pop = True
-                else:
-                    pop = False
                 time = ""
                 time = task.starttime
                 time = time.replace(tzinfo=None)
@@ -168,6 +163,48 @@ def index(request, funid):
                 days = int((timenow - time).days)
                 hours = int((timenow - time).seconds / 3600)
                 task_id = task.id
+
+                # 图标与颜色
+                if task.type == "ERROR":
+                    current_icon = "fa fa-exclamation-triangle"
+                    if task.state == "0":
+                        current_color = "red"
+                    if task.state == "1":
+                        current_color = "grey"
+                elif task.type == "SIGN":
+                    current_icon = "fa fa-user"
+                    if task.state == "0":
+                        current_color = "yellow"
+                    if task.state == "1":
+                        current_color = "blue"
+                elif task.type == "RUN":
+                    current_icon = "fa fa-bell-o"
+                    if task.state == "0":
+                        current_color = "yellow"
+                    if task.state == "1":
+                        current_color = "blue"
+                else:
+                    current_color = "green"
+                    if task.logtype == "START":
+                        current_icon = "fa fa-power-off"
+                    elif task.logtype == "START":
+                        current_icon = "fa fa-power-off"
+                    elif task.logtype == "STEP":
+                        current_icon = "fa fa-cog"
+                    elif task.logtype == "SCRIPT":
+                        current_icon = "fa fa-cog"
+                    elif task.logtype == "STOP":
+                        current_icon = "fa fa-stop"
+                    elif task.logtype == "CONTINUE":
+                        current_icon = "fa fa-play"
+                    elif task.logtype == "IGNORE":
+                        current_icon = "fa fa-share"
+                    elif task.logtype == "START":
+                        current_icon = "fa fa-power-off"
+                    elif task.logtype == "END":
+                        current_icon = "fa fa-lock"
+                    else:
+                        current_icon = "fa fa-info-circle"
 
                 if days > 1095:
                     time = "很久以前"
@@ -209,9 +246,7 @@ def index(request, funid):
                                                             else:
                                                                 time = "刚刚"
 
-                alltask.append({"content": task.content, "myurl": myurl, "time": time, "pop": pop, "task_id": task_id,
-                                "process_name": process_name, "send_time": send_time,
-                                "process_run_reason": process_run_reason, "group_name": guoups[0].name})
+                alltask.append({"content": task.content, "time": time, "process_name": process_name, "task_color": current_color, "task_icon": current_icon})
 
         # 成功率，恢复次数，平均RTO，最新切换
         all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
@@ -340,6 +375,108 @@ def index(request, funid):
                 # 进程url
                 processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)
 
+                # 当前系统任务
+                current_process_task_info = []
+
+                current_process_tasks = ProcessTask.objects.filter(
+                    Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(
+                    Q(state="0") | Q(state="1")).filter(processrun_id=current_processrun.id).order_by(
+                    "-starttime").all()
+                if len(current_process_tasks) > 0:
+                    for task in current_process_tasks:
+                        time = ""
+                        time = task.starttime
+                        time = time.replace(tzinfo=None)
+                        timenow = datetime.datetime.now()
+                        days = int((timenow - time).days)
+                        hours = int((timenow - time).seconds / 3600)
+
+                        # 图标与颜色
+                        if task.type == "ERROR":
+                            current_icon = "fa fa-exclamation-triangle"
+                            if task.state == "0":
+                                current_color = "red"
+                            if task.state == "1":
+                                current_color = "grey"
+                        elif task.type == "SIGN":
+                            current_icon = "fa fa-user"
+                            if task.state == "0":
+                                current_color = "yellow"
+                            if task.state == "1":
+                                current_color = "blue"
+                        elif task.type == "RUN":
+                            current_icon = "fa fa-bell-o"
+                            if task.state == "0":
+                                current_color = "yellow"
+                            if task.state == "1":
+                                current_color = "blue"
+                        else:
+                            current_color = "green"
+                            if task.logtype == "START":
+                                current_icon = "fa fa-power-off"
+                            elif task.logtype == "START":
+                                current_icon = "fa fa-power-off"
+                            elif task.logtype == "STEP":
+                                current_icon = "fa fa-cog"
+                            elif task.logtype == "SCRIPT":
+                                current_icon = "fa fa-cog"
+                            elif task.logtype == "STOP":
+                                current_icon = "fa fa-stop"
+                            elif task.logtype == "CONTINUE":
+                                current_icon = "fa fa-play"
+                            elif task.logtype == "IGNORE":
+                                current_icon = "fa fa-share"
+                            elif task.logtype == "START":
+                                current_icon = "fa fa-power-off"
+                            elif task.logtype == "END":
+                                current_icon = "fa fa-lock"
+                            else:
+                                current_icon = "fa fa-info-circle"
+
+                        if days > 1095:
+                            time = "很久以前"
+                        else:
+                            if days > 730:
+                                time = "2年前"
+                            else:
+                                if days > 365:
+                                    time = "1年前"
+                                else:
+                                    if days > 182:
+                                        time = "半年前"
+                                    else:
+                                        if days > 150:
+                                            time = "5月前"
+                                        else:
+                                            if days > 120:
+                                                time = "4月前"
+                                            else:
+                                                if days > 90:
+                                                    time = "3月前"
+                                                else:
+                                                    if days > 60:
+                                                        time = "2月前"
+                                                    else:
+                                                        if days > 30:
+                                                            time = "1月前"
+                                                        else:
+                                                            if days >= 1:
+                                                                time = str(days) + "天前"
+                                                            else:
+                                                                hours = int((timenow - time).seconds / 3600)
+                                                                if hours >= 1:
+                                                                    time = str(hours) + "小时"
+                                                                else:
+                                                                    minutes = int((timenow - time).seconds / 60)
+                                                                    if minutes >= 1:
+                                                                        time = str(minutes) + "分钟"
+                                                                    else:
+                                                                        time = "刚刚"
+
+                        current_process_task_info.append({"content": task.content, "time": time, "task_color": current_color,
+                                        "task_icon": current_icon})
+
+                current_processrun_dict["current_process_task_info"] = current_process_task_info
                 current_processrun_dict["current_processrun_dict"] = current_processrun_dict
                 current_processrun_dict["start_time_strftime"] = start_time_strftime
                 current_processrun_dict["current_delta_time"] = current_delta_time
@@ -376,7 +513,8 @@ def index(request, funid):
                       {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
                        "pagefuns": getpagefuns(funid), "success_rate": success_rate, "all_processruns": all_processruns,
                        "last_processrun_time": last_processrun_time, "average_rto": average_rto,
-                       "curren_processrun_info_list": curren_processrun_info_list, "process_success_rate_list": process_success_rate_list})
+                       "curren_processrun_info_list": curren_processrun_info_list,
+                       "process_success_rate_list": process_success_rate_list})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3503,16 +3641,15 @@ def invite(request):
         start_date = request.GET.get("start_date", "")
         purpose = request.GET.get("purpose", "")
         end_date = request.GET.get("end_date", "")
-        process_date = datetime.datetime.strptime(start_date,'%Y-%m-%d %H:%M').strftime("%Y-%m-%d")
+        process_date = datetime.datetime.strptime(start_date, '%Y-%m-%d %H:%M').strftime("%Y-%m-%d")
         nowtime = datetime.datetime.now()
         invite_time = nowtime.strftime("%Y-%m-%d")
-
 
         current_processes = Process.objects.filter(id=process_id).filter(type="falconstor")
         process_name = current_processes[0].name if current_processes else ""
         allgroup = current_processes[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
             "group").distinct()
-        all_groups=""
+        all_groups = ""
         if allgroup:
             for num, current_group in enumerate(allgroup):
                 if num == len(allgroup) - 1:
@@ -3617,8 +3754,9 @@ def invite(request):
         #                       "invite_reason": invite_reason, "invite_time": invite_time})
         t = TemplateResponse(request, 'notice.html',
                              {"wrapper_step_list": wrapper_step_list, "process_date": process_date,
-                              "purpose": purpose, "invite_time": invite_time, "start_date": start_date,"end_date":end_date,
-                              "process_name": process_name,"all_groups":all_groups})
+                              "purpose": purpose, "invite_time": invite_time, "start_date": start_date,
+                              "end_date": end_date,
+                              "process_name": process_name, "all_groups": all_groups})
         t.render()
 
         # 指定wkhtmltopdf运行程序路径
@@ -3671,5 +3809,3 @@ def get_all_users(request):
         for user in all_users:
             user_string += user.fullname + "&"
         return JsonResponse({"data": user_string})
-
-
