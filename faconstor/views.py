@@ -2632,7 +2632,7 @@ def falconstorrun(request):
                             myscriptrun.state = "EDIT"
                             myscriptrun.save()
 
-                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(approval="0") | Q(approval="")).values(
+                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                         "group").distinct()  # 当前预案下需要签字的组,但一个对象只发送一次task
 
                     if process[0].sign == "1" and len(allgroup) > 0:  # 如果预案流程已经启动,发送签字tasks
@@ -3510,7 +3510,7 @@ def invite(request):
 
         current_processes = Process.objects.filter(id=process_id).filter(type="falconstor")
         process_name = current_processes[0].name if current_processes else ""
-        allgroup = current_processes[0].step_set.exclude(state="9").exclude(Q(approval="0") | Q(approval="")).values(
+        allgroup = current_processes[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
             "group").distinct()
         all_groups=""
         if allgroup:
@@ -3519,7 +3519,8 @@ def invite(request):
                     group = Group.objects.get(id=int(current_group["group"]))
                     all_groups += group.name
                 else:
-                    all_groups += current_group.name + "、"
+                    group = Group.objects.get(id=int(current_group["group"]))
+                    all_groups += group.name + "、"
         all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None)
         wrapper_step_list = []
         num_to_char_choices = {
@@ -3558,6 +3559,15 @@ def invite(request):
                 wrapper_script_list.append(wrapper_script_dict)
                 wrapper_step_dict["wrapper_script_list"] = wrapper_script_list
 
+            wrapper_verify_list = []
+            all_wrapper_verifys = wrapper_step.verifyitems_set.exclude(state="9")
+            for wrapper_verify in all_wrapper_verifys:
+                wrapper_verify_dict = {
+                    "wrapper_verify_name": wrapper_verify.name
+                }
+                wrapper_verify_list.append(wrapper_verify_dict)
+                wrapper_step_dict["wrapper_verify_list"] = wrapper_verify_list
+
             pnode_id = wrapper_step.id
             inner_step_list = []
             all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id)
@@ -3586,6 +3596,17 @@ def invite(request):
                     inner_script_list.append(inner_script_dict)
 
                 inner_step_dict["inner_script_list"] = inner_script_list
+
+                inner_verify_list = []
+                all_inner_verifys = inner_step.verifyitems_set.exclude(state="9")
+                for inner_verify in all_inner_verifys:
+                    inner_verify_dict = {
+                        "inner_verify_name": inner_verify.name
+                    }
+                    inner_verify_list.append(inner_verify_dict)
+
+                inner_step_dict["inner_verify_list"] = inner_verify_list
+
                 inner_step_list.append(inner_step_dict)
 
             wrapper_step_dict["inner_step_list"] = inner_step_list

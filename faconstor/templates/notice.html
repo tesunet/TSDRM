@@ -38,11 +38,13 @@
                                         <p style="line-height:36px">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;根据保监会《保险业信息系统灾难恢复管理指引》文件第二十九条要求，"保险机构应定期组织开展灾难恢复预案的演练工作，灾难恢复预案每年至少演练一次"。 为了提高防范灾难风险的能力，保证业务连续性要求，太平资产定于{{ process_date }}进行灾备演练。为了保证演练工作顺利进行，诚邀您的参与和协作。
                                         </p>
                                         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;演练相关事项如下：</p>
-                                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.演练项目</p>
+                                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.演练系统</p>
+                                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ process_name }}</p>
+                                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.演练项目</p>
                                         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ purpose }}</p>
-                                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.演练时间</p>
+                                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.演练时间</p>
                                         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ start_date }}到{{ end_date }}</p>
-                                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.参与人员</p>
+                                        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4.参与人员</p>
                                         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ all_groups }}</p>
                                         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;为了更清晰查看您的职责和演练进度，请登录自动灾备管理平台，平台地址如下：</p>
                                         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;www.adrm.tpa</p>
@@ -70,7 +72,12 @@
                                                     <div class="portlet-body" style="height: 300px">
                                                         {% for wrapper_script in wrapper_step.wrapper_script_list %}
                                                             <ul>
-                                                                {{ wrapper_script.wrapper_script_name }}
+                                                                (脚本){{ wrapper_script.wrapper_script_name }}
+                                                            </ul>
+                                                        {% endfor %}
+                                                        {% for wrapper_script in wrapper_step.wrapper_verify_list %}
+                                                            <ul>
+                                                                (事项){{ wrapper_script.wrapper_verify_name }}
                                                             </ul>
                                                         {% endfor %}
                                                         <ol style="margin:5px;padding:5px;">
@@ -82,7 +89,12 @@
                                                                         ){% endif %}
                                                                     <ul>
                                                                         {% for inner_script in inner_step.inner_script_list %}
-                                                                            <li> {{ inner_script.inner_script_name }}</li>
+                                                                            <li> (脚本){{ inner_script.inner_script_name }}</li>
+                                                                        {% endfor %}
+                                                                    </ul>
+                                                                    <ul>
+                                                                        {% for inner_script in inner_step.inner_verify_list %}
+                                                                            <li> (事项){{ inner_script.inner_verify_name }}</li>
                                                                         {% endfor %}
                                                                     </ul>
                                                                 </li>
