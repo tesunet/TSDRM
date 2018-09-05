@@ -3495,22 +3495,26 @@ def download(request):
 def invite(request):
     if request.user.is_authenticated():
         process_id = request.GET.get("process_id", "")
-        person_invited = request.GET.get("person_invited", "")
+        start_date = request.GET.get("start_date", "")
         purpose = request.GET.get("purpose", "")
-        invite_time = request.GET.get("perform_date", "")
+        end_date = request.GET.get("end_date", "")
+        process_date = datetime.datetime.strptime(start_date,'%Y-%m-%d %H:%M').strftime("%Y-%m-%d")
+        nowtime = datetime.datetime.now()
+        invite_time = nowtime.strftime("%Y-%m-%d")
+
 
         current_processes = Process.objects.filter(id=process_id)
         process_name = current_processes[0].name if current_processes else ""
-        current_user = UserInfo.objects.filter(fullname=person_invited)
-        all_groups = ""
-        if current_user:
-            current_groups = current_user[0].group.all()
-            for num, current_group in enumerate(current_groups):
-                if num == len(current_groups) - 1:
-                    all_groups += current_group.name
+        allgroup = current_processes[0].step_set.exclude(state="9").exclude(Q(approval="0") | Q(approval="")).values(
+            "group").distinct()
+        all_groups=""
+        if allgroup:
+            for num, current_group in enumerate(allgroup):
+                if num == len(allgroup) - 1:
+                    group = Group.objects.get(id=int(current_group["group"]))
+                    all_groups += group.name
                 else:
                     all_groups += current_group.name + "、"
-
         all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None)
         wrapper_step_list = []
         num_to_char_choices = {
@@ -3586,9 +3590,9 @@ def invite(request):
         #                      {"wrapper_step_list": wrapper_step_list, "person_invited": person_invited,
         #                       "invite_reason": invite_reason, "invite_time": invite_time})
         t = TemplateResponse(request, 'notice.html',
-                             {"wrapper_step_list": wrapper_step_list, "person_invited": person_invited,
-                              "purpose": purpose, "invite_time": invite_time, "all_groups": all_groups,
-                              "process_name": process_name})
+                             {"wrapper_step_list": wrapper_step_list, "process_date": process_date,
+                              "purpose": purpose, "invite_time": invite_time, "start_date": start_date,"end_date":end_date,
+                              "process_name": process_name,"all_groups":all_groups})
         t.render()
 
         # 指定wkhtmltopdf运行程序路径

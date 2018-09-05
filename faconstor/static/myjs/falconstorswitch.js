@@ -89,64 +89,32 @@ $(document).ready(function () {
         $("#run_time").val(myDate.toLocaleString());
     })
     $("#invite").click(function () {
-        $("#person_link").hide();
-        // 清空邀请人，移除邀请pdf链接
-        $("#person_invited").empty();
-        $(".select2-selection__rendered").empty();
-        $("#invite_button").empty();
-
-        $("#person_invited").val();
-        $("#purpose").val("");
-        $("#perform_date").val("")
         var process_id = $("#process_id").val();
         $("#processid").val(process_id);
         $("#static01").modal({backdrop: "static"});
-
-        $.ajax({
-            type: "POST",
-            dataType: 'json',
-            url: "../get_all_users/",
-            data: {},
-            success: function (data) {
-                var userList = data.data.split("&");
-                for (var i = 0; i < userList.length - 1; i++) {
-                    var user = userList[i];
-                    $("#person_invited").append('<option value="' + user + '">' + user + '</option>')
-                }
-            },
-            error: function (e) {
-                alert("流程启动失败，请于管理员联系。");
-            }
-        });
-
     });
 
     $("#generate").click(function () {
         // 移除邀请pdf链接
-        $("#invite_button").empty();
-
         var process_id = $("#process_id").val();
-        var person_invited = $("#person_invited").val();
-        var perform_date = $("#perform_date").val();
+        var start_date = $("#start_date").val();
+        var end_date = $("#end_date").val();
         var purpose = $("#purpose").val();
-        var personList = person_invited;
-        if (person_invited == null) {
-            alert("邀请人必需填写！");
-        } else if (perform_date == "" || null) {
-            alert("演练时间不能为空！");
+        if (start_date == "" || null) {
+            alert("演练开始时间！");
+        } else if (end_date == "" || null) {
+            alert("演练结束时间！");
         } else {
-            $("#person_link").show();
-            for (var i = 0; i < personList.length; i++) {
-                var person = personList[i];
-                j = i + 1;
-                $("#invite_button").append('<button type="button" class="btn btn-link"><a href="' + '/invite/?process_id=' + process_id + '&person_invited=' + person + '&perform_date=' + perform_date + '&purpose=' + purpose + '">' + '第 ' + j + ' 封' + '</a></button>');
-            }
+            window.open('/invite/?process_id=' + process_id + '&start_date=' + start_date + '&end_date=' + end_date + '&purpose=' + purpose);
         }
     });
 
-    $('#perform_date').datetimepicker({
+    $('#start_date').datetimepicker({
         autoclose: true,
-        minView: "month",
-        format: 'yyyy-mm-dd',
+        format:'yyyy-mm-dd hh:ii',
+    });
+    $('#end_date').datetimepicker({
+        autoclose: true,
+        format:'yyyy-mm-dd hh:ii',
     });
 });

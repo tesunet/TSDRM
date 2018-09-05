@@ -1414,6 +1414,16 @@ File dropzone
 /***
 Fontawesome Icons
 ***/
+/* Make font awesome icons fixed width */
+li [class^="fa-"],
+li [class^="glyphicon-"],
+li [class^="icon-"],
+li [class*=" fa-"],
+li [class*=" glyphicon-"],
+li [class*=" icon-"] {
+  display: inline-block;
+  width: 1.25em;
+  text-align: center; }
 
 
 
