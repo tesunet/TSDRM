@@ -73,9 +73,12 @@ def childfun(myfun, funid):
     return {"fun": mychildfun, "isselected": pisselected}
 
 
-def getpagefuns(funid):
+def getpagefuns(funid, request=""):
     pagefuns = []
     mycurfun = {}
+    message_task = []
+    task_nums = 0
+
     for fun in funlist:
         if fun.pnode_id == 1:
             isselected = False
@@ -99,7 +102,95 @@ def getpagefuns(funid):
                 compile_obj = re.compile(r"/.*/")
                 jsurl = compile_obj.findall(myurl)[0][:-1]
         mycurfun = {"id": curfun[0].id, "name": curfun[0].name, "url": myurl, "jsurl": jsurl}
-    return {"pagefuns": pagefuns, "curfun": mycurfun}
+    if request:
+        # 左上角消息下拉菜单
+        mygroup = []
+        userinfo = request.user.userinfo
+        guoups = userinfo.group.all()
+        pop = False
+        if len(guoups) > 0:
+            for curguoup in guoups:
+                mygroup.append(str(curguoup.id))
+        allprosstasks = ProcessTask.objects.filter(
+            Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
+            "-starttime").all()
+        if len(allprosstasks) > 0:
+            for task in allprosstasks:
+                send_time = task.starttime
+                process_name = task.processrun.process.name
+                process_run_reason = task.processrun.run_reason
+                task_id = task.id
+
+                task_nums = len(allprosstasks)
+                process_name = task.processrun.process.name
+                process_color = task.processrun.process.color
+                process_url = task.processrun.process.url + "/" + str(task.processrun.id)
+                time = task.starttime
+                time = time.replace(tzinfo=None)
+                timenow = datetime.datetime.now()
+                days = int((timenow - time).days)
+                hours = int((timenow - time).seconds / 3600)
+
+                # 图标与颜色
+                if task.type == "ERROR":
+                    current_icon = "fa fa-exclamation-triangle"
+                    current_color = "red"
+                elif task.type == "SIGN":
+                    pop = True
+                    current_icon = "fa fa-user"
+                    current_color = "yellow"
+                elif task.type == "RUN":
+                    current_icon = "fa fa-bell-o"
+                    current_color = "yellow"
+                else:
+                    pass
+
+                if days > 1095:
+                    time = "很久以前"
+                else:
+                    if days > 730:
+                        time = "2年前"
+                    else:
+                        if days > 365:
+                            time = "1年前"
+                        else:
+                            if days > 182:
+                                time = "半年前"
+                            else:
+                                if days > 150:
+                                    time = "5月前"
+                                else:
+                                    if days > 120:
+                                        time = "4月前"
+                                    else:
+                                        if days > 90:
+                                            time = "3月前"
+                                        else:
+                                            if days > 60:
+                                                time = "2月前"
+                                            else:
+                                                if days > 30:
+                                                    time = "1月前"
+                                                else:
+                                                    if days >= 1:
+                                                        time = str(days) + "天前"
+                                                    else:
+                                                        hours = int((timenow - time).seconds / 3600)
+                                                        if hours >= 1:
+                                                            time = str(hours) + "小时"
+                                                        else:
+                                                            minutes = int((timenow - time).seconds / 60)
+                                                            if minutes >= 1:
+                                                                time = str(minutes) + "分钟"
+                                                            else:
+                                                                time = "刚刚"
+                message_task.append(
+                    {"content": task.content, "time": time, "process_name": process_name,
+                     "task_color": current_color.strip(),
+                     "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
+                     "pop": pop, "task_id": task_id, "process_name": process_name, "send_time": send_time,
+                     "process_run_reason": process_run_reason, "group_name": guoups[0].name})
+    return {"pagefuns": pagefuns, "curfun": mycurfun, "message_task": message_task, "task_nums": task_nums}
 
 
 def test(request):
@@ -155,6 +246,8 @@ def index(request, funid):
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 process_name = task.processrun.process.name
+                process_color = task.processrun.process.color
+
                 process_type = task.type
                 time = ""
                 time = task.starttime
@@ -246,7 +339,9 @@ def index(request, funid):
                                                             else:
                                                                 time = "刚刚"
 
-                alltask.append({"content": task.content, "time": time, "process_name": process_name, "task_color": current_color, "task_icon": current_icon})
+                alltask.append(
+                    {"content": task.content, "time": time, "process_name": process_name, "task_color": current_color,
+                     "task_icon": current_icon, "process_color": process_color})
 
         # 成功率，恢复次数，平均RTO，最新切换
         all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
@@ -473,8 +568,9 @@ def index(request, funid):
                                                                     else:
                                                                         time = "刚刚"
 
-                        current_process_task_info.append({"content": task.content, "time": time, "task_color": current_color,
-                                        "task_icon": current_icon})
+                        current_process_task_info.append(
+                            {"content": task.content, "time": time, "task_color": current_color,
+                             "task_icon": current_icon})
 
                 current_processrun_dict["current_process_task_info"] = current_process_task_info
                 current_processrun_dict["current_processrun_dict"] = current_processrun_dict
@@ -509,12 +605,15 @@ def index(request, funid):
                 }
                 process_success_rate_list.append(process_dict)
 
+        # 左上角消息任务
         return render(request, "index.html",
                       {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
                        "pagefuns": getpagefuns(funid), "success_rate": success_rate, "all_processruns": all_processruns,
                        "last_processrun_time": last_processrun_time, "average_rto": average_rto,
                        "curren_processrun_info_list": curren_processrun_info_list,
-                       "process_success_rate_list": process_success_rate_list})
+                       "process_success_rate_list": process_success_rate_list,
+                       "message_task": getpagefuns(funid, request=request)["message_task"],
+                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
     else:
         return HttpResponseRedirect("/login")
 
@@ -841,8 +940,10 @@ def function(request, funid):
             return render(request, 'function.html',
                           {'username': request.user.userinfo.fullname, 'errors': errors, "id": id,
                            "pid": pid, "pname": pname, "name": name, "url": url, "icon": icon, "title": title,
-                           "mytype": mytype,
-                           "hiddendiv": hiddendiv, "treedata": treedata, "pagefuns": getpagefuns(funid)})
+                           "mytype": mytype, "hiddendiv": hiddendiv, "treedata": treedata,
+                           "pagefuns": getpagefuns(funid),
+                           "message_task": getpagefuns(funid, request=request)["message_task"],
+                           "task_nums": getpagefuns(funid, request=request)["task_nums"]})
         except:
             return HttpResponseRedirect("/index")
     else:
@@ -1218,7 +1319,9 @@ def organization(request, funid):
                            "remark": remark, "title": title, "mytype": mytype, "hiddenuser": hiddenuser,
                            "hiddenorg": hiddenorg,
                            "newpassword": newpassword, "editpassword": editpassword, "hiddendiv": hiddendiv
-                              , "treedata": treedata, "pagefuns": getpagefuns(funid)})
+                              , "treedata": treedata, "pagefuns": getpagefuns(funid),
+                           "message_task": getpagefuns(funid, request=request)["message_task"],
+                           "task_nums": getpagefuns(funid, request=request)["task_nums"]})
 
         except:
             return HttpResponseRedirect("/index")
@@ -1590,7 +1693,9 @@ def script(request, funid):
                 else:
                     errors.append("只能上传xls和xlsx文件，请选择正确的文件类型。")
         return render(request, 'script.html',
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid), "errors": errors})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid), "errors": errors,
+                       "message_task": getpagefuns(funid, request=request)["message_task"],
+                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
     else:
         return HttpResponseRedirect("/login")
 
@@ -2313,7 +2418,9 @@ def processconfig(request, funid):
             processlist.append({"id": process.id, "code": process.code, "name": process.name})
         return render(request, 'processconfig.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
-                       "processlist": processlist, "process_id": process_id})
+                       "processlist": processlist, "process_id": process_id,
+                       "message_task": getpagefuns(funid, request=request)["message_task"],
+                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
 
 
 def del_step(request):
@@ -2681,7 +2788,9 @@ def falconstorswitch(request, funid, process_id):
 
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
-                       "wrapper_step_list": wrapper_step_list, "process_id": process_id})
+                       "wrapper_step_list": wrapper_step_list, "process_id": process_id,
+                       "message_task": getpagefuns(funid, request=request)["message_task"],
+                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3529,7 +3638,9 @@ def falconstorsearch(request, funid):
         }
         return render(request, "falconstorsearch.html",
                       {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
-                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid)})
+                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid),
+                       "message_task": getpagefuns(funid, request=request)["message_task"],
+                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3603,10 +3714,85 @@ def falconstorsearchdata(request):
         return HttpResponse(json.dumps({"data": result}))
 
 
+def tasksearch(request, funid):
+    if request.user.is_authenticated():
+        nowtime = datetime.datetime.now()
+        endtime = nowtime.strftime("%Y-%m-%d")
+        starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
+        all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
+        processname_list = []
+        for process in all_processes:
+            processname_list.append(process.name)
+
+        state_dict = {
+            "DONE": "已完成",
+            "EDIT": "未执行",
+            "RUN": "执行中",
+            "ERROR": "执行失败",
+            "IGNORE": "忽略",
+        }
+        return render(request, "tasksearch.html",
+                      {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
+                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid),
+                       "message_task": getpagefuns(funid, request=request)["message_task"],
+                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def tasksearchdata(request):
+    if request.user.is_authenticated():
+        result = []
+        task_type = request.GET.get('task_type', '')
+        has_finished = request.GET.get('has_finished', '')
+        startdate = request.GET.get('startdate', '')
+        enddate = request.GET.get('enddate', '')
+        print("task_type,has_finished,startdate,enddate",task_type,has_finished,startdate,enddate)
+        start_time = datetime.datetime.strptime(startdate, '%Y-%m-%d')
+        end_time = datetime.datetime.strptime(enddate, '%Y-%m-%d') + datetime.timedelta(days=1) - datetime.timedelta(
+            seconds=1)
+
+        all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time]).order_by("-starttime")
+
+        if task_type != "" and has_finished != "":
+            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time], type=task_type, state=has_finished).order_by("-starttime")
+        if task_type == "" and has_finished != "":
+            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time], state=has_finished).order_by("-starttime")
+        if task_type != "" and has_finished == "":
+            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time], type=task_type).order_by("-starttime")
+
+        type_dict = {
+            "SIGN": "签到",
+            "RUN": "操作",
+            "ERROR": "错误",
+            "": "",
+        }
+
+        has_finished_dict = {
+            "1": "完成",
+            "0": "未完成"
+        }
+        for task in all_process_task:
+            result.append({
+                "task_id": task.id,
+                "task_content": task.content,
+                "starttime": task.starttime.strftime('%Y-%m-%d %H:%M:%S') if task.starttime else "",
+                "endtime": task.endtime.strftime('%Y-%m-%d %H:%M:%S') if task.endtime else "",
+                "type": type_dict["{0}".format(task.type)] if task.type in type_dict.keys() else "",
+                "processrun_id": task.processrun_id if task.processrun_id else "",
+                "process_name": task.processrun.process.name if task.processrun.process.name else "",
+                "process_url": task.processrun.process.url if task.processrun.process.url else "",
+                "has_finished": has_finished_dict["{0}".format(task.state)] if task.state in has_finished_dict.keys() else "",
+            })
+        return JsonResponse({"data": result})
+
+
 def downloadlist(request, funid):
     if request.user.is_authenticated():
         return render(request, "downloadlist.html",
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
+                       "message_task": getpagefuns(funid, request=request)["message_task"],
+                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
     else:
         return HttpResponseRedirect("/login")
 

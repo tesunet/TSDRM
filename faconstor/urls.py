@@ -72,8 +72,10 @@ urlpatterns = [
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
-    url(r'^falconstorsearch/$', falconstorsearch, {'funid': '5'}),
+    url(r'^falconstorsearch/$', falconstorsearch, {'funid': '64'}),
     url(r'^falconstorsearchdata/$', falconstorsearchdata),
+    url(r'^tasksearch/$', tasksearch, {'funid': '65'}),
+    url(r'^tasksearchdata/$', tasksearchdata),
 
     # 其他
     url(r'^downloadlist/$', downloadlist, {'funid': '7'}),
