@@ -18,7 +18,7 @@ $(document).ready(function () {
         "columnDefs": [{
             "targets": 2,
             "render": function (data, type, full) {
-                return "<td><a href='process_url'>data</a></td>".replace("data", full.process_name).replace("process_url", full.process_url + "/" + full.processrun_id)
+                return "<td><a href='process_url'>data</a></td>".replace("data", full.task_content).replace("process_url", full.process_url + "/" + full.processrun_id)
             }
         }, {
             "visible": false,
