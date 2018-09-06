@@ -253,7 +253,8 @@ def exec_process(processrunid):
     end_step_tag = False
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
-    steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None, )
+    steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
+    
     if len(steprunlist) > 0:
         end_step_tag = runstep(steprunlist[0])
     else:
