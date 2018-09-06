@@ -2965,11 +2965,42 @@ def getchildrensteps(processrun, curstep):
                 endtime = steprunlist[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
             except:
                 pass
+            rto = ""
+            if steprunlist[0].state == "DONE":
+                try:
+                    current_delta_time = (steprunlist[0].endtime - steprunlist[0].starttime).total_seconds()
+                    m, s = divmod(current_delta_time, 60)
+                    h, m = divmod(m, 60)
+                    rto = "%d时%02d分%02d秒" % (h, m, s)
+                except:
+                    pass
+            else:
+                start_time = steprunlist[0].starttime.replace(tzinfo=None)
+                current_time = datetime.datetime.now()
+                current_delta_time = (current_time - start_time).total_seconds()
+                m, s = divmod(current_delta_time, 60)
+                h, m = divmod(m, 60)
+                rto = "%d时%02d分%02d秒" % (h, m, s)
             operator = steprunlist[0].operator
+            if operator is not None and operator != "":
+                try:
+                    curuser = User.objects.get(username=operator)
+                    operator = curuser.userinfo.fullname
+                except:
+                    pass
+            else:
+                operator = ""
             parameter = steprunlist[0].parameter
             runresult = steprunlist[0].result
             explain = steprunlist[0].explain
             state = steprunlist[0].state
+            note = steprunlist[0].note
+            group = step.group
+            try:
+                curgroup = Group.objects.get(id=int(group))
+                group = curgroup.name
+            except:
+                pass
         scripts = []
         scriptlist = Script.objects.exclude(state="9").filter(step=step)
         for script in scriptlist:
@@ -2993,21 +3024,38 @@ def getchildrensteps(processrun, curstep):
                         scriptendtime = scriptrunlist[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
                     except:
                         pass
-                        scriptoperator = scriptrunlist[0].operator
+                    scriptoperator = scriptrunlist[0].operator
                     scriptrunlog = scriptrunlist[0].runlog
                     scriptrunresult = scriptrunlist[0].result
                     scriptexplain = scriptrunlist[0].explain
                     scriptstate = scriptrunlist[0].state
+        verifyitems = []
+        verifyitemslist = VerifyItems.objects.exclude(state="9").filter(step=step)
+        for verifyitem in verifyitemslist:
+            runverifyitemid = 0
+            has_verified = ""
+            verifyitemstate = ""
+            if len(steprunlist) > 0:
+                verifyitemsrunlist = VerifyItemsRun.objects.exclude(state="9").filter(steprun=steprunlist[0],
+                                                                                      verify_items=verifyitem)
+                if len(verifyitemsrunlist) > 0:
+                    runverifyitemid = verifyitemsrunlist[0].id
+                    has_verified = verifyitemsrunlist[0].has_verified
+                    verifyitemstate = verifyitemsrunlist[0].state
+            verifyitems.append(
+                {"id": verifyitem.id, "name": verifyitem.name, "runverifyitemid": runverifyitemid,
+                 "has_verified": has_verified,
+                 "verifyitemstate": verifyitemstate})
             scripts.append({"id": script.id, "code": script.code, "name": script.name, "runscriptid": runscriptid,
                             "scriptstarttime": scriptstarttime,
                             "scriptendtime": scriptendtime, "scriptoperator": scriptoperator,
                             "scriptrunresult": scriptrunresult, "scriptexplain": scriptexplain,
                             "scriptrunlog": scriptrunlog, "scriptstate": scriptstate})
         childresult.append({"id": step.id, "code": step.code, "name": step.name, "approval": step.approval,
-                            "skip": step.skip, "group": step.group, "time": step.time, "runid": runid,
+                            "skip": step.skip, "group": group, "time": step.time, "runid": runid,
                             "starttime": starttime,
                             "endtime": endtime, "operator": operator, "parameter": parameter, "runresult": runresult,
-                            "explain": explain, "state": state, "scripts": scripts,
+                            "explain": explain, "state": state, "scripts": scripts,"verifyitems":verifyitems,"note":note,"rto":rto,
                             "children": getchildrensteps(processrun, step)})
     return childresult
 
@@ -3015,7 +3063,14 @@ def getchildrensteps(processrun, curstep):
 def getrunsetps(request):
     if request.user.is_authenticated():
         if request.method == 'POST':
+            processresult = {}
             result = []
+            process_name = ""
+            process_state=""
+            process_starttime = ""
+            process_endtime = ""
+            process_note = ""
+            process_rto = ""
             processrun = request.POST.get('process', '')
             try:
                 processrun = int(processrun)
@@ -3023,6 +3078,42 @@ def getrunsetps(request):
                 raise Http404()
             processruns = ProcessRun.objects.exclude(state="9").filter(id=processrun)
             if len(processruns) > 0:
+                process_name = processruns[0].process.name
+                process_state = processruns[0].state
+                process_note = processruns[0].note
+                try:
+                    process_starttime = processruns[0].starttime.strftime("%Y-%m-%d %H:%M:%S")
+                except:
+                    pass
+                try:
+                    process_endtime = processruns[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
+                except:
+                    pass
+                if process_state=="DONE" or process_state=="STOP":
+                    try:
+                        current_delta_time = (processruns[0].endtime - processruns[0].starttime).total_seconds()
+                        m, s = divmod(current_delta_time, 60)
+                        h, m = divmod(m, 60)
+                        process_rto = "%d时%02d分%02d秒" % (h, m, s)
+                    except:
+                        pass
+                else:
+                    start_time = processruns[0].starttime.replace(tzinfo=None)
+                    current_time = datetime.datetime.now()
+                    current_delta_time = (current_time - start_time).total_seconds()
+                    m, s = divmod(current_delta_time, 60)
+                    h, m = divmod(m, 60)
+                    process_rto = "%d时%02d分%02d秒" % (h, m, s)
+
+
+                processresult["step"] = result
+                processresult["process_name"] = process_name
+                processresult["process_state"] = process_state
+                processresult["process_starttime"] = process_starttime
+                processresult["process_endtime"] = process_endtime
+                processresult["process_note"] = process_note
+                processresult["process_rto"] = process_rto
+
                 steplist = Step.objects.exclude(state="9").filter(process=processruns[0].process, pnode=None)
                 for step in steplist:
                     runid = 0
@@ -3044,11 +3135,42 @@ def getrunsetps(request):
                             endtime = steprunlist[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
                         except:
                             pass
+                        rto = ""
+                        if steprunlist[0].state == "DONE":
+                            try:
+                                current_delta_time = (steprunlist[0].endtime - steprunlist[0].starttime).total_seconds()
+                                m, s = divmod(current_delta_time, 60)
+                                h, m = divmod(m, 60)
+                                rto = "%d时%02d分%02d秒" % (h, m, s)
+                            except:
+                                pass
+                        else:
+                            start_time = steprunlist[0].starttime.replace(tzinfo=None)
+                            current_time = datetime.datetime.now()
+                            current_delta_time = (current_time - start_time).total_seconds()
+                            m, s = divmod(current_delta_time, 60)
+                            h, m = divmod(m, 60)
+                            rto = "%d时%02d分%02d秒" % (h, m, s)
                         operator = steprunlist[0].operator
+                        if operator is not None and operator!="":
+                            try:
+                                curuser = User.objects.get(username=operator)
+                                operator = curuser.userinfo.fullname
+                            except:
+                                pass
+                        else:
+                            operator=""
                         parameter = steprunlist[0].parameter
                         runresult = steprunlist[0].result
                         explain = steprunlist[0].explain
                         state = steprunlist[0].state
+                        note = steprunlist[0].note
+                        group = step.group
+                        try:
+                            curgroup = Group.objects.get(id=int(group))
+                            group=curgroup.name
+                        except:
+                            pass
                     scripts = []
                     scriptlist = Script.objects.exclude(state="9").filter(step=step)
                     for script in scriptlist:
@@ -3073,7 +3195,7 @@ def getrunsetps(request):
                                     scriptendtime = scriptrunlist[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
                                 except:
                                     pass
-                                    scriptoperator = scriptrunlist[0].operator
+                                scriptoperator = scriptrunlist[0].operator
                                 scriptrunlog = scriptrunlist[0].runlog
                                 scriptrunresult = scriptrunlist[0].result
                                 scriptexplain = scriptrunlist[0].explain
@@ -3084,16 +3206,33 @@ def getrunsetps(request):
                              "scriptendtime": scriptendtime, "scriptoperator": scriptoperator,
                              "scriptrunresult": scriptrunresult, "scriptexplain": scriptexplain,
                              "scriptrunlog": scriptrunlog, "scriptstate": scriptstate})
+                    verifyitems=[]
+                    verifyitemslist = VerifyItems.objects.exclude(state="9").filter(step=step)
+                    for verifyitem in verifyitemslist:
+                        runverifyitemid = 0
+                        has_verified=""
+                        verifyitemstate = ""
+                        if len(steprunlist) > 0:
+                            verifyitemsrunlist = VerifyItemsRun.objects.exclude(state="9").filter(steprun=steprunlist[0],
+                                                                                                  verify_items=verifyitem)
+                            if len(verifyitemsrunlist) > 0:
+                                runverifyitemid = verifyitemsrunlist[0].id
+                                has_verified = verifyitemsrunlist[0].has_verified
+                                verifyitemstate = verifyitemsrunlist[0].state
+                        verifyitems.append(
+                            {"id": verifyitem.id,  "name": verifyitem.name, "runverifyitemid": runverifyitemid,
+                             "has_verified": has_verified,
+                             "verifyitemstate": verifyitemstate})
 
                     result.append({"id": step.id, "code": step.code, "name": step.name, "approval": step.approval,
-                                   "skip": step.skip, "group": step.group, "time": step.time, "runid": runid,
+                                   "skip": step.skip, "group": group, "time": step.time, "runid": runid,
                                    "starttime": starttime,
                                    "endtime": endtime, "operator": operator, "parameter": parameter,
                                    "runresult": runresult,
-                                   "explain": explain, "state": state, "scripts": scripts,
+                                   "explain": explain, "state": state, "scripts": scripts,"verifyitems":verifyitems,"note":note,"rto":rto,
                                    "children": getchildrensteps(processruns[0], step)})
 
-            return HttpResponse(json.dumps(result))
+            return HttpResponse(json.dumps(processresult))
 
 
 def falconstorcontinue(request):

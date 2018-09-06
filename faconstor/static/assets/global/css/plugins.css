@@ -507,7 +507,7 @@ Bootstrap Wizard
     color: #fff; }
   .form-wizard .steps > li.done > a.step .desc {
     color: #333; }
-    .form-wizard .steps > li.done > a.step .desc i {
+    .form-wizard .steps > li.active > a.step .desc i {
       font-size: 12px;
       font-weight: normal;
       color: #999;

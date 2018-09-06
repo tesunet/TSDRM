@@ -253,10 +253,11 @@ def runstep(steprun):
             myprocesstask.state = "1"
             myprocesstask.content = "脚本" + script.script.name + "完成。"
             myprocesstask.save()
-        steprun.state = "DONE"
-        steprun.endtime = datetime.datetime.now()
-        steprun.save()
         if steprun.step.approval=="approval":
+            steprun.state = "CONFIRM"
+            steprun.endtime = datetime.datetime.now()
+            steprun.save()
+
             myprocesstask = ProcessTask()
             myprocesstask.processrun = steprun.processrun
             myprocesstask.starttime = datetime.datetime.now()
@@ -266,8 +267,13 @@ def runstep(steprun):
             myprocesstask.state = "0"
             myprocesstask.content = "步骤" + steprun.step.name + "等待确认，请处理。"
             myprocesstask.save()
+
             return 2
         else:
+            steprun.state = "DONE"
+            steprun.endtime = datetime.datetime.now()
+            steprun.save()
+
             myprocesstask = ProcessTask()
             myprocesstask.processrun = steprun.processrun
             myprocesstask.starttime = datetime.datetime.now()
@@ -277,6 +283,7 @@ def runstep(steprun):
             myprocesstask.state = "1"
             myprocesstask.content = "步骤" + steprun.step.name + "完成。"
             myprocesstask.save()
+
 
     nextstep = steprun.step.next.exclude(state="9")
     if len(nextstep) > 0:
