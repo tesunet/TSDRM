@@ -256,29 +256,42 @@ def exec_process(processrunid):
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None, )
     if len(steprunlist) > 0:
         end_step_tag = runstep(steprunlist[0])
-    if end_step_tag:
-        processrun.state = "DONE"
-        processrun.save()
-
-        processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
-        if len(processtasks) > 0:
-            processtasks[0].state = "1"
-            processtasks[0].endtime = datetime.datetime.now()
-            processtasks[0].save()
     else:
+        myprocesstask = ProcessTask()
+        myprocesstask.processrun = processrun
+        myprocesstask.starttime = datetime.datetime.now()
+        myprocesstask.senduser = processrun.creatuser
+        myprocesstask.receiveuser = processrun.creatuser
+        myprocesstask.type = "ERROR"
+        myprocesstask.state = "0"
+        myprocesstask.content = "流程配置错误，请处理。"
+        myprocesstask.save()
+    if not end_step_tag:
         processrun.state = "ERROR"
         processrun.save()
-        processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
-        if len(processtasks) > 0:
-            processtasks[0].state = "1"
-            processtasks[0].save()
-
-            myprocesstask = ProcessTask()
-            myprocesstask.processrun = processrun
-            myprocesstask.starttime = datetime.datetime.now()
-            myprocesstask.senduser = processtasks[0].senduser
-            myprocesstask.receiveuser = processtasks[0].receiveuser
-            myprocesstask.type = "RUN"
-            myprocesstask.state = "0"
-            myprocesstask.content = processrun.process.name + " 流程运行出错，请处理。"
-            myprocesstask.save()
+    # if end_step_tag:
+    #     processrun.state = "DONE"
+    #     processrun.save()
+    #
+    #     processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
+    #     if len(processtasks) > 0:
+    #         processtasks[0].state = "1"
+    #         processtasks[0].endtime = datetime.datetime.now()
+    #         processtasks[0].save()
+    # else:
+    #     processrun.state = "ERROR"
+    #     processrun.save()
+    #     processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
+    #     if len(processtasks) > 0:
+    #         processtasks[0].state = "1"
+    #         processtasks[0].save()
+    #
+    #         myprocesstask = ProcessTask()
+    #         myprocesstask.processrun = processrun
+    #         myprocesstask.starttime = datetime.datetime.now()
+    #         myprocesstask.senduser = processtasks[0].senduser
+    #         myprocesstask.receiveuser = processtasks[0].receiveuser
+    #         myprocesstask.type = "RUN"
+    #         myprocesstask.state = "0"
+    #         myprocesstask.content = processrun.process.name + " 流程运行出错，请处理。"
+    #         myprocesstask.save()

@@ -2879,6 +2879,13 @@ def falconstorrun(request):
                             myscriptrun.state = "EDIT"
                             myscriptrun.save()
 
+                        myverifyitems = step.verifyitems_set.exclude(state="9")
+                        for verifyitems in myverifyitems:
+                            myverifyitemsrun = VerifyItemsRun()
+                            myverifyitemsrun.verify_items = verifyitems
+                            myverifyitemsrun.steprun = mysteprun
+                            myverifyitemsrun.save()
+
                     allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                         "group").distinct()  # 当前预案下需要签字的组,但一个对象只发送一次task
 
@@ -2895,7 +2902,7 @@ def falconstorrun(request):
                                 myprocesstask.receiveauth = group["group"]
                                 myprocesstask.type = "SIGN"
                                 myprocesstask.state = "0"
-                                myprocesstask.content = "管理员将启动流程“" + myprocessrun.process.name + "”，请" + groupname + "签字。"
+                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
                                 myprocesstask.save()
                             except:
                                 pass
@@ -2909,11 +2916,11 @@ def falconstorrun(request):
                             myprocesstask = ProcessTask()
                             myprocesstask.processrun = myprocessrun
                             myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.type = "RUN"
-                            myprocesstask.state = "0"
-                            myprocesstask.receiveuser = request.user.username
+                            myprocesstask.type = "INFO"
+                            myprocesstask.logtype = "START"
+                            myprocesstask.state = "1"
                             myprocesstask.senduser = request.user.username
-                            myprocesstask.content = myprocess.name + " 流程已启动，点击查看。"
+                            myprocesstask.content = "流程已启动。"
                             myprocesstask.save()
 
                             # exec_process.delay(myprocessrun.id)
@@ -3132,11 +3139,11 @@ def processsignsave(request):
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = myprocessrun
                 myprocesstask.starttime = datetime.datetime.now()
-                myprocesstask.type = "RUN"
-                myprocesstask.state = "0"
-                myprocesstask.content = myprocess.name + " 流程已启动，点击查看。"
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "START"
+                myprocesstask.state = "1"
+                myprocesstask.content = "流程已启动。"
                 myprocesstask.starttime = datetime.datetime.now()
-                myprocesstask.receiveuser = request.user.username
                 myprocesstask.senduser = request.user.username
                 myprocesstask.save()
 
@@ -3995,3 +4002,7 @@ def get_all_users(request):
         for user in all_users:
             user_string += user.fullname + "&"
         return JsonResponse({"data": user_string})
+
+
+
+
