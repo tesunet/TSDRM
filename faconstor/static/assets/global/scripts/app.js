@@ -407,7 +407,7 @@ var App = function() {
         });
         $('.portlet > .portlet-title > .tools > .collapse, .portlet > .portlet-title > .tools > .expand').tooltip({
             container: 'body',
-            title: 'Collapse/Expand'
+            title: '折叠/展开'
         });
     };
 

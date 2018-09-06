@@ -192,8 +192,11 @@ def runstep(steprun):
             for child in children:
                 childsteprun = child.steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
                 if len(childsteprun) > 0:
-                    if runstep(childsteprun[0]) == False:
-                        return False
+                    childreturn = runstep(childsteprun[0])
+                    if childreturn == 0:
+                        return 0
+                    if childreturn == 2:
+                        return 2
         scriptruns = steprun.scriptrun_set.exclude(Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
         for script in scriptruns:
             script.starttime = datetime.datetime.now()
@@ -227,22 +230,64 @@ def runstep(steprun):
                 script.save()
                 steprun.state = "ERROR"
                 steprun.save()
-                return False
+                myprocesstask = ProcessTask()
+                myprocesstask.processrun = steprun.processrun
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.senduser = steprun.processrun.creatuser
+                myprocesstask.receiveauth = steprun.step.group
+                myprocesstask.type = "ERROR"
+                myprocesstask.state = "0"
+                myprocesstask.content = "脚本" + script.script.name + "执行错误，请处理。"
+                myprocesstask.save()
+                return 0
 
             script.endtime = datetime.datetime.now()
             script.state = "DONE"
             script.save()
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun = steprun.processrun
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = steprun.processrun.creatuser
+            myprocesstask.type = "INFO"
+            myprocesstask.logtype = "SCRIPT"
+            myprocesstask.state = "1"
+            myprocesstask.content = "脚本" + script.script.name + "完成。"
+            myprocesstask.save()
         steprun.state = "DONE"
         steprun.endtime = datetime.datetime.now()
         steprun.save()
+        if steprun.step.approval=="approval":
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun = steprun.processrun
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = steprun.processrun.creatuser
+            myprocesstask.receiveauth = steprun.step.group
+            myprocesstask.type = "RUN"
+            myprocesstask.state = "0"
+            myprocesstask.content = "步骤" + steprun.step.name + "等待确认，请处理。"
+            myprocesstask.save()
+            return 2
+        else:
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun = steprun.processrun
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = steprun.processrun.creatuser
+            myprocesstask.type = "INFO"
+            myprocesstask.logtype = "STEP"
+            myprocesstask.state = "1"
+            myprocesstask.content = "步骤" + steprun.step.name + "完成。"
+            myprocesstask.save()
 
     nextstep = steprun.step.next.exclude(state="9")
     if len(nextstep) > 0:
         nextsteprun = nextstep[0].steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
         if len(nextsteprun) > 0:
-            if runstep(nextsteprun[0]) == False:
-                return False
-    return True
+            nextreturn = runstep(nextsteprun[0])
+            if nextreturn == 0:
+                return 0
+            if nextreturn == 2:
+                return 2
+    return 1
 
 
 @task
@@ -250,7 +295,7 @@ def exec_process(processrunid):
     """
     执行当前流程下的所有脚本
     """
-    end_step_tag = False
+    end_step_tag = 0
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
@@ -267,7 +312,7 @@ def exec_process(processrunid):
         myprocesstask.state = "0"
         myprocesstask.content = "流程配置错误，请处理。"
         myprocesstask.save()
-    if not end_step_tag:
+    if end_step_tag==0:
         processrun.state = "ERROR"
         processrun.save()
     # if end_step_tag:

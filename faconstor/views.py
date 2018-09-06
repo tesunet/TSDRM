@@ -196,7 +196,7 @@ def getpagefuns(funid, request=""):
 def test(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         errors = []
-        return render(request, 'notice.html',
+        return render(request, 'test.html',
                       {'username': request.user.userinfo.fullname, "errors": errors})
     else:
         return HttpResponseRedirect("/login")
