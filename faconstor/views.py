@@ -134,14 +134,14 @@ def getpagefuns(funid, request=""):
                 # 图标与颜色
                 if task.type == "ERROR":
                     current_icon = "fa fa-exclamation-triangle"
-                    current_color = "red"
+                    current_color = "label-danger"
                 elif task.type == "SIGN":
                     pop = True
                     current_icon = "fa fa-user"
-                    current_color = "yellow"
+                    current_color = "label-warning"
                 elif task.type == "RUN":
                     current_icon = "fa fa-bell-o"
-                    current_color = "yellow"
+                    current_color = "label-warning"
                 else:
                     pass
 
@@ -261,23 +261,23 @@ def index(request, funid):
                 if task.type == "ERROR":
                     current_icon = "fa fa-exclamation-triangle"
                     if task.state == "0":
-                        current_color = "red"
+                        current_color = "label-danger"
                     if task.state == "1":
-                        current_color = "grey"
+                        current_color = "label-default"
                 elif task.type == "SIGN":
                     current_icon = "fa fa-user"
                     if task.state == "0":
-                        current_color = "yellow"
+                        current_color = "label-warning"
                     if task.state == "1":
-                        current_color = "blue"
+                        current_color = "label-info"
                 elif task.type == "RUN":
                     current_icon = "fa fa-bell-o"
                     if task.state == "0":
-                        current_color = "yellow"
+                        current_color = "label-warning"
                     if task.state == "1":
-                        current_color = "blue"
+                        current_color = "label-info"
                 else:
-                    current_color = "green"
+                    current_color = "label-success"
                     if task.logtype == "START":
                         current_icon = "fa fa-power-off"
                     elif task.logtype == "START":
@@ -490,23 +490,23 @@ def index(request, funid):
                         if task.type == "ERROR":
                             current_icon = "fa fa-exclamation-triangle"
                             if task.state == "0":
-                                current_color = "red"
+                                current_color = "label-danger"
                             if task.state == "1":
-                                current_color = "grey"
+                                current_color = "label-default"
                         elif task.type == "SIGN":
                             current_icon = "fa fa-user"
                             if task.state == "0":
-                                current_color = "yellow"
+                                current_color = "label-warning"
                             if task.state == "1":
-                                current_color = "blue"
+                                current_color = "label-info"
                         elif task.type == "RUN":
                             current_icon = "fa fa-bell-o"
                             if task.state == "0":
-                                current_color = "yellow"
+                                current_color = "label-warning"
                             if task.state == "1":
-                                current_color = "blue"
+                                current_color = "label-info"
                         else:
-                            current_color = "green"
+                            current_color = "label-success"
                             if task.logtype == "START":
                                 current_icon = "fa fa-power-off"
                             elif task.logtype == "START":
