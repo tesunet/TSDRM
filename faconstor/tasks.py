@@ -322,9 +322,19 @@ def exec_process(processrunid):
     if end_step_tag==0:
         processrun.state = "ERROR"
         processrun.save()
-    # if end_step_tag:
-    #     processrun.state = "DONE"
-    #     processrun.save()
+    if end_step_tag==1:
+        processrun.state = "DONE"
+        processrun.save()
+
+        myprocesstask = ProcessTask()
+        myprocesstask.processrun = processrun
+        myprocesstask.starttime = datetime.datetime.now()
+        myprocesstask.senduser = processrun.creatuser
+        myprocesstask.type = "INFO"
+        myprocesstask.logtype = "END"
+        myprocesstask.state = "1"
+        myprocesstask.content = "流程结束。"
+        myprocesstask.save()
     #
     #     processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
     #     if len(processtasks) > 0:

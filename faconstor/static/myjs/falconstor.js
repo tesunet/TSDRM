@@ -85,7 +85,6 @@ if (App.isAngularJsApp() === false) {
                     $("ul.steps").empty();
                     $("div.tab-content").empty();
                     $("#stopbtn").show();
-                    $("#endbtn").show();
 
                     $("#process_name").text(data["process_name"]);
                     $("#process_starttime").val(data["process_starttime"]);
@@ -95,25 +94,21 @@ if (App.isAngularJsApp() === false) {
                     if(data["process_state"]=="DONE") {
                         $("#process_state").val("完成");
                         $("#stopbtn").hide();
-                        $("#endbtn").hide();
                         window.clearInterval(t2);
                     }
                     if(data["process_state"]=="RUN")
                         $("#process_state").val("运行");
                     if(data["process_state"]=="ERROR") {
                         $("#process_state").val("错误");
-                        $("#endbtn").hide();
                         window.clearInterval(t2);
                     }
                     if(data["process_state"]=="STOP") {
                         $("#process_state").val("停止");
                         $("#stopbtn").hide();
-                        $("#endbtn").hide();
                         window.clearInterval(t2);
                     }
                     var processallsteps = 0
                     var processdonesteps = 0
-                     $("#").width("100%");
 window.clearInterval(t2);
                     for (var i = 0; i < data["step"].length; i++) {
 
@@ -169,7 +164,7 @@ window.clearInterval(t2);
                             expand = "collapse"
                             style = ""
                             stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" +
-                                "                                                <button hidden id=\"endbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
+                                "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                 "                                            </div>"
                         }
                         if(step1_state=="RUN")
@@ -259,7 +254,7 @@ window.clearInterval(t2);
                             if(step2_state=="CONFIRM") {
                                 step2_state = "待确认";
                                 step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" +
-                                "                                                <button hidden id=\"endbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
+                                "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                 "                                            </div>"
                             }
                             if(step2_state=="RUN")
