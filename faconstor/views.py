@@ -608,12 +608,10 @@ def index(request, funid):
         # 左上角消息任务
         return render(request, "index.html",
                       {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
-                       "pagefuns": getpagefuns(funid), "success_rate": success_rate, "all_processruns": all_processruns,
+                       "pagefuns": getpagefuns(funid, request), "success_rate": success_rate, "all_processruns": all_processruns,
                        "last_processrun_time": last_processrun_time, "average_rto": average_rto,
                        "curren_processrun_info_list": curren_processrun_info_list,
-                       "process_success_rate_list": process_success_rate_list,
-                       "message_task": getpagefuns(funid, request=request)["message_task"],
-                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                       "process_success_rate_list": process_success_rate_list})
     else:
         return HttpResponseRedirect("/login")
 
@@ -941,9 +939,7 @@ def function(request, funid):
                           {'username': request.user.userinfo.fullname, 'errors': errors, "id": id,
                            "pid": pid, "pname": pname, "name": name, "url": url, "icon": icon, "title": title,
                            "mytype": mytype, "hiddendiv": hiddendiv, "treedata": treedata,
-                           "pagefuns": getpagefuns(funid),
-                           "message_task": getpagefuns(funid, request=request)["message_task"],
-                           "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                           "pagefuns": getpagefuns(funid, request=request)})
         except:
             return HttpResponseRedirect("/index")
     else:
@@ -1319,9 +1315,7 @@ def organization(request, funid):
                            "remark": remark, "title": title, "mytype": mytype, "hiddenuser": hiddenuser,
                            "hiddenorg": hiddenorg,
                            "newpassword": newpassword, "editpassword": editpassword, "hiddendiv": hiddendiv
-                              , "treedata": treedata, "pagefuns": getpagefuns(funid),
-                           "message_task": getpagefuns(funid, request=request)["message_task"],
-                           "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                              , "treedata": treedata, "pagefuns": getpagefuns(funid, request=request)})
 
         except:
             return HttpResponseRedirect("/index")
@@ -1445,7 +1439,7 @@ def group(request, funid):
 
             return render(request, 'group.html',
                           {'username': request.user.userinfo.fullname,
-                           "allgroup": allgroup, "pagefuns": getpagefuns(funid)})
+                           "allgroup": allgroup, "pagefuns": getpagefuns(funid, request)})
         except:
             return HttpResponseRedirect("/index")
     else:
@@ -1693,9 +1687,7 @@ def script(request, funid):
                 else:
                     errors.append("只能上传xls和xlsx文件，请选择正确的文件类型。")
         return render(request, 'script.html',
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid), "errors": errors,
-                       "message_task": getpagefuns(funid, request=request)["message_task"],
-                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request), "errors": errors})
     else:
         return HttpResponseRedirect("/login")
 
@@ -2417,10 +2409,8 @@ def processconfig(request, funid):
         for process in processes:
             processlist.append({"id": process.id, "code": process.code, "name": process.name})
         return render(request, 'processconfig.html',
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
-                       "processlist": processlist, "process_id": process_id,
-                       "message_task": getpagefuns(funid, request=request)["message_task"],
-                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
+                       "processlist": processlist, "process_id": process_id})
 
 
 def del_step(request):
@@ -2608,7 +2598,7 @@ def get_all_groups(request):
 def process_design(request, funid):
     if request.user.is_authenticated():
         return render(request, "processdesign.html",
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid)})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request)})
 
 
 def process_data(request):
@@ -2787,10 +2777,8 @@ def falconstorswitch(request, funid, process_id):
             wrapper_step_list.append(wrapper_step_dict)
 
         return render(request, 'falconstorswitch.html',
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
-                       "wrapper_step_list": wrapper_step_list, "process_id": process_id,
-                       "message_task": getpagefuns(funid, request=request)["message_task"],
-                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
+                       "wrapper_step_list": wrapper_step_list, "process_id": process_id})
     else:
         return HttpResponseRedirect("/login")
 
@@ -2937,7 +2925,7 @@ def falconstor(request, offset, funid):
         except:
             raise Http404()
         return render(request, 'falconstor.html',
-                      {'username': request.user.userinfo.fullname, "process": id, "pagefuns": getpagefuns(funid)})
+                      {'username': request.user.userinfo.fullname, "process": id, "pagefuns": getpagefuns(funid, request)})
     else:
         return HttpResponseRedirect("/index")
 
@@ -3784,9 +3772,7 @@ def falconstorsearch(request, funid):
         }
         return render(request, "falconstorsearch.html",
                       {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
-                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid),
-                       "message_task": getpagefuns(funid, request=request)["message_task"],
-                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid, request=request)})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3879,9 +3865,7 @@ def tasksearch(request, funid):
         }
         return render(request, "tasksearch.html",
                       {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
-                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid),
-                       "message_task": getpagefuns(funid, request=request)["message_task"],
-                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid, request=request)})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3936,9 +3920,7 @@ def tasksearchdata(request):
 def downloadlist(request, funid):
     if request.user.is_authenticated():
         return render(request, "downloadlist.html",
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid),
-                       "message_task": getpagefuns(funid, request=request)["message_task"],
-                       "task_nums": getpagefuns(funid, request=request)["task_nums"]})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request)})
     else:
         return HttpResponseRedirect("/login")
 

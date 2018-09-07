@@ -71,15 +71,17 @@
                 <li class="dropdown dropdown-extended dropdown-notification" id="header_notification_bar">
                     <a href="javascript:;" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown"
                        data-close-others="true">
-                        <i style="font-size:18px" class="fa fa-bell-o"></i><span class="badge badge-default"
-                                                                                 style="background-color: #36c6d3"> {{ task_nums }} </span>
+                        <i style="font-size:18px" class="fa fa-bell-o"></i>
+                        {% if pagefuns.task_nums > 0 %}
+                        <span class="badge badge-default" style="background-color: #36c6d3"> {{ pagefuns.task_nums }} </span>
+                        {% endif %}
                     </a>
                     <ul class="dropdown-menu">
 
                         <li>
                             <div class="scroller" style="height: 620px;" data-always-visible="1" data-rail-visible="0">
                                 <ul class="feeds" id="locate_task">
-                                    {% for task in message_task %}
+                                    {% for task in pagefuns.message_task %}
                                         <li id="{{ task.task_id }}">
                                             {% if task.pop %}
                                                 <a href="" data-toggle="modal" data-target="#static_base_01">
