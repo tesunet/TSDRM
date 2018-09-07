@@ -86,30 +86,31 @@ if (App.isAngularJsApp() === false) {
                     $("div.tab-content").empty();
                     $("#stopbtn").show();
 
+                    $("#process_run_id").val($("#process").val());
                     $("#process_name").text(data["process_name"]);
                     $("#process_starttime").val(data["process_starttime"]);
                     $("#process_endtime").val(data["process_endtime"]);
                     $("#process_note").val(data["process_note"]);
                     $("#process_rto").val(data["process_rto"]);
-                    if(data["process_state"]=="DONE") {
+                    if (data["process_state"] == "DONE") {
                         $("#process_state").val("完成");
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
                     }
-                    if(data["process_state"]=="RUN")
+                    if (data["process_state"] == "RUN")
                         $("#process_state").val("运行");
-                    if(data["process_state"]=="ERROR") {
+                    if (data["process_state"] == "ERROR") {
                         $("#process_state").val("错误");
                         window.clearInterval(t2);
                     }
-                    if(data["process_state"]=="STOP") {
+                    if (data["process_state"] == "STOP") {
                         $("#process_state").val("停止");
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
                     }
                     var processallsteps = 0
                     var processdonesteps = 0
-window.clearInterval(t2);
+                    window.clearInterval(t2);
                     for (var i = 0; i < data["step"].length; i++) {
 
                         var first = ""
@@ -140,26 +141,26 @@ window.clearInterval(t2);
                         var step1_group = data["step"][i]["group"]
                         var step1_operator = data["step"][i]["operator"]
                         var step1_note = data["step"][i]["note"]
-                        processallsteps = processallsteps+1
-                        var expand="collapse"
-                        var bar=""
+                        processallsteps = processallsteps + 1
+                        var expand = "collapse"
+                        var bar = ""
                         var style = ""
                         var stepbtn = ""
-                        if(data["step"][i]["children"].length>0) {
+                        if (data["step"][i]["children"].length > 0) {
                             expand = "expand"
-                            bar="<div id=\"step_bar\"" + (i + 1).toString() + " class=\"progress progress-striped\"\n" +
-                            "                                                             role=\"progressbar\">\n" +
-                            "                                                            <div id=\"step_bar_\"" + (i + 1).toString() + " class=\"progress-bar progress-bar-success\"\n" +
-                            "                                                                 style=\"width: 0%;\"></div>\n" +
-                            "                                                        </div>"
+                            bar = "<div id=\"step_bar\"" + (i + 1).toString() + " class=\"progress progress-striped\"\n" +
+                                "                                                             role=\"progressbar\">\n" +
+                                "                                                            <div id=\"step_bar_\"" + (i + 1).toString() + " class=\"progress-bar progress-bar-success\"\n" +
+                                "                                                                 style=\"width: 0%;\"></div>\n" +
+                                "                                                        </div>"
                             style = "style=\"display: none;\""
                         }
 
-                        if(step1_state=="DONE") {
+                        if (step1_state == "DONE") {
                             step1_state = "完成";
-                            processdonesteps = processdonesteps+1
+                            processdonesteps = processdonesteps + 1
                         }
-                        if(step1_state=="CONFIRM") {
+                        if (step1_state == "CONFIRM") {
                             step1_state = "待确认";
                             expand = "collapse"
                             style = ""
@@ -167,13 +168,13 @@ window.clearInterval(t2);
                                 "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                 "                                            </div>"
                         }
-                        if(step1_state=="RUN")
+                        if (step1_state == "RUN")
                             step1_state = "运行";
-                        if(step1_state=="ERROR")
+                        if (step1_state == "ERROR")
                             step1_state = "错误";
-                        if(step1_state=="CONFIRM")
+                        if (step1_state == "CONFIRM")
                             step1_state = "待确认";
-                        if(step1_state=="EDIT")
+                        if (step1_state == "EDIT")
                             step1_state = "未开始";
                         $("#tabdiv" + (i + 1).toString()).append("<div class=\"portlet box blue\"><div class=\"portlet-title\"><div class=\"caption\">" + step1_name + "</div><div class=\"tools\"><a href=\"javascript:;\"class=\"" + expand + "\"> </a>\n" +
                             "</div></div><div class=\"portlet-body\" " + style + "><div class=\"row\"><div ><div class=\"panel-body\"><div class=\"form-body\"><div class=\"row\"><div class=\"col-md-6\">\n" +
@@ -187,7 +188,7 @@ window.clearInterval(t2);
                             "placeholder=\"\" readonly=\"\"> <div class=\"form-control-focus\"></div> </div> </div> <div class=\"form-group \"> <label class=\"col-md-2 control-label\">确认人</label>\n" +
                             "<div class=\"col-md-10\"> <input  type=\"text\" value=\"" + step1_operator + "\" class=\"form-control \" placeholder=\"\" readonly=\"\"> <div class=\"form-control-focus\"></div> </div> </div> <div class=\"form-group\">\n" +
                             "<label class=\"col-md-2 control-label\">说明</label> <div class=\"col-md-10\"> <textarea style=\"height: 100px\" value=\"" + step1_note + "\" style=\"resize:none;\" autocomplete=\"off\" class=\"form-control\" readonly=\"\"></textarea> <div class=\"form-control-focus\"></div> </div> </div></div><div id='scriptdiv_" + (i + 1).toString() + "' class=\"col-md-6\"> </div> </div>" + bar + stepbtn + " </div> </div> </div> </div> </div></div>")
-                        if(data["step"][i]["scripts"].length>0){
+                        if (data["step"][i]["scripts"].length > 0) {
 
                             $("#scriptdiv_" + (i + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>脚本</label><div class=\"col-md-10\"><select id='se" + (i + 1).toString() + "' size='9' class='form-control' style='overflow-y:auto;'></select><div class=\"form-control-focus\"></div></div></div>")
                             for (var j = 0; j < data["step"][i]["scripts"].length; j++) {
@@ -205,7 +206,7 @@ window.clearInterval(t2);
 
 
                         }
-                        if(data["step"][i]["verifyitems"].length>0){
+                        if (data["step"][i]["verifyitems"].length > 0) {
 
                             $("#scriptdiv_" + (i + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div id='verifyitems_" + (i + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
                             for (var j = 0; j < data["step"][i]["verifyitems"].length; j++) {
@@ -225,7 +226,7 @@ window.clearInterval(t2);
                             var steprun = ""
                             var hidediv = "hidden"
                             var style = "display:none;"
-                            if (data["step"][i]["children"][j]["state"] == "RUN" || data["step"][i]["state"] == "CONFIRM"|| data["step"][i]["children"][j]["state"] == "ERROR" || ((j == data["step"][i]["children"].length - 1) && data["step"][i]["children"][j]["state"] == "DONE")) {
+                            if (data["step"][i]["children"][j]["state"] == "RUN" || data["step"][i]["state"] == "CONFIRM" || data["step"][i]["children"][j]["state"] == "ERROR" || ((j == data["step"][i]["children"].length - 1) && data["step"][i]["children"][j]["state"] == "DONE")) {
                                 hidediv = ""
                                 steprun = "active"
                                 style = ""
@@ -241,32 +242,32 @@ window.clearInterval(t2);
                             var step2_group = data["step"][i]["children"][j]["group"]
                             var step2_operator = data["step"][i]["children"][j]["operator"]
                             var step2_note = data["step"][i]["children"][j]["note"]
-                            processallsteps = processallsteps+1
-                            stepallsteps = stepallsteps+1
+                            processallsteps = processallsteps + 1
+                            stepallsteps = stepallsteps + 1
 
                             var step2btn = ""
 
-                            if(step2_state=="DONE") {
+                            if (step2_state == "DONE") {
                                 step2_state = "完成";
-                                processdonesteps = processdonesteps+1
-                                stepdonesteps = stepdonesteps+1
+                                processdonesteps = processdonesteps + 1
+                                stepdonesteps = stepdonesteps + 1
                             }
-                            if(step2_state=="CONFIRM") {
+                            if (step2_state == "CONFIRM") {
                                 step2_state = "待确认";
                                 step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" +
-                                "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
-                                "                                            </div>"
+                                    "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
+                                    "                                            </div>"
                             }
-                            if(step2_state=="RUN")
+                            if (step2_state == "RUN")
                                 step2_state = "运行";
-                            if(step2_state=="ERROR")
+                            if (step2_state == "ERROR")
                                 step2_state = "错误";
-                            if(step2_state=="CONFIRM")
+                            if (step2_state == "CONFIRM")
                                 step2_state = "待确认";
-                            if(step2_state=="EDIT")
+                            if (step2_state == "EDIT")
                                 step2_state = "未开始";
                             var stepbtn = ""
-                            $("#div" + (i + 1).toString() + "_" + (j + 1).toString() ).append("<div class=\"portlet box green\"><div class=\"portlet-title\"><div class=\"caption\">" + step2_name + "</div><div class=\"tools\"><a href=\"javascript:;\"class=\"collapse\"> </a>\n" +
+                            $("#div" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"portlet box green\"><div class=\"portlet-title\"><div class=\"caption\">" + step2_name + "</div><div class=\"tools\"><a href=\"javascript:;\"class=\"collapse\"> </a>\n" +
                                 "</div></div><div class=\"portlet-body\"><div class=\"row\"><div ><div class=\"panel-body\"><div class=\"form-body\"><div class=\"row\"><div class=\"col-md-6\">\n" +
                                 "<div class=\"form-group \"><label class=\"col-md-2 control-label\">状态</label><div class=\"col-md-10\"><input  type=\"text\" value='" + step2_state + "'\n" +
                                 "class=\"form-control \" placeholder=\"\" readonly=\"\"> <div class=\"form-control-focus\"></div> </div> </div> <div class=\"form-group \"> <label class=\"col-md-2 control-label\">\n" +
@@ -279,8 +280,8 @@ window.clearInterval(t2);
                                 "<div class=\"col-md-10\"> <input  type=\"text\" value=\"" + step2_operator + "\" class=\"form-control \" placeholder=\"\" readonly=\"\"> <div class=\"form-control-focus\"></div> </div> </div> <div class=\"form-group\">\n" +
                                 "<label class=\"col-md-2 control-label\">说明</label> <div class=\"col-md-10\"> <textarea style=\"height: 100px\" value=\"" + step2_note + "\" style=\"resize:none;\" autocomplete=\"off\" class=\"form-control\" readonly=\"\"></textarea> <div class=\"form-control-focus\"></div> </div> </div></div><div id='scriptdiv_" + (i + 1).toString() + "_" + (j + 1).toString() + "' class=\"col-md-6\"> </div> </div>" + step2btn + " </div> </div> </div> </div> </div></div>")
 
-                            if(data["step"][i]["children"][j]["scripts"].length>0){
-                                $("#scriptdiv_" + (i + 1).toString()+ "_" + (j + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>脚本</label><div class=\"col-md-10\"><select id='se" + (i + 1).toString()+ "_" + (j + 1).toString() + "' size='9' class='form-control' style='overflow-y:auto;'></select><div class=\"form-control-focus\"></div></div></div>")
+                            if (data["step"][i]["children"][j]["scripts"].length > 0) {
+                                $("#scriptdiv_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>脚本</label><div class=\"col-md-10\"><select id='se" + (i + 1).toString() + "_" + (j + 1).toString() + "' size='9' class='form-control' style='overflow-y:auto;'></select><div class=\"form-control-focus\"></div></div></div>")
                                 for (var k = 0; k < data["step"][i]["children"][j]["scripts"].length; k++) {
                                     var color = ""
                                     if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "DONE")
@@ -296,8 +297,8 @@ window.clearInterval(t2);
 
 
                             }
-                            if(data["step"][i]["children"][j]["verifyitems"].length>0){
-                                $("#scriptdiv_" + (i + 1).toString()+ "_" + (j + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div id='verifyitems_" + (i + 1).toString()+ "_" + (j + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
+                            if (data["step"][i]["children"][j]["verifyitems"].length > 0) {
+                                $("#scriptdiv_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div id='verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
                                 for (var k = 0; k < data["step"][i]["children"][j]["verifyitems"].length; k++) {
                                     var checked = ""
                                     if (data["step"][i]["children"][j]["verifyitems"][k]["has_verified"] == "1")
@@ -306,30 +307,25 @@ window.clearInterval(t2);
                                 }
                             }
                         }
-                        try
-                          {
-                            var stepbar ="0";
-                            stepbar = Math.round(stepdonesteps/stepallsteps*100).toString()
-                              $("#step_bar_" + (i + 1).toString()).width(stepbar + "%");
-                          }
-                        catch(err)
-                          {
+                        try {
+                            var stepbar = "0";
+                            stepbar = Math.round(stepdonesteps / stepallsteps * 100).toString()
+                            $("#step_bar_" + (i + 1).toString()).width(stepbar + "%");
+                        }
+                        catch (err) {
 
-                          }
-
-
+                        }
 
 
                     }
-                    try{
-                            var processbar ="0";
-                            processbar = Math.round(processdonesteps/processallsteps*100).toString()
-                             $("#process_bar").width(processbar + "%");
-                        }
-                    catch(err)
-                      {
+                    try {
+                        var processbar = "0";
+                        processbar = Math.round(processdonesteps / processallsteps * 100).toString()
+                        $("#process_bar").width(processbar + "%");
+                    }
+                    catch (err) {
 
-                      }
+                    }
                     FormWizard.init();
 
                     $(".mt-step-col").click(function () {
@@ -371,7 +367,7 @@ window.clearInterval(t2);
                                         $("#ontime").val(data.data["starttime"]);
                                         $("#offtime").val(data.data["endtime"]);
                                         $("#errorinfo").val(data.data["explain"]);
-                                        if (data.data["state"] == "执行失败" && data.data["processrunstate"]=="ERROR") {
+                                        if (data.data["state"] == "执行失败" && data.data["processrunstate"] == "ERROR") {
                                             $("#b1").show();
                                         } else {
                                             $("#b1").hide();
@@ -410,7 +406,7 @@ window.clearInterval(t2);
                     $("#ignore").click(function () {
                         var scriptid = $("#script_button").val();
                         $.ajax({
-                            url: "/ignore_current_script/",
+                            url: "../../ignore_current_script/",
                             type: "post",
                             data: {"scriptid": scriptid},
                             success: function (data) {
@@ -422,18 +418,25 @@ window.clearInterval(t2);
 
                     // 停止脚本
                     $("#stopbtn").click(function () {
-                        if($("#process_note").val() =="")
+                        if ($("#process_note").val() == "")
                             alert("请在说明项目输入停止原因！");
                         else {
                             if (confirm("即将终止本次演练，注意，此操作不可逆！是否继续？")) {
-                                var scriptid = $("#script_button").val();
+                                var process_run_id = $("#process_run_id").val();
                                 $.ajax({
-                                    url: "/ignore_current_script/",
+                                    url: "../../stop_current_process/",
                                     type: "post",
-                                    data: {"scriptid": scriptid},
+                                    data: {
+                                        "process_run_id": process_run_id,
+                                        "process_note": $("#process_note").val(),
+                                    },
                                     success: function (data) {
-                                        alert(data.data);
-                                        $('#static').modal('hide');
+                                        if (data.data = "流程已经被终止") {
+                                            alert(data.data);
+                                            getstep();
+                                        } else {
+                                            alert(data.data);
+                                        }
                                     }
                                 });
                             }

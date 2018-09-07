@@ -395,73 +395,78 @@ def index(request, funid):
                 current_processrun_id = current_processrun.id
                 all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
 
-                # 如果步骤小于3个
-                if len(all_stepruns) >= 3:
-                    all_stepruns_display = all_stepruns[:3]
-                else:
-                    all_stepruns_display = all_stepruns[:len(all_stepruns)]
 
-                if all_stepruns[0].state == "RUN":
-                    current_step_index = 1
-                    for num, steprun in enumerate(all_stepruns_display):
-                        if num == 0:
-                            current_step_name = steprun.step.name
-                            # 负责角色
-                            group_id = steprun.step.group
-                            if group_id:
-                                group_name = Group.objects.filter(id=int(group_id))[0].name
-                                users_from_group = Group.objects.filter(id=int(group_id))[
-                                    0].userinfo_set.all().values_list(
-                                    "fullname")
-                                users = ""
-                                for num, user in enumerate(users_from_group):
-                                    users += user[0] + "、"
-                                users = "({0})".format(users[:-1])
-                        all_steps.append(steprun.step.name)
-                elif all_stepruns[len(all_stepruns) - 1].state == "RUN" and all_stepruns[
-                    len(all_stepruns) - 2].state == "DONE":
-                    current_step_index = len(all_stepruns)
-                    for num, steprun in enumerate(all_stepruns[len(all_stepruns) - len(all_stepruns_display):]):
-                        if num == len(all_stepruns[len(all_stepruns) - 3:]) - 1:
-                            current_step_name = steprun.step.name
-                            # 负责角色
-                            group_id = steprun.step.group
-                            if group_id:
-                                group_name = Group.objects.filter(id=int(group_id))[0].name
-                                users_from_group = Group.objects.filter(id=int(group_id))[
-                                    0].userinfo_set.all().values_list(
-                                    "fullname")
-                                users = ""
-                                for num, user in enumerate(users_from_group):
-                                    users += user[0] + "、"
-                                users = "({0})".format(users[:-1])
-                        all_steps.append(steprun.step.name)
-                else:
-                    currentrun_step = all_stepruns.filter(state="RUN").first()
-                    current_step_name = currentrun_step.step.name
+                # 没有run的情况下，
+                try:
+                    # 如果步骤小于3个
+                    if len(all_stepruns) >= 3:
+                        all_stepruns_display = all_stepruns[:3]
+                    else:
+                        all_stepruns_display = all_stepruns[:len(all_stepruns)]
 
-                    # 负责角色
-                    group_id = currentrun_step.step.group
-                    if group_id:
-                        group_name = Group.objects.filter(id=int(group_id))[0].name
-                        users_from_group = Group.objects.filter(id=int(group_id))[
-                            0].userinfo_set.all().values_list(
-                            "fullname")
-                        users = ""
-                        for num, user in enumerate(users_from_group):
-                            users += user[0] + "、"
-                        users = "({0})".format(users[:-1])
-
-                    # 前一个后一个名称
-                    current_num = ""
-                    for num, steprun in enumerate(all_stepruns):
-                        if steprun.state == "RUN":
-                            current_num = num
-                            break
-                    for num, steprun in enumerate(all_stepruns):
-                        if num == current_num - 1 or num == current_num + 1 or num == current_num:
+                    if all_stepruns[0].state == "RUN":
+                        current_step_index = 1
+                        for num, steprun in enumerate(all_stepruns_display):
+                            if num == 0:
+                                current_step_name = steprun.step.name
+                                # 负责角色
+                                group_id = steprun.step.group
+                                if group_id:
+                                    group_name = Group.objects.filter(id=int(group_id))[0].name
+                                    users_from_group = Group.objects.filter(id=int(group_id))[
+                                        0].userinfo_set.all().values_list(
+                                        "fullname")
+                                    users = ""
+                                    for num, user in enumerate(users_from_group):
+                                        users += user[0] + "、"
+                                    users = "({0})".format(users[:-1])
                             all_steps.append(steprun.step.name)
-                    current_step_index = current_num + 1
+                    elif all_stepruns[len(all_stepruns) - 1].state == "RUN" and all_stepruns[
+                        len(all_stepruns) - 2].state == "DONE":
+                        current_step_index = len(all_stepruns)
+                        for num, steprun in enumerate(all_stepruns[len(all_stepruns) - len(all_stepruns_display):]):
+                            if num == len(all_stepruns[len(all_stepruns) - 3:]) - 1:
+                                current_step_name = steprun.step.name
+                                # 负责角色
+                                group_id = steprun.step.group
+                                if group_id:
+                                    group_name = Group.objects.filter(id=int(group_id))[0].name
+                                    users_from_group = Group.objects.filter(id=int(group_id))[
+                                        0].userinfo_set.all().values_list(
+                                        "fullname")
+                                    users = ""
+                                    for num, user in enumerate(users_from_group):
+                                        users += user[0] + "、"
+                                    users = "({0})".format(users[:-1])
+                            all_steps.append(steprun.step.name)
+                    else:
+                        currentrun_step = all_stepruns.filter(state="RUN").first()
+                        current_step_name = currentrun_step.step.name
+
+                        # 负责角色
+                        group_id = currentrun_step.step.group
+                        if group_id:
+                            group_name = Group.objects.filter(id=int(group_id))[0].name
+                            users_from_group = Group.objects.filter(id=int(group_id))[
+                                0].userinfo_set.all().values_list(
+                                "fullname")
+                            users = ""
+                            for num, user in enumerate(users_from_group):
+                                users += user[0] + "、"
+                            users = "({0})".format(users[:-1])
+
+                        # 前一个后一个名称
+                        current_num = ""
+                        for num, steprun in enumerate(all_stepruns):
+                            if steprun.state == "RUN":
+                                current_num = num
+                                break
+                        for num, steprun in enumerate(all_stepruns):
+                            if num == current_num - 1 or num == current_num + 1 or num == current_num:
+                                all_steps.append(steprun.step.name)
+                        current_step_index = current_num + 1
+                except:
+                    pass
 
                 total_steps = Step.objects.exclude(state="9").filter(process_id=process_id).values_list("name")
                 # 总体进度
@@ -608,7 +613,8 @@ def index(request, funid):
         # 左上角消息任务
         return render(request, "index.html",
                       {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
-                       "pagefuns": getpagefuns(funid, request), "success_rate": success_rate, "all_processruns": all_processruns,
+                       "pagefuns": getpagefuns(funid, request), "success_rate": success_rate,
+                       "all_processruns": all_processruns,
                        "last_processrun_time": last_processrun_time, "average_rto": average_rto,
                        "curren_processrun_info_list": curren_processrun_info_list,
                        "process_success_rate_list": process_success_rate_list})
@@ -1687,7 +1693,8 @@ def script(request, funid):
                 else:
                     errors.append("只能上传xls和xlsx文件，请选择正确的文件类型。")
         return render(request, 'script.html',
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request), "errors": errors})
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
+                       "errors": errors})
     else:
         return HttpResponseRedirect("/login")
 
@@ -2794,6 +2801,7 @@ def falconstorswitchdata(request):
             "RUN": "执行中",
             "ERROR": "执行失败",
             "IGNORE": "忽略",
+            "STOP": "终止",
             "": "",
         }
         for processrun_obj in all_processrun_objs:
@@ -2875,9 +2883,9 @@ def falconstorrun(request):
                             myverifyitemsrun.save()
 
                     allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-                        "group").distinct()  # 当前预案下需要签字的组,但一个对象只发送一次task
+                        "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果预案流程已经启动,发送签字tasks
+                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
                         for group in allgroup:
                             print(group)
                             try:
@@ -2925,7 +2933,8 @@ def falconstor(request, offset, funid):
         except:
             raise Http404()
         return render(request, 'falconstor.html',
-                      {'username': request.user.userinfo.fullname, "process": id, "pagefuns": getpagefuns(funid, request)})
+                      {'username': request.user.userinfo.fullname, "process": id,
+                       "pagefuns": getpagefuns(funid, request)})
     else:
         return HttpResponseRedirect("/index")
 
@@ -3043,7 +3052,8 @@ def getchildrensteps(processrun, curstep):
                             "skip": step.skip, "group": group, "time": step.time, "runid": runid,
                             "starttime": starttime,
                             "endtime": endtime, "operator": operator, "parameter": parameter, "runresult": runresult,
-                            "explain": explain, "state": state, "scripts": scripts,"verifyitems":verifyitems,"note":note,"rto":rto,
+                            "explain": explain, "state": state, "scripts": scripts, "verifyitems": verifyitems,
+                            "note": note, "rto": rto,
                             "children": getchildrensteps(processrun, step)})
     return childresult
 
@@ -3054,7 +3064,7 @@ def getrunsetps(request):
             processresult = {}
             result = []
             process_name = ""
-            process_state=""
+            process_state = ""
             process_starttime = ""
             process_endtime = ""
             process_note = ""
@@ -3077,7 +3087,7 @@ def getrunsetps(request):
                     process_endtime = processruns[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
                 except:
                     pass
-                if process_state=="DONE" or process_state=="STOP":
+                if process_state == "DONE" or process_state == "STOP":
                     try:
                         current_delta_time = (processruns[0].endtime - processruns[0].starttime).total_seconds()
                         m, s = divmod(current_delta_time, 60)
@@ -3092,7 +3102,6 @@ def getrunsetps(request):
                     m, s = divmod(current_delta_time, 60)
                     h, m = divmod(m, 60)
                     process_rto = "%d时%02d分%02d秒" % (h, m, s)
-
 
                 processresult["step"] = result
                 processresult["process_name"] = process_name
@@ -3140,14 +3149,14 @@ def getrunsetps(request):
                             h, m = divmod(m, 60)
                             rto = "%d时%02d分%02d秒" % (h, m, s)
                         operator = steprunlist[0].operator
-                        if operator is not None and operator!="":
+                        if operator is not None and operator != "":
                             try:
                                 curuser = User.objects.get(username=operator)
                                 operator = curuser.userinfo.fullname
                             except:
                                 pass
                         else:
-                            operator=""
+                            operator = ""
                         parameter = steprunlist[0].parameter
                         runresult = steprunlist[0].result
                         explain = steprunlist[0].explain
@@ -3156,7 +3165,7 @@ def getrunsetps(request):
                         group = step.group
                         try:
                             curgroup = Group.objects.get(id=int(group))
-                            group=curgroup.name
+                            group = curgroup.name
                         except:
                             pass
                     scripts = []
@@ -3194,21 +3203,22 @@ def getrunsetps(request):
                              "scriptendtime": scriptendtime, "scriptoperator": scriptoperator,
                              "scriptrunresult": scriptrunresult, "scriptexplain": scriptexplain,
                              "scriptrunlog": scriptrunlog, "scriptstate": scriptstate})
-                    verifyitems=[]
+                    verifyitems = []
                     verifyitemslist = VerifyItems.objects.exclude(state="9").filter(step=step)
                     for verifyitem in verifyitemslist:
                         runverifyitemid = 0
-                        has_verified=""
+                        has_verified = ""
                         verifyitemstate = ""
                         if len(steprunlist) > 0:
-                            verifyitemsrunlist = VerifyItemsRun.objects.exclude(state="9").filter(steprun=steprunlist[0],
-                                                                                                  verify_items=verifyitem)
+                            verifyitemsrunlist = VerifyItemsRun.objects.exclude(state="9").filter(
+                                steprun=steprunlist[0],
+                                verify_items=verifyitem)
                             if len(verifyitemsrunlist) > 0:
                                 runverifyitemid = verifyitemsrunlist[0].id
                                 has_verified = verifyitemsrunlist[0].has_verified
                                 verifyitemstate = verifyitemsrunlist[0].state
                         verifyitems.append(
-                            {"id": verifyitem.id,  "name": verifyitem.name, "runverifyitemid": runverifyitemid,
+                            {"id": verifyitem.id, "name": verifyitem.name, "runverifyitemid": runverifyitemid,
                              "has_verified": has_verified,
                              "verifyitemstate": verifyitemstate})
 
@@ -3217,7 +3227,8 @@ def getrunsetps(request):
                                    "starttime": starttime,
                                    "endtime": endtime, "operator": operator, "parameter": parameter,
                                    "runresult": runresult,
-                                   "explain": explain, "state": state, "scripts": scripts,"verifyitems":verifyitems,"note":note,"rto":rto,
+                                   "explain": explain, "state": state, "scripts": scripts, "verifyitems": verifyitems,
+                                   "note": note, "rto": rto,
                                    "children": getchildrensteps(processruns[0], step)})
 
             return HttpResponse(json.dumps(processresult))
@@ -3322,7 +3333,7 @@ def get_current_scriptinfo(request):
             except:
                 pass
             script_info = {
-                "processrunstate":scriptrun_obj.steprun.processrun.state,
+                "processrunstate": scriptrun_obj.steprun.processrun.state,
                 "code": script_obj.code,
                 "ip": script_obj.ip,
                 "port": script_obj.port,
@@ -3347,6 +3358,63 @@ def ignore_current_script(request):
         scriptruns.state = "IGNORE"
         scriptruns.save()
         return JsonResponse({"data": "成功忽略当前脚本"})
+
+
+def stop_current_process(request):
+    if request.user.is_authenticated():
+        process_run_id = request.POST.get('process_run_id', '')
+        process_note = request.POST.get('process_note', '')
+
+        if process_run_id:
+            process_run_id = int(process_run_id)
+        else:
+            return Http404()
+
+        current_process_run = ProcessRun.objects.exclude(state="9").filter(id=process_run_id)
+        if current_process_run:
+            current_process_run = current_process_run[0]
+
+            all_current_step_runs = current_process_run.steprun_set.filter(Q(state="RUN") | Q(state="CONFIRM")).exclude(
+                state="9")
+            if all_current_step_runs:
+                for all_current_step_run in all_current_step_runs:
+                    all_current_step_run.state = "EDIT"
+                    all_current_step_run.save()
+                    all_scripts_from_current_step = all_current_step_run.scriptrun_set.filter(state="RUN").exclude(
+                        state="9")
+                    if all_scripts_from_current_step:
+                        for script in all_scripts_from_current_step:
+                            script.state = "EDIT"
+                            script.save()
+            #         else:
+            #             return JsonResponse({"data": "流程已结束，终止流程失败"})
+            # else:
+            #     return JsonResponse({"data": "流程已结束，终止流程失败"})
+
+            current_process_run.state = "STOP"
+            current_process_run.endtime = datetime.datetime.now()
+            current_process_run.note = process_note
+            current_process_run.save()
+
+            all_tasks_ever = current_process_run.processtask_set.all()
+            for task in all_tasks_ever:
+                task.state = "1"
+                task.save()
+
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun_id = process_run_id
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = request.user.username
+            myprocesstask.type = "INFO"
+            myprocesstask.logtype = "STOP"
+            myprocesstask.state = "1"
+            myprocesstask.content = "流程被终止。"
+            myprocesstask.save()
+            return JsonResponse({"data": "流程已经被终止"})
+        else:
+            return JsonResponse({"data": "终止流程异常，请联系客服"})
+
+
 
 
 import pdfkit
@@ -3770,10 +3838,12 @@ def falconstorsearch(request, funid):
             "RUN": "执行中",
             "ERROR": "执行失败",
             "IGNORE": "忽略",
+            "STOP": "终止"
         }
         return render(request, "falconstorsearch.html",
                       {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
-                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid, request=request)})
+                       "processname_list": processname_list, "state_dict": state_dict,
+                       "pagefuns": getpagefuns(funid, request=request)})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3830,6 +3900,7 @@ def falconstorsearchdata(request):
             "RUN": "执行中",
             "ERROR": "执行失败",
             "IGNORE": "忽略",
+            "STOP": "终止",
             "": "",
         }
         for processrun_obj in all_processrun_objs:
@@ -3857,16 +3928,9 @@ def tasksearch(request, funid):
         for process in all_processes:
             processname_list.append(process.name)
 
-        state_dict = {
-            "DONE": "已完成",
-            "EDIT": "未执行",
-            "RUN": "执行中",
-            "ERROR": "执行失败",
-            "IGNORE": "忽略",
-        }
         return render(request, "tasksearch.html",
                       {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
-                       "processname_list": processname_list, "state_dict": state_dict, "pagefuns": getpagefuns(funid, request=request)})
+                       "processname_list": processname_list, "pagefuns": getpagefuns(funid, request=request)})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3878,19 +3942,24 @@ def tasksearchdata(request):
         has_finished = request.GET.get('has_finished', '')
         startdate = request.GET.get('startdate', '')
         enddate = request.GET.get('enddate', '')
-        print("task_type,has_finished,startdate,enddate",task_type,has_finished,startdate,enddate)
+        print("task_type,has_finished,startdate,enddate", task_type, has_finished, startdate, enddate)
         start_time = datetime.datetime.strptime(startdate, '%Y-%m-%d')
         end_time = datetime.datetime.strptime(enddate, '%Y-%m-%d') + datetime.timedelta(days=1) - datetime.timedelta(
             seconds=1)
 
-        all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time]).order_by("-starttime")
+        all_process_task = ProcessTask.objects.exclude(state="9").filter(
+            starttime__range=[start_time, end_time]).order_by("-starttime")
 
         if task_type != "" and has_finished != "":
-            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time], type=task_type, state=has_finished).order_by("-starttime")
+            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
+                                                                             type=task_type,
+                                                                             state=has_finished).order_by("-starttime")
         if task_type == "" and has_finished != "":
-            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time], state=has_finished).order_by("-starttime")
+            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
+                                                                             state=has_finished).order_by("-starttime")
         if task_type != "" and has_finished == "":
-            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time], type=task_type).order_by("-starttime")
+            all_process_task = ProcessTask.objects.exclude(state="9").filter(starttime__range=[start_time, end_time],
+                                                                             type=task_type).order_by("-starttime")
 
         type_dict = {
             "SIGN": "签到",
@@ -3913,7 +3982,8 @@ def tasksearchdata(request):
                 "processrun_id": task.processrun_id if task.processrun_id else "",
                 "process_name": task.processrun.process.name if task.processrun.process.name else "",
                 "process_url": task.processrun.process.url if task.processrun.process.url else "",
-                "has_finished": has_finished_dict["{0}".format(task.state)] if task.state in has_finished_dict.keys() else "",
+                "has_finished": has_finished_dict[
+                    "{0}".format(task.state)] if task.state in has_finished_dict.keys() else "",
             })
         return JsonResponse({"data": result})
 
@@ -4124,7 +4194,3 @@ def get_all_users(request):
         for user in all_users:
             user_string += user.fullname + "&"
         return JsonResponse({"data": user_string})
-
-
-
-
