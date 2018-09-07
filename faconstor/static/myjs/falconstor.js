@@ -371,7 +371,7 @@ window.clearInterval(t2);
                                         $("#ontime").val(data.data["starttime"]);
                                         $("#offtime").val(data.data["endtime"]);
                                         $("#errorinfo").val(data.data["explain"]);
-                                        if (data.data["state"] == "执行中" || data.data["state"] == "执行失败") {
+                                        if (data.data["state"] == "执行失败" && data.data["processrunstate"]=="ERROR") {
                                             $("#b1").show();
                                         } else {
                                             $("#b1").hide();

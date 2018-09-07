@@ -3322,6 +3322,7 @@ def get_current_scriptinfo(request):
             except:
                 pass
             script_info = {
+                "processrunstate":scriptrun_obj.steprun.processrun.state,
                 "code": script_obj.code,
                 "ip": script_obj.ip,
                 "port": script_obj.port,
