@@ -179,122 +179,128 @@ def exec_script(steprunid, username, fullname):
 def runstep(steprun):
     """
     执行当前步骤下的所有脚本
+    返回值0,：错误，1：完成，2：确认，3：流程已结束
     """
 
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
-    if steprun.state != "DONE":
-        # 判断是否有子步骤，如果有，先执行子步骤
-        steprun.state = "RUN"
-        steprun.starttime = datetime.datetime.now()
-        steprun.save()
-        children = steprun.step.children.order_by("sort").exclude(state="9")
-        if len(children) > 0:
-            for child in children:
-                childsteprun = child.steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
-                if len(childsteprun) > 0:
-                    childreturn = runstep(childsteprun[0])
-                    if childreturn == 0:
-                        return 0
-                    if childreturn == 2:
-                        return 2
-        scriptruns = steprun.scriptrun_set.exclude(Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
-        for script in scriptruns:
-            script.starttime = datetime.datetime.now()
-            script.result = ""
-            script.state = "RUN"
-            script.save()
-
-            cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
-            ip = script.script.ip
-            username = script.script.username
-            password = script.script.password
-            script_type = script.script.type
-            system_tag = ""
-            if script_type == "SSH":
-                system_tag = "Linux"
-            if script_type == "BAT":
-                system_tag = "Windows"
-            rm_obj = remote.ServerByPara(cmd, ip, username, password, system_tag)  # 服务器系统从视图中传入
-            result = rm_obj.run(script.script.succeedtext)
-
-            script.endtime = datetime.datetime.now()
-            script.result = result['exec_tag']
-            script.explain = result['data'] if len(result['data']) <= 5000 else result['data'][-4999:]
-
-            # 处理脚本执行失败问题
-            if result["exec_tag"] == 1:
-                script.runlog = result['log']  # 写入错误类型
-
-                print("当前脚本执行失败,结束任务!")
-                script.state = "ERROR"
+    processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
+    processrun = processrun[0]
+    if processrun=="RUN":
+        if steprun.state != "DONE":
+            # 判断是否有子步骤，如果有，先执行子步骤
+            steprun.state = "RUN"
+            steprun.starttime = datetime.datetime.now()
+            steprun.save()
+            children = steprun.step.children.order_by("sort").exclude(state="9")
+            if len(children) > 0:
+                for child in children:
+                    childsteprun = child.steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
+                    if len(childsteprun) > 0:
+                        childreturn = runstep(childsteprun[0])
+                        if childreturn == 0:
+                            return 0
+                        if childreturn == 2:
+                            return 2
+            scriptruns = steprun.scriptrun_set.exclude(Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
+            for script in scriptruns:
+                script.starttime = datetime.datetime.now()
+                script.result = ""
+                script.state = "RUN"
                 script.save()
-                steprun.state = "ERROR"
+
+                cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
+                ip = script.script.ip
+                username = script.script.username
+                password = script.script.password
+                script_type = script.script.type
+                system_tag = ""
+                if script_type == "SSH":
+                    system_tag = "Linux"
+                if script_type == "BAT":
+                    system_tag = "Windows"
+                rm_obj = remote.ServerByPara(cmd, ip, username, password, system_tag)  # 服务器系统从视图中传入
+                result = rm_obj.run(script.script.succeedtext)
+
+                script.endtime = datetime.datetime.now()
+                script.result = result['exec_tag']
+                script.explain = result['data'] if len(result['data']) <= 5000 else result['data'][-4999:]
+
+                # 处理脚本执行失败问题
+                if result["exec_tag"] == 1:
+                    script.runlog = result['log']  # 写入错误类型
+
+                    print("当前脚本执行失败,结束任务!")
+                    script.state = "ERROR"
+                    script.save()
+                    steprun.state = "ERROR"
+                    steprun.save()
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun = steprun.processrun
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.senduser = steprun.processrun.creatuser
+                    myprocesstask.receiveauth = steprun.step.group
+                    myprocesstask.type = "ERROR"
+                    myprocesstask.state = "0"
+                    myprocesstask.content = "脚本" + script.script.name + "执行错误，请处理。"
+                    myprocesstask.save()
+                    return 0
+
+                script.endtime = datetime.datetime.now()
+                script.state = "DONE"
+                script.save()
+                myprocesstask = ProcessTask()
+                myprocesstask.processrun = steprun.processrun
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.senduser = steprun.processrun.creatuser
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "SCRIPT"
+                myprocesstask.state = "1"
+                myprocesstask.content = "脚本" + script.script.name + "完成。"
+                myprocesstask.save()
+            if steprun.step.approval=="approval":
+                steprun.state = "CONFIRM"
+                steprun.endtime = datetime.datetime.now()
                 steprun.save()
+
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = steprun.processrun
                 myprocesstask.starttime = datetime.datetime.now()
                 myprocesstask.senduser = steprun.processrun.creatuser
                 myprocesstask.receiveauth = steprun.step.group
-                myprocesstask.type = "ERROR"
+                myprocesstask.type = "RUN"
                 myprocesstask.state = "0"
-                myprocesstask.content = "脚本" + script.script.name + "执行错误，请处理。"
+                myprocesstask.content = "步骤" + steprun.step.name + "等待确认，请处理。"
                 myprocesstask.save()
-                return 0
 
-            script.endtime = datetime.datetime.now()
-            script.state = "DONE"
-            script.save()
-            myprocesstask = ProcessTask()
-            myprocesstask.processrun = steprun.processrun
-            myprocesstask.starttime = datetime.datetime.now()
-            myprocesstask.senduser = steprun.processrun.creatuser
-            myprocesstask.type = "INFO"
-            myprocesstask.logtype = "SCRIPT"
-            myprocesstask.state = "1"
-            myprocesstask.content = "脚本" + script.script.name + "完成。"
-            myprocesstask.save()
-        if steprun.step.approval=="approval":
-            steprun.state = "CONFIRM"
-            steprun.endtime = datetime.datetime.now()
-            steprun.save()
-
-            myprocesstask = ProcessTask()
-            myprocesstask.processrun = steprun.processrun
-            myprocesstask.starttime = datetime.datetime.now()
-            myprocesstask.senduser = steprun.processrun.creatuser
-            myprocesstask.receiveauth = steprun.step.group
-            myprocesstask.type = "RUN"
-            myprocesstask.state = "0"
-            myprocesstask.content = "步骤" + steprun.step.name + "等待确认，请处理。"
-            myprocesstask.save()
-
-            return 2
-        else:
-            steprun.state = "DONE"
-            steprun.endtime = datetime.datetime.now()
-            steprun.save()
-
-            myprocesstask = ProcessTask()
-            myprocesstask.processrun = steprun.processrun
-            myprocesstask.starttime = datetime.datetime.now()
-            myprocesstask.senduser = steprun.processrun.creatuser
-            myprocesstask.type = "INFO"
-            myprocesstask.logtype = "STEP"
-            myprocesstask.state = "1"
-            myprocesstask.content = "步骤" + steprun.step.name + "完成。"
-            myprocesstask.save()
-
-
-    nextstep = steprun.step.next.exclude(state="9")
-    if len(nextstep) > 0:
-        nextsteprun = nextstep[0].steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
-        if len(nextsteprun) > 0:
-            nextreturn = runstep(nextsteprun[0])
-            if nextreturn == 0:
-                return 0
-            if nextreturn == 2:
                 return 2
-    return 1
+            else:
+                steprun.state = "DONE"
+                steprun.endtime = datetime.datetime.now()
+                steprun.save()
+
+                myprocesstask = ProcessTask()
+                myprocesstask.processrun = steprun.processrun
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.senduser = steprun.processrun.creatuser
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "STEP"
+                myprocesstask.state = "1"
+                myprocesstask.content = "步骤" + steprun.step.name + "完成。"
+                myprocesstask.save()
+
+
+        nextstep = steprun.step.next.exclude(state="9")
+        if len(nextstep) > 0:
+            nextsteprun = nextstep[0].steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
+            if len(nextsteprun) > 0:
+                nextreturn = runstep(nextsteprun[0])
+                if nextreturn == 0:
+                    return 0
+                if nextreturn == 2:
+                    return 2
+        return 1
+    else:
+        return 3
 
 
 @task
