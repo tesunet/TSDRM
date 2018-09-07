@@ -419,6 +419,26 @@ window.clearInterval(t2);
                             }
                         });
                     });
+
+                    // 停止脚本
+                    $("#stopbtn").click(function () {
+                        if($("#process_note").val() =="")
+                            alert("请在说明项目输入停止原因！");
+                        else {
+                            if (confirm("即将终止本次演练，注意，此操作不可逆！是否继续？")) {
+                                var scriptid = $("#script_button").val();
+                                $.ajax({
+                                    url: "/ignore_current_script/",
+                                    type: "post",
+                                    data: {"scriptid": scriptid},
+                                    success: function (data) {
+                                        alert(data.data);
+                                        $('#static').modal('hide');
+                                    }
+                                });
+                            }
+                        }
+                    });
                 }
             });
         }
