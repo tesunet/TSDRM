@@ -444,12 +444,12 @@ if (App.isAngularJsApp() === false) {
                     // 确认
                     $("#confirmbtn").click(function () {
                         var step_id = $(this).prev().val();
-                        var notChecked = "";
+                        var notCheckedNum = 0;
                         $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (k) {
-                            notChecked += k + ","
+                            notCheckedNum += 1
                         });
-                        if (notChecked) {
-                            alert("确认项data未勾选!".replace("data", notChecked.slice(0, notChecked.length - 1)))
+                        if (notCheckedNum) {
+                            alert("有data个确认项未勾选!".replace("data", notCheckedNum));
                         } else {
                             $.ajax({
                                 url: "/verify_items/",
