@@ -85,7 +85,6 @@ if (App.isAngularJsApp() === false) {
                     $("ul.steps").empty();
                     $("div.tab-content").empty();
                     $("#stopbtn").show();
-
                     $("#process_run_id").val($("#process").val());
                     $("#process_name").text(data["process_name"]);
                     $("#process_starttime").val(data["process_starttime"]);
@@ -132,7 +131,6 @@ if (App.isAngularJsApp() === false) {
                         $("div.tab-content").append("<div class='tab-pane " + tabrun + "' id='tab" + (i + 1).toString() + "'></div>")
 
                         $("#tab" + (i + 1).toString()).append("<div id='tabdiv" + (i + 1).toString() + "' class='mt-element-step'></div>")
-
                         var step1_name = data["step"][i]["name"]
                         var step1_state = data["step"][i]["state"]
                         var step1_starttime = data["step"][i]["starttime"]
@@ -155,7 +153,6 @@ if (App.isAngularJsApp() === false) {
                                 "                                                        </div>"
                             style = "style=\"display: none;\""
                         }
-
                         if (step1_state == "DONE") {
                             step1_state = "完成";
                             processdonesteps = processdonesteps + 1
@@ -442,6 +439,20 @@ if (App.isAngularJsApp() === false) {
                             }
                         }
                     });
+
+                    // 确认
+                    $("#confirmbtn").click(function () {
+                        var notChecked = "";
+                        $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (k) {
+                            notChecked +=  k + ","
+                        });
+                        if (notChecked){
+                            alert(notChecked.slice(0,notChecked.length-1), "未勾选!")
+                        } else{
+                            // ..ajax 运行程序, 当前step_id??
+                            alert("ajax请求运行程序.......")
+                        }
+                    })
                 }
             });
         }

@@ -3088,6 +3088,7 @@ def getrunsetps(request):
             process_note = ""
             process_rto = ""
             processrun = request.POST.get('process', '')
+            print("processrun", processrun)
             try:
                 processrun = int(processrun)
             except:
@@ -3248,7 +3249,6 @@ def getrunsetps(request):
                                    "explain": explain, "state": state, "scripts": scripts, "verifyitems": verifyitems,
                                    "note": note, "rto": rto,
                                    "children": getchildrensteps(processruns[0], step)})
-
             return HttpResponse(json.dumps(processresult))
 
 
