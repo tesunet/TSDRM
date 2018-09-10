@@ -131,6 +131,7 @@ if (App.isAngularJsApp() === false) {
                         $("div.tab-content").append("<div class='tab-pane " + tabrun + "' id='tab" + (i + 1).toString() + "'></div>")
 
                         $("#tab" + (i + 1).toString()).append("<div id='tabdiv" + (i + 1).toString() + "' class='mt-element-step'></div>")
+                        var step1_id = data["step"][i]["id"]
                         var step1_name = data["step"][i]["name"]
                         var step1_state = data["step"][i]["state"]
                         var step1_starttime = data["step"][i]["starttime"]
@@ -161,7 +162,7 @@ if (App.isAngularJsApp() === false) {
                             step1_state = "待确认";
                             expand = "collapse"
                             style = ""
-                            stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" +
+                            stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" + "<input name='step_id' id='step_id' value='" + step1_id + "' hidden>" +
                                 "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                 "                                            </div>"
                         }
@@ -251,7 +252,7 @@ if (App.isAngularJsApp() === false) {
                             }
                             if (step2_state == "CONFIRM") {
                                 step2_state = "待确认";
-                                step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" +
+                                step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" + "<input name='step_id' id='step_id' value='" + step1_id + "' hidden>" +
                                     "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                     "                                            </div>"
                             }
@@ -442,15 +443,27 @@ if (App.isAngularJsApp() === false) {
 
                     // 确认
                     $("#confirmbtn").click(function () {
+                        var step_id = $(this).prev().val();
                         var notChecked = "";
                         $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (k) {
-                            notChecked +=  k + ","
+                            notChecked += k + ","
                         });
-                        if (notChecked){
-                            alert(notChecked.slice(0,notChecked.length-1), "未勾选!")
-                        } else{
-                            // ..ajax 运行程序, 当前step_id??
-                            alert("ajax请求运行程序.......")
+                        if (notChecked) {
+                            alert("确认项data未勾选!".replace("data", notChecked.slice(0, notChecked.length - 1)))
+                        } else {
+                            $.ajax({
+                                url: "/verify_items/",
+                                type: "post",
+                                data: {"step_id": step_id},
+                                success: function (data) {
+                                    if (data.data == "0") {
+                                        alert("该步骤已确认，继续流程！")
+                                    } else {
+                                        alert("步骤确认异常，请联系客服！")
+                                    }
+                                }
+                            });
+
                         }
                     })
                 }

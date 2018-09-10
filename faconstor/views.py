@@ -3433,6 +3433,39 @@ def stop_current_process(request):
             return JsonResponse({"data": "终止流程异常，请联系客服"})
 
 
+def verify_items(request):
+    if request.user.is_authenticated():
+        step_id = request.POST.get("step_id", "")
+        current_step_run = StepRun.objects.filter(step_id=step_id).exclude(state="9")
+        if current_step_run:
+            current_step_run = current_step_run[0]
+            # CONFIRM修改成DONE
+            current_step_run.state = "DONE"
+            current_step_run.save()
+
+            # 当前step_run对应的task.state="1"
+            all_current__tasks = current_step_run.processtask_set.exclude(state="9")
+            for task in all_current__tasks:
+                task.state = "1"
+                task.save()
+
+            # 写入任务
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun_id = current_step_run.processrun_id
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = current_step_run.processrun.creatuser
+            myprocesstask.type = "INFO"
+            myprocesstask.logtype = "STEP"
+            myprocesstask.state = "1"
+            myprocesstask.content = "步骤" + current_step_run.step.name + "完成。"
+            myprocesstask.save()
+
+            # 运行流程
+            current_process_run_id = current_step_run.processrun_id
+            # exec_process.delay(current_process_run_id)
+            return JsonResponse({"data": "0"})
+        else:
+            return JsonResponse({"data": "1"})
 
 
 import pdfkit
