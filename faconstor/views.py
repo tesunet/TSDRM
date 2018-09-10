@@ -2749,6 +2749,15 @@ def falconstorswitch(request, funid, process_id):
                 wrapper_script_list.append(wrapper_script_dict)
                 wrapper_step_dict["wrapper_script_list"] = wrapper_script_list
 
+            wrapper_verify_list = []
+            all_wrapper_verifys = wrapper_step.verifyitems_set.exclude(state="9")
+            for wrapper_verify in all_wrapper_verifys:
+                wrapper_verify_dict = {
+                    "wrapper_verify_name": wrapper_verify.name
+                }
+                wrapper_verify_list.append(wrapper_verify_dict)
+                wrapper_step_dict["wrapper_verify_list"] = wrapper_verify_list
+
             pnode_id = wrapper_step.id
             inner_step_list = []
             all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id)
@@ -2776,13 +2785,21 @@ def falconstorswitch(request, funid, process_id):
                     }
                     inner_script_list.append(inner_script_dict)
 
+                inner_verify_list = []
+                all_inner_verifys = inner_step.verifyitems_set.exclude(state="9")
+                for inner_verify in all_inner_verifys:
+                    inner_verify_dict = {
+                        "inner_verify_name": inner_verify.name
+                    }
+                    inner_verify_list.append(inner_verify_dict)
+
+                inner_step_dict["inner_verify_list"] = inner_verify_list
                 inner_step_dict["inner_script_list"] = inner_script_list
                 inner_step_list.append(inner_step_dict)
 
             wrapper_step_dict["inner_step_list"] = inner_step_list
 
             wrapper_step_list.append(wrapper_step_dict)
-
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id})
@@ -4148,7 +4165,6 @@ def invite(request):
         current_path = os.getcwd()
         wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
         config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
-
         options = {
             'page-size': 'A3',
             'margin-top': '0.75in',

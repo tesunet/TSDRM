@@ -75,9 +75,9 @@
                                                                 (脚本){{ wrapper_script.wrapper_script_name }}
                                                             </ul>
                                                         {% endfor %}
-                                                        {% for wrapper_script in wrapper_step.wrapper_verify_list %}
+                                                        {% for wrapper_verify in wrapper_step.wrapper_verify_list %}
                                                             <ul>
-                                                                (事项){{ wrapper_script.wrapper_verify_name }}
+                                                                (事项){{ wrapper_verify.wrapper_verify_name }}
                                                             </ul>
                                                         {% endfor %}
                                                         <ol style="margin:5px;padding:5px;">
@@ -93,8 +93,8 @@
                                                                         {% endfor %}
                                                                     </ul>
                                                                     <ul>
-                                                                        {% for inner_script in inner_step.inner_verify_list %}
-                                                                            <li> (事项){{ inner_script.inner_verify_name }}</li>
+                                                                        {% for inner_verify in inner_step.inner_verify_list %}
+                                                                            <li> (事项){{ inner_verify.inner_verify_name }}</li>
                                                                         {% endfor %}
                                                                     </ul>
                                                                 </li>
