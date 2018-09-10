@@ -185,7 +185,7 @@ def runstep(steprun):
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
-    if processrun=="RUN":
+    if processrun.state == "RUN":
         if steprun.state != "DONE":
             # 判断是否有子步骤，如果有，先执行子步骤
             steprun.state = "RUN"
@@ -257,7 +257,7 @@ def runstep(steprun):
                 myprocesstask.state = "1"
                 myprocesstask.content = "脚本" + script.script.name + "完成。"
                 myprocesstask.save()
-            if steprun.step.approval=="approval":
+            if steprun.step.approval == "approval":
                 steprun.state = "CONFIRM"
                 steprun.endtime = datetime.datetime.now()
                 steprun.save()
@@ -287,7 +287,6 @@ def runstep(steprun):
                 myprocesstask.state = "1"
                 myprocesstask.content = "步骤" + steprun.step.name + "完成。"
                 myprocesstask.save()
-
 
         nextstep = steprun.step.next.exclude(state="9")
         if len(nextstep) > 0:
@@ -325,10 +324,10 @@ def exec_process(processrunid):
         myprocesstask.state = "0"
         myprocesstask.content = "流程配置错误，请处理。"
         myprocesstask.save()
-    if end_step_tag==0:
+    if end_step_tag == 0:
         processrun.state = "ERROR"
         processrun.save()
-    if end_step_tag==1:
+    if end_step_tag == 1:
         processrun.state = "DONE"
         processrun.save()
 
