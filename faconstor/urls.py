@@ -64,6 +64,8 @@ urlpatterns = [
     url(r'^falconstorswitchdata/$', falconstorswitchdata),
     url(r'^falconstorrun/$', falconstorrun),
     url(r'^falconstor/(\d+)/$', falconstor, {'funid': '49'}),
+    url(r'^Test/(\d+)/$', falconstor, {'funid': '49'}),
+
     url(r'^getrunsetps/$', getrunsetps),
     url(r'^falconstorcontinue/$', falconstorcontinue),
     url(r'^processsignsave/$', processsignsave),

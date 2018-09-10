@@ -2800,6 +2800,7 @@ def falconstorswitch(request, funid, process_id):
             wrapper_step_dict["inner_step_list"] = inner_step_list
 
             wrapper_step_list.append(wrapper_step_dict)
+        # print("process_id", process_id)
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id})
@@ -2989,9 +2990,9 @@ def getchildrensteps(processrun, curstep):
                 except:
                     pass
             else:
-                start_time = steprunlist[0].starttime.replace(tzinfo=None)
+                start_time = steprunlist[0].starttime.replace(tzinfo=None) if steprunlist[0].starttime else ""
                 current_time = datetime.datetime.now()
-                current_delta_time = (current_time - start_time).total_seconds()
+                current_delta_time = (current_time - start_time).total_seconds() if current_time and start_time else 0
                 m, s = divmod(current_delta_time, 60)
                 h, m = divmod(m, 60)
                 rto = "%d时%02d分%02d秒" % (h, m, s)
@@ -3159,9 +3160,9 @@ def getrunsetps(request):
                             except:
                                 pass
                         else:
-                            start_time = steprunlist[0].starttime.replace(tzinfo=None)
+                            start_time = steprunlist[0].starttime.replace(tzinfo=None) if steprunlist[0].starttime else ""
                             current_time = datetime.datetime.now()
-                            current_delta_time = (current_time - start_time).total_seconds()
+                            current_delta_time = (current_time - start_time).total_seconds() if current_time and start_time else 0
                             m, s = divmod(current_delta_time, 60)
                             h, m = divmod(m, 60)
                             rto = "%d时%02d分%02d秒" % (h, m, s)
