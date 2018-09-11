@@ -469,6 +469,22 @@ if (App.isAngularJsApp() === false) {
                                     }
                                 });
                             }
+                        } else {
+                            $.ajax({
+                                url: "/verify_items/",
+                                type: "post",
+                                data: {
+                                    "step_id": step_id,
+                                    "checked_id": CheckedId.slice(0, CheckedId.length - 1),
+                                },
+                                success: function (data) {
+                                    if (data.data == "0") {
+                                        alert("该步骤已确认，继续流程！")
+                                    } else {
+                                        alert("步骤确认异常，请联系客服！")
+                                    }
+                                }
+                            });
                         }
                     })
                 }
