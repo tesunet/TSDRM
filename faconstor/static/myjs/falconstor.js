@@ -205,12 +205,13 @@ if (App.isAngularJsApp() === false) {
 
                         }
                         if (data["step"][i]["verifyitems"].length > 0) {
-                            $("#scriptdiv_" + (i + 1).toString()).append("<div class=\"form-group\" data-toggle=\"buttons\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div id='verifyitems_" + (i + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
+                            $("#scriptdiv_" + (i + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div class=\"md-checkbox-inline\" id='verifyitems_" + (i + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
                             for (var j = 0; j < data["step"][i]["verifyitems"].length; j++) {
                                 var checked = ""
                                 if (data["step"][i]["verifyitems"][j]["has_verified"] == "1")
                                     checked = "checked"
-                                $("#verifyitems_" + (i + 1).toString()).append("<label for=\"closeButton\" class=\"btn btn-transparent btn-primary btn-outline btn-sm\"><input id=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />" + data["step"][i]["verifyitems"][j]["name"] + "</label>")
+                                $("#verifyitems_" + (i + 1).toString()).append("<div class=\"md-checkbox\"><input class=\"md-check\" id=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  /><label for=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\"><span class=\"inc\"></span><span class=\"check\"></span><span class=\"box\"></span><font style=\"vertical-align: inherit;\"><font style=\"vertical-align: inherit;\">\n" +
+                                    data["step"][i]["verifyitems"][j]["name"] + "</font></font></label></div>")
                             }
                         }
                         $("#tabdiv" + (i + 1).toString()).append("<div id='tabsteps" + (i + 1).toString() + "' class='row  step-background-thin'></div><br><br>");
@@ -295,12 +296,13 @@ if (App.isAngularJsApp() === false) {
 
                             }
                             if (data["step"][i]["children"][j]["verifyitems"].length > 0) {
-                                $("#scriptdiv_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div id='verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
+                                $("#scriptdiv_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div class=\"md-checkbox-inline\" id='verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
                                 for (var k = 0; k < data["step"][i]["children"][j]["verifyitems"].length; k++) {
                                     var checked = ""
                                     if (data["step"][i]["children"][j]["verifyitems"][k]["has_verified"] == "1")
                                         checked = "checked"
-                                    $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<label for=\"closeButton\" class=\"btn btn-transparent btn-primary btn-outline btn-sm\"><input id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />" + data["step"][i]["children"][j]["verifyitems"][k]["name"]+ "</label>")
+                                    $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"md-checkbox\"><input class=\"md-check\" id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  /><label for=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\"><span class=\"inc\"></span><span class=\"check\"></span><span class=\"box\"></span><font style=\"vertical-align: inherit;\"><font style=\"vertical-align: inherit;\">\n" +
+                                        data["step"][i]["children"][j]["verifyitems"][k]["name"] + "</font></font></label></div>")
                                 }
                             }
                         }

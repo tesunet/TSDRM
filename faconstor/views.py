@@ -3250,7 +3250,7 @@ def getrunsetps(request):
                                    "explain": explain, "state": state, "scripts": scripts, "verifyitems": verifyitems,
                                    "note": note, "rto": rto,
                                    "children": getchildrensteps(processruns[0], step)})
-            print("result", processresult)
+            # print("processresult", processresult)
             return HttpResponse(json.dumps(processresult))
 
 
@@ -3448,7 +3448,7 @@ def verify_items(request):
                 if verify_item_id:
                     current_verify_run_item = current_step_run.verifyitemsrun_set.filter(id=int(verify_item_id))
                     if current_verify_run_item:
-                        current_verify_run_item[0].state = "1"
+                        current_verify_run_item[0].state = "9"
                         current_verify_run_item[0].save()
 
             # CONFIRM修改成DONE
