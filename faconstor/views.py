@@ -3319,16 +3319,23 @@ def get_current_scriptinfo(request):
     if request.user.is_authenticated():
         current_step_id = request.POST.get('steprunid', '')
         selected_script_id = request.POST.get('scriptid', '')
-        try:
-            scriptrun_obj = ScriptRun.objects.filter(id=selected_script_id)[0]
-        except:
-            scriptrun_obj = None
-        script_id = scriptrun_obj.script_id
-        try:
-            script_obj = Script.objects.filter(id=script_id)[0]
-        except:
-            script_obj = None
+
+        if selected_script_id:
+            try:
+                selected_script_id = int(selected_script_id)
+            except:
+                selected_script_id = None
+        else:
+            selected_script_id = None
+
+        scriptrun_objs = ScriptRun.objects.filter(id=selected_script_id)
+        script_id = scriptrun_objs[0].script_id if scriptrun_objs else None
+
+        script_objs = Script.objects.filter(id=script_id)
+        script_obj = script_objs[0] if script_objs else None
+
         if script_obj:
+            scriptrun_obj = scriptrun_objs[0]
             step_id_from_script = scriptrun_obj.steprun.step_id
             show_button = ""
             if step_id_from_script == current_step_id:
@@ -3342,16 +3349,9 @@ def get_current_scriptinfo(request):
                 "IGNORE": "忽略",
                 "": "",
             }
-            starttime = ""
-            endtime = ""
-            try:
-                starttime = scriptrun_obj.starttime.strftime("%Y-%m-%d %H:%M:%S")
-            except:
-                pass
-            try:
-                endtime = scriptrun_obj.endtime.strftime("%Y-%m-%d %H:%M:%S")
-            except:
-                pass
+
+            starttime = scriptrun_obj.starttime.strftime("%Y-%m-%d %H:%M:%S") if scriptrun_obj.starttime else ""
+            endtime = scriptrun_obj.endtime.strftime("%Y-%m-%d %H:%M:%S") if scriptrun_obj.endtime else ""
             script_info = {
                 "processrunstate": scriptrun_obj.steprun.processrun.state,
                 "code": script_obj.code,
