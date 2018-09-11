@@ -3967,10 +3967,14 @@ def falconstorsearchdata(request):
             "": "",
         }
         for processrun_obj in all_processrun_objs:
+            create_users = processrun_obj.creatuser if processrun_obj.creatuser else ""
+            create_user_objs = User.objects.filter(username=create_users)
+            create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
+
             result.append({
                 "starttime": processrun_obj.starttime.strftime('%Y-%m-%d %H:%M:%S') if processrun_obj.starttime else "",
                 "endtime": processrun_obj.endtime.strftime('%Y-%m-%d %H:%M:%S') if processrun_obj.endtime else "",
-                "createuser": processrun_obj.creatuser if processrun_obj.creatuser else "",
+                "createuser": create_user_fullname,
                 "state": state_dict["{0}".format(processrun_obj.state)] if processrun_obj.state else "",
                 "process_id": processrun_obj.process_id if processrun_obj.process_id else "",
                 "processrun_id": processrun_obj.id if processrun_obj.id else "",
