@@ -205,13 +205,12 @@ if (App.isAngularJsApp() === false) {
 
                         }
                         if (data["step"][i]["verifyitems"].length > 0) {
-
-                            $("#scriptdiv_" + (i + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div id='verifyitems_" + (i + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
+                            $("#scriptdiv_" + (i + 1).toString()).append("<div class=\"form-group\" data-toggle=\"buttons\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div id='verifyitems_" + (i + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
                             for (var j = 0; j < data["step"][i]["verifyitems"].length; j++) {
                                 var checked = ""
                                 if (data["step"][i]["verifyitems"][j]["has_verified"] == "1")
                                     checked = "checked"
-                                $("#verifyitems_" + (i + 1).toString()).append("<label for=\"closeButton\"><input id=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />"+data["step"][i]["verifyitems"][j]["name"]+"</label>")
+                                $("#verifyitems_" + (i + 1).toString()).append("<label for=\"closeButton\" class=\"btn btn-transparent btn-primary btn-outline btn-sm\"><input id=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />" + data["step"][i]["verifyitems"][j]["name"] + "</label>")
                             }
                         }
                         $("#tabdiv" + (i + 1).toString()).append("<div id='tabsteps" + (i + 1).toString() + "' class='row  step-background-thin'></div><br><br>");
@@ -301,7 +300,7 @@ if (App.isAngularJsApp() === false) {
                                     var checked = ""
                                     if (data["step"][i]["children"][j]["verifyitems"][k]["has_verified"] == "1")
                                         checked = "checked"
-                                    $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<label for=\"closeButton\"><input id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />"+data["step"][i]["verifyitems"][j]["name"]+"</label>")
+                                    $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<label for=\"closeButton\" class=\"btn btn-transparent btn-primary btn-outline btn-sm\"><input id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />" + data["step"][i]["verifyitems"][j]["name"] + "</label>")
                                 }
                             }
                         }
@@ -445,25 +444,31 @@ if (App.isAngularJsApp() === false) {
                     $("#confirmbtn").click(function () {
                         var step_id = $(this).prev().val();
                         var notChecked = "";
-                        $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (index,element) {
-                            notChecked += $(this).parent().text() + ","
+                        var CheckedId = "";
+                        $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (index, element) {
+                            notChecked += $(this).parent().text() + ",";
+                        });
+                        $(this).parent().siblings().find("input[type='checkbox']:checked").each(function (index, element) {
+                            CheckedId += $(this).attr("id") + ",";
                         });
                         if (notChecked) {
-                            alert("当前data未勾选!".replace("data", notChecked.slice(0,-1)));
-                        } else {
-                            $.ajax({
-                                url: "/verify_items/",
-                                type: "post",
-                                data: {"step_id": step_id},
-                                success: function (data) {
-                                    if (data.data == "0") {
-                                        alert("该步骤已确认，继续流程！")
-                                    } else {
-                                        alert("步骤确认异常，请联系客服！")
+                            if (confirm("data未勾选，是否继续？".replace("data", notChecked.slice(0, notChecked.length - 1)))) {
+                                $.ajax({
+                                    url: "/verify_items/",
+                                    type: "post",
+                                    data: {
+                                        "step_id": step_id,
+                                        "checked_id": CheckedId.slice(0, CheckedId.length - 1),
+                                    },
+                                    success: function (data) {
+                                        if (data.data == "0") {
+                                            alert("该步骤已确认，继续流程！")
+                                        } else {
+                                            alert("步骤确认异常，请联系客服！")
+                                        }
                                     }
-                                }
-                            });
-
+                                });
+                            }
                         }
                     })
                 }
