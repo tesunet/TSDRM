@@ -300,7 +300,7 @@ if (App.isAngularJsApp() === false) {
                                     var checked = ""
                                     if (data["step"][i]["children"][j]["verifyitems"][k]["has_verified"] == "1")
                                         checked = "checked"
-                                    $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<label for=\"closeButton\" class=\"btn btn-transparent btn-primary btn-outline btn-sm\"><input id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />" + data["step"][i]["verifyitems"][j]["name"] + "</label>")
+                                    $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<label for=\"closeButton\" class=\"btn btn-transparent btn-primary btn-outline btn-sm\"><input id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />" + data["step"][i]["children"][j]["verifyitems"][k]["name"]+ "</label>")
                                 }
                             }
                         }
@@ -334,7 +334,6 @@ if (App.isAngularJsApp() === false) {
                         $("#" + this.id + " i").show();
                     });
                     $('select').dblclick(function () {
-
 
                         if ($(this).find('option:selected').length == 0) {
                             alert("请至少选中一个脚本。")

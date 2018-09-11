@@ -3044,6 +3044,12 @@ def getchildrensteps(processrun, curstep):
                     scriptrunresult = scriptrunlist[0].result
                     scriptexplain = scriptrunlist[0].explain
                     scriptstate = scriptrunlist[0].state
+            scripts.append({"id": script.id, "code": script.code, "name": script.name, "runscriptid": runscriptid,
+                            "scriptstarttime": scriptstarttime,
+                            "scriptendtime": scriptendtime, "scriptoperator": scriptoperator,
+                            "scriptrunresult": scriptrunresult, "scriptexplain": scriptexplain,
+                            "scriptrunlog": scriptrunlog, "scriptstate": scriptstate})
+
         verifyitems = []
         verifyitemslist = VerifyItems.objects.exclude(state="9").filter(step=step)
         for verifyitem in verifyitemslist:
@@ -3061,11 +3067,7 @@ def getchildrensteps(processrun, curstep):
                 {"id": verifyitem.id, "name": verifyitem.name, "runverifyitemid": runverifyitemid,
                  "has_verified": has_verified,
                  "verifyitemstate": verifyitemstate})
-            scripts.append({"id": script.id, "code": script.code, "name": script.name, "runscriptid": runscriptid,
-                            "scriptstarttime": scriptstarttime,
-                            "scriptendtime": scriptendtime, "scriptoperator": scriptoperator,
-                            "scriptrunresult": scriptrunresult, "scriptexplain": scriptexplain,
-                            "scriptrunlog": scriptrunlog, "scriptstate": scriptstate})
+
         childresult.append({"id": step.id, "code": step.code, "name": step.name, "approval": step.approval,
                             "skip": step.skip, "group": group, "time": step.time, "runid": runid,
                             "starttime": starttime,
@@ -3248,6 +3250,7 @@ def getrunsetps(request):
                                    "explain": explain, "state": state, "scripts": scripts, "verifyitems": verifyitems,
                                    "note": note, "rto": rto,
                                    "children": getchildrensteps(processruns[0], step)})
+            print("result", processresult)
             return HttpResponse(json.dumps(processresult))
 
 

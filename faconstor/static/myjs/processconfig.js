@@ -41,6 +41,8 @@ $.ajax({
                             var inst = jQuery.jstree.reference(data.reference),
                                 obj = inst.get_node(data.reference);
                             $("#se_1").empty();
+                            $("#se_2").empty();
+
                             $("#group").empty();
                             // $("#group").attr("disabled", false);
                             $("#title").text("新建");
@@ -526,6 +528,8 @@ $("#process").change(function () {
                                 var inst = jQuery.jstree.reference(data.reference),
                                     obj = inst.get_node(data.reference);
                                 $("#se_1").empty();
+                                $("#se_2").empty();
+
                                 $("#group").empty();
                                 // $("#group").attr("disabled", false);
                                 $("#title").text("新建");
@@ -945,7 +949,6 @@ $("#process").change(function () {
 
 // 脚本
 $('#scriptsave').click(function () {
-    alert($("#id").val());
     $.ajax({
         type: "POST",
         dataType: 'json',
@@ -975,7 +978,7 @@ $('#scriptsave').click(function () {
             var mydata = data["data"];
             if (myres == "新增成功。") {
                 $("#scriptid").val(data["data"]);
-                $("#se_1").append("<option value='"+ mydata + "'>" + $("#scriptcode").val() + "</option>");
+                $("#se_1").append("<option value='" + mydata + "'>" + $("#scriptcode").val() + "</option>");
                 $('#static01').modal('hide');
             }
             if (myres == "修改成功。") {
@@ -1101,6 +1104,8 @@ $('#save').click(function () {
                                         var inst = jQuery.jstree.reference(data.reference),
                                             obj = inst.get_node(data.reference);
                                         $("#se_1").empty();
+                                        $("#se_2").empty();
+
                                         $("#group").empty();
                                         // $("#group").attr("disabled", false);
                                         $("#title").text("新建");
