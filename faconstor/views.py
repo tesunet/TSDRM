@@ -3088,7 +3088,6 @@ def getrunsetps(request):
             process_note = ""
             process_rto = ""
             processrun = request.POST.get('process', '')
-            print("processrun", processrun)
             try:
                 processrun = int(processrun)
             except:
@@ -3993,7 +3992,6 @@ def tasksearchdata(request):
         has_finished = request.GET.get('has_finished', '')
         startdate = request.GET.get('startdate', '')
         enddate = request.GET.get('enddate', '')
-        print("task_type,has_finished,startdate,enddate", task_type, has_finished, startdate, enddate)
         start_time = datetime.datetime.strptime(startdate, '%Y-%m-%d')
         end_time = datetime.datetime.strptime(enddate, '%Y-%m-%d') + datetime.timedelta(days=1) - datetime.timedelta(
             seconds=1)

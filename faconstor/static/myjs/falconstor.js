@@ -444,12 +444,12 @@ if (App.isAngularJsApp() === false) {
                     // 确认
                     $("#confirmbtn").click(function () {
                         var step_id = $(this).prev().val();
-                        var notCheckedNum = 0;
-                        $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (k) {
-                            notCheckedNum += 1
+                        var notChecked = "";
+                        $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (index,element) {
+                            notChecked += $(this).parent().text() + ","
                         });
-                        if (notCheckedNum) {
-                            alert("有data个确认项未勾选!".replace("data", notCheckedNum));
+                        if (notChecked) {
+                            alert("当前data未勾选!".replace("data", notChecked.slice(0,-1)));
                         } else {
                             $.ajax({
                                 url: "/verify_items/",
