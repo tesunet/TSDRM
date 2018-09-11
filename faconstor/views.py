@@ -3443,7 +3443,7 @@ def verify_items(request):
             # 确认项
             for verify_item_id in checked_id.split(","):
                 if verify_item_id:
-                    current_verify_run_item = current_step_run.verifyitemsrun_set.filter(id=int(checked_id))
+                    current_verify_run_item = current_step_run.verifyitemsrun_set.filter(id=int(verify_item_id))
                     if current_verify_run_item:
                         current_verify_run_item[0].state = "1"
                         current_verify_run_item[0].save()
