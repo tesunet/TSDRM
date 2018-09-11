@@ -211,7 +211,7 @@ if (App.isAngularJsApp() === false) {
                                 var checked = ""
                                 if (data["step"][i]["verifyitems"][j]["has_verified"] == "1")
                                     checked = "checked"
-                                $("#verifyitems_" + (i + 1).toString()).append("<label for=\"closeButton\"><input id=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />事项</label>")
+                                $("#verifyitems_" + (i + 1).toString()).append("<label for=\"closeButton\"><input id=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />"+data["step"][i]["verifyitems"][j]["name"]+"</label>")
                             }
                         }
                         $("#tabdiv" + (i + 1).toString()).append("<div id='tabsteps" + (i + 1).toString() + "' class='row  step-background-thin'></div><br><br>");
@@ -301,7 +301,7 @@ if (App.isAngularJsApp() === false) {
                                     var checked = ""
                                     if (data["step"][i]["children"][j]["verifyitems"][k]["has_verified"] == "1")
                                         checked = "checked"
-                                    $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<label for=\"closeButton\"><input id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />事项</label>")
+                                    $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<label for=\"closeButton\"><input id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  />"+data["step"][i]["verifyitems"][j]["name"]+"</label>")
                                 }
                             }
                         }
