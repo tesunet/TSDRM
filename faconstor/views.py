@@ -1674,19 +1674,20 @@ def script(request, funid):
                                     ncols = sheet.ncols
                                     scriptsave = Script()
                                     scriptsave.code = sheet.cell(i, 0).value
-                                    scriptsave.ip = sheet.cell(i, 1).value
-                                    scriptsave.port = sheet.cell(i, 2).value
+                                    scriptsave.name = sheet.cell(i, 1).value
+                                    scriptsave.ip = sheet.cell(i, 2).value
+                                    # scriptsave.port = sheet.cell(i, 2).value
                                     scriptsave.type = sheet.cell(i, 3).value
-                                    scriptsave.runtype = sheet.cell(i, 4).value
-                                    scriptsave.username = sheet.cell(i, 5).value
-                                    scriptsave.password = sheet.cell(i, 6).value
-                                    scriptsave.filename = sheet.cell(i, 7).value
-                                    scriptsave.paramtype = sheet.cell(i, 8).value
-                                    scriptsave.param = sheet.cell(i, 9).value
-                                    scriptsave.scriptpath = sheet.cell(i, 10).value
-                                    scriptsave.runpath = sheet.cell(i, 11).value
-                                    scriptsave.maxtime = int(sheet.cell(i, 12).value)
-                                    scriptsave.time = int(sheet.cell(i, 13).value)
+                                    # scriptsave.runtype = sheet.cell(i, 4).value
+                                    scriptsave.username = sheet.cell(i, 4).value
+                                    scriptsave.password = sheet.cell(i, 5).value
+                                    scriptsave.filename = sheet.cell(i, 6).value
+                                    # scriptsave.paramtype = sheet.cell(i, 8).value
+                                    # scriptsave.param = sheet.cell(i, 9).value
+                                    scriptsave.scriptpath = sheet.cell(i, 7).value
+                                    # scriptsave.runpath = sheet.cell(i, 11).value
+                                    # scriptsave.maxtime = int(sheet.cell(i, 12).value)
+                                    # scriptsave.time = int(sheet.cell(i, 13).value)
                                     scriptsave.save()
                             except:
                                 errors.append(sheet.cell(i, 0).value + ":数据存在问题，已剔除。")
@@ -1882,36 +1883,38 @@ def scriptexport(request):
         filename = xlwt.Workbook()
         sheet = filename.add_sheet('sheet1')
         allscript = Script.objects.exclude(state="9").filter(step_id=None)
-        sheet.write(0, 0, u'脚本编号')
-        sheet.write(0, 1, u'主机IP')
-        sheet.write(0, 2, u'端口号')
-        sheet.write(0, 3, u'连接类型')
-        sheet.write(0, 4, u'运行类型')
-        sheet.write(0, 5, u'用户名')
-        sheet.write(0, 6, u'密码')
-        sheet.write(0, 7, u'脚本文件名')
-        sheet.write(0, 8, u'参数类型')
-        sheet.write(0, 9, u'脚本参数')
-        sheet.write(0, 10, u'脚本文件路径')
-        sheet.write(0, 11, u'执行路径')
-        sheet.write(0, 12, u'超时时间')
-        sheet.write(0, 13, u'预计耗时')
+        sheet.write(0, 0, '脚本编号')
+        sheet.write(0, 1, '脚本名称')
+        sheet.write(0, 2, '主机IP')
+        # sheet.write(0, 2, '端口号')
+        sheet.write(0, 3, '连接类型')
+        # sheet.write(0, 4, '运行类型')
+        sheet.write(0, 4, '用户名')
+        sheet.write(0, 5, '密码')
+        sheet.write(0, 6, '脚本文件名')
+        # sheet.write(0, 8, '参数类型')
+        # sheet.write(0, 9, '脚本参数')
+        sheet.write(0, 7, '脚本文件路径')
+        # sheet.write(0, 11, '执行路径')
+        # sheet.write(0, 12, '超时时间')
+        # sheet.write(0, 13, '预计耗时')
         if len(allscript) > 0:
             for i in range(len(allscript)):
                 sheet.write(i + 1, 0, allscript[i].code)
-                sheet.write(i + 1, 1, allscript[i].ip)
-                sheet.write(i + 1, 2, allscript[i].port)
+                sheet.write(i + 1, 1, allscript[i].name)
+                sheet.write(i + 1, 2, allscript[i].ip)
+                # sheet.write(i + 1, 2, allscript[i].port)
                 sheet.write(i + 1, 3, allscript[i].type)
-                sheet.write(i + 1, 4, allscript[i].runtype)
-                sheet.write(i + 1, 5, allscript[i].username)
-                sheet.write(i + 1, 6, allscript[i].password)
-                sheet.write(i + 1, 7, allscript[i].filename)
-                sheet.write(i + 1, 8, allscript[i].paramtype)
-                sheet.write(i + 1, 9, allscript[i].param)
-                sheet.write(i + 1, 10, allscript[i].scriptpath)
-                sheet.write(i + 1, 11, allscript[i].runpath)
-                sheet.write(i + 1, 12, allscript[i].maxtime)
-                sheet.write(i + 1, 13, allscript[i].time)
+                # sheet.write(i + 1, 4, allscript[i].runtype)
+                sheet.write(i + 1, 4, allscript[i].username)
+                sheet.write(i + 1, 5, allscript[i].password)
+                sheet.write(i + 1, 6, allscript[i].filename)
+                # sheet.write(i + 1, 8, allscript[i].paramtype)
+                # sheet.write(i + 1, 9, allscript[i].param)
+                sheet.write(i + 1, 7, allscript[i].scriptpath)
+                # sheet.write(i + 1, 11, allscript[i].runpath)
+                # sheet.write(i + 1, 12, allscript[i].maxtime)
+                # sheet.write(i + 1, 13, allscript[i].time)
         filename.save(myfilepath)
 
         def file_iterator(file_name, chunk_size=512):
@@ -3828,7 +3831,7 @@ def custom_pdf_report(request):
         second_el_dict['inner_step_list'] = inner_step_list
         step_info_list.append(second_el_dict)
     # return render(request, "pdf.html", locals())
-    
+
     t = TemplateResponse(request, 'pdf.html',
                          {"step_info_list": step_info_list, "first_el_dict": first_el_dict, "ele_xml01": ele_xml01,
                           "ele_xml02": ele_xml02, "title_xml": title_xml, "abstract_xml": abstract_xml})
