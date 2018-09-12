@@ -3251,7 +3251,7 @@ def getrunsetps(request):
                                    "note": note, "rto": rto,
                                    "children": getchildrensteps(processruns[0], step)})
             # print("processresult", processresult)
-            return HttpResponse(json.dumps(processresult))
+            return HttpResponse(json.dumps(processresult)) 
 
 
 def falconstorcontinue(request):
