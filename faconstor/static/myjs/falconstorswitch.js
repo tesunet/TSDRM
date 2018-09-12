@@ -95,7 +95,6 @@ $(document).ready(function () {
     });
 
     $("#generate").click(function () {
-        // 移除邀请pdf链接
         var process_id = $("#process_id").val();
         var start_date = $("#start_date").val();
         var end_date = $("#end_date").val();
