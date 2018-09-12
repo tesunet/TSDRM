@@ -3828,6 +3828,7 @@ def custom_pdf_report(request):
         second_el_dict['inner_step_list'] = inner_step_list
         step_info_list.append(second_el_dict)
     # return render(request, "pdf.html", locals())
+    
     t = TemplateResponse(request, 'pdf.html',
                          {"step_info_list": step_info_list, "first_el_dict": first_el_dict, "ele_xml01": ele_xml01,
                           "ele_xml02": ele_xml02, "title_xml": title_xml, "abstract_xml": abstract_xml})
