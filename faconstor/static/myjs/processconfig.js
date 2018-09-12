@@ -312,7 +312,7 @@ $.ajax({
                 }
                 if ($(e.target).text() == "修改") {
                     if ($("#se_2").find('option:selected').length == 0)
-                        alert("请选择要修改的脚本。");
+                        alert("请选择要修改的确认项。");
                     else {
                         if ($("#se_2").find('option:selected').length > 1)
                             alert("修改时请不要选择多条记录。");
@@ -344,9 +344,9 @@ $.ajax({
 
                 if ($(e.target).text() == "删除") {
                     if ($("#se_2").find('option:selected').length == 0)
-                        alert("请选择要删除的脚本。");
+                        alert("请选择要删除的确认项。");
                     else {
-                        if (confirm("确定要删除该脚本吗？")) {
+                        if (confirm("确定要删除该确认项吗？")) {
                             $.ajax({
                                 type: "POST",
                                 url: "../../remove_verify_item/",
@@ -798,7 +798,7 @@ $("#process").change(function () {
                     }
                     if ($(e.target).text() == "修改") {
                         if ($("#se_2").find('option:selected').length == 0)
-                            alert("请选择要修改的脚本。");
+                            alert("请选择要修改的确认项。");
                         else {
                             if ($("#se_2").find('option:selected').length > 1)
                                 alert("修改时请不要选择多条记录。");
@@ -830,9 +830,9 @@ $("#process").change(function () {
 
                     if ($(e.target).text() == "删除") {
                         if ($("#se_2").find('option:selected').length == 0)
-                            alert("请选择要删除的脚本。");
+                            alert("请选择要删除的确认项。");
                         else {
-                            if (confirm("确定要删除该脚本吗？")) {
+                            if (confirm("确定要删除该确认项吗？")) {
                                 $.ajax({
                                     type: "POST",
                                     url: "../../remove_verify_item/",
@@ -1374,7 +1374,7 @@ $('#save').click(function () {
                             }
                             if ($(e.target).text() == "修改") {
                                 if ($("#se_1").find('option:selected').length == 0)
-                                    alert("请选择要修改的脚本。");
+                                    alert("请选择要修改的确认项。");
                                 else {
                                     if ($("#se_1").find('option:selected').length > 1)
                                         alert("修改时请不要选择多条记录。");
@@ -1406,9 +1406,9 @@ $('#save').click(function () {
 
                             if ($(e.target).text() == "删除") {
                                 if ($("#se_2").find('option:selected').length == 0)
-                                    alert("请选择要删除的脚本。");
+                                    alert("请选择要删除的确认项。");
                                 else {
-                                    if (confirm("确定要删除该脚本吗？")) {
+                                    if (confirm("确定要删除该确认项吗？")) {
                                         $.ajax({
                                             type: "POST",
                                             url: "../../remove_verify_item/",

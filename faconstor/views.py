@@ -2128,7 +2128,7 @@ def remove_verify_item(request):
         except:
             pass
         else:
-            current_verify_item.step_id = None
+            current_verify_item.state = "9"
             current_verify_item.save()
         return JsonResponse({
             "status": 1
@@ -2167,7 +2167,8 @@ def remove_script(request):
         except:
             pass
         else:
-            current_script.step_id = None
+            # current_script.delete()
+            current_script.state = "9"
             current_script.save()
         return JsonResponse({
             "status": 1
@@ -2937,7 +2938,7 @@ def falconstorrun(request):
                             myprocesstask.content = "流程已启动。"
                             myprocesstask.save()
 
-                            # exec_process.delay(myprocessrun.id)
+                            exec_process.delay(myprocessrun.id)
                             result["res"] = "新增成功。"
                             result["data"] = process[0].url + "/" + str(myprocessrun.id)
         return HttpResponse(json.dumps(result))
@@ -3262,7 +3263,7 @@ def falconstorcontinue(request):
             process = int(process)
         except:
             raise Http404()
-        # exec_process.delay(process)
+        exec_process.delay(process)
         result["res"] = "执行成功。"
         return HttpResponse(json.dumps(result))
 
@@ -3305,7 +3306,7 @@ def processsignsave(request):
                 myprocesstask.senduser = request.user.username
                 myprocesstask.save()
 
-                # exec_process.delay(myprocessrun.id)
+                exec_process.delay(myprocessrun.id)
                 result["res"] = "签字成功,同时启动流程。"
                 result["data"] = myprocess.url + "/" + str(myprocessrun.id)
             else:
@@ -3474,7 +3475,7 @@ def verify_items(request):
 
             # 运行流程
             current_process_run_id = current_step_run.processrun_id
-            # exec_process.delay(current_process_run_id)
+            exec_process.delay(current_process_run_id)
             return JsonResponse({"data": "0"})
         else:
             return JsonResponse({"data": "1"})
