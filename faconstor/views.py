@@ -2589,12 +2589,6 @@ def get_all_groups(request):
         all_group_list = []
         all_groups = Group.objects.exclude(state="9")
         for num, group in enumerate(all_groups):
-            # if num == 0:
-            #     group_info_dict = {
-            #         "group_id": None,
-            #         "group_name": "-----------------",
-            #     }
-            # else:
             group_info_dict = {
                 "group_id": group.id,
                 "group_name": group.name,
