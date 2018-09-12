@@ -28,6 +28,8 @@ import pymssql
 from lxml import etree
 from django.forms.models import model_to_dict
 import re
+import pdfkit
+from django.template.response import TemplateResponse
 
 pythoncom.CoInitialize()
 import wmi
@@ -394,7 +396,6 @@ def index(request, funid):
                 current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
                 current_processrun_id = current_processrun.id
                 all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
-
 
                 # 没有run的情况下，
                 try:
@@ -2185,7 +2186,6 @@ def setpsave(request):
         skip = request.POST.get('skip', '')
         approval = request.POST.get('approval', '')
         group = request.POST.get('group', '')
-        print(group)
         if group == " ":
             group = None
 
@@ -2801,7 +2801,6 @@ def falconstorswitch(request, funid, process_id):
             wrapper_step_dict["inner_step_list"] = inner_step_list
 
             wrapper_step_list.append(wrapper_step_dict)
-        # print("process_id", process_id)
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id})
@@ -2886,7 +2885,6 @@ def falconstorrun(request):
                         mysteprun.save()
 
                         myscript = step.script_set.exclude(state="9")
-                        # print(myscript)
                         for script in myscript:
                             myscriptrun = ScriptRun()
                             myscriptrun.script = script
@@ -2906,7 +2904,6 @@ def falconstorrun(request):
 
                     if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
                         for group in allgroup:
-                            print(group)
                             try:
                                 signgroup = Group.objects.get(id=int(group["group"]))
                                 groupname = signgroup.name
@@ -3163,9 +3160,11 @@ def getrunsetps(request):
                             except:
                                 pass
                         else:
-                            start_time = steprunlist[0].starttime.replace(tzinfo=None) if steprunlist[0].starttime else ""
+                            start_time = steprunlist[0].starttime.replace(tzinfo=None) if steprunlist[
+                                0].starttime else ""
                             current_time = datetime.datetime.now()
-                            current_delta_time = (current_time - start_time).total_seconds() if current_time and start_time else 0
+                            current_delta_time = (
+                                        current_time - start_time).total_seconds() if current_time and start_time else 0
                             m, s = divmod(current_delta_time, 60)
                             h, m = divmod(m, 60)
                             rto = "%d时%02d分%02d秒" % (h, m, s)
@@ -3251,7 +3250,6 @@ def getrunsetps(request):
                                    "explain": explain, "state": state, "scripts": scripts, "verifyitems": verifyitems,
                                    "note": note, "rto": rto,
                                    "children": getchildrensteps(processruns[0], step)})
-            print("processresult", processresult)
             return HttpResponse(json.dumps(processresult))
 
 
@@ -3439,18 +3437,10 @@ def stop_current_process(request):
 def verify_items(request):
     if request.user.is_authenticated():
         step_id = request.POST.get("step_id", "")
-        checked_id = request.POST.get("checked_id", "")
 
         current_step_run = StepRun.objects.filter(step_id=step_id).exclude(state="9")
         if current_step_run:
             current_step_run = current_step_run[0]
-            # # 确认项
-            # for verify_item_id in checked_id.split(","):
-            #     if verify_item_id:
-            #         current_verify_run_item = current_step_run.verifyitemsrun_set.filter(id=int(verify_item_id))
-            #         if current_verify_run_item:
-            #             current_verify_run_item[0].state = "9"
-            #             current_verify_run_item[0].save()
 
             # CONFIRM修改成DONE
             current_step_run.state = "DONE"
@@ -3479,10 +3469,6 @@ def verify_items(request):
             return JsonResponse({"data": "0"})
         else:
             return JsonResponse({"data": "1"})
-
-
-import pdfkit
-from django.template.response import TemplateResponse
 
 
 def custom_pdf_report(request):

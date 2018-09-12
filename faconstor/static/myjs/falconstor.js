@@ -107,51 +107,51 @@ if (App.isAngularJsApp() === false) {
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
                     }
-                    var processallsteps = 0
-                    var processdonesteps = 0
+                    var processallsteps = 0;
+                    var processdonesteps = 0;
                     window.clearInterval(t2);
                     for (var i = 0; i < data["step"].length; i++) {
 
-                        var first = ""
-                        var last = ""
+                        var first = "";
+                        var last = "";
                         if (i == 0)
-                            first = "first"
+                            first = "first";
                         if (i == data["step"].length - 1)
-                            last = "last"
+                            last = "last";
                         if (data["step"][i]["state"] == "ERROR")
                             $("#continue").show();
-                        var tabdone = ""
+                        var tabdone = "";
                         if (data["step"][i]["state"] == "DONE")
-                            tabdone = "done"
-                        var tabrun = ""
+                            tabdone = "done";
+                        var tabrun = "";
                         if (data["step"][i]["state"] == "RUN" || data["step"][i]["state"] == "CONFIRM" || data["step"][i]["state"] == "ERROR" || ((i == data["step"].length - 1) && data["step"][i]["state"] == "DONE"))
-                            tabrun = "active"
+                            tabrun = "active";
 
-                        $("ul.steps").append("<li id='li_" + (i + 1).toString() + "' class='" + tabdone + " " + tabrun + "'><a href='#tab" + (i + 1).toString() + "' data-toggle='tab' class='step' aria-expanded='true'><span class='number'> " + (i + 1).toString() + " </span><span class='desc'><i hidden class='fa fa-check'></i> " + data["step"][i]["name"] + " </span></a></li>")
-                        $("div.tab-content").append("<div class='tab-pane " + tabrun + "' id='tab" + (i + 1).toString() + "'></div>")
+                        $("ul.steps").append("<li id='li_" + (i + 1).toString() + "' class='" + tabdone + " " + tabrun + "'><a href='#tab" + (i + 1).toString() + "' data-toggle='tab' class='step' aria-expanded='true'><span class='number'> " + (i + 1).toString() + " </span><span class='desc'><i hidden class='fa fa-check'></i> " + data["step"][i]["name"] + " </span></a></li>");
+                        $("div.tab-content").append("<div class='tab-pane " + tabrun + "' id='tab" + (i + 1).toString() + "'></div>");
 
-                        $("#tab" + (i + 1).toString()).append("<div id='tabdiv" + (i + 1).toString() + "' class='mt-element-step'></div>")
-                        var step1_id = data["step"][i]["id"]
-                        var step1_name = data["step"][i]["name"]
-                        var step1_state = data["step"][i]["state"]
-                        var step1_starttime = data["step"][i]["starttime"]
-                        var step1_endtime = data["step"][i]["endtime"]
-                        var step1_rto = data["step"][i]["rto"]
-                        var step1_group = data["step"][i]["group"]
-                        var step1_operator = data["step"][i]["operator"]
-                        var step1_note = data["step"][i]["note"]
-                        processallsteps = processallsteps + 1
-                        var expand = "collapse"
-                        var bar = ""
-                        var style = ""
-                        var stepbtn = ""
+                        $("#tab" + (i + 1).toString()).append("<div id='tabdiv" + (i + 1).toString() + "' class='mt-element-step'></div>");
+                        var step1_id = data["step"][i]["id"];
+                        var step1_name = data["step"][i]["name"];
+                        var step1_state = data["step"][i]["state"];
+                        var step1_starttime = data["step"][i]["starttime"];
+                        var step1_endtime = data["step"][i]["endtime"];
+                        var step1_rto = data["step"][i]["rto"];
+                        var step1_group = data["step"][i]["group"];
+                        var step1_operator = data["step"][i]["operator"];
+                        var step1_note = data["step"][i]["note"];
+                        processallsteps = processallsteps + 1;
+                        var expand = "collapse";
+                        var bar = "";
+                        var style = "";
+                        var stepbtn = "";
                         if (data["step"][i]["children"].length > 0) {
-                            expand = "expand"
+                            expand = "expand";
                             bar = "<div id=\"step_bar\"" + (i + 1).toString() + " class=\"progress progress-striped\"\n" +
                                 "                                                             role=\"progressbar\">\n" +
                                 "                                                            <div id=\"step_bar_\"" + (i + 1).toString() + " class=\"progress-bar progress-bar-success\"\n" +
                                 "                                                                 style=\"width: 0%;\"></div>\n" +
-                                "                                                        </div>"
+                                "                                                        </div>";
                             style = "style=\"display: none;\""
                         }
                         if (step1_state == "DONE") {
@@ -160,8 +160,8 @@ if (App.isAngularJsApp() === false) {
                         }
                         if (step1_state == "CONFIRM") {
                             step1_state = "待确认";
-                            expand = "collapse"
-                            style = ""
+                            expand = "collapse";
+                            style = "";
                             stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" + "<input name='step_id' id='step_id' value='" + step1_id + "' hidden>" +
                                 "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                 "                                            </div>"
@@ -207,48 +207,48 @@ if (App.isAngularJsApp() === false) {
                         if (data["step"][i]["verifyitems"].length > 0) {
                             $("#scriptdiv_" + (i + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div class=\"md-checkbox-inline\" id='verifyitems_" + (i + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
                             for (var j = 0; j < data["step"][i]["verifyitems"].length; j++) {
-                                var checked = ""
+                                var checked = "";
                                 if (data["step"][i]["verifyitems"][j]["has_verified"] == "1")
-                                    checked = "checked"
+                                    checked = "checked";
                                 $("#verifyitems_" + (i + 1).toString()).append("<div class=\"md-checkbox\"><input class=\"md-check\" id=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  /><label for=\"" + data["step"][i]["verifyitems"][j]["runverifyitemid"] + "\"><span class=\"inc\"></span><span class=\"check\"></span><span class=\"box\"></span><font style=\"vertical-align: inherit;\"><font style=\"vertical-align: inherit;\">\n" +
                                     data["step"][i]["verifyitems"][j]["name"] + "</font></font></label></div>")
                             }
                         }
                         $("#tabdiv" + (i + 1).toString()).append("<div id='tabsteps" + (i + 1).toString() + "' class='row  step-background-thin'></div><br><br>");
-                        var stepallsteps = 0
-                        var stepdonesteps = 0
+                        var stepallsteps = 0;
+                        var stepdonesteps = 0;
                         for (var j = 0; j < data["step"][i]["children"].length; j++) {
-                            var stepdone = ""
+                            var stepdone = "";
                             if (data["step"][i]["children"][j]["state"] == "DONE")
-                                stepdone = "done"
-                            var steprun = ""
-                            var hidediv = "hidden"
-                            var style = "display:none;"
+                                stepdone = "done";
+                            var steprun = "";
+                            var hidediv = "hidden";
+                            var style = "display:none;";
                             if (data["step"][i]["children"][j]["state"] == "RUN" || data["step"][i]["state"] == "CONFIRM" || data["step"][i]["children"][j]["state"] == "ERROR" || ((j == data["step"][i]["children"].length - 1) && data["step"][i]["children"][j]["state"] == "DONE")) {
-                                hidediv = ""
-                                steprun = "active"
+                                hidediv = "";
+                                steprun = "active";
                                 style = ""
                             }
                             $("#tabsteps" + (i + 1).toString()).append("<div id='step" + (i + 1).toString() + "_" + (j + 1).toString() + "' class='col-md-4 bg-grey-steel mt-step-col " + stepdone + " " + steprun + "'><div class='mt-step-number'>" + (j + 1).toString() + "</div><div class='mt-step-title uppercase font-grey-cascade'><i class='fa fa-hand-o-right' style='" + style + "'></i>     " + data["step"][i]["children"][j]["name"] + "</div><div class='mt-step-content font-grey-cascade'>开始时间:" + data["step"][i]["children"][j]["starttime"] + "</div><div class='mt-step-content font-grey-cascade'>结束时间:" + data["step"][i]["children"][j]["endtime"] + "</div></div>")
-                            $("#tabdiv" + (i + 1).toString()).append("<div " + hidediv + " class='form-group tabdiv' id='div" + (i + 1).toString() + "_" + (j + 1).toString() + "'></div>")
+                            $("#tabdiv" + (i + 1).toString()).append("<div " + hidediv + " class='form-group tabdiv' id='div" + (i + 1).toString() + "_" + (j + 1).toString() + "'></div>");
 
-                            var step2_name = data["step"][i]["children"][j]["name"]
-                            var step2_state = data["step"][i]["children"][j]["state"]
-                            var step2_starttime = data["step"][i]["children"][j]["starttime"]
-                            var step2_endtime = data["step"][i]["children"][j]["endtime"]
-                            var step2_rto = data["step"][i]["children"][j]["rto"]
-                            var step2_group = data["step"][i]["children"][j]["group"]
-                            var step2_operator = data["step"][i]["children"][j]["operator"]
-                            var step2_note = data["step"][i]["children"][j]["note"]
-                            processallsteps = processallsteps + 1
-                            stepallsteps = stepallsteps + 1
+                            var step2_name = data["step"][i]["children"][j]["name"];
+                            var step2_state = data["step"][i]["children"][j]["state"];
+                            var step2_starttime = data["step"][i]["children"][j]["starttime"];
+                            var step2_endtime = data["step"][i]["children"][j]["endtime"];
+                            var step2_rto = data["step"][i]["children"][j]["rto"];
+                            var step2_group = data["step"][i]["children"][j]["group"];
+                            var step2_operator = data["step"][i]["children"][j]["operator"];
+                            var step2_note = data["step"][i]["children"][j]["note"];
+                            processallsteps = processallsteps + 1;
+                            stepallsteps = stepallsteps + 1;
 
-                            var step2btn = ""
+                            var step2btn = "";
 
                             if (step2_state == "DONE") {
                                 step2_state = "完成";
-                                processdonesteps = processdonesteps + 1
-                                stepdonesteps = stepdonesteps + 1
+                                processdonesteps = processdonesteps + 1;
+                                stepdonesteps = stepdonesteps + 1;
                             }
                             if (step2_state == "CONFIRM") {
                                 step2_state = "待确认";
@@ -264,7 +264,7 @@ if (App.isAngularJsApp() === false) {
                                 step2_state = "待确认";
                             if (step2_state == "EDIT")
                                 step2_state = "未开始";
-                            var stepbtn = ""
+                            var stepbtn = "";
                             $("#div" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"portlet box green\"><div class=\"portlet-title\"><div class=\"caption\">" + step2_name + "</div><div class=\"tools\"><a href=\"javascript:;\"class=\"collapse\"> </a>\n" +
                                 "</div></div><div class=\"portlet-body\"><div class=\"row\"><div ><div class=\"panel-body\"><div class=\"form-body\"><div class=\"row\"><div class=\"col-md-6\">\n" +
                                 "<div class=\"form-group \"><label class=\"col-md-2 control-label\">状态</label><div class=\"col-md-10\"><input  type=\"text\" value='" + step2_state + "'\n" +
@@ -281,15 +281,15 @@ if (App.isAngularJsApp() === false) {
                             if (data["step"][i]["children"][j]["scripts"].length > 0) {
                                 $("#scriptdiv_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>脚本</label><div class=\"col-md-10\"><select id='se" + (i + 1).toString() + "_" + (j + 1).toString() + "' size='9' class='form-control' style='overflow-y:auto;'></select><div class=\"form-control-focus\"></div></div></div>")
                                 for (var k = 0; k < data["step"][i]["children"][j]["scripts"].length; k++) {
-                                    var color = ""
+                                    var color = "";
                                     if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "DONE")
-                                        color = "#26C281"
+                                        color = "#26C281";
                                     if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "RUN")
-                                        color = "#32c5d2"
+                                        color = "#32c5d2";
                                     if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "IGNORE")
-                                        color = "#ffd966"
+                                        color = "#ffd966";
                                     if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "ERROR")
-                                        color = "#ff0000"
+                                        color = "#ff0000";
                                     $("#se" + (i + 1).toString() + "_" + (j + 1).toString()).append("<option style='color:" + color + "' value='" + data["step"][i]["children"][j]["scripts"][k]["runscriptid"] + "'>" + data["step"][i]["children"][j]["scripts"][k]["name"] + "</option>")
                                 }
 
@@ -298,9 +298,9 @@ if (App.isAngularJsApp() === false) {
                             if (data["step"][i]["children"][j]["verifyitems"].length > 0) {
                                 $("#scriptdiv_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"form-group\"><label class=\"col-md-2 control-label\"></span>事项</label><div class=\"col-md-10\"><div class=\"md-checkbox-inline\" id='verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString() + "'></div></div></div><div class=\"form-group\"><div  style='padding-top: 5px'  class=\"checkbox-list\">")
                                 for (var k = 0; k < data["step"][i]["children"][j]["verifyitems"].length; k++) {
-                                    var checked = ""
+                                    var checked = "";
                                     if (data["step"][i]["children"][j]["verifyitems"][k]["has_verified"] == "1")
-                                        checked = "checked"
+                                        checked = "checked";
                                     $("#verifyitems_" + (i + 1).toString() + "_" + (j + 1).toString()).append("<div class=\"md-checkbox\"><input class=\"md-check\" id=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\" type=\"checkbox\" " + checked + "  /><label for=\"" + data["step"][i]["children"][j]["verifyitems"][k]["runverifyitemid"] + "\"><span class=\"inc\"></span><span class=\"check\"></span><span class=\"box\"></span><font style=\"vertical-align: inherit;\"><font style=\"vertical-align: inherit;\">\n" +
                                         data["step"][i]["children"][j]["verifyitems"][k]["name"] + "</font></font></label></div>")
                                 }
@@ -308,7 +308,7 @@ if (App.isAngularJsApp() === false) {
                         }
                         try {
                             var stepbar = "0";
-                            stepbar = Math.round(stepdonesteps / stepallsteps * 100).toString()
+                            stepbar = Math.round(stepdonesteps / stepallsteps * 100).toString();
                             $("#step_bar_" + (i + 1).toString()).width(stepbar + "%");
                         }
                         catch (err) {
@@ -319,7 +319,7 @@ if (App.isAngularJsApp() === false) {
                     }
                     try {
                         var processbar = "0";
-                        processbar = Math.round(processdonesteps / processallsteps * 100).toString()
+                        processbar = Math.round(processdonesteps / processallsteps * 100).toString();
                         $("#process_bar").width(processbar + "%");
                     }
                     catch (err) {
@@ -328,8 +328,8 @@ if (App.isAngularJsApp() === false) {
                     FormWizard.init();
 
                     $(".mt-step-col").click(function () {
-                        $(".tabdiv").hide()
-                        $("#" + this.id.replace('step', 'div')).show()
+                        $(".tabdiv").hide();
+                        $("#" + this.id.replace('step', 'div')).show();
                         $(".mt-step-col").removeClass("active");
                         $("#" + this.id).addClass("active");
                         $(".mt-step-col" + " i").hide();
@@ -445,12 +445,8 @@ if (App.isAngularJsApp() === false) {
                     $("#confirmbtn").click(function () {
                         var step_id = $(this).prev().val();
                         var notChecked = "";
-                        var CheckedId = "";
                         $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (index, element) {
                             notChecked += $(this).parent().text() + ",";
-                        });
-                        $(this).parent().siblings().find("input[type='checkbox']:checked").each(function (index, element) {
-                            CheckedId += $(this).attr("id") + ",";
                         });
                         if (notChecked) {
                             if (confirm("data未勾选，是否继续？".replace("data", notChecked.slice(0, notChecked.length - 1)))) {
@@ -459,7 +455,6 @@ if (App.isAngularJsApp() === false) {
                                     type: "post",
                                     data: {
                                         "step_id": step_id,
-                                        "checked_id": CheckedId.slice(0, CheckedId.length - 1),
                                     },
                                     success: function (data) {
                                         if (data.data == "0") {
@@ -476,7 +471,6 @@ if (App.isAngularJsApp() === false) {
                                 type: "post",
                                 data: {
                                     "step_id": step_id,
-                                    "checked_id": CheckedId.slice(0, CheckedId.length - 1),
                                 },
                                 success: function (data) {
                                     if (data.data == "0") {
