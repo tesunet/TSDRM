@@ -193,29 +193,6 @@ $("ul#locate_task").on("click", " li", function () {
 });
 
 
-$("#sign_save").click(function () {
-    var csrfToken = $("[name='csrfmiddlewaretoken']").val();
-    $.ajax({
-        type: "POST",
-        url: "../processsignsave/",
-        data: {
-            "task_id": $("#mytask").val(),
-            "sign_info": $("#sign_info").val(),
-            "csrfmiddlewaretoken": csrfToken,
-        },
-        success: function (data) {
-            if (data["res"] == "签字成功,同时启动流程。") {
-                window.location.href = data["data"];
-            }
-            else
-                alert(data["res"]);
-            $('#static01').modal('hide');
-        },
-        error: function (e) {
-            alert("流程启动失败，请于管理员联系。");
-        }
-    });
-});
 
 
 

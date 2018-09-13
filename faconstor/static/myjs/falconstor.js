@@ -81,7 +81,6 @@ if (App.isAngularJsApp() === false) {
                     },
                 dataType: "json",
                 success: function (data) {
-                    $("#continue").hide();
                     $("ul.steps").empty();
                     $("div.tab-content").empty();
                     $("#stopbtn").show();
@@ -109,7 +108,6 @@ if (App.isAngularJsApp() === false) {
                     }
                     var processallsteps = 0;
                     var processdonesteps = 0;
-                    window.clearInterval(t2);
                     for (var i = 0; i < data["step"].length; i++) {
 
                         var first = "";
@@ -118,8 +116,6 @@ if (App.isAngularJsApp() === false) {
                             first = "first";
                         if (i == data["step"].length - 1)
                             last = "last";
-                        if (data["step"][i]["state"] == "ERROR")
-                            $("#continue").show();
                         var tabdone = "";
                         if (data["step"][i]["state"] == "DONE")
                             tabdone = "done";
@@ -389,7 +385,8 @@ if (App.isAngularJsApp() === false) {
                                 },
                             success: function (data) {
                                 if (data["res"] == "执行成功。") {
-                                    $('#continue').hide()
+                                    $('#b1').hide()
+                                    $('#static').modal('hide');
                                 }
                                 else
                                     alert(data["res"]);
