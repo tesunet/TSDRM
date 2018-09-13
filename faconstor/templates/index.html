@@ -59,21 +59,22 @@
 
                             {% for current_processrun in curren_processrun_info_list %}
                                 <div class="portlet-body">
-                                    <div class="mt-element-step" onclick="window.open('{{ current_processrun.processrun_url }}','_self');" style="cursor:pointer;">
+                                    <div class="mt-element-step">
                                         <div class="row step-line">
-                                            <div class="mt-step-desc">
-                                                <div class="font-dark bold uppercase">{{ current_processrun.current_process_name }}</div>
-                                                <div class="caption-desc font-grey-cascade"> 启动时间: <span
-                                                        class="timeline-body-alerttitle font-green-haze">{{ current_processrun.start_time_strftime }}</span>，已运行
-                                                    <span class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_delta_time }}</span>
-                                                    ，当前阶段 <span
-                                                            class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_step_name }}</span>
-                                                    ，当前负责角色 <span
-                                                            class="timeline-body-alerttitle font-green-haze">{{ current_processrun.group_name }}{{ current_processrun.users }}。</span>
-                                                </div>
-                                                <br/></div>
-                                            <div class="col-md-8">
 
+                                            <div class="col-md-8" onclick="window.open('{{ current_processrun.processrun_url }}','_self');" style="cursor:pointer;">
+                                                <div class="mt-step-desc">
+                                                    <div class="font-dark bold uppercase">{{ current_processrun.current_process_name }}</div>
+                                                    <div class="caption-desc font-grey-cascade"> 启动时间: <span
+                                                            class="timeline-body-alerttitle font-green-haze">{{ current_processrun.start_time_strftime }}</span>，已运行
+                                                        <span class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_delta_time }}</span>
+                                                        ，当前阶段 <span
+                                                                class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_step_name }}</span>
+                                                        ，当前负责角色 <span
+                                                                class="timeline-body-alerttitle font-green-haze">{{ current_processrun.group_name }}{{ current_processrun.users }}。</span>
+                                                    </div>
+                                                    <br/>
+                                                </div>
                                                 <div class="row">
                                                     {% for step in current_processrun.all_steps %}
                                                         <div class="col-md-4 mt-step-col {% if forloop.counter == 1 %}done{% endif %}{% if forloop.counter == 2 %}active{% endif %}">
@@ -103,25 +104,25 @@
                                             <div class="col-md-4">
                                                 <ul class="feeds">
                                                     {% for task in current_processrun.current_process_task_info %}
-                                                    <li>
-                                                        <div class="col1">
-                                                            <div class="cont">
-                                                                <div class="cont-col1">
-                                                                    <div class="label label-sm {{ task.task_color }}">
-                                                                        <i class="{{ task.task_icon }}"></i>
+                                                        <li>
+                                                            <div class="col1">
+                                                                <div class="cont">
+                                                                    <div class="cont-col1">
+                                                                        <div class="label label-sm {{ task.task_color }}">
+                                                                            <i class="{{ task.task_icon }}"></i>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                                <div class="cont-col2">
-                                                                    <div class="desc"> {{ task.content }}
+                                                                    <div class="cont-col2">
+                                                                        <div class="desc"> {{ task.content }}
 
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                        <div class="col2">
-                                                            <div class="date"> {{ task.time }}</div>
-                                                        </div>
-                                                    </li>
+                                                            <div class="col2">
+                                                                <div class="date"> {{ task.time }}</div>
+                                                            </div>
+                                                        </li>
                                                     {% endfor %}
                                                 </ul>
                                             </div>
@@ -248,26 +249,27 @@
                             <div class="scroller" style="height: 620px;" data-always-visible="1" data-rail-visible="0">
                                 <ul class="feeds">
                                     {% for task in alltask %}
-                                    <li>
-                                        <div class="col1">
-                                            <div class="cont">
-                                                <div class="cont-col1">
-                                                    <div class="label label-sm {{ task.task_color }}">
-                                                        <i class="{{ task.task_icon }}"></i>
+                                        <li>
+                                            <div class="col1">
+                                                <div class="cont">
+                                                    <div class="cont-col1">
+                                                        <div class="label label-sm {{ task.task_color }}">
+                                                            <i class="{{ task.task_icon }}"></i>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div class="cont-col2">
-                                                    <div class="desc"> {{ task.content }}
-                                                        <span class="label label-sm " style="background-color:{{ task.process_color }};"> {{ task.process_name }}
+                                                    <div class="cont-col2">
+                                                        <div class="desc"> {{ task.content }}
+                                                            <span class="label label-sm "
+                                                                  style="background-color:{{ task.process_color }};"> {{ task.process_name }}
                                                         </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="col2">
-                                            <div class="date"> {{ task.time }}</div>
-                                        </div>
-                                    </li>
+                                            <div class="col2">
+                                                <div class="date"> {{ task.time }}</div>
+                                            </div>
+                                        </li>
                                     {% endfor %}
                                 </ul>
                             </div>

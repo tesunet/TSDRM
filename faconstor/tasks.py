@@ -188,16 +188,12 @@ def runstep(steprun):
     if processrun.state == "RUN" or processrun.state == "ERROR":
         if steprun.state != "DONE":
             # 判断是否有子步骤，如果有，先执行子步骤
-            if processrun.state == "ERROR":
-                # 脚本执行失败，点击继续之后，清空相关任务消息；
-                processrun.state = "RUN"
-                processrun.save()
-                # 取消错误消息展示
-                all_done_tasks = ProcessTask.objects.exclude(state="1").filter(processrun_id=processrun.id,
-                                                                               type="ERROR")
-                for task in all_done_tasks:
-                    task.state = "1"
-                    task.save()
+            # 取消错误消息展示
+            all_done_tasks = ProcessTask.objects.exclude(state="1").filter(processrun_id=processrun.id,
+                                                                           type="ERROR")
+            for task in all_done_tasks:
+                task.state = "1"
+                task.save()
 
             steprun.state = "RUN"
             steprun.starttime = datetime.datetime.now()
@@ -239,7 +235,6 @@ def runstep(steprun):
                 # 处理脚本执行失败问题
                 if result["exec_tag"] == 1:
                     script.runlog = result['log']  # 写入错误类型
-
                     print("当前脚本执行失败,结束任务!")
                     script.state = "ERROR"
                     script.save()

@@ -363,7 +363,7 @@ def index(request, funid):
                     delta_time = (end_time - start_time)
                     rto = delta_time.total_seconds()
                     all_rto += rto
-            m, s = divmod(all_rto/len(successful_processruns), 60)
+            m, s = divmod(all_rto / len(successful_processruns), 60)
             h, m = divmod(m, 60)
             average_rto = "%d时%02d分%02d秒" % (h, m, s)
 
@@ -371,7 +371,7 @@ def index(request, funid):
             average_rto = "0时0分0秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-        current_processruns = ProcessRun.objects.filter(state="RUN")
+        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP"])
         curren_processrun_info_list = []
         if current_processruns:
             for current_processrun in current_processruns:
@@ -404,7 +404,7 @@ def index(request, funid):
                     else:
                         all_stepruns_display = all_stepruns[:len(all_stepruns)]
 
-                    if all_stepruns[0].state == "RUN":
+                    if all_stepruns[0].state not in ["DONE", "STOP", "EDIT"]:
                         current_step_index = 1
                         for num, steprun in enumerate(all_stepruns_display):
                             if num == 0:
@@ -421,7 +421,7 @@ def index(request, funid):
                                         users += user[0] + "、"
                                     users = "({0})".format(users[:-1])
                             all_steps.append(steprun.step.name)
-                    elif all_stepruns[len(all_stepruns) - 1].state == "RUN" and all_stepruns[
+                    elif all_stepruns[len(all_stepruns) - 1].state not in ["DONE", "STOP", "EDIT"] and all_stepruns[
                         len(all_stepruns) - 2].state == "DONE":
                         current_step_index = len(all_stepruns)
                         for num, steprun in enumerate(all_stepruns[len(all_stepruns) - len(all_stepruns_display):]):
@@ -440,7 +440,7 @@ def index(request, funid):
                                     users = "({0})".format(users[:-1])
                             all_steps.append(steprun.step.name)
                     else:
-                        currentrun_step = all_stepruns.filter(state="RUN").first()
+                        currentrun_step = all_stepruns.exclude(state__in=["DONE", "STOP", "EDIT"]).first()
                         current_step_name = currentrun_step.step.name
 
                         # 负责角色
@@ -458,7 +458,7 @@ def index(request, funid):
                         # 前一个后一个名称
                         current_num = ""
                         for num, steprun in enumerate(all_stepruns):
-                            if steprun.state == "RUN":
+                            if steprun.state not in ["DONE", "STOP", "EDIT"]:
                                 current_num = num
                                 break
                         for num, steprun in enumerate(all_stepruns):
@@ -3160,7 +3160,7 @@ def getrunsetps(request):
                                 0].starttime else ""
                             current_time = datetime.datetime.now()
                             current_delta_time = (
-                                        current_time - start_time).total_seconds() if current_time and start_time else 0
+                                    current_time - start_time).total_seconds() if current_time and start_time else 0
                             m, s = divmod(current_delta_time, 60)
                             h, m = divmod(m, 60)
                             rto = "%d时%02d分%02d秒" % (h, m, s)
