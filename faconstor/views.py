@@ -363,8 +363,7 @@ def index(request, funid):
                     delta_time = (end_time - start_time)
                     rto = delta_time.total_seconds()
                     all_rto += rto
-
-            m, s = divmod(all_rto, 60)
+            m, s = divmod(all_rto/len(successful_processruns), 60)
             h, m = divmod(m, 60)
             average_rto = "%d时%02d分%02d秒" % (h, m, s)
 
@@ -3402,10 +3401,6 @@ def stop_current_process(request):
                         for script in all_scripts_from_current_step:
                             script.state = "EDIT"
                             script.save()
-            #         else:
-            #             return JsonResponse({"data": "流程已结束，终止流程失败"})
-            # else:
-            #     return JsonResponse({"data": "流程已结束，终止流程失败"})
 
             current_process_run.state = "STOP"
             current_process_run.endtime = datetime.datetime.now()
@@ -3444,7 +3439,7 @@ def verify_items(request):
             current_step_run.save()
 
             # 当前step_run对应的task.state="1"
-            all_current__tasks = current_step_run.processtask_set.exclude(state="9")
+            all_current__tasks = current_step_run.processtask_set.exclude(state="1")
             for task in all_current__tasks:
                 task.state = "1"
                 task.save()

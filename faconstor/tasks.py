@@ -185,9 +185,20 @@ def runstep(steprun):
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
-    if processrun.state == "RUN":
+    if processrun.state == "RUN" or processrun.state == "ERROR":
         if steprun.state != "DONE":
             # 判断是否有子步骤，如果有，先执行子步骤
+            if processrun.state == "ERROR":
+                # 脚本执行失败，点击继续之后，清空相关任务消息；
+                processrun.state = "RUN"
+                processrun.save()
+                # 取消错误消息展示
+                all_done_tasks = ProcessTask.objects.exclude(state="1").filter(processrun_id=processrun.id,
+                                                                               type="ERROR")
+                for task in all_done_tasks:
+                    task.state = "1"
+                    task.save()
+
             steprun.state = "RUN"
             steprun.starttime = datetime.datetime.now()
             steprun.save()
@@ -311,7 +322,6 @@ def exec_process(processrunid):
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
-
     if len(steprunlist) > 0:
         end_step_tag = runstep(steprunlist[0])
     else:
@@ -329,8 +339,8 @@ def exec_process(processrunid):
         processrun.save()
     if end_step_tag == 1:
         processrun.state = "DONE"
+        processrun.endtime = datetime.datetime.now()
         processrun.save()
-
         myprocesstask = ProcessTask()
         myprocesstask.processrun = processrun
         myprocesstask.starttime = datetime.datetime.now()
