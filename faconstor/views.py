@@ -234,17 +234,9 @@ def index(request, funid):
                 value.sort = 0
         funlist = sorted(funlist, key=lambda fun: fun.sort)
 
+        # 最新操作
         alltask = []
-        mygroup = []
-        userinfo = request.user.userinfo
-        guoups = userinfo.group.all()
-        if len(guoups) > 0:
-            for curguoup in guoups:
-                mygroup.append(str(curguoup.id))
-        allprosstasks = ProcessTask.objects.filter(
-            Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(
-            Q(state="0") | Q(state="1")).order_by(
-            "-starttime").all()
+        allprosstasks = ProcessTask.objects.filter(Q(state="0") | Q(state="1")).order_by("-starttime").all()
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 process_name = task.processrun.process.name
@@ -478,10 +470,8 @@ def index(request, funid):
                 # 当前系统任务
                 current_process_task_info = []
 
-                current_process_tasks = ProcessTask.objects.filter(
-                    Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(
-                    Q(state="0") | Q(state="1")).filter(processrun_id=current_processrun.id).order_by(
-                    "-starttime").all()
+                current_process_tasks = ProcessTask.objects.filter(Q(state="0") | Q(state="1")).filter(
+                    processrun_id=current_processrun.id).order_by("-starttime").all()
                 if len(current_process_tasks) > 0:
                     for task in current_process_tasks:
                         time = ""

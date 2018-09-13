@@ -126,8 +126,8 @@ var Dashboard = function () {
                             for (var i = 0; i < data.data.length; i++) {
                                 var title = data.data[i].process_name;
                                 var id = data.data[i].process_run_id;
-                                var start = new Date(data.data[i].start_time);
-                                var end = new Date(data.data[i].end_time);
+                                var start = data.data[i].start_time;
+                                var end = data.data[i].end_time;
                                 var backgroundColor = data.data[i].process_color;
                                 var url = data.data[i].url;
 
@@ -191,7 +191,6 @@ $("ul#locate_task").on("click", " li", function () {
     $("#signrole").val($("#a".replace("a", task_id)).find("input#sign_role").val());
     $("#processrunreason").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
 });
-
 
 
 
