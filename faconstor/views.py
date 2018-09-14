@@ -1672,15 +1672,15 @@ def script(request, funid):
 def scriptdata(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         result = []
-        allscript = Script.objects.exclude(state="9").filter(step_id=None)
+        allscript = Script.objects.exclude(state="9").filter(step_id=None).values()
         if (len(allscript) > 0):
             for script in allscript:
                 result.append(
-                    {"id": script.id, "code": script.code, "name": script.name, "ip": script.ip, "port": script.port,
-                     "type": script.type, "runtype": script.runtype, "username": script.username,
-                     "password": script.password, "filename": script.filename, "paramtype": script.paramtype,
-                     "param": script.param, "scriptpath": script.scriptpath, "runpath": script.runpath,
-                     "maxtime": script.maxtime, "time": script.time})
+                    {"id": script["id"], "code": script["code"], "name": script["name"], "ip": script["ip"], "port": script["port"],
+                     "type": script["type"], "runtype": script["runtype"], "username": script["username"],
+                     "password": script["password"], "filename": script["filename"], "paramtype": script["paramtype"],
+                     "param": script["param"], "scriptpath": script["scriptpath"], "runpath": script["runpath"],
+                     "maxtime": script["maxtime"], "time": script["time"]})
         return HttpResponse(json.dumps({"data": result}))
 
 
@@ -2577,18 +2577,18 @@ def process_design(request, funid):
 def process_data(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         result = []
-        all_process = Process.objects.exclude(state="9").filter(type="falconstor")
+        all_process = Process.objects.exclude(state="9").filter(type="falconstor").values()
         if (len(all_process) > 0):
             for process in all_process:
                 result.append({
-                    "process_id": process.id,
-                    "process_code": process.code,
-                    "process_name": process.name,
-                    "process_remark": process.remark,
-                    "process_sign": process.sign,
-                    "process_rto": process.rto,
-                    "process_rpo": process.rpo,
-                    "process_sort": process.sort,
+                    "process_id": process["id"],
+                    "process_code": process["code"],
+                    "process_name": process["name"],
+                    "process_remark": process["remark"],
+                    "process_sign": process["sign"],
+                    "process_rto": process["rto"],
+                    "process_rpo": process["rpo"],
+                    "process_sort": process["sort"],
                 })
         return JsonResponse({"data": result})
 
