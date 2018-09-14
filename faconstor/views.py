@@ -2776,7 +2776,6 @@ def falconstorswitch(request, funid, process_id):
 def falconstorswitchdata(request):
     if request.user.is_authenticated():
         result = []
-        all_processrun_objs = ProcessRun.objects.exclude(state="9").order_by("-starttime")
 
         state_dict = {
             "DONE": "已完成",
@@ -2787,27 +2786,35 @@ def falconstorswitchdata(request):
             "STOP": "终止",
             "": "",
         }
-        for processrun_obj in all_processrun_objs:
-            if processrun_obj.process.type == "falconstor":
-                create_user = processrun_obj.creatuser
-                create_user_fullname = ""
-                if create_user:
-                    try:
-                        create_user_fullname = UserInfo.objects.filter(user__username=create_user)[0].fullname
-                    except:
-                        create_user_fullname = ""
+
+        cursor = connection.cursor()
+
+        exec_sql = """
+        select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
+        left join faconstor_process as p on p.id = r.process_id where r.state != '9' order by r.starttime desc;
+        """
+
+        cursor.execute(exec_sql)
+        rows = cursor.fetchall()
+
+        for processrun_obj in rows:
+            if processrun_obj[9] == "falconstor":
+                create_users = processrun_obj[2] if processrun_obj[2] else ""
+                create_user_objs = User.objects.filter(username=create_users)
+                create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
+
                 result.append({
-                    "starttime": processrun_obj.starttime.strftime(
-                        '%Y-%m-%d %H:%M:%S') if processrun_obj.starttime else "",
-                    "endtime": processrun_obj.endtime.strftime('%Y-%m-%d %H:%M:%S') if processrun_obj.endtime else "",
+                    "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
+                    "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
                     "createuser": create_user_fullname,
-                    "state": state_dict["{0}".format(processrun_obj.state)] if processrun_obj.state else "",
-                    "process_id": processrun_obj.process_id if processrun_obj.process_id else "",
-                    "processrun_id": processrun_obj.id if processrun_obj.id else "",
-                    "run_reason": processrun_obj.run_reason[:20] if processrun_obj.run_reason else "",
-                    "process_name": processrun_obj.process.name if processrun_obj.process.name else "",
-                    "process_url": processrun_obj.process.url if processrun_obj.process.url else ""
+                    "state": state_dict["{0}".format(processrun_obj[3])] if processrun_obj[3] else "",
+                    "process_id": processrun_obj[4] if processrun_obj[4] else "",
+                    "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
+                    "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
+                    "process_name": processrun_obj[7] if processrun_obj[7] else "",
+                    "process_url": processrun_obj[8] if processrun_obj[8] else ""
                 })
+
         return JsonResponse({"data": result})
 
 
@@ -3880,10 +3887,7 @@ def falconstorsearchdata(request):
             seconds=1)).strftime('%Y-%m-%d %H:%M:%S')
 
         cursor = connection.cursor()
-        # cursor.execute("""
-        # select t.starttime, t.content, t.type, t.state, t.logtype, p.name, p.color from faconstor_processtask as t left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.state='1'or'0' order by t.starttime desc;
-        # """)
-        # rows = cursor.fetchall()
+
 
         exec_sql = """
         select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
