@@ -330,7 +330,7 @@ def index(request, funid):
                     elif task_logtype == "START":
                         current_icon = "fa fa-power-off"
                     elif task_logtype == "STEP":
-                        current_icon = "fa fa-cog"
+                        current_icon = "fa fa-briefcase"
                     elif task_logtype == "SCRIPT":
                         current_icon = "fa fa-cog"
                     elif task_logtype == "STOP":
