@@ -1,5 +1,6 @@
 # coding:utf-8
-
+from django.utils.timezone import utc
+from django.utils.timezone import localtime
 from django.shortcuts import render
 from django.contrib import auth
 from django.template import RequestContext
@@ -486,10 +487,9 @@ def index(request, funid):
 
                 cursor = connection.cursor()
                 cursor.execute("""
-                select t.starttime, t.content, t.type, t.state, t.logtype from faconstor_processtask as t where t.state='1'or'0' and t.processrun_id = {0} order by t.starttime desc;
+                select t.starttime, t.content, t.type, t.state, t.logtype from faconstor_processtask as t where t.processrun_id = '{0}' order by t.starttime desc;
                 """.format(current_processrun.id))
                 rows = cursor.fetchall()
-
                 if len(rows) > 0:
                     for task in rows:
                         time = task[0]
@@ -545,7 +545,6 @@ def index(request, funid):
                         current_process_task_info.append(
                             {"content": content, "time": time, "task_color": current_color,
                              "task_icon": current_icon})
-
                 current_processrun_dict["current_process_task_info"] = current_process_task_info
                 current_processrun_dict["current_processrun_dict"] = current_processrun_dict
                 current_processrun_dict["start_time_strftime"] = start_time_strftime
