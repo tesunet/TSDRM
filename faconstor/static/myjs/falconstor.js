@@ -565,8 +565,7 @@ if (App.isAngularJsApp() === false) {
                                         groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
                                             '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
                                     }
-
-                                }
+                                } 
                                 $("table#group_data tbody").append(groupElements);
                             }
                         });
