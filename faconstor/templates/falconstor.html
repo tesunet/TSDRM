@@ -117,6 +117,7 @@
                                 </div>
                                 <div class="form-actions noborder" style="text-align:center">
                                     <button id="stopbtn" type="button" class="btn red"> 停止</button>
+                                    <button id="show_result" type="button" class="btn btn-primary" hidden> 显示结果</button>
                                 </div>
                             </div>
                         </div>
@@ -258,6 +259,86 @@
             </div>
         </div>
     </div>
+    <div class="modal fade text-center" id="process_result" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg text-left" style="display: inline-block; width: auto;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h1 class="modal-title" id="myModalLabel" align="center">太平资产灾备演练报告</h1>
+                </div>
+                <div class="modal-body">
+                    <div style="margin: 45px;">
+                        <p id="summary"></p>
+                    </div>
+                    <div>
+                        <ul style="list-style: none;">
+                            <li><b>1.参与系统</b></li>
+                            <p id="current_process"></p>
+                            <li><b>2.项目组成员</b>
+                                <table class="table table-hover table-bordered" id="group_data">
+                                    <thead>
+                                    <tr class="info">
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            用户组 </font></font></th>
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            成员 </font></font></th>
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            部门 </font></font></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    </tbody>
+                                </table>
+                            </li>
+                            <li><b>3.流程明细</b>
+                                <table class="table table-hover table-bordered" id="process_data">
+                                    <thead>
+                                    <tr class="info">
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            环节名称 </font></font></th>
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            步骤名称 </font></font></th>
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            操作人员 </font></font></th>
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            开始时间 </font></font></th>
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            结束时间 </font></font></th>
+                                        <th><font style="vertical-align: inherit;"><font
+                                                style="vertical-align: inherit;">
+                                            RTO </font></font></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    </tbody>
+                                </table>
+                            </li>
+                        </ul>
+                    </div>
+
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
 
 {% endblock %}
 

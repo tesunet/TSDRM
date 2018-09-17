@@ -1676,7 +1676,8 @@ def scriptdata(request):
         if (len(allscript) > 0):
             for script in allscript:
                 result.append(
-                    {"id": script["id"], "code": script["code"], "name": script["name"], "ip": script["ip"], "port": script["port"],
+                    {"id": script["id"], "code": script["code"], "name": script["name"], "ip": script["ip"],
+                     "port": script["port"],
                      "type": script["type"], "runtype": script["runtype"], "username": script["username"],
                      "password": script["password"], "filename": script["filename"], "paramtype": script["paramtype"],
                      "param": script["param"], "scriptpath": script["scriptpath"], "runpath": script["runpath"],
@@ -3439,6 +3440,316 @@ def verify_items(request):
             return JsonResponse({"data": "1"})
 
 
+def show_result(request):
+    if request.user.is_authenticated():
+        processrun_id = request.POST.get("process_run_id", "")
+        process_id = None
+        show_result_dict = {}
+        process_name = ""
+        processrun_time = ""
+        if processrun_id:
+            try:
+                processrun_id = int(processrun_id)
+            except:
+                processrun_id = None
+            current_processrun = ProcessRun.objects.filter(id=processrun_id)
+            if current_processrun:
+                process_id = current_processrun[0].process.id
+            else:
+                process_id = None
+
+            process_name = current_processrun[0].process.name if current_processrun else ""
+            processrun_time = current_processrun[0].starttime.strftime("%Y-%m-%d")
+        else:
+            processrun_id = None
+            process_id = None
+
+        # 步骤信息
+        step_info_list = []
+        pnode_steplist = Step.objects.exclude(state="9").filter(process_id=process_id).order_by("sort").filter(
+            pnode_id=None)
+
+        for num, pstep in enumerate(pnode_steplist):
+            second_el_dict = dict()
+            step_name = pstep.name
+            second_el_dict["step_name"] = step_name
+
+            pnode_steprun = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id).filter(
+                step=pstep)
+            if pnode_steprun:
+                second_el_dict["start_time"] = pnode_steprun[0].starttime.strftime("%Y-%m-%d %H:%M:%S") if \
+                    pnode_steprun[
+                        0].starttime else ""
+                second_el_dict["end_time"] = pnode_steprun[0].endtime.strftime("%Y-%m-%d %H:%M:%S") if pnode_steprun[
+                    0].endtime else ""
+
+                if pnode_steprun[0].endtime and pnode_steprun[0].starttime:
+                    delta_time = (pnode_steprun[0].endtime - pnode_steprun[0].starttime)
+                    delta_time_str = str(delta_time)
+
+                    end_time = pnode_steprun[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
+                    start_time = pnode_steprun[0].starttime.strftime("%Y-%m-%d %H:%M:%S")
+                    delta_seconds = datetime.datetime.strptime(end_time,
+                                                               '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
+                        start_time, '%Y-%m-%d %H:%M:%S')
+                    delta_second = str(delta_seconds).split(":")[-1]
+
+                    if delta_time.total_seconds() > 0:
+                        if "," in delta_time_str:
+                            delta_time_example = str(delta_time.total_seconds() // 60 // 60).split(".")[0]
+                            delta_time_list = delta_time_str.split(",")[-1].split(":")
+                            delta_time = "{0}时{1}分{2}秒".format(delta_time_example, delta_time_list[1],
+                                                               delta_second if delta_second else "")
+                        else:
+                            delta_time_list = delta_time_str.split(":")
+                            delta_time = "{0}时{1}分{2}秒".format(delta_time_list[0], delta_time_list[1],
+                                                               delta_second if delta_second else "")
+                    elif delta_time.total_seconds() == 0:
+                        delta_time = ""
+                    else:
+                        return Http404()
+
+                    second_el_dict["rto"] = delta_time
+                else:
+                    second_el_dict["rto"] = ""
+
+            # 步骤负责人
+            try:
+                users = User.objects.filter(username=pnode_steprun[0].operator)
+            except:
+                if users:
+                    operator = users[0].userinfo.fullname
+                    second_el_dict["operator"] = operator
+                else:
+                    second_el_dict["operator"] = ""
+
+            # 当前步骤下脚本
+            state_dict = {
+                "DONE": "已完成",
+                "EDIT": "未执行",
+                "RUN": "执行中",
+                "ERROR": "执行失败",
+                "IGNORE": "忽略",
+                "": "",
+            }
+
+            current_scripts = Script.objects.exclude(state="9").filter(step_id=pstep.id)
+            script_list_wrapper = []
+            if current_scripts:
+                for snum, current_script in enumerate(current_scripts):
+                    script_el_dict = dict()
+                    # title
+                    script_name = "{0}.{1}".format("i" * (snum + 1), current_script.name)
+                    script_el_dict["script_name"] = script_name
+                    # content
+                    steprun_id = pnode_steprun[0].id if pnode_steprun else None
+                    script_id = current_script.id
+                    current_scriptrun_obj = ScriptRun.objects.filter(steprun_id=steprun_id, script_id=script_id)
+                    if current_scriptrun_obj:
+                        script_el_dict["start_time"] = current_scriptrun_obj[0].starttime.strftime(
+                            "%Y-%m-%d %H:%M:%S") if \
+                            current_scriptrun_obj[0].starttime else ""
+                        script_el_dict["end_time"] = current_scriptrun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S") if \
+                            current_scriptrun_obj[0].endtime else ""
+
+                        if current_scriptrun_obj[0].endtime and current_scriptrun_obj[0].starttime:
+                            delta_time = (current_scriptrun_obj[0].endtime - current_scriptrun_obj[0].starttime)
+                            delta_time_str = str(delta_time)
+
+                            end_time = current_scriptrun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
+                            start_time = current_scriptrun_obj[0].starttime.strftime("%Y-%m-%d %H:%M:%S")
+                            delta_seconds = datetime.datetime.strptime(end_time,
+                                                                       '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
+                                start_time, '%Y-%m-%d %H:%M:%S')
+                            delta_second = str(delta_seconds).split(":")[-1]
+
+                            if delta_time.total_seconds() > 0:
+                                if "," in delta_time_str:
+                                    delta_time_example = str(delta_time.total_seconds() // 60 // 60).split(".")[0]
+                                    delta_time_list = delta_time_str.split(",")[-1].split(":")
+                                    delta_time = "{0}时{1}分{2}秒".format(delta_time_example, delta_time_list[1],
+                                                                       delta_second if delta_second else "")
+                                else:
+                                    delta_time_list = delta_time_str.split(":")
+                                    delta_time = "{0}时{1}分{2}秒".format(delta_time_list[0], delta_time_list[1],
+                                                                       delta_second if delta_second else "")
+                            elif delta_time.total_seconds() == 0:
+                                delta_time = ""
+                            else:
+                                return Http404()
+
+                            script_el_dict["rto"] = delta_time
+                        else:
+                            script_el_dict["rto"] = ""
+
+                        state = current_scriptrun_obj[0].state
+                        if state in state_dict.keys():
+                            script_el_dict["state"] = state_dict[state]
+                        else:
+                            script_el_dict["state"] = ""
+                        script_el_dict["explain"] = current_scriptrun_obj[0].explain
+
+                    script_list_wrapper.append(script_el_dict)
+                second_el_dict["script_list_wrapper"] = script_list_wrapper
+
+            # 子步骤下相关内容
+            p_id = pstep.id
+            inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id).order_by("sort").filter(
+                pnode_id=p_id)
+
+            inner_step_list = []
+            if inner_steps:
+                for num, step in enumerate(inner_steps):
+                    inner_second_el_dict = dict()
+                    step_name = step.name
+                    inner_second_el_dict["step_name"] = step_name
+                    steprun_obj = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id).filter(
+                        step=step)
+                    if steprun_obj:
+                        inner_second_el_dict["start_time"] = steprun_obj[0].starttime.strftime("%Y-%m-%d %H:%M:%S") if \
+                            steprun_obj[0].starttime else ""
+                        inner_second_el_dict["end_time"] = steprun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S") if \
+                            steprun_obj[0].endtime else ""
+
+                        if steprun_obj[0].endtime and steprun_obj[0].starttime:
+                            delta_time = (steprun_obj[0].endtime - steprun_obj[0].starttime)
+                            delta_time_str = str(delta_time)
+
+                            end_time = steprun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
+                            start_time = steprun_obj[0].starttime.strftime("%Y-%m-%d %H:%M:%S")
+                            delta_seconds = datetime.datetime.strptime(end_time,
+                                                                       '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
+                                start_time, '%Y-%m-%d %H:%M:%S')
+                            delta_second = str(delta_seconds).split(":")[-1]
+
+                            if delta_time.total_seconds() > 0:
+                                if "," in delta_time_str:
+                                    delta_time_example = str(delta_time.total_seconds() // 60 // 60).split(".")[0]
+                                    delta_time_list = delta_time_str.split(",")[-1].split(":")
+                                    delta_time = "{0}时{1}分{2}秒".format(delta_time_example, delta_time_list[1],
+                                                                       delta_second if delta_second else "")
+                                else:
+                                    delta_time_list = delta_time_str.split(":")
+                                    delta_time = "{0}时{1}分{2}秒".format(delta_time_list[0], delta_time_list[1],
+                                                                       delta_second if delta_second else "")
+                            elif delta_time.total_seconds() == 0:
+                                delta_time = ""
+                            else:
+                                return Http404()
+
+                            inner_second_el_dict["rto"] = delta_time
+                        else:
+                            inner_second_el_dict["rto"] = ""
+
+                        # ...需要审批时
+                        # if step.approval == "1":
+                        # 步骤负责人
+                        users = User.objects.filter(username=steprun_obj[0].operator)
+                        if users:
+                            operator = users[0].userinfo.fullname
+                            inner_second_el_dict["operator"] = operator
+                        else:
+                            inner_second_el_dict["operator"] = ""
+
+                        # 当前步骤下脚本
+                        current_scripts = Script.objects.exclude(state="9").filter(step_id=step.id)
+
+                        script_list_inner = []
+                        if current_scripts:
+                            for snum, current_script in enumerate(current_scripts):
+                                script_el_dict_inner = dict()
+                                # title
+                                script_name = "{0}.{1}".format("i" * (snum + 1), current_script.name)
+                                script_el_dict_inner["script_name"] = script_name
+
+                                # content
+                                steprun_id = steprun_obj[0].id
+                                script_id = current_script.id
+                                current_scriptrun_obj = ScriptRun.objects.filter(steprun_id=steprun_id,
+                                                                                 script_id=script_id)
+                                if current_scriptrun_obj:
+                                    script_el_dict_inner["start_time"] = current_scriptrun_obj[0].starttime.strftime(
+                                        "%Y-%m-%d %H:%M:%S") if current_scriptrun_obj[0].starttime else ""
+                                    script_el_dict_inner["end_time"] = current_scriptrun_obj[0].endtime.strftime(
+                                        "%Y-%m-%d %H:%M:%S") if current_scriptrun_obj[0].endtime else ""
+
+                                    if current_scriptrun_obj[0].endtime and current_scriptrun_obj[0].starttime:
+
+                                        delta_time = (current_scriptrun_obj[0].endtime - current_scriptrun_obj[
+                                            0].starttime)
+                                        delta_time_str = str(delta_time)
+
+                                        end_time = current_scriptrun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
+                                        start_time = current_scriptrun_obj[0].starttime.strftime("%Y-%m-%d %H:%M:%S")
+                                        delta_seconds = datetime.datetime.strptime(end_time,
+                                                                                   '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
+                                            start_time, '%Y-%m-%d %H:%M:%S')
+                                        delta_second = str(delta_seconds).split(":")[-1]
+
+                                        if delta_time.total_seconds() > 0:
+                                            if "," in delta_time_str:
+                                                delta_time_example = \
+                                                    str(delta_time.total_seconds() // 60 // 60).split(".")[0]
+                                                delta_time_list = delta_time_str.split(",")[-1].split(":")
+                                                delta_time = "{0}时{1}分{2}秒".format(delta_time_example,
+                                                                                   delta_time_list[1],
+                                                                                   delta_second if delta_second else "")
+                                            else:
+                                                delta_time_list = delta_time_str.split(":")
+                                                delta_time = "{0}时{1}分{2}秒".format(delta_time_list[0],
+                                                                                   delta_time_list[1],
+                                                                                   delta_second if delta_second else "")
+                                        elif delta_time.total_seconds() == 0:
+                                            delta_time = ""
+                                        else:
+                                            return Http404()
+
+                                        script_el_dict_inner["rto"] = delta_time
+                                    else:
+                                        script_el_dict_inner["rto"] = ""
+
+                                    state = current_scriptrun_obj[0].state
+                                    if state in state_dict.keys():
+                                        script_el_dict_inner["state"] = state_dict[state]
+                                    else:
+                                        script_el_dict_inner["state"] = ""
+
+                                    script_el_dict_inner["explain"] = current_scriptrun_obj[0].explain
+                                else:
+                                    pass
+                                script_list_inner.append(script_el_dict_inner)
+                        inner_second_el_dict["script_list_inner"] = script_list_inner
+                    inner_step_list.append(inner_second_el_dict)
+            second_el_dict['inner_step_list'] = inner_step_list
+            step_info_list.append(second_el_dict)
+
+        show_result_dict["step_info_list"] = step_info_list
+        # 用户组信息
+        all_groups = Group.objects.exclude(state="9")
+        total_list = []
+        if all_groups:
+            for group in all_groups:
+                all_group_dict = {}
+                all_group_dict["group"] = group.name
+                current_group_users = group.userinfo_set.exclude(state="9", pnode=None).filter(type="user")
+                current_users_and_departments = []
+                for user in current_group_users:
+                    inner_dict = {}
+                    inner_dict["fullname"] = user.fullname
+                    inner_dict["depart_name"] = user.pnode.fullname if user.pnode else ""
+                    current_users_and_departments.append(inner_dict)
+                all_group_dict["current_users_and_departments"] = current_users_and_departments
+                total_list.append(all_group_dict)
+        show_result_dict["total_list"] = total_list
+
+        # process_name
+        show_result_dict["process_name"] = process_name
+        # processrun_time
+        show_result_dict["processrun_time"] = processrun_time
+        print("-----", show_result_dict["total_list"])
+        return JsonResponse(show_result_dict)
+
+
 def custom_pdf_report(request):
     """
     pip3 install pdfkit
@@ -3802,7 +4113,6 @@ def custom_pdf_report(request):
         second_el_dict['inner_step_list'] = inner_step_list
         step_info_list.append(second_el_dict)
     # return render(request, "pdf.html", locals())
-
     t = TemplateResponse(request, 'pdf.html',
                          {"step_info_list": step_info_list, "first_el_dict": first_el_dict, "ele_xml01": ele_xml01,
                           "ele_xml02": ele_xml02, "title_xml": title_xml, "abstract_xml": abstract_xml})
@@ -3887,7 +4197,6 @@ def falconstorsearchdata(request):
             seconds=1)).strftime('%Y-%m-%d %H:%M:%S')
 
         cursor = connection.cursor()
-
 
         exec_sql = """
         select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
@@ -4006,7 +4315,7 @@ def tasksearchdata(request):
         cursor = connection.cursor()
         exec_sql = """
         select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-        left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.starttime between '{0}' and '{1}' order by t.starttime desc;
+        left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type!='INFO' and t.starttime between '{0}' and '{1}' order by t.starttime desc;
         """.format(start_time, end_time)
 
         if task_type != "" and has_finished != "":
@@ -4018,13 +4327,13 @@ def tasksearchdata(request):
         if task_type == "" and has_finished != "":
             exec_sql = """
             select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.state='{0}' t.starttime between '{1}' and '{2}' order by t.starttime desc;
+            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where  t.type!='INFO' and t.state='{0}' and t.starttime between '{1}' and '{2}' order by t.starttime desc;
             """.format(has_finished, start_time, end_time)
 
         if task_type != "" and has_finished == "":
             exec_sql = """
             select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type='{0}' t.starttime between '{1}' and '{2}' order by t.starttime desc;
+            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type='{0}' and t.starttime between '{1}' and '{2}' order by t.starttime desc;
             """.format(task_type, start_time, end_time)
 
         cursor.execute(exec_sql)
