@@ -404,6 +404,12 @@ def index(request, funid):
                 current_processrun_id = current_processrun.id
                 all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
 
+                # 构造所在步骤序列的对应关系
+                index_dict = {}
+                all_step_runs_id = StepRun.objects.filter(processrun_id=current_processrun_id).values_list("id")
+                for num, current_step in enumerate(all_step_runs_id):
+                    index_dict["{0}".format(current_step[0])] = num + 1
+
                 # 没有run的情况下，
                 try:
                     # 如果步骤小于3个
@@ -428,7 +434,12 @@ def index(request, funid):
                                     for num, user in enumerate(users_from_group):
                                         users += user[0] + "、"
                                     users = "({0})".format(users[:-1])
-                            all_steps.append(steprun.step.name)
+                            current_step_run_id = steprun.id
+                            all_steps.append({
+                                "step_run_name": steprun.step.name,
+                                "step_run_index": index_dict["{0}".format(current_step_run_id)]
+                            })
+
                     elif all_stepruns[len(all_stepruns) - 1].state not in ["DONE", "STOP", "EDIT"] and all_stepruns[
                         len(all_stepruns) - 2].state == "DONE":
                         current_step_index = len(all_stepruns)
@@ -446,7 +457,11 @@ def index(request, funid):
                                     for num, user in enumerate(users_from_group):
                                         users += user[0] + "、"
                                     users = "({0})".format(users[:-1])
-                            all_steps.append(steprun.step.name)
+                            current_step_run_id = steprun.id
+                            all_steps.append({
+                                "step_run_name": steprun.step.name,
+                                "step_run_index": index_dict["{0}".format(current_step_run_id)]
+                            })
                     else:
                         currentrun_step = all_stepruns.exclude(state__in=["DONE", "STOP", "EDIT"]).first()
                         current_step_name = currentrun_step.step.name
@@ -471,7 +486,11 @@ def index(request, funid):
                                 break
                         for num, steprun in enumerate(all_stepruns):
                             if num == current_num - 1 or num == current_num + 1 or num == current_num:
-                                all_steps.append(steprun.step.name)
+                                current_step_run_id = steprun.id
+                                all_steps.append({
+                                    "step_run_name": steprun.step.name,
+                                    "step_run_index": index_dict["{0}".format(current_step_run_id)]
+                                })
                         current_step_index = current_num + 1
                 except:
                     pass

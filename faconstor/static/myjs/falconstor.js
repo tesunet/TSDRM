@@ -95,9 +95,91 @@ if (App.isAngularJsApp() === false) {
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
 
-                        // 自动触发click事件
+                        // 自动触发模态框
                         $("#show_result").show();
-                        $("#show_result").trigger("click");
+                        $("#process_result").modal({backdrop: "static"});
+                        $("table#process_data tbody").empty();
+                        $("table#group_data tbody").empty();
+
+                        var process_run_id = $("#process_run_id").val();
+                        $.ajax({
+                            url: "../../show_result/",
+                            type: "post",
+                            data: {
+                                "process_run_id": process_run_id,
+                            },
+                            success: function (data) {
+                                $("#current_process").text(data.process_name);
+                                $("#summary").text("为了提高防范灾难风险的能力，保证业务连续性要求，在公司总经理室高度重视下，太平资产成立灾备演练项目组，于time进行核心系统灾备演练，并取得圆满成功。演练具体情况报告如下。".replace("time", data.processrun_time));
+
+                                var elements = "";
+                                for (var i = 0; i < data.step_info_list.length; i++) {
+                                    // wrapper_step
+                                    var stepWrapper = data.step_info_list[i];
+                                    var innerStep = stepWrapper.inner_step_list;
+                                    if (innerStep != "" || null) {
+                                        var innerStepLength = innerStep.length;
+                                        var rowSpanString = ' rowspan="' + innerStepLength + '"';
+                                    } else {
+                                        rowSpanString = "";
+                                    }
+
+                                    if (stepWrapper.operator) {
+                                        var stepWrapperOperator = stepWrapper.operator
+                                    } else {
+                                        var stepWrapperOperator = ""
+                                    }
+
+                                    elements += '<tr><td' + rowSpanString + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">*' + stepWrapper.step_name + '</font></font></td>';
+                                    // inner_step
+                                    if (innerStep != "" || null) {
+                                        for (var j = 0; j < innerStep.length; j++) {
+                                            if (innerStep[j].operator) {
+                                                var stepInnerOperator = innerStep[j].operator
+                                            } else {
+                                                var stepInnerOperator = ""
+                                            }
+
+                                            elements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">**' + innerStep[j].step_name + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepInnerOperator + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + innerStep[j].start_time + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + innerStep[j].end_time + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + innerStep[j].rto + '</font></font></td></tr>'
+                                        }
+                                    } else {
+                                        elements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
+                                    }
+                                }
+                                $("table#process_data tbody").append(elements);
+
+                                var groupElements = "";
+                                for (var i = 0; i < data.total_list.length; i++) {
+                                    var currentGroup = data.total_list[i];
+                                    var userList = currentGroup.current_users_and_departments;
+                                    if (userList != "" || null) {
+                                        var userListLength = userList.length;
+                                        var rowSpanString01 = ' rowspan="' + userListLength + '"';
+                                    } else {
+                                        rowSpanString01 = "";
+                                    }
+                                    groupElements += '<tr><td' + rowSpanString01 + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + currentGroup.group + '</font></font></td>';
+                                    if (userList != "" || null) {
+                                        for (var j = 0; j < userList.length; j++) {
+                                            groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].fullname + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].depart_name + '</font></font></td></tr>'
+                                        }
+                                    } else {
+                                        groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
+                                    }
+                                }
+                                $("table#group_data tbody").append(groupElements);
+                            }
+                        });
                     }
                     if (data["process_state"] == "RUN")
                         $("#process_state").val("运行");
@@ -109,6 +191,91 @@ if (App.isAngularJsApp() === false) {
                         $("#process_state").val("停止");
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
+                        // 自动触发模态框
+                        $("#show_result").show();
+                        $("#process_result").modal({backdrop: "static"});
+                        $("table#process_data tbody").empty();
+                        $("table#group_data tbody").empty();
+
+                        var process_run_id = $("#process_run_id").val();
+                        $.ajax({
+                            url: "../../show_result/",
+                            type: "post",
+                            data: {
+                                "process_run_id": process_run_id,
+                            },
+                            success: function (data) {
+                                $("#current_process").text(data.process_name);
+                                $("#summary").text("为了提高防范灾难风险的能力，保证业务连续性要求，在公司总经理室高度重视下，太平资产成立灾备演练项目组，于time进行核心系统灾备演练，并取得圆满成功。演练具体情况报告如下。".replace("time", data.processrun_time));
+
+                                var elements = "";
+                                for (var i = 0; i < data.step_info_list.length; i++) {
+                                    // wrapper_step
+                                    var stepWrapper = data.step_info_list[i];
+                                    var innerStep = stepWrapper.inner_step_list;
+                                    if (innerStep != "" || null) {
+                                        var innerStepLength = innerStep.length;
+                                        var rowSpanString = ' rowspan="' + innerStepLength + '"';
+                                    } else {
+                                        rowSpanString = "";
+                                    }
+
+                                    if (stepWrapper.operator) {
+                                        var stepWrapperOperator = stepWrapper.operator
+                                    } else {
+                                        var stepWrapperOperator = ""
+                                    }
+
+                                    elements += '<tr><td' + rowSpanString + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">*' + stepWrapper.step_name + '</font></font></td>';
+                                    // inner_step
+                                    if (innerStep != "" || null) {
+                                        for (var j = 0; j < innerStep.length; j++) {
+                                            if (innerStep[j].operator) {
+                                                var stepInnerOperator = innerStep[j].operator
+                                            } else {
+                                                var stepInnerOperator = ""
+                                            }
+
+                                            elements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">**' + innerStep[j].step_name + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepInnerOperator + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + innerStep[j].start_time + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + innerStep[j].end_time + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + innerStep[j].rto + '</font></font></td></tr>'
+                                        }
+                                    } else {
+                                        elements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
+                                    }
+                                }
+                                $("table#process_data tbody").append(elements);
+
+                                var groupElements = "";
+                                for (var i = 0; i < data.total_list.length; i++) {
+                                    var currentGroup = data.total_list[i];
+                                    var userList = currentGroup.current_users_and_departments;
+                                    if (userList != "" || null) {
+                                        var userListLength = userList.length;
+                                        var rowSpanString01 = ' rowspan="' + userListLength + '"';
+                                    } else {
+                                        rowSpanString01 = "";
+                                    }
+                                    groupElements += '<tr><td' + rowSpanString01 + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + currentGroup.group + '</font></font></td>';
+                                    if (userList != "" || null) {
+                                        for (var j = 0; j < userList.length; j++) {
+                                            groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].fullname + '</font></font></td>' +
+                                                '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].depart_name + '</font></font></td></tr>'
+                                        }
+                                    } else {
+                                        groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
+                                    }
+                                }
+                                $("table#group_data tbody").append(groupElements);
+                            }
+                        });
                     }
                     var processallsteps = 0;
                     var processdonesteps = 0;
@@ -565,7 +732,7 @@ if (App.isAngularJsApp() === false) {
                                         groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
                                             '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
                                     }
-                                } 
+                                }
                                 $("table#group_data tbody").append(groupElements);
                             }
                         });

@@ -78,8 +78,8 @@
                                                 <div class="row">
                                                     {% for step in current_processrun.all_steps %}
                                                         <div class="col-md-4 mt-step-col {% if forloop.counter == 1 %}done{% endif %}{% if forloop.counter == 2 %}active{% endif %}">
-                                                            <div class="mt-step-number bg-white">{{ forloop.counter }}</div>
-                                                            <div class="mt-step-title uppercase font-grey-cascade">{{ step }}</div>
+                                                            <div class="mt-step-number bg-white">{{ step.step_run_index }}</div>
+                                                            <div class="mt-step-title uppercase font-grey-cascade">{{ step.step_run_name }}</div>
                                                             <div class="mt-step-content font-grey-cascade"></div>
                                                         </div>
                                                     {% endfor %}
