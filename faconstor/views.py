@@ -290,7 +290,7 @@ def index(request, funid):
         alltask = []
         cursor = connection.cursor()
         cursor.execute("""
-        select t.starttime, t.content, t.type, t.state, t.logtype, p.name, p.color from faconstor_processtask as t left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.state='1'or'0' order by t.starttime desc;
+        select t.starttime, t.content, t.type, t.state, t.logtype, p.name, p.color from faconstor_processtask as t left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id order by t.starttime desc;
         """)
         rows = cursor.fetchall()
 
@@ -497,7 +497,7 @@ def index(request, funid):
 
                 total_steps = Step.objects.exclude(state="9").filter(process_id=process_id).values_list("name")
                 # 总体进度
-                process_rate = "%02d" % (current_step_index / len(total_steps) * 100) if current_step_index else ""
+                process_rate = "%02d" % (current_step_index / len(total_steps) * 100) if current_step_index else 0
 
                 # 进程url
                 processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)

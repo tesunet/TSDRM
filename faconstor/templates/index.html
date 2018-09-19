@@ -69,7 +69,7 @@
                                                             class="timeline-body-alerttitle font-green-haze">{{ current_processrun.start_time_strftime }}</span>，已运行
                                                         <span class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_delta_time }}</span>
                                                         ，当前阶段 <span
-                                                                class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_step_name }}</span>
+                                                                class="timeline-body-alerttitle font-green-haze">{% if current_processrun.process_rate == 0 %}签到{% else %}{{ current_processrun.current_step_name }}{% endif %}</span>
                                                         ，当前负责角色 <span
                                                                 class="timeline-body-alerttitle font-green-haze">{{ current_processrun.group_name }}{{ current_processrun.users }}。</span>
                                                     </div>
