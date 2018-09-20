@@ -56,6 +56,8 @@ $(document).ready(function () {
 
     $("#confirm").click(function () {
         var processid = $("#processid").val();
+
+        // 非邀请流程启动
         $.ajax({
             type: "POST",
             dataType: 'json',
@@ -80,6 +82,36 @@ $(document).ready(function () {
         });
     });
 
+    $("#confirm_invited").click(function () {
+        var processid = $("#processid").val();
+        var plan_process_run_id = $("#planprocessrunid").val();
+        // 需邀请流程启动
+        $.ajax({
+            type: "POST",
+            dataType: 'json',
+            url: "../falconstor_run_invited/",
+            data:
+                {
+                    processid: processid,
+                    plan_process_run_id: plan_process_run_id,
+                    run_person: $("#runperson").val(),
+                    run_time: $("#runtime").val(),
+                    run_reason: $("#runreason").val(),
+                },
+            success: function (data) {
+                if (data["res"] == "新增成功。") {
+                    window.location.href = data["data"];
+                }
+                else
+                    alert(data["res"]);
+            },
+            error: function (e) {
+                alert("流程启动失败，请于管理员联系。");
+            }
+        });
+    });
+
+
     $("#run").click(function () {
         var process_id = $("#process_id").val();
         $("#processid").val(process_id);
@@ -87,11 +119,48 @@ $(document).ready(function () {
         // 写入当前时间
         var myDate = new Date();
         $("#run_time").val(myDate.toLocaleString());
-    })
-    $("#invite").click(function () {
+    });
+
+    $("#run_invited").click(function () {
         var process_id = $("#process_id").val();
         $("#processid").val(process_id);
+        $("#static02").modal({backdrop: "static"});
+        // 写入当前时间
+        var myDate = new Date();
+        $("#runtime").val(myDate.toLocaleString());
+    });
+
+    $("#plan").click(function () {
+        var process_id = $("#process_id").val();
+        var plan_process_run_id = $("#plan_process_run_id").val();
+        $("#processid").val(process_id);
+        $("#planprocessrunid").val(plan_process_run_id);
         $("#static01").modal({backdrop: "static"});
+        if (plan_process_run_id != "" && plan_process_run_id != null) {
+            $("#save_div").hide();
+            $("#download_div").show();
+            // 填充开始时间与结束时间
+            $.ajax({
+                type: "POST",
+                dataType: 'json',
+                url: "../fill_with_invitation/",
+                data:
+                    {
+                        plan_process_run_id: plan_process_run_id,
+                    },
+                success: function (data) {
+                    $("#start_date").val(data.start_time);
+                    $("#end_date").val(data.end_time);
+                    $("#purpose").val(data.purpose);
+                },
+                error: function (e) {
+                    alert("获取邀请函数据失败，请于管理员联系。");
+                }
+            });
+        } else {
+            $("#save_div").show();
+            $("#download_div").hide();
+        }
     });
 
     $("#generate").click(function () {
@@ -99,9 +168,9 @@ $(document).ready(function () {
         var start_date = $("#start_date").val();
         var end_date = $("#end_date").val();
         var purpose = $("#purpose").val();
-        if (start_date == "" || null) {
+        if (start_date == "" || start_date == null) {
             alert("演练开始时间！");
-        } else if (end_date == "" || null) {
+        } else if (end_date == "" || end_date == null) {
             alert("演练结束时间！");
         } else {
             window.open('/invite/?process_id=' + process_id + '&start_date=' + start_date + '&end_date=' + end_date + '&purpose=' + purpose);
@@ -110,10 +179,38 @@ $(document).ready(function () {
 
     $('#start_date').datetimepicker({
         autoclose: true,
-        format:'yyyy-mm-dd hh:ii',
+        format: 'yyyy-mm-dd hh:ii',
     });
     $('#end_date').datetimepicker({
         autoclose: true,
-        format:'yyyy-mm-dd hh:ii',
+        format: 'yyyy-mm-dd hh:ii',
+    });
+
+    // 保存邀请函
+    $("#save_invitation").click(function () {
+        var process_id = $("#processid").val();
+        var plan_process_run_id = $("#planprocessrunid").val();
+        $.ajax({
+            type: "POST",
+            dataType: 'json',
+            url: "../save_invitation/",
+            data:
+                {
+                    process_id: process_id,
+                    plan_process_run_id: plan_process_run_id,
+                    start_time: $("#start_date").val(),
+                    end_time: $("#end_date").val(),
+                    purpose: $("#purpose").val(),
+                },
+            success: function (data) {
+                if (data["res"] == "流程计划成功，待开启流程。") {
+                    $("#save_div").hide();
+                    $("#download_div").show();
+                    window.location.href = "/falconstorswitch/12";
+                }
+                else
+                    alert(data["res"]);
+            }
+        });
     });
 });

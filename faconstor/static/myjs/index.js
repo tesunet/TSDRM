@@ -131,7 +131,6 @@ var Dashboard = function () {
                                 var backgroundColor = data.data[i].process_color;
                                 var url = data.data[i].url;
 
-                                // var allDay = plan.isAllday == 0 ? false : true;
                                 events.push({
                                     id: id,
                                     title: title,
@@ -139,7 +138,6 @@ var Dashboard = function () {
                                     end: end,
                                     backgroundColor: App.getBrandColor(backgroundColor),
                                     url: url,
-                                    // allDay: allDay
                                 });
                             }
 
@@ -191,6 +189,8 @@ $("ul#locate_task").on("click", " li", function () {
     $("#signrole").val($("#a".replace("a", task_id)).find("input#sign_role").val());
     $("#processrunreason").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
 });
+
+
 
 
 

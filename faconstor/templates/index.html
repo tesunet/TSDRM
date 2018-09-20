@@ -62,16 +62,20 @@
                                     <div class="mt-element-step">
                                         <div class="row step-line">
 
-                                            <div class="col-md-8" onclick="window.open('{{ current_processrun.processrun_url }}','_self');" style="cursor:pointer;">
+                                            <div class="col-md-8"
+                                                 onclick="window.open('{{ current_processrun.processrun_url }}','_self');"
+                                                 style="cursor:pointer;">
                                                 <div class="mt-step-desc">
                                                     <div class="font-dark bold uppercase">{{ current_processrun.current_process_name }}</div>
                                                     <div class="caption-desc font-grey-cascade"> 启动时间: <span
                                                             class="timeline-body-alerttitle font-green-haze">{{ current_processrun.start_time_strftime }}</span>，已运行
                                                         <span class="timeline-body-alerttitle font-green-haze">{{ current_processrun.current_delta_time }}</span>
                                                         ，当前阶段 <span
-                                                                class="timeline-body-alerttitle font-green-haze">{% if current_processrun.process_rate == 0 %}签到{% else %}{{ current_processrun.current_step_name }}{% endif %}</span>
+                                                                class="timeline-body-alerttitle font-green-haze">{% if current_processrun.process_rate == '0' %}
+                                                            {{ current_processrun.current_process_run_state }}{% else %}
+                                                            {{ current_processrun.current_step_name }}{% endif %}</span>
                                                         ，当前负责角色 <span
-                                                                class="timeline-body-alerttitle font-green-haze">{{ current_processrun.group_name }}{{ current_processrun.users }}。</span>
+                                                                class="timeline-body-alerttitle font-green-haze">{{ current_processrun.group_name }}{{ current_processrunpytho.users }}。</span>
                                                     </div>
                                                     <br/>
                                                 </div>
@@ -337,7 +341,7 @@
             </div>
 
             <div style="text-align:center">
-                        <div class="copyright"> CopyRight  &copy;2005-2018 Tesunet Inc.</div>
+                <div class="copyright"> CopyRight &copy;2005-2018 Tesunet Inc.</div>
 
             </div>
         </div>

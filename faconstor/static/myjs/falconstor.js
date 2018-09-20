@@ -117,7 +117,7 @@ if (App.isAngularJsApp() === false) {
                                     // wrapper_step
                                     var stepWrapper = data.step_info_list[i];
                                     var innerStep = stepWrapper.inner_step_list;
-                                    if (innerStep != "" || null) {
+                                    if (innerStep != "" && innerStep != null) {
                                         var innerStepLength = innerStep.length;
                                         var rowSpanString = ' rowspan="' + innerStepLength + '"';
                                     } else {
@@ -132,7 +132,7 @@ if (App.isAngularJsApp() === false) {
 
                                     elements += '<tr><td' + rowSpanString + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">*' + stepWrapper.step_name + '</font></font></td>';
                                     // inner_step
-                                    if (innerStep != "" || null) {
+                                    if (innerStep != "" && innerStep != null) {
                                         for (var j = 0; j < innerStep.length; j++) {
                                             if (innerStep[j].operator) {
                                                 var stepInnerOperator = innerStep[j].operator
@@ -160,14 +160,14 @@ if (App.isAngularJsApp() === false) {
                                 for (var i = 0; i < data.total_list.length; i++) {
                                     var currentGroup = data.total_list[i];
                                     var userList = currentGroup.current_users_and_departments;
-                                    if (userList != "" || null) {
+                                    if (userList != "" && userList != null) {
                                         var userListLength = userList.length;
                                         var rowSpanString01 = ' rowspan="' + userListLength + '"';
                                     } else {
                                         rowSpanString01 = "";
                                     }
                                     groupElements += '<tr><td' + rowSpanString01 + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + currentGroup.group + '</font></font></td>';
-                                    if (userList != "" || null) {
+                                    if (userList != "" && userList != null) {
                                         for (var j = 0; j < userList.length; j++) {
                                             groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].fullname + '</font></font></td>' +
                                                 '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].depart_name + '</font></font></td></tr>'
@@ -213,7 +213,7 @@ if (App.isAngularJsApp() === false) {
                                     // wrapper_step
                                     var stepWrapper = data.step_info_list[i];
                                     var innerStep = stepWrapper.inner_step_list;
-                                    if (innerStep != "" || null) {
+                                    if (innerStep != "" && innerStep != null) {
                                         var innerStepLength = innerStep.length;
                                         var rowSpanString = ' rowspan="' + innerStepLength + '"';
                                     } else {
@@ -228,7 +228,7 @@ if (App.isAngularJsApp() === false) {
 
                                     elements += '<tr><td' + rowSpanString + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">*' + stepWrapper.step_name + '</font></font></td>';
                                     // inner_step
-                                    if (innerStep != "" || null) {
+                                    if (innerStep != "" && innerStep != null) {
                                         for (var j = 0; j < innerStep.length; j++) {
                                             if (innerStep[j].operator) {
                                                 var stepInnerOperator = innerStep[j].operator
@@ -256,14 +256,14 @@ if (App.isAngularJsApp() === false) {
                                 for (var i = 0; i < data.total_list.length; i++) {
                                     var currentGroup = data.total_list[i];
                                     var userList = currentGroup.current_users_and_departments;
-                                    if (userList != "" || null) {
+                                    if (userList != "" && userList != null) {
                                         var userListLength = userList.length;
                                         var rowSpanString01 = ' rowspan="' + userListLength + '"';
                                     } else {
                                         rowSpanString01 = "";
                                     }
                                     groupElements += '<tr><td' + rowSpanString01 + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + currentGroup.group + '</font></font></td>';
-                                    if (userList != "" || null) {
+                                    if (userList != "" && userList != null) {
                                         for (var j = 0; j < userList.length; j++) {
                                             groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].fullname + '</font></font></td>' +
                                                 '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].depart_name + '</font></font></td></tr>'
@@ -673,7 +673,7 @@ if (App.isAngularJsApp() === false) {
                                     // wrapper_step
                                     var stepWrapper = data.step_info_list[i];
                                     var innerStep = stepWrapper.inner_step_list;
-                                    if (innerStep != "" || null) {
+                                    if (innerStep != "" && innerStep != null) {
                                         var innerStepLength = innerStep.length;
                                         var rowSpanString = ' rowspan="' + innerStepLength + '"';
                                     } else {
@@ -688,7 +688,7 @@ if (App.isAngularJsApp() === false) {
 
                                     elements += '<tr><td' + rowSpanString + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">*' + stepWrapper.step_name + '</font></font></td>';
                                     // inner_step
-                                    if (innerStep != "" || null) {
+                                    if (innerStep != "" && innerStep != null) {
                                         for (var j = 0; j < innerStep.length; j++) {
                                             if (innerStep[j].operator) {
                                                 var stepInnerOperator = innerStep[j].operator
@@ -716,14 +716,14 @@ if (App.isAngularJsApp() === false) {
                                 for (var i = 0; i < data.total_list.length; i++) {
                                     var currentGroup = data.total_list[i];
                                     var userList = currentGroup.current_users_and_departments;
-                                    if (userList != "" || null) {
+                                    if (userList != "" && userList != null) {
                                         var userListLength = userList.length;
                                         var rowSpanString01 = ' rowspan="' + userListLength + '"';
                                     } else {
                                         rowSpanString01 = "";
                                     }
                                     groupElements += '<tr><td' + rowSpanString01 + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + currentGroup.group + '</font></font></td>';
-                                    if (userList != "" || null) {
+                                    if (userList != "" && userList != null) {
                                         for (var j = 0; j < userList.length; j++) {
                                             groupElements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].fullname + '</font></font></td>' +
                                                 '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + userList[j].depart_name + '</font></font></td></tr>'

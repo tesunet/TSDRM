@@ -381,6 +381,19 @@ def index(request, funid):
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
         current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP"])
         curren_processrun_info_list = []
+
+        state_dict = {
+            "DONE": "已完成",
+            "EDIT": "未执行",
+            "RUN": "执行中",
+            "ERROR": "执行失败",
+            "IGNORE": "忽略",
+            "STOP": "终止",
+            "PLAN": "计划",
+            "": "",
+        }
+
+        process_rate = "0"
         if current_processruns:
             for current_processrun in current_processruns:
                 current_processrun_dict = {}
@@ -402,102 +415,78 @@ def index(request, funid):
                 h, m = divmod(m, 60)
                 current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
                 current_processrun_id = current_processrun.id
-                all_stepruns = StepRun.objects.filter(processrun_id=current_processrun_id)
 
                 # 构造所在步骤序列的对应关系
+                # 步骤顺序是错的,所以要构造一个正确的步骤顺序
+                # step -> step_run -> 对应关系 -> 取对象
+                all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by("sort")
+                correct_step_id_list = []
+                if all_pnode_steps:
+                    for pnode_step in all_pnode_steps:
+                        pnode_step_id = pnode_step.id
+                        correct_step_id_list.append(pnode_step_id)
+                        inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_step_id).order_by("sort")
+                        if inner_steps:
+                            for inner_step in inner_steps:
+                                correct_step_id_list.append(inner_step.id)
+                else:
+                    return Http404()
+
+                correct_step_run_list = []
+                for step_id in correct_step_id_list:
+                    current_step_run = StepRun.objects.filter(step_id=step_id).last()
+                    correct_step_run_list.append(current_step_run)
+
                 index_dict = {}
-                all_step_runs_id = StepRun.objects.filter(processrun_id=current_processrun_id).values_list("id")
-                for num, current_step in enumerate(all_step_runs_id):
-                    index_dict["{0}".format(current_step[0])] = num + 1
+                if correct_step_run_list:
+                    for num, current_step in enumerate(correct_step_run_list):
+                        index_dict["{0}".format(current_step.id)] = num + 1
 
-                # 没有run的情况下，
-                try:
-                    # 如果步骤小于3个
-                    if len(all_stepruns) >= 3:
-                        all_stepruns_display = all_stepruns[:3]
-                    else:
-                        all_stepruns_display = all_stepruns[:len(all_stepruns)]
+                    current_run_step_id = None
+                    for step_run in correct_step_run_list[::-1]:
+                        if step_run.state not in ["DONE", "STOP", "EDIT"]:
+                            current_run_step_id = step_run.id
+                            current_step_name = step_run.step.name
+                            # 负责角色
+                            group_id = step_run.step.group
+                            if group_id:
+                                group_name = Group.objects.filter(id=int(group_id))[0].name
+                                users_from_group = Group.objects.filter(id=int(group_id))[
+                                    0].userinfo_set.all().values_list(
+                                    "fullname")
+                                users = ""
+                                for num, user in enumerate(users_from_group):
+                                    users += user[0] + "、"
+                                users = "({0})".format(users[:-1])
+                            break
+                    if current_run_step_id:
+                        if len(correct_step_run_list) > index_dict["{0}".format(current_run_step_id)] > 1:
+                            current_run_step_index = index_dict["{0}".format(current_run_step_id)]
+                            for num, step_run in enumerate(correct_step_run_list):
+                                if current_run_step_index - 2 == num or current_run_step_index == num or current_run_step_index - 1 == num:
+                                    all_steps.append({
+                                        "step_run_name": step_run.step.name,
+                                        "step_run_index": num + 1
+                                    })
+                        elif index_dict["{0}".format(current_run_step_id)] == 1:
+                            current_run_step_index = 1
+                            for num, step_run in enumerate(correct_step_run_list):
+                                if current_run_step_index - 1 == num or current_run_step_index == num or current_run_step_index - 1 == num:
+                                    all_steps.append({
+                                        "step_run_name": step_run.step.name,
+                                        "step_run_index": num + 1
+                                    })
+                        else:
+                            current_run_step_index = len(correct_step_run_list)
+                            for num, step_run in enumerate(correct_step_run_list):
+                                if current_run_step_index - 1 == num or current_run_step_index -2 == num or current_run_step_index -3 == num:
+                                    all_steps.append({
+                                        "step_run_name": step_run.step.name,
+                                        "step_run_index": num + 1
+                                    })
 
-                    if all_stepruns[0].state not in ["DONE", "STOP", "EDIT"]:
-                        current_step_index = 1
-                        for num, steprun in enumerate(all_stepruns_display):
-                            if num == 0:
-                                current_step_name = steprun.step.name
-                                # 负责角色
-                                group_id = steprun.step.group
-                                if group_id:
-                                    group_name = Group.objects.filter(id=int(group_id))[0].name
-                                    users_from_group = Group.objects.filter(id=int(group_id))[
-                                        0].userinfo_set.all().values_list(
-                                        "fullname")
-                                    users = ""
-                                    for num, user in enumerate(users_from_group):
-                                        users += user[0] + "、"
-                                    users = "({0})".format(users[:-1])
-                            current_step_run_id = steprun.id
-                            all_steps.append({
-                                "step_run_name": steprun.step.name,
-                                "step_run_index": index_dict["{0}".format(current_step_run_id)]
-                            })
+                        process_rate = "%02d" % (index_dict["{0}".format(current_run_step_id)] / len(correct_step_run_list) * 100)
 
-                    elif all_stepruns[len(all_stepruns) - 1].state not in ["DONE", "STOP", "EDIT"] and all_stepruns[
-                        len(all_stepruns) - 2].state == "DONE":
-                        current_step_index = len(all_stepruns)
-                        for num, steprun in enumerate(all_stepruns[len(all_stepruns) - len(all_stepruns_display):]):
-                            if num == len(all_stepruns[len(all_stepruns) - 3:]) - 1:
-                                current_step_name = steprun.step.name
-                                # 负责角色
-                                group_id = steprun.step.group
-                                if group_id:
-                                    group_name = Group.objects.filter(id=int(group_id))[0].name
-                                    users_from_group = Group.objects.filter(id=int(group_id))[
-                                        0].userinfo_set.all().values_list(
-                                        "fullname")
-                                    users = ""
-                                    for num, user in enumerate(users_from_group):
-                                        users += user[0] + "、"
-                                    users = "({0})".format(users[:-1])
-                            current_step_run_id = steprun.id
-                            all_steps.append({
-                                "step_run_name": steprun.step.name,
-                                "step_run_index": index_dict["{0}".format(current_step_run_id)]
-                            })
-                    else:
-                        currentrun_step = all_stepruns.exclude(state__in=["DONE", "STOP", "EDIT"]).first()
-                        current_step_name = currentrun_step.step.name
-
-                        # 负责角色
-                        group_id = currentrun_step.step.group
-                        if group_id:
-                            group_name = Group.objects.filter(id=int(group_id))[0].name
-                            users_from_group = Group.objects.filter(id=int(group_id))[
-                                0].userinfo_set.all().values_list(
-                                "fullname")
-                            users = ""
-                            for num, user in enumerate(users_from_group):
-                                users += user[0] + "、"
-                            users = "({0})".format(users[:-1])
-
-                        # 前一个后一个名称
-                        current_num = ""
-                        for num, steprun in enumerate(all_stepruns):
-                            if steprun.state not in ["DONE", "STOP", "EDIT"]:
-                                current_num = num
-                                break
-                        for num, steprun in enumerate(all_stepruns):
-                            if num == current_num - 1 or num == current_num + 1 or num == current_num:
-                                current_step_run_id = steprun.id
-                                all_steps.append({
-                                    "step_run_name": steprun.step.name,
-                                    "step_run_index": index_dict["{0}".format(current_step_run_id)]
-                                })
-                        current_step_index = current_num + 1
-                except:
-                    pass
-
-                total_steps = Step.objects.exclude(state="9").filter(process_id=process_id).values_list("name")
-                # 总体进度
-                process_rate = "%02d" % (current_step_index / len(total_steps) * 100) if current_step_index else 0
 
                 # 进程url
                 processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)
@@ -565,6 +554,9 @@ def index(request, funid):
                         current_process_task_info.append(
                             {"content": content, "time": time, "task_color": current_color,
                              "task_icon": current_icon})
+
+                current_processrun_dict["current_process_run_state"] = state_dict[
+                    "{0}".format(current_processrun.state)]
                 current_processrun_dict["current_process_task_info"] = current_process_task_info
                 current_processrun_dict["current_processrun_dict"] = current_processrun_dict
                 current_processrun_dict["start_time_strftime"] = start_time_strftime
@@ -638,6 +630,7 @@ def get_process_rto(request):
 
 def get_daily_processrun(request):
     if request.user.is_authenticated():
+        print(11111)
         all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
         process_success_rate_list = []
         if all_processrun_objs:
@@ -659,6 +652,19 @@ def get_daily_processrun(request):
                     "url": processrun_url,
                 }
                 process_success_rate_list.append(process_run_dict)
+        all_process_run_invitations = Invitation.objects.all()
+        if all_process_run_invitations:
+            for invitation in all_process_run_invitations:
+                invitations_dict = {
+                    "process_name": "*发送邀请函",
+                    "start_time": invitation.current_time,
+                    "end_time": invitation.current_time,
+                    "process_color": invitation.process_run.process.color,
+                    "process_run_id": invitation.process_run.id,
+                    "url": "/falconstorswitch/12",
+                }
+                process_success_rate_list.append(invitations_dict)
+        print(process_success_rate_list)
         return JsonResponse({"data": process_success_rate_list})
 
 
@@ -2786,9 +2792,19 @@ def falconstorswitch(request, funid, process_id):
             wrapper_step_dict["inner_step_list"] = inner_step_list
 
             wrapper_step_list.append(wrapper_step_dict)
+
+        # 计划流程
+        plan_process_run = ProcessRun.objects.filter(process_id=process_id, state="PLAN")
+        if plan_process_run:
+            plan_process_run = plan_process_run[0]
+            plan_process_run_id = plan_process_run.id
+        else:
+            plan_process_run_id = ""
+        print("plan_process_run_id", plan_process_run_id)
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                       "wrapper_step_list": wrapper_step_list, "process_id": process_id})
+                       "wrapper_step_list": wrapper_step_list, "process_id": process_id,
+                       "plan_process_run_id": plan_process_run_id})
     else:
         return HttpResponseRedirect("/login")
 
@@ -2804,6 +2820,7 @@ def falconstorswitchdata(request):
             "ERROR": "执行失败",
             "IGNORE": "忽略",
             "STOP": "终止",
+            "PLAN": "计划",
             "": "",
         }
 
@@ -2853,84 +2870,179 @@ def falconstorrun(request):
         if (len(process) <= 0):
             result["res"] = '流程启动失败，该流程不存在。'
         else:
-            curprocessrun = ProcessRun.objects.filter(process=process[0], state="RUN")
-            if (len(curprocessrun) > 0):
+            running_process = ProcessRun.objects.filter(process=process[0], state="RUN")
+            if (len(running_process) > 0):
                 result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
             else:
-                myprocessrun = ProcessRun()
-                myprocessrun.process = process[0]
-                myprocessrun.starttime = datetime.datetime.now()
-                myprocessrun.creatuser = request.user.username
-                myprocessrun.run_reason = run_reason
-                myprocessrun.state = "RUN"
-                myprocessrun.DataSet_id = 89
-                myprocessrun.save()
-                mystep = process[0].step_set.exclude(state="9")
-                if (len(mystep) <= 0):
-                    result["res"] = '流程启动失败，没有找到可用步骤。'
+                planning_process = ProcessRun.objects.filter(process=process[0], state="PLAN")
+                if (len(planning_process) > 0):
+                    result["res"] = '流程启动失败，计划流程未执行，务必先完成计划流程。'
                 else:
-                    for step in mystep:
-                        mysteprun = StepRun()
-                        mysteprun.step = step
-                        mysteprun.processrun = myprocessrun
-                        mysteprun.state = "EDIT"
-                        mysteprun.save()
+                    myprocessrun = ProcessRun()
+                    myprocessrun.process = process[0]
+                    myprocessrun.starttime = datetime.datetime.now()
+                    myprocessrun.creatuser = request.user.username
+                    myprocessrun.run_reason = run_reason
+                    myprocessrun.state = "RUN"
+                    myprocessrun.DataSet_id = 89
+                    myprocessrun.save()
+                    mystep = process[0].step_set.exclude(state="9")
+                    if (len(mystep) <= 0):
+                        result["res"] = '流程启动失败，没有找到可用步骤。'
+                    else:
+                        for step in mystep:
+                            mysteprun = StepRun()
+                            mysteprun.step = step
+                            mysteprun.processrun = myprocessrun
+                            mysteprun.state = "EDIT"
+                            mysteprun.save()
 
-                        myscript = step.script_set.exclude(state="9")
-                        for script in myscript:
-                            myscriptrun = ScriptRun()
-                            myscriptrun.script = script
-                            myscriptrun.steprun = mysteprun
-                            myscriptrun.state = "EDIT"
-                            myscriptrun.save()
+                            myscript = step.script_set.exclude(state="9")
+                            for script in myscript:
+                                myscriptrun = ScriptRun()
+                                myscriptrun.script = script
+                                myscriptrun.steprun = mysteprun
+                                myscriptrun.state = "EDIT"
+                                myscriptrun.save()
 
-                        myverifyitems = step.verifyitems_set.exclude(state="9")
-                        for verifyitems in myverifyitems:
-                            myverifyitemsrun = VerifyItemsRun()
-                            myverifyitemsrun.verify_items = verifyitems
-                            myverifyitemsrun.steprun = mysteprun
-                            myverifyitemsrun.save()
+                            myverifyitems = step.verifyitems_set.exclude(state="9")
+                            for verifyitems in myverifyitems:
+                                myverifyitemsrun = VerifyItemsRun()
+                                myverifyitemsrun.verify_items = verifyitems
+                                myverifyitemsrun.steprun = mysteprun
+                                myverifyitemsrun.save()
 
-                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-                        "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+                        allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                            "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
-                        for group in allgroup:
-                            try:
-                                signgroup = Group.objects.get(id=int(group["group"]))
-                                groupname = signgroup.name
+                        if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                            for group in allgroup:
+                                try:
+                                    signgroup = Group.objects.get(id=int(group["group"]))
+                                    groupname = signgroup.name
+                                    myprocesstask = ProcessTask()
+                                    myprocesstask.processrun = myprocessrun
+                                    myprocesstask.starttime = datetime.datetime.now()
+                                    myprocesstask.senduser = request.user.username
+                                    myprocesstask.receiveauth = group["group"]
+                                    myprocesstask.type = "SIGN"
+                                    myprocesstask.state = "0"
+                                    myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                    myprocesstask.save()
+                                except:
+                                    pass
+                            result["res"] = "新增成功。"
+                            result["data"] = "/"
+
+                        else:
+                            prosssigns = ProcessTask.objects.filter(processrun=myprocessrun, state="0")
+                            if len(prosssigns) <= 0:
+                                myprocess = myprocessrun.process
                                 myprocesstask = ProcessTask()
                                 myprocesstask.processrun = myprocessrun
                                 myprocesstask.starttime = datetime.datetime.now()
+                                myprocesstask.type = "INFO"
+                                myprocesstask.logtype = "START"
+                                myprocesstask.state = "1"
                                 myprocesstask.senduser = request.user.username
-                                myprocesstask.receiveauth = group["group"]
-                                myprocesstask.type = "SIGN"
-                                myprocesstask.state = "0"
-                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                myprocesstask.content = "流程已启动。"
                                 myprocesstask.save()
-                            except:
-                                pass
-                        result["res"] = "新增成功。"
-                        result["data"] = "/"
 
-                    else:
-                        prosssigns = ProcessTask.objects.filter(processrun=myprocessrun, state="0")
-                        if len(prosssigns) <= 0:
-                            myprocess = myprocessrun.process
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = myprocessrun
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.type = "INFO"
-                            myprocesstask.logtype = "START"
-                            myprocesstask.state = "1"
-                            myprocesstask.senduser = request.user.username
-                            myprocesstask.content = "流程已启动。"
-                            myprocesstask.save()
-
-                            exec_process.delay(myprocessrun.id)
-                            result["res"] = "新增成功。"
-                            result["data"] = process[0].url + "/" + str(myprocessrun.id)
+                                exec_process.delay(myprocessrun.id)
+                                result["res"] = "新增成功。"
+                                result["data"] = process[0].url + "/" + str(myprocessrun.id)
         return HttpResponse(json.dumps(result))
+
+
+def falconstor_run_invited(request):
+    if request.user.is_authenticated():
+        result = {}
+        process_id = request.POST.get('processid', '')
+        run_person = request.POST.get('run_person', '')
+        run_time = request.POST.get('run_time', '')
+        run_reason = request.POST.get('run_reason', '')
+        plan_process_run_id = request.POST.get('plan_process_run_id', '')
+
+        current_process_run = ProcessRun.objects.filter(id=plan_process_run_id)
+
+        if current_process_run:
+            current_process_run = current_process_run[0]
+            current_process_run.starttime = datetime.datetime.now()
+            current_process_run.creatuser = request.user.username
+            current_process_run.run_reason = run_reason
+            current_process_run.state = "RUN"
+            current_process_run.DataSet_id = 89
+            current_process_run.save()
+
+            process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+            mystep = process[0].step_set.exclude(state="9")
+            if (len(mystep) <= 0):
+                result["res"] = '流程启动失败，没有找到可用步骤。'
+            else:
+                for step in mystep:
+                    mysteprun = StepRun()
+                    mysteprun.step = step
+                    mysteprun.processrun = current_process_run
+                    mysteprun.state = "EDIT"
+                    mysteprun.save()
+
+                    myscript = step.script_set.exclude(state="9")
+                    for script in myscript:
+                        myscriptrun = ScriptRun()
+                        myscriptrun.script = script
+                        myscriptrun.steprun = mysteprun
+                        myscriptrun.state = "EDIT"
+                        myscriptrun.save()
+
+                    myverifyitems = step.verifyitems_set.exclude(state="9")
+                    for verifyitems in myverifyitems:
+                        myverifyitemsrun = VerifyItemsRun()
+                        myverifyitemsrun.verify_items = verifyitems
+                        myverifyitemsrun.steprun = mysteprun
+                        myverifyitemsrun.save()
+
+                allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                    "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+                if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                    for group in allgroup:
+                        try:
+                            signgroup = Group.objects.get(id=int(group["group"]))
+                            groupname = signgroup.name
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun = current_process_run
+                            myprocesstask.starttime = datetime.datetime.now()
+                            myprocesstask.senduser = request.user.username
+                            myprocesstask.receiveauth = group["group"]
+                            myprocesstask.type = "SIGN"
+                            myprocesstask.state = "0"
+                            myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                            myprocesstask.save()
+                        except:
+                            pass
+                    result["res"] = "新增成功。"
+                    result["data"] = "/"
+
+                else:
+                    prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
+                    if len(prosssigns) <= 0:
+                        myprocesstask = ProcessTask()
+                        myprocesstask.processrun = current_process_run
+                        myprocesstask.starttime = datetime.datetime.now()
+                        myprocesstask.type = "INFO"
+                        myprocesstask.logtype = "START"
+                        myprocesstask.state = "1"
+                        myprocesstask.senduser = request.user.username
+                        myprocesstask.content = "流程已启动。"
+                        myprocesstask.save()
+
+                        exec_process.delay(current_process_run.id)
+                        result["res"] = "新增成功。"
+                        result["data"] = process[0].url + "/" + str(current_process_run.id)
+        else:
+            result["res"] = '流程启动异常，请联系客服。'
+
+    return HttpResponse(json.dumps(result))
 
 
 def falconstor(request, offset, funid):
@@ -4189,7 +4301,8 @@ def falconstorsearch(request, funid):
             "RUN": "执行中",
             "ERROR": "执行失败",
             "IGNORE": "忽略",
-            "STOP": "终止"
+            "STOP": "终止",
+            "PLAN": "计划"
         }
         return render(request, "falconstorsearch.html",
                       {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
@@ -4279,6 +4392,7 @@ def falconstorsearchdata(request):
             "ERROR": "执行失败",
             "IGNORE": "忽略",
             "STOP": "终止",
+            "PLAN": "计划",
             "": "",
         }
         cursor.execute(exec_sql)
@@ -4415,6 +4529,75 @@ def download(request):
             return HttpResponseRedirect("/downloadlist")
     else:
         return HttpResponseRedirect("/login")
+
+
+def save_invitation(request):
+    if request.user.is_authenticated():
+        result = {}
+        process_id = request.POST.get("process_id", "")
+        start_time = request.POST.get("start_time", "")
+        purpose = request.POST.get("purpose", "")
+        end_time = request.POST.get("end_time", "")
+
+        # 准备流程PLAN
+        try:
+            process_id = int(process_id)
+        except:
+            raise Http404()
+
+        process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+        if (len(process) <= 0):
+            result["res"] = '流程计划失败，该流程不存在。'
+        else:
+            curprocessrun = ProcessRun.objects.filter(process=process[0], state="RUN")
+            if (len(curprocessrun) > 0):
+                result["res"] = '流程计划失败，有流程正在进行中，请勿重复启动。'
+            else:
+                myprocessrun = ProcessRun()
+                myprocessrun.process = process[0]
+                myprocessrun.state = "PLAN"
+                myprocessrun.starttime = datetime.datetime.now()
+                myprocessrun.save()
+                current_process_run_id = myprocessrun.id
+
+                # 保存邀请函
+                current_invitation = Invitation()
+                current_invitation.process_run_id = current_process_run_id
+                current_invitation.start_time = start_time
+                current_invitation.end_time = end_time
+                current_invitation.purpose = purpose
+                current_invitation.current_time = datetime.datetime.now()
+                current_invitation.save()
+
+                # 生成邀请任务信息
+                myprocesstask = ProcessTask()
+                myprocesstask.processrun_id = current_process_run_id
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.senduser = request.user.username
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "PLAN"
+                myprocesstask.state = "1"
+                myprocesstask.content = "流程发起邀请。"
+                myprocesstask.save()
+
+                result["res"] = "流程计划成功，待开启流程。"
+        return JsonResponse(result)
+
+
+def fill_with_invitation(request):
+    if request.user.is_authenticated():
+        plan_process_run_id = request.POST.get("plan_process_run_id", "")
+        current_invitation = Invitation.objects.filter(process_run_id=plan_process_run_id)
+        if current_invitation:
+            current_invitation = current_invitation[0]
+            start_time = current_invitation.start_time
+            end_time = current_invitation.end_time
+            purpose = current_invitation.purpose
+            return JsonResponse({
+                "start_time": start_time,
+                "end_time": end_time,
+                "purpose": purpose,
+            })
 
 
 def invite(request):

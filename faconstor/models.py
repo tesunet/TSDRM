@@ -153,3 +153,11 @@ class VerifyItemsRun(models.Model):
     steprun = models.ForeignKey(StepRun, blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=30)
     has_verified = models.CharField("是否确认", blank=True, null=True, max_length=20)
+
+
+class Invitation(models.Model):
+    process_run = models.OneToOneField(ProcessRun, blank=True, null=True)
+    start_time = models.DateTimeField("开始时间", blank=True, null=True)
+    end_time = models.DateTimeField("结束时间", blank=True, null=True)
+    purpose = models.CharField("演练目的", max_length=5000, blank=True, null=True)
+    current_time = models.DateTimeField("邀请时间", blank=True, null=True)
