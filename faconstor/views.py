@@ -2964,7 +2964,7 @@ def falconstor_run_invited(request):
 
         if current_process_run:
             current_process_run = current_process_run[0]
-            # current_process_run.starttime = datetime.datetime.now()
+            current_process_run.starttime = datetime.datetime.now()
             current_process_run.creatuser = request.user.username
             current_process_run.run_reason = run_reason
             current_process_run.state = "RUN"
