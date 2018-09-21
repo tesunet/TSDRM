@@ -655,7 +655,7 @@ def get_daily_processrun(request):
         if all_process_run_invitations:
             for invitation in all_process_run_invitations:
                 invitations_dict = {
-                    "process_name": "*发送邀请函",
+                    "process_name": "* 发送邀请函",
                     "start_time": invitation.current_time,
                     "end_time": invitation.current_time,
                     "process_color": invitation.process_run.process.color,
@@ -4541,43 +4541,50 @@ def save_invitation(request):
         except:
             raise Http404()
 
-        process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
-        if (len(process) <= 0):
-            result["res"] = '流程计划失败，该流程不存在。'
-        else:
-            curprocessrun = ProcessRun.objects.filter(process=process[0], state="RUN")
-            if (len(curprocessrun) > 0):
-                result["res"] = '流程计划失败，有流程正在进行中，请勿重复启动。'
+        if start_time:
+            if end_time:
+                process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+                if (len(process) <= 0):
+                    result["res"] = '流程计划失败，该流程不存在。'
+                else:
+                    curprocessrun = ProcessRun.objects.filter(process=process[0], state="RUN")
+                    if (len(curprocessrun) > 0):
+                        result["res"] = '流程计划失败，有流程正在进行中，请勿重复启动。'
+                    else:
+                        myprocessrun = ProcessRun()
+                        myprocessrun.process = process[0]
+                        myprocessrun.state = "PLAN"
+                        myprocessrun.starttime = datetime.datetime.now()
+                        myprocessrun.save()
+                        current_process_run_id = myprocessrun.id
+
+                        # 保存邀请函
+                        current_invitation = Invitation()
+                        current_invitation.process_run_id = current_process_run_id
+                        current_invitation.start_time = start_time
+                        current_invitation.end_time = end_time
+                        current_invitation.purpose = purpose
+                        current_invitation.current_time = datetime.datetime.now()
+                        current_invitation.save()
+
+                        # 生成邀请任务信息
+                        myprocesstask = ProcessTask()
+                        myprocesstask.processrun_id = current_process_run_id
+                        myprocesstask.starttime = datetime.datetime.now()
+                        myprocesstask.senduser = request.user.username
+                        myprocesstask.type = "INFO"
+                        myprocesstask.logtype = "PLAN"
+                        myprocesstask.state = "1"
+                        myprocesstask.content = "流程发起邀请。"
+                        myprocesstask.save()
+
+                        result["data"] = current_process_run_id
+                        result["res"] = "流程计划成功，待开启流程。"
             else:
-                myprocessrun = ProcessRun()
-                myprocessrun.process = process[0]
-                myprocessrun.state = "PLAN"
-                myprocessrun.starttime = datetime.datetime.now()
-                myprocessrun.save()
-                current_process_run_id = myprocessrun.id
+                result["res"] = "演练结束时间必须填写！"
+        else:
+            result["res"] = "演练开始时间必须填写！"
 
-                # 保存邀请函
-                current_invitation = Invitation()
-                current_invitation.process_run_id = current_process_run_id
-                current_invitation.start_time = start_time
-                current_invitation.end_time = end_time
-                current_invitation.purpose = purpose
-                current_invitation.current_time = datetime.datetime.now()
-                current_invitation.save()
-
-                # 生成邀请任务信息
-                myprocesstask = ProcessTask()
-                myprocesstask.processrun_id = current_process_run_id
-                myprocesstask.starttime = datetime.datetime.now()
-                myprocesstask.senduser = request.user.username
-                myprocesstask.type = "INFO"
-                myprocesstask.logtype = "PLAN"
-                myprocesstask.state = "1"
-                myprocesstask.content = "流程发起邀请。"
-                myprocesstask.save()
-
-                result["data"] = current_process_run_id
-                result["res"] = "流程计划成功，待开启流程。"
         return JsonResponse(result)
 
 
