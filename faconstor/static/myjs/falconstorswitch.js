@@ -128,7 +128,6 @@ $(document).ready(function () {
 
     $("#plan").click(function () {
         var plan_process_run_id = $("#plan_process_run_id").val();
-        alert(plan_process_run_id);
         $("#static01").modal({backdrop: "static"});
         if (plan_process_run_id != "" && plan_process_run_id != null) {
             $("#save_div").hide();
