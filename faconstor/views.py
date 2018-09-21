@@ -630,7 +630,6 @@ def get_process_rto(request):
 
 def get_daily_processrun(request):
     if request.user.is_authenticated():
-        print(11111)
         all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
         process_success_rate_list = []
         if all_processrun_objs:
@@ -664,7 +663,6 @@ def get_daily_processrun(request):
                     "url": "/falconstorswitch/12",
                 }
                 process_success_rate_list.append(invitations_dict)
-        print(process_success_rate_list)
         return JsonResponse({"data": process_success_rate_list})
 
 
@@ -2800,7 +2798,6 @@ def falconstorswitch(request, funid, process_id):
             plan_process_run_id = plan_process_run.id
         else:
             plan_process_run_id = ""
-        print("plan_process_run_id", plan_process_run_id)
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id,
@@ -3877,7 +3874,6 @@ def show_result(request):
         show_result_dict["process_name"] = process_name
         # processrun_time
         show_result_dict["processrun_time"] = processrun_time
-        print("-----", show_result_dict["total_list"])
         return JsonResponse(show_result_dict)
 
 
@@ -4580,6 +4576,7 @@ def save_invitation(request):
                 myprocesstask.content = "流程发起邀请。"
                 myprocesstask.save()
 
+                result["data"] = current_process_run_id
                 result["res"] = "流程计划成功，待开启流程。"
         return JsonResponse(result)
 

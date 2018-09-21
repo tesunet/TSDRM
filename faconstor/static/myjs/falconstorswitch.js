@@ -55,7 +55,7 @@ $(document).ready(function () {
     });
 
     $("#confirm").click(function () {
-        var processid = $("#processid").val();
+        var process_id = $("#process_id").val();
 
         // 非邀请流程启动
         $.ajax({
@@ -64,7 +64,7 @@ $(document).ready(function () {
             url: "../falconstorrun/",
             data:
                 {
-                    processid: processid,
+                    processid: process_id,
                     run_person: $("#run_person").val(),
                     run_time: $("#run_time").val(),
                     run_reason: $("#run_reason").val(),
@@ -83,8 +83,8 @@ $(document).ready(function () {
     });
 
     $("#confirm_invited").click(function () {
-        var processid = $("#processid").val();
-        var plan_process_run_id = $("#planprocessrunid").val();
+        var process_id = $("#process_id").val();
+        var plan_process_run_id = $("#plan_process_run_id").val();
         // 需邀请流程启动
         $.ajax({
             type: "POST",
@@ -92,7 +92,7 @@ $(document).ready(function () {
             url: "../falconstor_run_invited/",
             data:
                 {
-                    processid: processid,
+                    processid: process_id,
                     plan_process_run_id: plan_process_run_id,
                     run_person: $("#runperson").val(),
                     run_time: $("#runtime").val(),
@@ -113,8 +113,6 @@ $(document).ready(function () {
 
 
     $("#run").click(function () {
-        var process_id = $("#process_id").val();
-        $("#processid").val(process_id);
         $("#static").modal({backdrop: "static"});
         // 写入当前时间
         var myDate = new Date();
@@ -122,8 +120,6 @@ $(document).ready(function () {
     });
 
     $("#run_invited").click(function () {
-        var process_id = $("#process_id").val();
-        $("#processid").val(process_id);
         $("#static02").modal({backdrop: "static"});
         // 写入当前时间
         var myDate = new Date();
@@ -131,10 +127,8 @@ $(document).ready(function () {
     });
 
     $("#plan").click(function () {
-        var process_id = $("#process_id").val();
         var plan_process_run_id = $("#plan_process_run_id").val();
-        $("#processid").val(process_id);
-        $("#planprocessrunid").val(plan_process_run_id);
+        alert(plan_process_run_id);
         $("#static01").modal({backdrop: "static"});
         if (plan_process_run_id != "" && plan_process_run_id != null) {
             $("#save_div").hide();
@@ -188,8 +182,8 @@ $(document).ready(function () {
 
     // 保存邀请函
     $("#save_invitation").click(function () {
-        var process_id = $("#processid").val();
-        var plan_process_run_id = $("#planprocessrunid").val();
+        var process_id = $("#process_id").val();
+        var plan_process_run_id = $("#plan_process_run_id").val();
         $.ajax({
             type: "POST",
             dataType: 'json',
@@ -206,7 +200,7 @@ $(document).ready(function () {
                 if (data["res"] == "流程计划成功，待开启流程。") {
                     $("#save_div").hide();
                     $("#download_div").show();
-                    window.location.href = "/falconstorswitch/12";
+                    $("#plan_process_run_id").val(data["data"]);
                 }
                 else
                     alert(data["res"]);
