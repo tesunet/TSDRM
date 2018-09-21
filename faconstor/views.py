@@ -649,18 +649,20 @@ def get_daily_processrun(request):
                     "process_color": process_color,
                     "process_run_id": process_run_id,
                     "url": processrun_url,
+                    "invite": "0"
                 }
                 process_success_rate_list.append(process_run_dict)
         all_process_run_invitations = Invitation.objects.all()
         if all_process_run_invitations:
             for invitation in all_process_run_invitations:
                 invitations_dict = {
-                    "process_name": "* 发送邀请函",
+                    "process_name": "",
                     "start_time": invitation.current_time,
                     "end_time": invitation.current_time,
                     "process_color": invitation.process_run.process.color,
                     "process_run_id": invitation.process_run.id,
                     "url": "/falconstorswitch/12",
+                    "invite": "1"
                 }
                 process_success_rate_list.append(invitations_dict)
         return JsonResponse({"data": process_success_rate_list})

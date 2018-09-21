@@ -104,9 +104,9 @@ var Dashboard = function () {
                 editable: true,
                 monthNames: ['一月', '二月', '三月', '四月', '五月', '六月', '七月',
                     '八月', '九月', '十月', '十一月', '十二月'],
-                dayNames: ['星期天','星期一', '星期二', '星期三', '星期四',
+                dayNames: ['星期天', '星期一', '星期二', '星期三', '星期四',
                     '星期五', '星期六'],
-                dayNamesShort: [ '星期天','星期一', '星期二', '星期三', '星期四',
+                dayNamesShort: ['星期天', '星期一', '星期二', '星期三', '星期四',
                     '星期五', '星期六'],
                 buttonText: {
                     today: '回到当日',
@@ -130,15 +130,27 @@ var Dashboard = function () {
                                 var end = data.data[i].end_time;
                                 var backgroundColor = data.data[i].process_color;
                                 var url = data.data[i].url;
-
-                                events.push({
-                                    id: id,
-                                    title: title,
-                                    start: start,
-                                    end: end,
-                                    backgroundColor: App.getBrandColor(backgroundColor),
-                                    url: url,
-                                });
+                                var invite = data.data[i].invite;
+                                if (invite == "1") {
+                                    events.push({
+                                        id: id,
+                                        title: title,
+                                        start: start,
+                                        end: end,
+                                        backgroundColor: App.getBrandColor(backgroundColor),
+                                        url: url,
+                                        className: "invite"
+                                    });
+                                } else {
+                                    events.push({
+                                        id: id,
+                                        title: title,
+                                        start: start,
+                                        end: end,
+                                        backgroundColor: App.getBrandColor(backgroundColor),
+                                        url: url,
+                                    });
+                                }
                             }
 
                             try {
@@ -149,6 +161,11 @@ var Dashboard = function () {
                         }
                     });
                 },
+                eventAfterAllRender: function (view) {
+                    $(".fc-day-grid-event.fc-h-event.fc-event.fc-start.fc-end.invite.fc-draggable").each(function () {
+                        $(this).find('.fc-title').html("<font color='red'>*</font> 发送邀请函");
+                    })
+                }
             });
         },
         componentsKnobDials: function () {
