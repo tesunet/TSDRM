@@ -471,7 +471,7 @@ def index(request, funid):
                         elif index_dict["{0}".format(current_run_step_id)] == 1:
                             current_run_step_index = 1
                             for num, step_run in enumerate(correct_step_run_list):
-                                if current_run_step_index - 1 == num or current_run_step_index == num or current_run_step_index - 1 == num:
+                                if current_run_step_index + 1 == num or current_run_step_index == num or current_run_step_index - 1 == num:
                                     all_steps.append({
                                         "step_run_name": step_run.step.name,
                                         "step_run_index": num + 1
@@ -2964,7 +2964,7 @@ def falconstor_run_invited(request):
 
         if current_process_run:
             current_process_run = current_process_run[0]
-            current_process_run.starttime = datetime.datetime.now()
+            # current_process_run.starttime = datetime.datetime.now()
             current_process_run.creatuser = request.user.username
             current_process_run.run_reason = run_reason
             current_process_run.state = "RUN"
@@ -2972,70 +2972,45 @@ def falconstor_run_invited(request):
             current_process_run.save()
 
             process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
-            mystep = process[0].step_set.exclude(state="9")
-            if (len(mystep) <= 0):
-                result["res"] = '流程启动失败，没有找到可用步骤。'
-            else:
-                for step in mystep:
-                    mysteprun = StepRun()
-                    mysteprun.step = step
-                    mysteprun.processrun = current_process_run
-                    mysteprun.state = "EDIT"
-                    mysteprun.save()
 
-                    myscript = step.script_set.exclude(state="9")
-                    for script in myscript:
-                        myscriptrun = ScriptRun()
-                        myscriptrun.script = script
-                        myscriptrun.steprun = mysteprun
-                        myscriptrun.state = "EDIT"
-                        myscriptrun.save()
+            allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                    myverifyitems = step.verifyitems_set.exclude(state="9")
-                    for verifyitems in myverifyitems:
-                        myverifyitemsrun = VerifyItemsRun()
-                        myverifyitemsrun.verify_items = verifyitems
-                        myverifyitemsrun.steprun = mysteprun
-                        myverifyitemsrun.save()
-
-                allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-                    "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
-
-                if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
-                    for group in allgroup:
-                        try:
-                            signgroup = Group.objects.get(id=int(group["group"]))
-                            groupname = signgroup.name
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = current_process_run
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.senduser = request.user.username
-                            myprocesstask.receiveauth = group["group"]
-                            myprocesstask.type = "SIGN"
-                            myprocesstask.state = "0"
-                            myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
-                            myprocesstask.save()
-                        except:
-                            pass
-                    result["res"] = "新增成功。"
-                    result["data"] = "/"
-
-                else:
-                    prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
-                    if len(prosssigns) <= 0:
+            if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                for group in allgroup:
+                    try:
+                        signgroup = Group.objects.get(id=int(group["group"]))
+                        groupname = signgroup.name
                         myprocesstask = ProcessTask()
                         myprocesstask.processrun = current_process_run
                         myprocesstask.starttime = datetime.datetime.now()
-                        myprocesstask.type = "INFO"
-                        myprocesstask.logtype = "START"
-                        myprocesstask.state = "1"
                         myprocesstask.senduser = request.user.username
-                        myprocesstask.content = "流程已启动。"
+                        myprocesstask.receiveauth = group["group"]
+                        myprocesstask.type = "SIGN"
+                        myprocesstask.state = "0"
+                        myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
                         myprocesstask.save()
+                    except:
+                        pass
+                result["res"] = "新增成功。"
+                result["data"] = "/"
 
-                        exec_process.delay(current_process_run.id)
-                        result["res"] = "新增成功。"
-                        result["data"] = process[0].url + "/" + str(current_process_run.id)
+            else:
+                prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
+                if len(prosssigns) <= 0:
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun = current_process_run
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "START"
+                    myprocesstask.state = "1"
+                    myprocesstask.senduser = request.user.username
+                    myprocesstask.content = "流程已启动。"
+                    myprocesstask.save()
+
+                    exec_process.delay(current_process_run.id)
+                    result["res"] = "新增成功。"
+                    result["data"] = process[0].url + "/" + str(current_process_run.id)
         else:
             result["res"] = '流程启动异常，请联系客服。'
 
@@ -4557,6 +4532,33 @@ def save_invitation(request):
                         myprocessrun.starttime = datetime.datetime.now()
                         myprocessrun.save()
                         current_process_run_id = myprocessrun.id
+
+                        process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+                        mystep = process[0].step_set.exclude(state="9")
+                        if (len(mystep) <= 0):
+                            result["res"] = '流程启动失败，没有找到可用步骤。'
+                        else:
+                            for step in mystep:
+                                mysteprun = StepRun()
+                                mysteprun.step = step
+                                mysteprun.processrun = myprocessrun
+                                mysteprun.state = "EDIT"
+                                mysteprun.save()
+
+                                myscript = step.script_set.exclude(state="9")
+                                for script in myscript:
+                                    myscriptrun = ScriptRun()
+                                    myscriptrun.script = script
+                                    myscriptrun.steprun = mysteprun
+                                    myscriptrun.state = "EDIT"
+                                    myscriptrun.save()
+
+                                myverifyitems = step.verifyitems_set.exclude(state="9")
+                                for verifyitems in myverifyitems:
+                                    myverifyitemsrun = VerifyItemsRun()
+                                    myverifyitemsrun.verify_items = verifyitems
+                                    myverifyitemsrun.steprun = mysteprun
+                                    myverifyitemsrun.save()
 
                         # 保存邀请函
                         current_invitation = Invitation()
