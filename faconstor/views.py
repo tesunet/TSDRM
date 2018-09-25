@@ -3016,7 +3016,7 @@ def falconstor_run_invited(request):
         else:
             result["res"] = '流程启动异常，请联系客服。'
 
-    return HttpResponse(json.dumps(result))
+        return HttpResponse(json.dumps(result))
 
 
 def falconstor(request, offset, funid):
@@ -3217,6 +3217,9 @@ def getrunsetps(request):
                     runresult = ""
                     explain = ""
                     state = ""
+                    group = ""
+                    note = ""
+                    rto = 0
                     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processruns[0], step=step)
                     if len(steprunlist) > 0:
                         runid = steprunlist[0].id
@@ -3621,12 +3624,14 @@ def show_result(request):
             # 步骤负责人
             try:
                 users = User.objects.filter(username=pnode_steprun[0].operator)
-            except:
                 if users:
                     operator = users[0].userinfo.fullname
                     second_el_dict["operator"] = operator
                 else:
                     second_el_dict["operator"] = ""
+            except:
+                second_el_dict["operator"] = ""
+
 
             # 当前步骤下脚本
             state_dict = {
