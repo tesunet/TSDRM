@@ -33,7 +33,8 @@ import pdfkit
 from django.template.response import TemplateResponse
 
 pythoncom.CoInitialize()
-import wmi
+
+
 
 funlist = []
 
@@ -125,7 +126,6 @@ def getpagefuns(funid, request=""):
                 task_id = task.id
 
                 task_nums = len(allprosstasks)
-                process_name = task.processrun.process.name
                 process_color = task.processrun.process.color
                 process_url = task.processrun.process.url + "/" + str(task.processrun.id)
                 time = task.starttime
@@ -188,10 +188,9 @@ def getpagefuns(funid, request=""):
                                                             else:
                                                                 time = "刚刚"
                 message_task.append(
-                    {"content": task.content, "time": time, "process_name": process_name,
-                     "task_color": current_color.strip(),
+                    {"content": task.content, "time": time, "process_name": process_name, "task_color": current_color.strip(),
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
-                     "pop": pop, "task_id": task_id, "process_name": process_name, "send_time": send_time,
+                     "pop": pop, "task_id": task_id, "send_time": send_time,
                      "process_run_reason": process_run_reason, "group_name": guoups[0].name})
     return {"pagefuns": pagefuns, "curfun": mycurfun, "message_task": message_task, "task_nums": task_nums}
 
