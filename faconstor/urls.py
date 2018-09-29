@@ -77,6 +77,7 @@ urlpatterns = [
     url(r'^stop_current_process/$', stop_current_process),
     url(r'^verify_items/$', verify_items),
     url(r'^show_result/$', show_result),
+    url(r'^reject_invited/$', reject_invited),
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
@@ -92,5 +93,4 @@ urlpatterns = [
     # 邀请
     url(r'^invite/$', invite),
     url(r'^get_all_users/$', get_all_users),
-
 ]

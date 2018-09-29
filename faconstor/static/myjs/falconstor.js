@@ -84,6 +84,7 @@ if (App.isAngularJsApp() === false) {
                     $("ul.steps").empty();
                     $("div.tab-content").empty();
                     $("#stopbtn").show();
+                    $("#show_result").hide();
                     $("#process_run_id").val($("#process").val());
                     $("#process_name").text(data["process_name"]);
                     $("#process_starttime").val(data["process_starttime"]);
@@ -102,7 +103,7 @@ if (App.isAngularJsApp() === false) {
                         $("table#group_data tbody").empty();
 
                         var process_run_id = $("#process_run_id").val();
-                        $.ajax({
+                       $.ajax({
                             url: "../../show_result/",
                             type: "post",
                             data: {
@@ -129,7 +130,6 @@ if (App.isAngularJsApp() === false) {
                                     } else {
                                         var stepWrapperOperator = ""
                                     }
-
                                     elements += '<tr><td' + rowSpanString + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">*' + stepWrapper.step_name + '</font></font></td>';
                                     // inner_step
                                     if (innerStep != "" && innerStep != null) {
@@ -148,10 +148,10 @@ if (App.isAngularJsApp() === false) {
                                         }
                                     } else {
                                         elements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapperOperator + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.start_time + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.end_time + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.rto + '</font></font></td></tr>'
                                     }
                                 }
                                 $("table#process_data tbody").append(elements);
@@ -183,6 +183,8 @@ if (App.isAngularJsApp() === false) {
                     }
                     if (data["process_state"] == "RUN")
                         $("#process_state").val("运行");
+                    if (data["process_state"] == "PLAN")
+                        $("#process_state").val("计划");
                     if (data["process_state"] == "ERROR") {
                         $("#process_state").val("错误");
                         window.clearInterval(t2);
@@ -225,7 +227,6 @@ if (App.isAngularJsApp() === false) {
                                     } else {
                                         var stepWrapperOperator = ""
                                     }
-
                                     elements += '<tr><td' + rowSpanString + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">*' + stepWrapper.step_name + '</font></font></td>';
                                     // inner_step
                                     if (innerStep != "" && innerStep != null) {
@@ -244,10 +245,10 @@ if (App.isAngularJsApp() === false) {
                                         }
                                     } else {
                                         elements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapperOperator + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.start_time + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.end_time + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.rto + '</font></font></td></tr>'
                                     }
                                 }
                                 $("table#process_data tbody").append(elements);
@@ -649,7 +650,7 @@ if (App.isAngularJsApp() === false) {
                                 }
                             });
                         }
-                    })
+                    });
 
                     // 展示结果
                     $("#show_result").click(function () {
@@ -685,7 +686,6 @@ if (App.isAngularJsApp() === false) {
                                     } else {
                                         var stepWrapperOperator = ""
                                     }
-
                                     elements += '<tr><td' + rowSpanString + '><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">*' + stepWrapper.step_name + '</font></font></td>';
                                     // inner_step
                                     if (innerStep != "" && innerStep != null) {
@@ -704,10 +704,10 @@ if (App.isAngularJsApp() === false) {
                                         }
                                     } else {
                                         elements += '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td>' +
-                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;"></font></font></td></tr>'
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapperOperator + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.start_time + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.end_time + '</font></font></td>' +
+                                            '<td><font style="vertical-align: inherit;"><font style="vertical-align: inherit;">' + stepWrapper.rto + '</font></font></td></tr>'
                                     }
                                 }
                                 $("table#process_data tbody").append(elements);

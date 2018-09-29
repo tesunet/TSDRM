@@ -163,7 +163,8 @@ var Dashboard = function () {
                 },
                 eventAfterAllRender: function (view) {
                     $(".fc-day-grid-event.fc-h-event.fc-event.fc-start.fc-end.invite.fc-draggable").each(function () {
-                        $(this).find('.fc-title').html("<font color='red'>*</font> 发送邀请函");
+                        var processName = $(this).find('.fc-title').text();
+                        $(this).find('.fc-title').html("<font color='red'>*</font> " + processName);
                     })
                 }
             });

@@ -200,10 +200,143 @@ $(document).ready(function () {
                     $("#save_div").hide();
                     $("#download_div").show();
                     $("#plan_process_run_id").val(data["data"]);
+                    $("#static01").modal("hide");
+                    $("#sample_1").DataTable().destroy();
+                    $('#sample_1').dataTable({
+                        "bAutoWidth": true,
+                        "bSort": false,
+                        "bProcessing": true,
+                        "ajax": "../falconstorswitchdata/",
+                        "columns": [
+                            {"data": "processrun_id"},
+                            {"data": "process_name"},
+                            {"data": "createuser"},
+                            {"data": "state"},
+                            {"data": "run_reason"},
+                            {"data": "starttime"},
+                            {"data": "endtime"},
+                            {"data": "process_id"},
+                            {"data": "process_url"},
+                            {"data": null},
+                        ],
+                        "columnDefs": [{
+                            "targets": 1,
+                            "render": function (data, type, full) {
+                                return "<td><a href='process_url'>data</a></td>".replace("data", full.process_name).replace("process_url", full.process_url + "/" + full.processrun_id)
+                            }
+                        }, {
+                            "visible": false,
+                            "targets": -2  // 倒数第一列
+                        }, {
+                            "visible": false,
+                            "targets": -3  // 倒数第一列
+                        }, {
+                            "targets": -1,  // 指定最后一列添加按钮；
+                            "data": null,
+                            "width": "60px",  // 指定列宽；
+                            "render": function (data, type, full) {
+                                return "<td><a href='/custom_pdf_report/?processrunid&processid'></td><i class='fa fa-arrow-down'></i></a>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
+                            }
+                        }],
+
+                        "oLanguage": {
+                            "sLengthMenu": "&nbsp;&nbsp;每页显示 _MENU_ 条记录",
+                            "sZeroRecords": "抱歉， 没有找到",
+                            "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
+                            "sInfoEmpty": '',
+                            "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
+                            "sSearch": "搜索",
+                            "oPaginate": {
+                                "sFirst": "首页",
+                                "sPrevious": "前一页",
+                                "sNext": "后一页",
+                                "sLast": "尾页"
+                            },
+                            "sZeroRecords": "没有检索到数据",
+
+                        }
+                    });
                 }
                 else
                     alert(data["res"]);
             }
         });
     });
+
+    // 取消计划流程
+    $("#reject_invited").click(function () {
+        var plan_process_run_id = $("#plan_process_run_id").val();
+        $.ajax({
+            type: "POST",
+            dataType: 'json',
+            url: "../reject_invited/",
+            data:
+                {
+                    plan_process_run_id: plan_process_run_id,
+                },
+            success: function (data) {
+                alert(data["res"]);
+                if (data['res'] === "取消演练计划成功！") {
+                    // 关闭模态框刷新表格
+                    $("#static01").modal("hide");
+                    $("#sample_1").DataTable().destroy();
+                    $('#sample_1').dataTable({
+                        "bAutoWidth": true,
+                        "bSort": false,
+                        "bProcessing": true,
+                        "ajax": "../falconstorswitchdata/",
+                        "columns": [
+                            {"data": "processrun_id"},
+                            {"data": "process_name"},
+                            {"data": "createuser"},
+                            {"data": "state"},
+                            {"data": "run_reason"},
+                            {"data": "starttime"},
+                            {"data": "endtime"},
+                            {"data": "process_id"},
+                            {"data": "process_url"},
+                            {"data": null},
+                        ],
+                        "columnDefs": [{
+                            "targets": 1,
+                            "render": function (data, type, full) {
+                                return "<td><a href='process_url'>data</a></td>".replace("data", full.process_name).replace("process_url", full.process_url + "/" + full.processrun_id)
+                            }
+                        }, {
+                            "visible": false,
+                            "targets": -2  // 倒数第一列
+                        }, {
+                            "visible": false,
+                            "targets": -3  // 倒数第一列
+                        }, {
+                            "targets": -1,  // 指定最后一列添加按钮；
+                            "data": null,
+                            "width": "60px",  // 指定列宽；
+                            "render": function (data, type, full) {
+                                return "<td><a href='/custom_pdf_report/?processrunid&processid'></td><i class='fa fa-arrow-down'></i></a>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
+                            }
+                        }],
+
+                        "oLanguage": {
+                            "sLengthMenu": "&nbsp;&nbsp;每页显示 _MENU_ 条记录",
+                            "sZeroRecords": "抱歉， 没有找到",
+                            "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
+                            "sInfoEmpty": '',
+                            "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
+                            "sSearch": "搜索",
+                            "oPaginate": {
+                                "sFirst": "首页",
+                                "sPrevious": "前一页",
+                                "sNext": "后一页",
+                                "sLast": "尾页"
+                            },
+                            "sZeroRecords": "没有检索到数据",
+
+                        }
+                    });
+                }
+            }
+        });
+    });
+
 });

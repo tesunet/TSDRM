@@ -355,7 +355,7 @@ def index(request, funid):
         # 成功率，恢复次数，平均RTO，最新切换
         all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
         successful_processruns = ProcessRun.objects.filter(state="DONE")
-        processrun_times_obj = ProcessRun.objects.exclude(state="RUN")
+        processrun_times_obj = ProcessRun.objects.exclude(state__in=["RUN", "REJECT"])
 
         success_rate = "%.0f" % (len(successful_processruns) / len(
             all_processrun_objs) * 100) if all_processrun_objs and successful_processruns else 0
@@ -378,7 +378,7 @@ def index(request, funid):
             average_rto = "0时0分0秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP"])
+        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"])
         curren_processrun_info_list = []
 
         state_dict = {
@@ -389,6 +389,7 @@ def index(request, funid):
             "IGNORE": "忽略",
             "STOP": "终止",
             "PLAN": "计划",
+            "REJECT": "取消",
             "": "",
         }
 
@@ -651,15 +652,15 @@ def get_daily_processrun(request):
                     "invite": "0"
                 }
                 process_success_rate_list.append(process_run_dict)
-        all_process_run_invitations = Invitation.objects.all()
-        if all_process_run_invitations:
-            for invitation in all_process_run_invitations:
+        all_process_run_invited = ProcessRun.objects.filter(state="PLAN")
+        if all_process_run_invited:
+            for process_run_invited in all_process_run_invited:
                 invitations_dict = {
-                    "process_name": "",
-                    "start_time": invitation.current_time,
-                    "end_time": invitation.current_time,
-                    "process_color": invitation.process_run.process.color,
-                    "process_run_id": invitation.process_run.id,
+                    "process_name": process_run_invited.process.name,
+                    "start_time": process_run_invited.starttime,
+                    "end_time": process_run_invited.endtime,
+                    "process_color": process_run_invited.process.color,
+                    "process_run_id": process_run_invited.id,
                     "url": "/falconstorswitch/12",
                     "invite": "1"
                 }
@@ -2819,6 +2820,7 @@ def falconstorswitchdata(request):
             "IGNORE": "忽略",
             "STOP": "终止",
             "PLAN": "计划",
+            "REJECT": "取消",
             "": "",
         }
 
@@ -2826,7 +2828,7 @@ def falconstorswitchdata(request):
 
         exec_sql = """
         select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
-        left join faconstor_process as p on p.id = r.process_id where r.state != '9' order by r.starttime desc;
+        left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' order by r.starttime desc;
         """
 
         cursor.execute(exec_sql)
@@ -3632,76 +3634,6 @@ def show_result(request):
                 second_el_dict["operator"] = ""
 
 
-            # 当前步骤下脚本
-            state_dict = {
-                "DONE": "已完成",
-                "EDIT": "未执行",
-                "RUN": "执行中",
-                "ERROR": "执行失败",
-                "IGNORE": "忽略",
-                "": "",
-            }
-
-            current_scripts = Script.objects.exclude(state="9").filter(step_id=pstep.id)
-            script_list_wrapper = []
-            if current_scripts:
-                for snum, current_script in enumerate(current_scripts):
-                    script_el_dict = dict()
-                    # title
-                    script_name = "{0}.{1}".format("i" * (snum + 1), current_script.name)
-                    script_el_dict["script_name"] = script_name
-                    # content
-                    steprun_id = pnode_steprun[0].id if pnode_steprun else None
-                    script_id = current_script.id
-                    current_scriptrun_obj = ScriptRun.objects.filter(steprun_id=steprun_id, script_id=script_id)
-                    if current_scriptrun_obj:
-                        script_el_dict["start_time"] = current_scriptrun_obj[0].starttime.strftime(
-                            "%Y-%m-%d %H:%M:%S") if \
-                            current_scriptrun_obj[0].starttime else ""
-                        script_el_dict["end_time"] = current_scriptrun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S") if \
-                            current_scriptrun_obj[0].endtime else ""
-
-                        if current_scriptrun_obj[0].endtime and current_scriptrun_obj[0].starttime:
-                            delta_time = (current_scriptrun_obj[0].endtime - current_scriptrun_obj[0].starttime)
-                            delta_time_str = str(delta_time)
-
-                            end_time = current_scriptrun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
-                            start_time = current_scriptrun_obj[0].starttime.strftime("%Y-%m-%d %H:%M:%S")
-                            delta_seconds = datetime.datetime.strptime(end_time,
-                                                                       '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
-                                start_time, '%Y-%m-%d %H:%M:%S')
-                            delta_second = str(delta_seconds).split(":")[-1]
-
-                            if delta_time.total_seconds() > 0:
-                                if "," in delta_time_str:
-                                    delta_time_example = str(delta_time.total_seconds() // 60 // 60).split(".")[0]
-                                    delta_time_list = delta_time_str.split(",")[-1].split(":")
-                                    delta_time = "{0}时{1}分{2}秒".format(delta_time_example, delta_time_list[1],
-                                                                       delta_second if delta_second else "")
-                                else:
-                                    delta_time_list = delta_time_str.split(":")
-                                    delta_time = "{0}时{1}分{2}秒".format(delta_time_list[0], delta_time_list[1],
-                                                                       delta_second if delta_second else "")
-                            elif delta_time.total_seconds() == 0:
-                                delta_time = ""
-                            else:
-                                return Http404()
-
-                            script_el_dict["rto"] = delta_time
-                        else:
-                            script_el_dict["rto"] = ""
-
-                        state = current_scriptrun_obj[0].state
-                        if state in state_dict.keys():
-                            script_el_dict["state"] = state_dict[state]
-                        else:
-                            script_el_dict["state"] = ""
-                        script_el_dict["explain"] = current_scriptrun_obj[0].explain
-
-                    script_list_wrapper.append(script_el_dict)
-                second_el_dict["script_list_wrapper"] = script_list_wrapper
-
-            # 子步骤下相关内容
             p_id = pstep.id
             inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id).order_by("sort").filter(
                 pnode_id=p_id)
@@ -3760,74 +3692,6 @@ def show_result(request):
                         else:
                             inner_second_el_dict["operator"] = ""
 
-                        # 当前步骤下脚本
-                        current_scripts = Script.objects.exclude(state="9").filter(step_id=step.id)
-
-                        script_list_inner = []
-                        if current_scripts:
-                            for snum, current_script in enumerate(current_scripts):
-                                script_el_dict_inner = dict()
-                                # title
-                                script_name = "{0}.{1}".format("i" * (snum + 1), current_script.name)
-                                script_el_dict_inner["script_name"] = script_name
-
-                                # content
-                                steprun_id = steprun_obj[0].id
-                                script_id = current_script.id
-                                current_scriptrun_obj = ScriptRun.objects.filter(steprun_id=steprun_id,
-                                                                                 script_id=script_id)
-                                if current_scriptrun_obj:
-                                    script_el_dict_inner["start_time"] = current_scriptrun_obj[0].starttime.strftime(
-                                        "%Y-%m-%d %H:%M:%S") if current_scriptrun_obj[0].starttime else ""
-                                    script_el_dict_inner["end_time"] = current_scriptrun_obj[0].endtime.strftime(
-                                        "%Y-%m-%d %H:%M:%S") if current_scriptrun_obj[0].endtime else ""
-
-                                    if current_scriptrun_obj[0].endtime and current_scriptrun_obj[0].starttime:
-
-                                        delta_time = (current_scriptrun_obj[0].endtime - current_scriptrun_obj[
-                                            0].starttime)
-                                        delta_time_str = str(delta_time)
-
-                                        end_time = current_scriptrun_obj[0].endtime.strftime("%Y-%m-%d %H:%M:%S")
-                                        start_time = current_scriptrun_obj[0].starttime.strftime("%Y-%m-%d %H:%M:%S")
-                                        delta_seconds = datetime.datetime.strptime(end_time,
-                                                                                   '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
-                                            start_time, '%Y-%m-%d %H:%M:%S')
-                                        delta_second = str(delta_seconds).split(":")[-1]
-
-                                        if delta_time.total_seconds() > 0:
-                                            if "," in delta_time_str:
-                                                delta_time_example = \
-                                                    str(delta_time.total_seconds() // 60 // 60).split(".")[0]
-                                                delta_time_list = delta_time_str.split(",")[-1].split(":")
-                                                delta_time = "{0}时{1}分{2}秒".format(delta_time_example,
-                                                                                   delta_time_list[1],
-                                                                                   delta_second if delta_second else "")
-                                            else:
-                                                delta_time_list = delta_time_str.split(":")
-                                                delta_time = "{0}时{1}分{2}秒".format(delta_time_list[0],
-                                                                                   delta_time_list[1],
-                                                                                   delta_second if delta_second else "")
-                                        elif delta_time.total_seconds() == 0:
-                                            delta_time = ""
-                                        else:
-                                            return Http404()
-
-                                        script_el_dict_inner["rto"] = delta_time
-                                    else:
-                                        script_el_dict_inner["rto"] = ""
-
-                                    state = current_scriptrun_obj[0].state
-                                    if state in state_dict.keys():
-                                        script_el_dict_inner["state"] = state_dict[state]
-                                    else:
-                                        script_el_dict_inner["state"] = ""
-
-                                    script_el_dict_inner["explain"] = current_scriptrun_obj[0].explain
-                                else:
-                                    pass
-                                script_list_inner.append(script_el_dict_inner)
-                        inner_second_el_dict["script_list_inner"] = script_list_inner
                     inner_step_list.append(inner_second_el_dict)
             second_el_dict['inner_step_list'] = inner_step_list
             step_info_list.append(second_el_dict)
@@ -3839,16 +3703,18 @@ def show_result(request):
         if all_groups:
             for group in all_groups:
                 all_group_dict = {}
-                all_group_dict["group"] = group.name
                 current_group_users = group.userinfo_set.exclude(state="9", pnode=None).filter(type="user")
-                current_users_and_departments = []
-                for user in current_group_users:
-                    inner_dict = {}
-                    inner_dict["fullname"] = user.fullname
-                    inner_dict["depart_name"] = user.pnode.fullname if user.pnode else ""
-                    current_users_and_departments.append(inner_dict)
-                all_group_dict["current_users_and_departments"] = current_users_and_departments
-                total_list.append(all_group_dict)
+                if current_group_users:
+                    all_group_dict["group"] = group.name
+
+                    current_users_and_departments = []
+                    for user in current_group_users:
+                        inner_dict = {}
+                        inner_dict["fullname"] = user.fullname
+                        inner_dict["depart_name"] = user.pnode.fullname if user.pnode else ""
+                        current_users_and_departments.append(inner_dict)
+                    all_group_dict["current_users_and_departments"] = current_users_and_departments
+                    total_list.append(all_group_dict)
         show_result_dict["total_list"] = total_list
 
         # process_name
@@ -3856,6 +3722,32 @@ def show_result(request):
         # processrun_time
         show_result_dict["processrun_time"] = processrun_time
         return JsonResponse(show_result_dict)
+
+
+def reject_invited(request):
+    if request.user.is_authenticated():
+        plan_process_run_id = request.POST.get("plan_process_run_id", "")
+        rejected_process_runs = ProcessRun.objects.filter(id=plan_process_run_id)
+        if rejected_process_runs:
+            rejected_process_run = rejected_process_runs[0]
+            rejected_process_run.state = "REJECT"
+            rejected_process_run.save()
+
+            # 生成取消任务信息
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun_id = rejected_process_run.id
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = request.user.username
+            myprocesstask.type = "INFO"
+            myprocesstask.logtype = "REJECT"
+            myprocesstask.state = "1"
+            myprocesstask.content = "取消演练计划。"
+            myprocesstask.save()
+
+            result = "取消演练计划成功！"
+        else:
+            result = "计划流程不存在，取消失败！"
+        return JsonResponse({"res": result})
 
 
 def custom_pdf_report(request):
@@ -4309,7 +4201,7 @@ def falconstorsearchdata(request):
 
         exec_sql = """
         select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-        left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.starttime between '{0}' and '{1}' order by r.starttime desc;
+        left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and r.starttime between '{0}' and '{1}' order by r.starttime desc;
         """.format(start_time, end_time)
 
         if runperson:
@@ -4323,43 +4215,43 @@ def falconstorsearchdata(request):
             if processname != "" and runstate != "":
                 exec_sql = """
                 select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and p.name='{0}' and r.state='{1}' and r.creatuser='{2}' and r.starttime between '{3}' and '{4}'  order by r.starttime desc;
+                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and p.name='{0}' and r.state='{1}' and r.creatuser='{2}' and r.starttime between '{3}' and '{4}'  order by r.starttime desc;
                 """.format(processname, runstate, runperson, start_time, end_time)
 
             if processname == "" and runstate != "":
                 exec_sql = """
                 select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state='{0}' and r.creatuser='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
+                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and r.state='{0}' and r.creatuser='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
                 """.format(runstate, runperson, start_time, end_time)
 
             if processname != "" and runstate == "":
                 exec_sql = """
                 select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and p.name='{0}' and r.creatuser='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
+                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and p.name='{0}' and r.creatuser='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
                 """.format(processname, runperson, start_time, end_time)
             if processname == "" and runstate == "":
                 exec_sql = """
                 select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.creatuser='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
+                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and r.creatuser='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
                 """.format(runperson, start_time, end_time)
 
         else:
             if processname != "" and runstate != "":
                 exec_sql = """
                 select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and p.name='{0}' and r.state='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
+                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and p.name='{0}' and r.state='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
                 """.format(processname, runstate, start_time, end_time)
 
             if processname == "" and runstate != "":
                 exec_sql = """
                 select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
+                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and r.state='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
                 """.format(runstate, start_time, end_time)
 
             if processname != "" and runstate == "":
                 exec_sql = """
                 select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and p.name='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
+                left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and p.name='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
                 """.format(processname, start_time, end_time)
 
         state_dict = {
@@ -4370,6 +4262,7 @@ def falconstorsearchdata(request):
             "IGNORE": "忽略",
             "STOP": "终止",
             "PLAN": "计划",
+            "REJECT": "取消",
             "": "",
         }
         cursor.execute(exec_sql)
@@ -4583,7 +4476,7 @@ def save_invitation(request):
                         myprocesstask.type = "INFO"
                         myprocesstask.logtype = "PLAN"
                         myprocesstask.state = "1"
-                        myprocesstask.content = "流程发起邀请。"
+                        myprocesstask.content = "创建演练计划。"
                         myprocesstask.save()
 
                         result["data"] = current_process_run_id
@@ -4606,8 +4499,8 @@ def fill_with_invitation(request):
             end_time = current_invitation.end_time
             purpose = current_invitation.purpose
             return JsonResponse({
-                "start_time": start_time,
-                "end_time": end_time,
+                "start_time": start_time.strftime('%Y-%m-%d %H:%M:%S') if start_time else "",
+                "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S') if end_time else "",
                 "purpose": purpose,
             })
 
@@ -4618,7 +4511,7 @@ def invite(request):
         start_date = request.GET.get("start_date", "")
         purpose = request.GET.get("purpose", "")
         end_date = request.GET.get("end_date", "")
-        process_date = datetime.datetime.strptime(start_date, '%Y-%m-%d %H:%M').strftime("%Y-%m-%d")
+        process_date = start_date
         nowtime = datetime.datetime.now()
         invite_time = nowtime.strftime("%Y-%m-%d")
 
