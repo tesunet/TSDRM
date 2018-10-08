@@ -85,6 +85,10 @@ if (App.isAngularJsApp() === false) {
                     $("div.tab-content").empty();
                     $("#stopbtn").show();
                     $("#show_result").hide();
+
+                    $("table#process_data tbody").empty();
+                    $("table#group_data tbody").empty();
+
                     $("#process_run_id").val($("#process").val());
                     $("#process_name").text(data["process_name"]);
                     $("#process_starttime").val(data["process_starttime"]);
@@ -99,11 +103,9 @@ if (App.isAngularJsApp() === false) {
                         // 自动触发模态框
                         $("#show_result").show();
                         $("#process_result").modal({backdrop: "static"});
-                        $("table#process_data tbody").empty();
-                        $("table#group_data tbody").empty();
 
                         var process_run_id = $("#process_run_id").val();
-                       $.ajax({
+                        $.ajax({
                             url: "../../show_result/",
                             type: "post",
                             data: {
@@ -196,8 +198,6 @@ if (App.isAngularJsApp() === false) {
                         // 自动触发模态框
                         $("#show_result").show();
                         $("#process_result").modal({backdrop: "static"});
-                        $("table#process_data tbody").empty();
-                        $("table#group_data tbody").empty();
 
                         var process_run_id = $("#process_run_id").val();
                         $.ajax({

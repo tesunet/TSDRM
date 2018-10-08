@@ -266,18 +266,60 @@ $(document).ready(function () {
     // 取消计划流程
     $("#reject_invited").click(function () {
         var plan_process_run_id = $("#plan_process_run_id").val();
+        if (confirm("是否取消当前流程计划？")) {
+            $.ajax({
+                type: "POST",
+                dataType: 'json',
+                url: "../reject_invited/",
+                data:
+                    {
+                        plan_process_run_id: plan_process_run_id,
+                    },
+                success: function (data) {
+                    alert(data["res"]);
+                    if (data['res'] === "取消演练计划成功！") {
+                        // 关闭模态框刷新表格
+                        window.location.reload();
+                    }
+                }
+            });
+        }
+    });
+
+
+    // 修改计划流程
+    $("#modify_invited").click(function () {
+        $("#static03").modal({backdrop: "static"});
+        $('#start_date_modify').datetimepicker({
+            autoclose: true,
+            format: 'yyyy-mm-dd hh:ii',
+        });
+        $('#end_date_modify').datetimepicker({
+            autoclose: true,
+            format: 'yyyy-mm-dd hh:ii',
+        });
+    });
+
+    // 保存修改计划流程
+    $("#save_modify_invitation").click(function () {
+        var plan_process_run_id = $("#plan_process_run_id").val();
         $.ajax({
             type: "POST",
             dataType: 'json',
-            url: "../reject_invited/",
+            url: "../save_modify_invitation/",
             data:
                 {
                     plan_process_run_id: plan_process_run_id,
+                    start_date_modify: $("#start_date_modify").val(),
+                    end_date_modify: $("#end_date_modify").val(),
+                    purpose_modify: $("#purpose_modify").val(),
                 },
             success: function (data) {
-                alert(data["res"]);
-                if (data['res'] === "取消演练计划成功！") {
-                    // 关闭模态框刷新表格
+                if (data["res"] == "修改流程计划成功，待开启流程。") {
+                    $("#save_div").hide();
+                    $("#download_div").show();
+                    $("#plan_process_run_id").val(data["data"]);
+                    $("#static03").modal("hide");
                     $("#static01").modal("hide");
                     $("#sample_1").DataTable().destroy();
                     $('#sample_1').dataTable({
@@ -335,8 +377,10 @@ $(document).ready(function () {
                         }
                     });
                 }
+                else
+                    alert(data["res"]);
             }
         });
-    });
+    })
 
 });

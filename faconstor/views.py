@@ -1311,11 +1311,10 @@ def organization(request, funid):
                           {'username': request.user.userinfo.fullname, 'errors': errors, "id": id, "orgname": orgname,
                            "pid": pid, "pname": pname, "fullname": fullname, "phone": phone, "myusername": username,
                            "email": email, "password": password, "noselectgroup": noselectgroup,
-                           "selectgroup": selectgroup, "mytype": mytype,
-                           "remark": remark, "title": title, "mytype": mytype, "hiddenuser": hiddenuser,
-                           "hiddenorg": hiddenorg,
-                           "newpassword": newpassword, "editpassword": editpassword, "hiddendiv": hiddendiv
-                              , "treedata": treedata, "pagefuns": getpagefuns(funid, request=request)})
+                           "selectgroup": selectgroup, "remark": remark, "title": title, "mytype": mytype,
+                           "hiddenuser": hiddenuser, "hiddenorg": hiddenorg, "newpassword": newpassword,
+                           "editpassword": editpassword, "hiddendiv": hiddendiv, "treedata": treedata,
+                           "pagefuns": getpagefuns(funid, request=request)})
 
         except:
             return HttpResponseRedirect("/index")
@@ -4481,6 +4480,53 @@ def save_invitation(request):
 
                         result["data"] = current_process_run_id
                         result["res"] = "流程计划成功，待开启流程。"
+            else:
+                result["res"] = "演练结束时间必须填写！"
+        else:
+            result["res"] = "演练开始时间必须填写！"
+
+        return JsonResponse(result)
+
+
+def save_modify_invitation(request):
+    if request.user.is_authenticated():
+        result = {}
+        plan_process_run_id = request.POST.get("plan_process_run_id", "")
+        start_time = request.POST.get("start_date_modify", "")
+        purpose = request.POST.get("purpose_modify", "")
+        end_time = request.POST.get("end_date_modify", "")
+
+        try:
+            plan_process_run_id = int(plan_process_run_id)
+        except:
+            raise Http404()
+
+        if start_time:
+            if end_time:
+                current_invitation = Invitation.objects.filter(process_run_id=plan_process_run_id)
+                if current_invitation:
+                    current_invitation = current_invitation[0]
+
+                    current_invitation.start_time = start_time
+                    current_invitation.end_time = end_time
+                    current_invitation.purpose = purpose
+                    current_invitation.save()
+
+                    # 生成邀请任务信息
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun_id = plan_process_run_id
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.senduser = request.user.username
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "PLAN"
+                    myprocesstask.state = "1"
+                    myprocesstask.content = "修改演练计划。"
+                    myprocesstask.save()
+
+                    result["data"] = plan_process_run_id
+                    result["res"] = "修改流程计划成功，待开启流程。"
+                else:
+                    result["res"] = "演练计划不存在，请联系客服！"
             else:
                 result["res"] = "演练结束时间必须填写！"
         else:
