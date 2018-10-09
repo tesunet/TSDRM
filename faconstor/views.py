@@ -4420,7 +4420,7 @@ def save_invitation(request):
                 if (len(process) <= 0):
                     result["res"] = '流程计划失败，该流程不存在。'
                 else:
-                    curprocessrun = ProcessRun.objects.filter(process=process[0], state="RUN")
+                    curprocessrun = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "STOP", "ERROR"])
                     if (len(curprocessrun) > 0):
                         result["res"] = '流程计划失败，有流程正在进行中，请勿重复启动。'
                     else:
