@@ -2602,7 +2602,7 @@ def process_design(request, funid):
 def process_data(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         result = []
-        all_process = Process.objects.exclude(state="9").filter(type="falconstor").values()
+        all_process = Process.objects.exclude(state="9").filter(type="falconstor").order_by("sort").values()
         if (len(all_process) > 0):
             for process in all_process:
                 result.append({
@@ -2650,6 +2650,8 @@ def process_save(request):
                                 result["res"] = '预案编码:' + code + '已存在。'
                             else:
                                 processsave = Process()
+                                processsave.url = '/falconstor'
+                                processsave.type = 'falconstor'
                                 processsave.code = code
                                 processsave.name = name
                                 processsave.remark = remark

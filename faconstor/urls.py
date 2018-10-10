@@ -64,7 +64,6 @@ urlpatterns = [
     url(r'^falconstorswitchdata/$', falconstorswitchdata),
     url(r'^falconstorrun/$', falconstorrun),
     url(r'^falconstor/(\d+)/$', falconstor, {'funid': '49'}),
-    url(r'^Test/(\d+)/$', falconstor, {'funid': '49'}),
     url(r'^save_invitation/$', save_invitation),
     url(r'^falconstor_run_invited/$', falconstor_run_invited),
     url(r'^fill_with_invitation/$', fill_with_invitation),
