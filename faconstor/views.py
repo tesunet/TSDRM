@@ -24,16 +24,13 @@ from django.db.models import Count
 from django.db.models import Sum, Max
 from django.db import connection
 import xlrd, xlwt
-import pythoncom
 import pymssql
 from lxml import etree
 from django.forms.models import model_to_dict
 import re
 import pdfkit
 from django.template.response import TemplateResponse
-
-pythoncom.CoInitialize()
-
+import sys
 
 
 funlist = []
@@ -4138,10 +4135,14 @@ def custom_pdf_report(request):
                           "ele_xml02": ele_xml02, "title_xml": title_xml, "abstract_xml": abstract_xml})
     t.render()
 
-    # 指定wkhtmltopdf运行程序路径
     current_path = os.getcwd()
-    wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
-    config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+
+    if sys.platform.startswith("win"):
+        # 指定wkhtmltopdf运行程序路径
+        wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
+        config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+    else:
+        config = None
 
     options = {
         'page-size': 'A3',
@@ -4696,10 +4697,15 @@ def invite(request):
                               "process_name": process_name, "all_groups": all_groups})
         t.render()
 
-        # 指定wkhtmltopdf运行程序路径
         current_path = os.getcwd()
-        wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
-        config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+
+        if sys.platform.startswith("win"):
+            # 指定wkhtmltopdf运行程序路径
+            wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
+            config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+        else:
+            config = None
+
         options = {
             'page-size': 'A3',
             'margin-top': '0.75in',
