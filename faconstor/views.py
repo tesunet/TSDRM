@@ -2819,7 +2819,7 @@ def falconstorswitch(request, funid, process_id):
 def falconstorswitchdata(request):
     if request.user.is_authenticated():
         result = []
-
+        process_id = request.GET.get("process_id", "")
         state_dict = {
             "DONE": "已完成",
             "EDIT": "未执行",
@@ -2836,8 +2836,8 @@ def falconstorswitchdata(request):
 
         exec_sql = """
         select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
-        left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' order by r.starttime desc;
-        """
+        left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' and r.process_id = {0} order by r.starttime desc;
+        """.format(process_id)
 
         cursor.execute(exec_sql)
         rows = cursor.fetchall()
