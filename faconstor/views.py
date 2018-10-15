@@ -554,7 +554,6 @@ def index(request, funid):
                         current_process_task_info.append(
                             {"content": content, "time": time, "task_color": current_color,
                              "task_icon": current_icon})
-
                 current_processrun_dict["current_process_run_state"] = state_dict[
                     "{0}".format(current_processrun.state)]
                 current_processrun_dict["current_process_task_info"] = current_process_task_info
