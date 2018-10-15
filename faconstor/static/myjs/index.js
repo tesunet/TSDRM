@@ -137,7 +137,7 @@ var Dashboard = function () {
                                         title: title,
                                         start: start,
                                         end: end,
-                                        backgroundColor: App.getBrandColor(backgroundColor),
+                                        backgroundColor: backgroundColor,
                                         url: url,
                                         className: "invite"
                                     });
@@ -147,7 +147,7 @@ var Dashboard = function () {
                                         title: title,
                                         start: start,
                                         end: end,
-                                        backgroundColor: App.getBrandColor(backgroundColor),
+                                        backgroundColor: backgroundColor,
                                         url: url,
                                     });
                                 }
