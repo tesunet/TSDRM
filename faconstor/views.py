@@ -3536,11 +3536,10 @@ def stop_current_process(request):
 def verify_items(request):
     if request.user.is_authenticated():
         step_id = request.POST.get("step_id", "")
-
-        current_step_run = StepRun.objects.filter(step_id=step_id).exclude(state="9")
+        print("step_id", step_id)
+        current_step_run = StepRun.objects.filter(id=step_id).exclude(state="9")
         if current_step_run:
             current_step_run = current_step_run[0]
-
             # CONFIRM修改成DONE
             current_step_run.state = "DONE"
             current_step_run.save()

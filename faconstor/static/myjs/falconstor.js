@@ -300,6 +300,7 @@ if (App.isAngularJsApp() === false) {
 
                         $("#tab" + (i + 1).toString()).append("<div id='tabdiv" + (i + 1).toString() + "' class='mt-element-step'></div>");
                         var step1_id = data["step"][i]["id"];
+                        var step1_run_id = data["step"][i]["runid"];
                         var step1_name = data["step"][i]["name"];
                         var step1_state = data["step"][i]["state"];
                         var step1_starttime = data["step"][i]["starttime"];
@@ -330,7 +331,7 @@ if (App.isAngularJsApp() === false) {
                             step1_state = "待确认";
                             expand = "collapse";
                             style = "";
-                            stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" + "<input name='step_id' id='step_id' value='" + step1_id + "' hidden>" +
+                            stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" + "<input name='step_id' id='step_id' value='" + step1_run_id + "' hidden>" +
                                 "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                 "                                            </div>"
                         }
@@ -338,8 +339,6 @@ if (App.isAngularJsApp() === false) {
                             step1_state = "运行";
                         if (step1_state == "ERROR")
                             step1_state = "错误";
-                        if (step1_state == "CONFIRM")
-                            step1_state = "待确认";
                         if (step1_state == "EDIT")
                             step1_state = "未开始";
                         $("#tabdiv" + (i + 1).toString()).append("<div class=\"portlet box blue\"><div class=\"portlet-title\"><div class=\"caption\">" + step1_name + "</div><div class=\"tools\"><a href=\"javascript:;\"class=\"" + expand + "\"> </a>\n" +
@@ -401,6 +400,7 @@ if (App.isAngularJsApp() === false) {
                             $("#tabdiv" + (i + 1).toString()).append("<div " + hidediv + " class='form-group tabdiv' id='div" + (i + 1).toString() + "_" + (j + 1).toString() + "'></div>");
 
                             var step2_name = data["step"][i]["children"][j]["name"];
+                            var step2_run_id = data["step"][i]["children"][j]["runid"];
                             var step2_state = data["step"][i]["children"][j]["state"];
                             var step2_starttime = data["step"][i]["children"][j]["starttime"];
                             var step2_endtime = data["step"][i]["children"][j]["endtime"];
@@ -420,7 +420,7 @@ if (App.isAngularJsApp() === false) {
                             }
                             if (step2_state == "CONFIRM") {
                                 step2_state = "待确认";
-                                step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" + "<input name='step_id' id='step_id' value='" + step1_id + "' hidden>" +
+                                step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\">\n" + "<input name='step_id' id='step_id' value='" + step2_run_id + "' hidden>" +
                                     "                                                <button hidden id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                     "                                            </div>"
                             }
@@ -428,8 +428,6 @@ if (App.isAngularJsApp() === false) {
                                 step2_state = "运行";
                             if (step2_state == "ERROR")
                                 step2_state = "错误";
-                            if (step2_state == "CONFIRM")
-                                step2_state = "待确认";
                             if (step2_state == "EDIT")
                                 step2_state = "未开始";
                             var stepbtn = "";
@@ -627,7 +625,8 @@ if (App.isAngularJsApp() === false) {
                                     },
                                     success: function (data) {
                                         if (data.data == "0") {
-                                            alert("该步骤已确认，继续流程！")
+                                            alert("该步骤已确认，继续流程！");
+                                            getstep();
                                         } else {
                                             alert("步骤确认异常，请联系客服！")
                                         }
@@ -643,7 +642,8 @@ if (App.isAngularJsApp() === false) {
                                 },
                                 success: function (data) {
                                     if (data.data == "0") {
-                                        alert("该步骤已确认，继续流程！")
+                                        alert("该步骤已确认，继续流程！");
+                                        getstep();
                                     } else {
                                         alert("步骤确认异常，请联系客服！")
                                     }
