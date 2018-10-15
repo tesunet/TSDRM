@@ -51,10 +51,12 @@ $(document).ready(function () {
             {
                 "targets": [-7],
                 "visible": false
-            }, {
-                "targets": [-8],
-                "visible": false
-            }],
+            },
+            // {
+            //     "targets": [-8],
+            //     "visible": false
+            // }
+            ],
         "oLanguage": {
             "sLengthMenu": "每页显示 _MENU_ 条记录",
             "sZeroRecords": "抱歉， 没有找到",
