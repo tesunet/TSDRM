@@ -2614,6 +2614,7 @@ def process_data(request):
                     "process_rto": process["rto"],
                     "process_rpo": process["rpo"],
                     "process_sort": process["sort"],
+                    "process_color": process["color"],
                 })
         return JsonResponse({"data": result})
 
@@ -2630,6 +2631,7 @@ def process_save(request):
             rto = request.POST.get('rto', '')
             rpo = request.POST.get('rpo', '')
             sort = request.POST.get('sort', '')
+            color = request.POST.get('color', '')
             try:
                 id = int(id)
             except:
@@ -2643,33 +2645,18 @@ def process_save(request):
                     if sign.strip() == '':
                         result["res"] = '是否签到不能为空。'
                     else:
-                        if id == 0:
-                            all_process = Process.objects.filter(code=code).exclude(
-                                state="9").filter(type="falconstor")
-                            if (len(all_process) > 0):
-                                result["res"] = '预案编码:' + code + '已存在。'
-                            else:
-                                processsave = Process()
-                                processsave.url = '/falconstor'
-                                processsave.type = 'falconstor'
-                                processsave.code = code
-                                processsave.name = name
-                                processsave.remark = remark
-                                processsave.sign = sign
-                                processsave.rto = rto if rto else None
-                                processsave.rpo = rpo if rpo else None
-                                processsave.sort = sort if sort else None
-                                processsave.save()
-                                result["res"] = "保存成功。"
-                                result["data"] = processsave.id
+                        if color.strip() == "":
+                            result["res"] = '项目图标配色不能为空。'
                         else:
-                            all_process = Script.objects.filter(code=code).exclude(
-                                id=id).exclude(state="9")
-                            if (len(all_process) > 0):
-                                result["res"] = '预案编码:' + code + '已存在。'
-                            else:
-                                try:
-                                    processsave = Process.objects.get(id=id)
+                            if id == 0:
+                                all_process = Process.objects.filter(code=code).exclude(
+                                    state="9").filter(type="falconstor")
+                                if (len(all_process) > 0):
+                                    result["res"] = '预案编码:' + code + '已存在。'
+                                else:
+                                    processsave = Process()
+                                    processsave.url = '/falconstor'
+                                    processsave.type = 'falconstor'
                                     processsave.code = code
                                     processsave.name = name
                                     processsave.remark = remark
@@ -2677,11 +2664,31 @@ def process_save(request):
                                     processsave.rto = rto if rto else None
                                     processsave.rpo = rpo if rpo else None
                                     processsave.sort = sort if sort else None
+                                    processsave.color = color
                                     processsave.save()
                                     result["res"] = "保存成功。"
                                     result["data"] = processsave.id
-                                except:
-                                    result["res"] = "修改失败。"
+                            else:
+                                all_process = Script.objects.filter(code=code).exclude(
+                                    id=id).exclude(state="9")
+                                if (len(all_process) > 0):
+                                    result["res"] = '预案编码:' + code + '已存在。'
+                                else:
+                                    try:
+                                        processsave = Process.objects.get(id=id)
+                                        processsave.code = code
+                                        processsave.name = name
+                                        processsave.remark = remark
+                                        processsave.sign = sign
+                                        processsave.rto = rto if rto else None
+                                        processsave.rpo = rpo if rpo else None
+                                        processsave.sort = sort if sort else None
+                                        processsave.color = color
+                                        processsave.save()
+                                        result["res"] = "保存成功。"
+                                        result["data"] = processsave.id
+                                    except:
+                                        result["res"] = "修改失败。"
         return HttpResponse(json.dumps(result))
 
 

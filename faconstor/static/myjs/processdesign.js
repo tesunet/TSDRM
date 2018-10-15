@@ -13,6 +13,7 @@ $(document).ready(function () {
             {"data": "process_rto"},
             {"data": "process_rpo"},
             {"data": "process_sort"},
+            {"data": "process_color"},
             {"data": null}
         ],
 
@@ -91,6 +92,7 @@ $(document).ready(function () {
         $("#rto").val(data.process_rto);
         $("#rpo").val(data.process_rpo);
         $("#sort").val(data.process_sort);
+        $("#process_color").val(data.process_color);
     });
 
     $("#new").click(function () {
@@ -102,6 +104,7 @@ $(document).ready(function () {
         $("#rto").val("");
         $("#rpo").val("");
         $("#sort").val("");
+        $("#process_color").val("");
     });
 
     $('#save').click(function () {
@@ -121,6 +124,7 @@ $(document).ready(function () {
                     rto: $("#rto").val(),
                     rpo: $("#rpo").val(),
                     sort: $("#sort").val(),
+                    color: $("#process_color").val(),
                 },
             success: function (data) {
                 var myres = data["res"];
