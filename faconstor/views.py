@@ -1330,13 +1330,25 @@ def orgdel(request):
             except:
                 raise Http404()
             userinfo = UserInfo.objects.get(id=id)
+            sort = userinfo.sort
             userinfo.state = "9"
+            userinfo.sort = 9999
             userinfo.save()
 
             if userinfo.type == "user":
                 user = userinfo.user
                 user.is_active = 0
                 user.save()
+
+            userinfos = UserInfo.objects.filter(pnode=userinfo.pnode).filter(sort__gt=sort).exclude(state="9")
+            if (len(userinfos) > 0):
+                for myuserinfo in userinfos:
+                    try:
+                        myuserinfo.sort = myuserinfo.sort - 1
+                        myuserinfo.save()
+                    except:
+                        pass
+
             return HttpResponse(1)
         else:
             return HttpResponse(0)
@@ -1376,13 +1388,13 @@ def orgmove(request):
 
             puserinfo = UserInfo.objects.get(id=parent)
             sort = position + 1
-            userinfos = UserInfo.objects.filter(pnode=puserinfo).filter(sort__gte=sort).exclude(id=id)
+            userinfos = UserInfo.objects.filter(pnode=puserinfo).filter(sort__gte=sort).exclude(id=id).exclude(state="9")
 
             myuserinfo = UserInfo.objects.get(id=id)
             if puserinfo.type == "user":
                 return HttpResponse("类型")
             else:
-                usersame = UserInfo.objects.filter(pnode=puserinfo).filter(fullname=myuserinfo.fullname).exclude(id=id)
+                usersame = UserInfo.objects.filter(pnode=puserinfo).filter(fullname=myuserinfo.fullname).exclude(id=id).exclude(state="9")
                 if (len(usersame) > 0):
                     return HttpResponse("重名")
                 else:
@@ -1396,7 +1408,9 @@ def orgmove(request):
                     if (len(userinfos) > 0):
                         for userinfo in userinfos:
                             try:
+                                print(userinfo.id)
                                 userinfo.sort = userinfo.sort + 1
+                                print(userinfo.sort)
                                 userinfo.save()
                             except:
                                 pass
