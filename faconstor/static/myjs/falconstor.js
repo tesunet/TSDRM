@@ -86,9 +86,6 @@ if (App.isAngularJsApp() === false) {
                     $("#stopbtn").show();
                     $("#show_result").hide();
 
-                    $("table#process_data tbody").empty();
-                    $("table#group_data tbody").empty();
-
                     $("#process_run_id").val($("#process").val());
                     $("#process_name").text(data["process_name"]);
                     $("#process_starttime").val(data["process_starttime"]);
@@ -112,6 +109,9 @@ if (App.isAngularJsApp() === false) {
                                 "process_run_id": process_run_id,
                             },
                             success: function (data) {
+                                $("table#process_data tbody").empty();
+                                $("table#group_data tbody").empty();
+
                                 $("#current_process").text(data.process_name);
                                 $("#summary").text("为了提高防范灾难风险的能力，保证业务连续性要求，在公司总经理室高度重视下，太平资产成立灾备演练项目组，于time进行核心系统灾备演练，并取得圆满成功。演练具体情况报告如下。".replace("time", data.processrun_time));
 
@@ -655,8 +655,6 @@ if (App.isAngularJsApp() === false) {
                     // 展示结果
                     $("#show_result").click(function () {
                         $("#process_result").modal({backdrop: "static"});
-                        $("table#process_data tbody").empty();
-                        $("table#group_data tbody").empty();
 
                         var process_run_id = $("#process_run_id").val();
                         $.ajax({
@@ -666,6 +664,8 @@ if (App.isAngularJsApp() === false) {
                                 "process_run_id": process_run_id,
                             },
                             success: function (data) {
+                                $("table#process_data tbody").empty();
+                                $("table#group_data tbody").empty();
                                 $("#current_process").text(data.process_name);
                                 $("#summary").text("为了提高防范灾难风险的能力，保证业务连续性要求，在公司总经理室高度重视下，太平资产成立灾备演练项目组，于time进行核心系统灾备演练，并取得圆满成功。演练具体情况报告如下。".replace("time", data.processrun_time));
 
