@@ -213,6 +213,12 @@ $(document).ready(function () {
                         "bSort": false,
                         "bProcessing": true,
                         "ajax": "../falconstorswitchdata/",
+                        "fnServerParams": function (aoData) {
+                            aoData.push({
+                                name: "process_id",
+                                value: $("#process_id").val()
+                            })
+                        },
                         "columns": [
                             {"data": "processrun_id"},
                             {"data": "process_name"},
