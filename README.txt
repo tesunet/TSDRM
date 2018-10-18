@@ -4,6 +4,122 @@
 3.安装wkhtmltopdf:dpkg -i wkhtmltox_0.12.5-1.xenial_amd64.deb
 
 
+
+************Centos系统下部署环境 nginx+uwsgi+django************
+一.更新系统软件包
+yum update -y
+
+二.安装软件管理包和可能使用的依赖
+yum -y groupinstall "Development tools"
+yum install openssl-devel bzip2-devel expat-devel gdbm-devel readline-devel sqlite-devel
+
+三、安装python3
+wget https://www.python.org/ftp/python/3.6.6/Python-3.6.6.tgz
+
+# 解压
+tar -zxvf Python-3.6.6.tgz
+
+cd /Python-3.6.6
+# 编译
+./configure --prefix=/usr/local/python3
+make
+make install
+
+# 建立软链接
+ln -s /usr/local/python3/bin/python3.6 /usr/bin/python3
+ln -s /usr/local/python3/bin/pip3.6 /usr/bin/pip3
+
+# 查看python3与pip3版本
+python3
+pip3 -V
+
+四、安装django项目依赖包与uwsgi(requirements.txt已经提供)
+pip3 install uwsgi
+pip3 install -r requirements.txt
+
+五、配置uwsgi
+# 在项目目录下创建TSDRM.xml
+<uwsgi>
+    <socket>127.0.0.1:8997</socket><!-- 内部端口，自定义 -->
+    <chdir>/var/www/html/TSDRM/</chdir><!-- 项目路径 -->
+    <module>TSDRM.wsgi</module>
+    <processes>4</processes> <!-- 进程数 -->
+    <daemonize>uwsgi.log</daemonize><!-- 日志文件 -->
+</uwsgi>
+
+六、安装/配置nginx
+# 在/home目录下
+wget http://nginx.org/download/nginx-1.13.7.tar.gz
+
+# 解压/配置
+tar -zxvf nginx-1.13.7.tar.gz
+cd nginx-1.13.7
+./configure
+make
+make install
+
+# 备份nginx配置文件
+cd /usr/local/nginx/conf/
+cp nginx.conf nginx.conf.bak
+
+# 修改nginx配置(删除原有的)
+worker_processes  1;
+events {
+    worker_connections  1024;
+}
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    server {
+        listen       80;
+        server_name  localhost;
+        charset utf-8;
+        location / {
+            include uwsgi_params;
+            uwsgi_pass 127.0.0.1:8997;
+            uwsgi_param UWSGI_SCRIPT TSDRM.wsgi;
+            uwsgi_param UWSGI_CHDIR /var/www/html/TSDRM;
+        }
+        location /static/ {
+            alias /var/www/html/TSDRM/static/;
+        }
+    }
+}
+
+七.启动nginx
+/usr/local/nginx/sbin/nginx
+# /usr/local/nginx/sbin/nginx -t 检查
+# /usr/local/nginx/sbin/nginx -s reload 重启nginx
+
+八.启动uwsgi
+cd /var/www/html/TSDRM
+uwsgi -x TSDRM.xml
+
+# 重启nginx
+# 此时项目就可以访问了，只是静态文件未读取？？？
+
+九.解决静态文件问题
+# settings.py文件中写入静态文件物理路径(已经写了)
+SITE_ROOT=os.path.join(os.path.abspath(os.path.dirname(__file__)),'..')
+STATIC_ROOT = os.path.join(SITE_ROOT,'static')
+
+# 添加静态文件访问逻辑路径
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
+
+# 收集静态文件
+python3 manage.py collectstatic
+
+# 注销掉物理路径
+# STATIC_ROOT,SITE_ROOT
+
+九.重新启动nginx与uwsgi
+
+
+
+
 ************Ubuntu系统下部署环境 apache+mod_wsgi************
 
 1.准备依赖包/安装包
