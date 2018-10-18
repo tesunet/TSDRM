@@ -4,6 +4,13 @@
 3.安装wkhtmltopdf:dpkg -i wkhtmltox_0.12.5-1.xenial_amd64.deb
 
 
+************windows需要手动启用winrm服务************
+1.在以管理员身份运行的powershell或者cmd中执行命令，winrm quickconfig或winrm qc 查看winrm是否开启成功，如果提示未开始，输入enter执行提示操作开始winrm;
+2.执行一下两个命令，允许其他机器链接：
+winrm set winrm/config/service/auth @{Basic="true"}
+winrm set winrm/config/service @{AllowUnencrypted="true"}
+
+
 
 ************Centos系统下部署环境 nginx+uwsgi+django************
 一.更新系统软件包
@@ -120,7 +127,7 @@ python3 manage.py collectstatic
 
 
 
-************Ubuntu系统下部署环境 apache+mod_wsgi************
+************Ubuntu系统下部署环境 apache+mod_wsgi************(没访问成功....)
 
 1.准备依赖包/安装包
 wget http://mirror.bit.edu.cn/apache/httpd/httpd-2.4.35.tar.gz
