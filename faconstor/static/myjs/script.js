@@ -19,6 +19,7 @@ $(document).ready(function () {
             // {"data": "paramtype"},
             // {"data": "param"},
             {"data": "scriptpath"},
+            {"data": "success_text"},
             // {"data": "runpath"},
             // {"data": "maxtime"},
             {"data": null}
@@ -38,25 +39,25 @@ $(document).ready(function () {
             //     "visible": false
             // },
             {
-                "targets": [-4],
+                "targets": [-5],
                 "visible": false
             },
             //     {
-            //     "targets": [-5],
+            //     "targets": [-6],
             //     "visible": false
             // }, {
-            //     "targets": [-6],
+            //     "targets": [-7],
             //     "visible": false
             // },
             {
-                "targets": [-7],
+                "targets": [-8],
                 "visible": false
             },
             // {
-            //     "targets": [-8],
+            //     "targets": [-9],
             //     "visible": false
             // }
-            ],
+        ],
         "oLanguage": {
             "sLengthMenu": "每页显示 _MENU_ 条记录",
             "sZeroRecords": "抱歉， 没有找到",
@@ -108,19 +109,20 @@ $(document).ready(function () {
         $("#code").val(data.code);
         $("#name").val(data.name);
         $("#ip").val(data.ip);
-        $("#port").val(data.port);
-        $("#type").val(data.type);
-        $("#runtype").val(data.runtype);
+        // $("#port").val(data.port);
+        // $("#type").val(data.type);
+        // $("#runtype").val(data.runtype);
         $("#username").val(data.username);
         $("#password").val(data.password);
         $("#filename").val(data.filename);
-        $("#paramtype").val(data.paramtype);
-        $("#param").val(data.param);
+        // $("#paramtype").val(data.paramtype);
+        // $("#param").val(data.param);
         $("#scriptpath").val(data.scriptpath);
-        $("#runpath").val(data.runpath);
-        $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
-        $("#maxtime").val(data.maxtime);
-        $("#time").val(data.time);
+        // $("#runpath").val(data.runpath);
+        // $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
+        // $("#maxtime").val(data.maxtime);
+        // $("#time").val(data.time);
+        $("#success_text").val(data.success_text);
     });
 
     $("#new").click(function () {
@@ -128,17 +130,18 @@ $(document).ready(function () {
         $("#code").val("");
         $("#name").val("");
         $("#ip").val("");
-        $("#port").val("");
+        // $("#port").val("");
         $("#username").val("");
         $("#password").val("");
         $("#filename").val("");
-        $("#paramtype").val("无");
-        $("#param").val("");
+        // $("#paramtype").val("无");
+        // $("#param").val("");
         $("#scriptpath").val("");
-        $("#runpath").val("");
-        $("#command").val("");
-        $("#maxtime").val("");
-        $("#time").val("");
+        // $("#runpath").val("");
+        // $("#command").val("");
+        // $("#maxtime").val("");
+        // $("#time").val("");
+        $("#success_text").val();
     });
 
     $('#save').click(function () {
@@ -166,6 +169,7 @@ $(document).ready(function () {
                     // runpath: $("#runpath").val(),
                     // maxtime: $("#maxtime").val(),
                     // time: $("#time").val(),
+                    success_text: $("#success_text").val(),
                 },
             success: function (data) {
                 var myres = data["res"];

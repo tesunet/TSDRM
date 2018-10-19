@@ -73,7 +73,8 @@
                        data-close-others="true">
                         <i style="font-size:18px" class="fa fa-bell-o"></i>
                         {% if pagefuns.task_nums > 0 %}
-                        <span class="badge badge-default" style="background-color: #36c6d3"> {{ pagefuns.task_nums }} </span>
+                            <span class="badge badge-default" id="task_nums"
+                                  style="background-color: #36c6d3"> {{ pagefuns.task_nums }} </span>
                         {% endif %}
                     </a>
                     <ul class="dropdown-menu">
@@ -409,6 +410,16 @@
             success: function (data) {
                 if (data["res"] == "签字成功,同时启动流程。") {
                     window.location.href = data["data"];
+                    $.ajax({
+                        type: "POST",
+                        url: "../reload_task_nums/",
+                        data: {
+                            "csrfmiddlewaretoken": csrfToken,
+                        },
+                        success: function (data) {
+                            $("#task_nums").val(data["task_nums"]);
+                        },
+                    });
                 }
                 else {
                     alert(data["res"]);

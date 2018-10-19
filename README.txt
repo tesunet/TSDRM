@@ -5,11 +5,13 @@
 
 
 ************windows需要手动启用winrm服务************
-1.在以管理员身份运行的powershell或者cmd中执行命令，winrm quickconfig或winrm qc 查看winrm是否开启成功，如果提示未开始，输入enter执行提示操作开始winrm;
-2.执行一下两个命令，允许其他机器链接：
+1.win + R 启动cmd终端;
+2.输入命令winrm qc
+  # 会弹出窗口：执行这些更改吗[y/n]?
+  # 输入y   确认启用
+3.输入命令:
 winrm set winrm/config/service/auth @{Basic="true"}
 winrm set winrm/config/service @{AllowUnencrypted="true"}
-
 
 
 ************Centos系统下部署环境 nginx+uwsgi+django************

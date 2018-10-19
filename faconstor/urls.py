@@ -78,6 +78,7 @@ urlpatterns = [
     url(r'^verify_items/$', verify_items),
     url(r'^show_result/$', show_result),
     url(r'^reject_invited/$', reject_invited),
+    url(r'^reload_task_nums/$', reload_task_nums),
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
