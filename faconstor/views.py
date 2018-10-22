@@ -1688,7 +1688,7 @@ def script(request, funid):
                                     scriptsave.scriptpath = sheet.cell(i, 7).value
                                     # scriptsave.runpath = sheet.cell(i, 11).value
                                     # scriptsave.maxtime = int(sheet.cell(i, 12).value)
-                                    # scriptsave.time = int(sheet.cell(i, 13).value)
+                                    scriptsave.succeedtext = int(sheet.cell(i, 8).value)
                                     scriptsave.save()
                             except:
                                 errors.append(sheet.cell(i, 0).value + ":数据存在问题，已剔除。")
@@ -1808,16 +1808,49 @@ def scriptsave(request):
                                             #         if time.strip() == '':
                                             #             result["res"] = '预计耗时不能为空。'
                                             #         else:
-                                            if success_text == '':
-                                                result["res"] = 'SUCCESSTEXT不能为空。'
+                                            # if success_text == '':
+                                            #     result["res"] = 'SUCCESSTEXT不能为空。'
+                                            # else:
+                                            if id == 0:
+                                                allscript = Script.objects.filter(code=code).exclude(
+                                                    state="9").filter(step_id=None)
+                                                if (len(allscript) > 0):
+                                                    result["res"] = '脚本编码:' + code + '已存在。'
+                                                else:
+                                                    scriptsave = Script()
+                                                    scriptsave.code = code
+                                                    scriptsave.name = name
+                                                    scriptsave.ip = ip
+                                                    # scriptsave.port = port
+                                                    scriptsave.type = type
+                                                    # scriptsave.runtype = runtype
+                                                    scriptsave.username = username
+                                                    scriptsave.password = password
+                                                    scriptsave.filename = filename
+                                                    # scriptsave.paramtype = paramtype
+                                                    # scriptsave.param = param
+                                                    scriptsave.scriptpath = scriptpath
+                                                    scriptsave.succeedtext = success_text
+                                                    # scriptsave.runpath = runpath
+                                                    # try:
+                                                    #     scriptsave.maxtime = int(maxtime)
+                                                    # except:
+                                                    #     pass
+                                                    # try:
+                                                    #     scriptsave.time = int(time)
+                                                    # except:
+                                                    #     pass
+                                                    scriptsave.save()
+                                                    result["res"] = "保存成功。"
+                                                    result["data"] = scriptsave.id
                                             else:
-                                                if id == 0:
-                                                    allscript = Script.objects.filter(code=code).exclude(
-                                                        state="9").filter(step_id=None)
-                                                    if (len(allscript) > 0):
-                                                        result["res"] = '脚本编码:' + code + '已存在。'
-                                                    else:
-                                                        scriptsave = Script()
+                                                allscript = Script.objects.filter(code=code).exclude(
+                                                    id=id).exclude(state="9").filter(step_id=None)
+                                                if (len(allscript) > 0):
+                                                    result["res"] = '脚本编码:' + code + '已存在。'
+                                                else:
+                                                    try:
+                                                        scriptsave = Script.objects.get(id=id)
                                                         scriptsave.code = code
                                                         scriptsave.name = name
                                                         scriptsave.ip = ip
@@ -1843,41 +1876,8 @@ def scriptsave(request):
                                                         scriptsave.save()
                                                         result["res"] = "保存成功。"
                                                         result["data"] = scriptsave.id
-                                                else:
-                                                    allscript = Script.objects.filter(code=code).exclude(
-                                                        id=id).exclude(state="9").filter(step_id=None)
-                                                    if (len(allscript) > 0):
-                                                        result["res"] = '脚本编码:' + code + '已存在。'
-                                                    else:
-                                                        try:
-                                                            scriptsave = Script.objects.get(id=id)
-                                                            scriptsave.code = code
-                                                            scriptsave.name = name
-                                                            scriptsave.ip = ip
-                                                            # scriptsave.port = port
-                                                            scriptsave.type = type
-                                                            # scriptsave.runtype = runtype
-                                                            scriptsave.username = username
-                                                            scriptsave.password = password
-                                                            scriptsave.filename = filename
-                                                            # scriptsave.paramtype = paramtype
-                                                            # scriptsave.param = param
-                                                            scriptsave.scriptpath = scriptpath
-                                                            scriptsave.succeedtext = success_text
-                                                            # scriptsave.runpath = runpath
-                                                            # try:
-                                                            #     scriptsave.maxtime = int(maxtime)
-                                                            # except:
-                                                            #     pass
-                                                            # try:
-                                                            #     scriptsave.time = int(time)
-                                                            # except:
-                                                            #     pass
-                                                            scriptsave.save()
-                                                            result["res"] = "保存成功。"
-                                                            result["data"] = scriptsave.id
-                                                        except:
-                                                            result["res"] = "修改失败。"
+                                                    except:
+                                                        result["res"] = "修改失败。"
             return HttpResponse(json.dumps(result))
 
 
@@ -1907,6 +1907,8 @@ def scriptexport(request):
         # sheet.write(0, 11, '执行路径')
         # sheet.write(0, 12, '超时时间')
         # sheet.write(0, 13, '预计耗时')
+        sheet.write(0, 8, 'SUCCESSTEXT')
+
         if len(allscript) > 0:
             for i in range(len(allscript)):
                 sheet.write(i + 1, 0, allscript[i].code)
@@ -1924,6 +1926,8 @@ def scriptexport(request):
                 # sheet.write(i + 1, 11, allscript[i].runpath)
                 # sheet.write(i + 1, 12, allscript[i].maxtime)
                 # sheet.write(i + 1, 13, allscript[i].time)
+                sheet.write(i + 1, 8, allscript[i].succeedtext)
+
         filename.save(myfilepath)
 
         def file_iterator(file_name, chunk_size=512):
@@ -2010,81 +2014,81 @@ def processscriptsave(request):
                                             #         if time.strip() == '':
                                             #             result["res"] = '预计耗时不能为空。'
                                             #         else:
-                                            if success_text.strip() == '':
-                                                result["res"] = 'SUCCESSTEXT不能为空。'
-                                            else:
-                                                if id == 0:
-                                                    allscript = Script.objects.filter(code=code).exclude(
-                                                        state="9").filter(step_id=pid)
-                                                    if (len(allscript) > 0):
-                                                        result["res"] = '脚本编码:' + code + '已存在。'
-                                                    else:
-                                                        steplist = Step.objects.filter(process_id=processid)
-                                                        if len(steplist) > 0:
-                                                            scriptsave = Script()
-                                                            scriptsave.code = code
-                                                            scriptsave.name = name
-                                                            scriptsave.ip = ip
-                                                            # scriptsave.port = port
-                                                            scriptsave.type = type
-                                                            # scriptsave.runtype = runtype
-                                                            scriptsave.username = username
-                                                            scriptsave.password = password
-                                                            scriptsave.filename = filename
-                                                            # scriptsave.paramtype = paramtype
-                                                            # scriptsave.param = param
-                                                            scriptsave.scriptpath = scriptpath
-                                                            scriptsave.succeedtext = success_text
-
-                                                            # scriptsave.runpath = runpath
-                                                            # try:
-                                                            #     scriptsave.maxtime = int(maxtime)
-                                                            # except:
-                                                            #     pass
-                                                            # try:
-                                                            #     scriptsave.time = int(time)
-                                                            # except:
-                                                            #     pass
-                                                            scriptsave.step_id = pid
-                                                            scriptsave.save()
-                                                            result["res"] = "新增成功。"
-                                                            result["data"] = scriptsave.id
-
+                                            # if success_text.strip() == '':
+                                            #     result["res"] = 'SUCCESSTEXT不能为空。'
+                                            # else:
+                                            if id == 0:
+                                                allscript = Script.objects.filter(code=code).exclude(
+                                                    state="9").filter(step_id=pid)
+                                                if (len(allscript) > 0):
+                                                    result["res"] = '脚本编码:' + code + '已存在。'
                                                 else:
-                                                    allscript = Script.objects.filter(code=code).exclude(
-                                                        id=id).exclude(state="9").filter(step_id=pid)
-                                                    if (len(allscript) > 0):
-                                                        result["res"] = '脚本编码:' + code + '已存在。'
-                                                    else:
-                                                        try:
-                                                            scriptsave = Script.objects.get(id=id)
-                                                            scriptsave.code = code
-                                                            scriptsave.name = name
-                                                            scriptsave.ip = ip
-                                                            # scriptsave.port = port
-                                                            scriptsave.type = type
-                                                            # scriptsave.runtype = runtype
-                                                            scriptsave.username = username
-                                                            scriptsave.password = password
-                                                            scriptsave.filename = filename
-                                                            # scriptsave.paramtype = paramtype
-                                                            # scriptsave.param = param
-                                                            scriptsave.scriptpath = scriptpath
-                                                            scriptsave.succeedtext = success_text
-                                                            # scriptsave.runpath = runpath
-                                                            # try:
-                                                            #     scriptsave.maxtime = int(maxtime)
-                                                            # except:
-                                                            #     pass
-                                                            # try:
-                                                            #     scriptsave.time = int(time)
-                                                            # except:
-                                                            #     pass
-                                                            scriptsave.save()
-                                                            result["res"] = "修改成功。"
-                                                            result["data"] = scriptsave.id
-                                                        except:
-                                                            result["res"] = "修改失败。"
+                                                    steplist = Step.objects.filter(process_id=processid)
+                                                    if len(steplist) > 0:
+                                                        scriptsave = Script()
+                                                        scriptsave.code = code
+                                                        scriptsave.name = name
+                                                        scriptsave.ip = ip
+                                                        # scriptsave.port = port
+                                                        scriptsave.type = type
+                                                        # scriptsave.runtype = runtype
+                                                        scriptsave.username = username
+                                                        scriptsave.password = password
+                                                        scriptsave.filename = filename
+                                                        # scriptsave.paramtype = paramtype
+                                                        # scriptsave.param = param
+                                                        scriptsave.scriptpath = scriptpath
+                                                        scriptsave.succeedtext = success_text
+
+                                                        # scriptsave.runpath = runpath
+                                                        # try:
+                                                        #     scriptsave.maxtime = int(maxtime)
+                                                        # except:
+                                                        #     pass
+                                                        # try:
+                                                        #     scriptsave.time = int(time)
+                                                        # except:
+                                                        #     pass
+                                                        scriptsave.step_id = pid
+                                                        scriptsave.save()
+                                                        result["res"] = "新增成功。"
+                                                        result["data"] = scriptsave.id
+
+                                            else:
+                                                allscript = Script.objects.filter(code=code).exclude(
+                                                    id=id).exclude(state="9").filter(step_id=pid)
+                                                if (len(allscript) > 0):
+                                                    result["res"] = '脚本编码:' + code + '已存在。'
+                                                else:
+                                                    try:
+                                                        scriptsave = Script.objects.get(id=id)
+                                                        scriptsave.code = code
+                                                        scriptsave.name = name
+                                                        scriptsave.ip = ip
+                                                        # scriptsave.port = port
+                                                        scriptsave.type = type
+                                                        # scriptsave.runtype = runtype
+                                                        scriptsave.username = username
+                                                        scriptsave.password = password
+                                                        scriptsave.filename = filename
+                                                        # scriptsave.paramtype = paramtype
+                                                        # scriptsave.param = param
+                                                        scriptsave.scriptpath = scriptpath
+                                                        scriptsave.succeedtext = success_text
+                                                        # scriptsave.runpath = runpath
+                                                        # try:
+                                                        #     scriptsave.maxtime = int(maxtime)
+                                                        # except:
+                                                        #     pass
+                                                        # try:
+                                                        #     scriptsave.time = int(time)
+                                                        # except:
+                                                        #     pass
+                                                        scriptsave.save()
+                                                        result["res"] = "修改成功。"
+                                                        result["data"] = scriptsave.id
+                                                    except:
+                                                        result["res"] = "修改失败。"
             return HttpResponse(json.dumps(result))
 
 
@@ -2668,18 +2672,37 @@ def process_save(request):
                     if sign.strip() == '':
                         result["res"] = '是否签到不能为空。'
                     else:
-                        if color.strip() == "":
-                            result["res"] = '项目图标配色不能为空。'
+                        # if color.strip() == "":
+                        #     result["res"] = '项目图标配色不能为空。'
+                        # else:
+                        if id == 0:
+                            all_process = Process.objects.filter(code=code).exclude(
+                                state="9").filter(type="falconstor")
+                            if (len(all_process) > 0):
+                                result["res"] = '预案编码:' + code + '已存在。'
+                            else:
+                                processsave = Process()
+                                processsave.url = '/falconstor'
+                                processsave.type = 'falconstor'
+                                processsave.code = code
+                                processsave.name = name
+                                processsave.remark = remark
+                                processsave.sign = sign
+                                processsave.rto = rto if rto else None
+                                processsave.rpo = rpo if rpo else None
+                                processsave.sort = sort if sort else None
+                                processsave.color = color
+                                processsave.save()
+                                result["res"] = "保存成功。"
+                                result["data"] = processsave.id
                         else:
-                            if id == 0:
-                                all_process = Process.objects.filter(code=code).exclude(
-                                    state="9").filter(type="falconstor")
-                                if (len(all_process) > 0):
-                                    result["res"] = '预案编码:' + code + '已存在。'
-                                else:
-                                    processsave = Process()
-                                    processsave.url = '/falconstor'
-                                    processsave.type = 'falconstor'
+                            all_process = Script.objects.filter(code=code).exclude(
+                                id=id).exclude(state="9")
+                            if (len(all_process) > 0):
+                                result["res"] = '预案编码:' + code + '已存在。'
+                            else:
+                                try:
+                                    processsave = Process.objects.get(id=id)
                                     processsave.code = code
                                     processsave.name = name
                                     processsave.remark = remark
@@ -2691,27 +2714,8 @@ def process_save(request):
                                     processsave.save()
                                     result["res"] = "保存成功。"
                                     result["data"] = processsave.id
-                            else:
-                                all_process = Script.objects.filter(code=code).exclude(
-                                    id=id).exclude(state="9")
-                                if (len(all_process) > 0):
-                                    result["res"] = '预案编码:' + code + '已存在。'
-                                else:
-                                    try:
-                                        processsave = Process.objects.get(id=id)
-                                        processsave.code = code
-                                        processsave.name = name
-                                        processsave.remark = remark
-                                        processsave.sign = sign
-                                        processsave.rto = rto if rto else None
-                                        processsave.rpo = rpo if rpo else None
-                                        processsave.sort = sort if sort else None
-                                        processsave.color = color
-                                        processsave.save()
-                                        result["res"] = "保存成功。"
-                                        result["data"] = processsave.id
-                                    except:
-                                        result["res"] = "修改失败。"
+                                except:
+                                    result["res"] = "修改失败。"
         return HttpResponse(json.dumps(result))
 
 

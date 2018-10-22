@@ -226,6 +226,8 @@ function customTree() {
                         // $("#scriptcommand").val("");
                         // $("#scriptmaxtime").val("");
                         // $("#scripttime").val("");
+                        $("#success_text").val("");
+
                         document.getElementById("edit").click();
                     }
                     if ($(e.target).text() == "修改") {

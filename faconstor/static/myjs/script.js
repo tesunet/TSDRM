@@ -141,7 +141,7 @@ $(document).ready(function () {
         // $("#command").val("");
         // $("#maxtime").val("");
         // $("#time").val("");
-        $("#success_text").val();
+        $("#success_text").val("");
     });
 
     $('#save').click(function () {
