@@ -263,7 +263,7 @@ def runstep(steprun):
                 myprocesstask.state = "1"
                 myprocesstask.content = "脚本" + script.script.name + "完成。"
                 myprocesstask.save()
-            if steprun.step.approval == "1":
+            if steprun.step.approval == "1" or steprun.verifyitemsrun_set.all():
                 steprun.state = "CONFIRM"
                 steprun.endtime = datetime.datetime.now()
                 steprun.save()
