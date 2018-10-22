@@ -3181,8 +3181,7 @@ def getchildrensteps(processrun, curstep):
                             "starttime": starttime, "endtime": endtime, "operator": operator,
                             "parameter": parameter, "runresult": runresult,
                             "explain": explain, "state": state, "scripts": scripts, "verifyitems": verifyitems,
-                            "note": note, "rto": rto,  "verify": "NEED" if verifyitems else "",
-                            "children": getchildrensteps(processrun, step)})
+                            "note": note, "rto": rto, "children": getchildrensteps(processrun, step)})
     return childresult
 
 
@@ -3360,8 +3359,7 @@ def getrunsetps(request):
                                    "starttime": starttime, "endtime": endtime, "operator": operator,
                                    "parameter": parameter, "runresult": runresult, "explain": explain,
                                    "state": state, "scripts": scripts, "verifyitems": verifyitems,
-                                   "note": note, "rto": rto, "verify": "NEED" if verifyitems else "",
-                                   "children": getchildrensteps(processruns[0], step)})
+                                   "note": note, "rto": rto, "children": getchildrensteps(processruns[0], step)})
             return HttpResponse(json.dumps(processresult))
 
 

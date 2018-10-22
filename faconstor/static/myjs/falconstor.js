@@ -214,7 +214,7 @@ if (App.isAngularJsApp() === false) {
                     }
                     var processallsteps = 0;
                     var processdonesteps = 0;
-                    var buttonShowId = "";
+                    var showButtonId = "";
 
                     for (var i = 0; i < data["step"].length; i++) {
 
@@ -266,20 +266,15 @@ if (App.isAngularJsApp() === false) {
                         }
 
                         if (step1_state == "CONFIRM") {
-                            buttonShowId = step1_run_id
+                            showButtonId = step1_run_id
                             step1_state = "待确认";
                             expand = "collapse";
                             style = "";
-                            stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\" id='stepbtn' hidden>\n" + "<input name='step_id' id='step_id' value='" + step1_run_id + "' hidden>" +
-                                "                                                <button id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
-                                "                                            </div>"
-                        } else if (step1_verify == "NEED") {
-                            expand = "collapse";
-                            style = "";
-                            stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\" id='stepbtn' hidden>\n" + "<input name='step_id' id='step_id' value='" + step1_run_id + "' hidden>" +
+                            stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\" hidden>\n" + "<input name='step_id' id='step_id' value='" + step1_run_id + "' hidden>" +
                                 "                                                <button id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                 "                                            </div>"
                         }
+
                         if (step1_state == "RUN")
                             step1_state = "运行";
                         if (step1_state == "ERROR")
@@ -329,7 +324,7 @@ if (App.isAngularJsApp() === false) {
                         $("#tabdiv" + (i + 1).toString()).append("<div id='tabsteps" + (i + 1).toString() + "' class='row  step-background-thin'></div><br><br>");
                         var stepallsteps = 0;
                         var stepdonesteps = 0;
-
+                        var buttonShowId = "";
                         for (var j = 0; j < data["step"][i]["children"].length; j++) {
                             var stepdone = "";
                             if (data["step"][i]["children"][j]["state"] == "DONE")
@@ -366,17 +361,12 @@ if (App.isAngularJsApp() === false) {
                                 stepdonesteps = stepdonesteps + 1;
                             }
                             if (step2_state == "CONFIRM") {
-                                buttonShowId = step2_run_id
+                                showButtonId = step2_run_id;
                                 step2_state = "待确认";
-                                step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\" id='stepbtn' hidden>\n" + "<input name='step_id' id='step_id' value='" + step2_run_id + "' hidden>" +
-                                    "                                                <button id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
-                                    "                                            </div>"
-                            } else if (step2_verify == "NEED") {
-                                step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\" id='stepbtn' hidden>\n" + "<input name='step_id' id='step_id' value='" + step2_run_id + "' hidden>" +
+                                step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\" hidden>\n" + "<input name='step_id' id='step_id' value='" + step2_run_id + "' hidden>" +
                                     "                                                <button id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
                                     "                                            </div>"
                             }
-
 
                             if (step2_state == "RUN")
                                 step2_state = "运行";
@@ -438,9 +428,9 @@ if (App.isAngularJsApp() === false) {
 
 
                     }
-                    console.log(buttonShowId)
+
                     // 展示确认按钮
-                    $("input[value=" + buttonShowId + "]").siblings().parent().show();
+                    $("#confirmbtn").parent().show();
 
                     try {
                         var processbar = "0";
@@ -504,6 +494,7 @@ if (App.isAngularJsApp() === false) {
 
                     // 重试
                     $('#exec').click(function () {
+                        $("#confirmbtn").parent().empty();
                         $.ajax({
                             type: "POST",
                             dataType: 'json',
@@ -528,6 +519,7 @@ if (App.isAngularJsApp() === false) {
 
                     // 跳过脚本
                     $("#ignore").click(function () {
+                        $("#confirmbtn").parent().empty();
                         var scriptid = $("#script_button").val();
                         $.ajax({
                             url: "../../ignore_current_script/",
@@ -542,6 +534,7 @@ if (App.isAngularJsApp() === false) {
 
                     // 停止脚本
                     $("#stopbtn").click(function () {
+                        $("#confirmbtn").parent().empty();
                         if ($("#process_note").val() == "")
                             alert("请在说明项目输入停止原因！");
                         else {
@@ -568,8 +561,7 @@ if (App.isAngularJsApp() === false) {
                     });
 
                     // 确认
-                    $("input[value=" + buttonShowId + "]").siblings().click(function () {
-                        console.log(1111)
+                    $("#confirmbtn").click(function () {
                         var step_id = $(this).prev().val();
                         var notChecked = "";
                         $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (index, element) {
