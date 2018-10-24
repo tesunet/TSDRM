@@ -1,3 +1,38 @@
+************windows系统下安装rabbitMQ************
+1.安装Erlang语言(http://www.erlang.org/downloads)，根据系统版本下载；
+    # 添加bin目录至系统环境;
+2.安装rabbitMQ-server；
+    # 添加bin目录至系统环境;
+3.设置rabbitMQ
+    rabbitmqctl add_user myuser mypassword
+    rabbitmqctl add_vhost myvhost
+    rabbitmqctl set_user_tags myuser mytag
+    rabbitmqctl set_permissions -p myvhost myuser ".*" ".*" ".*"  # 必须给用户与host授予权限
+4.运行rabbitMQ
+    rabbitmq-server
+    rabbitmq-server -detached  # 后台运行
+    rabbitmqctl stop  # 关闭rabbitMQ
+5.broker配置
+    BROKER_URL = 'amqp://root:password@localhost:5672/myvhost'
+6.管理rabbitMQ
+    # 启动服务
+    rabbitmq-plugins enable rabbitmq_management
+    # 访问http://localhost:15672
+
+
+************windows系统下安装redis************
+1.github下载地址：https://github.com/MSOpenTech/redis/tags 
+    # 选择下载Redis-x64-3.2.100
+    # 添加bin目录至系统环境;
+2.启动redis
+    redis-server redis.windows.conf # 指定配置文件开启
+    redis-server --service-install redis.windows-service.conf --loglevel verbose  # 开机自动启用
+3.测试redis启动情况
+    redis-cli.exe -h 127.0.0.1 -p 6379
+    >> ping
+    >> pong
+    
+
 ************Linux系统下，运行程序前需要安装wkhtmltopdf启动程序，用以生成pdf文件************
 1.下载地址：https://wkhtmltopdf.org/downloads.html
 2.安装依赖(ubuntu16.4为例):sudo apt-get -f install xfonts-75dpi

@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-from celery import shared_task, task
+from celery import shared_task
 import pymssql
 from faconstor.models import *
 from django.db import connection
@@ -94,7 +94,7 @@ def handle_func(jobid, steprunid):
                 steprun.save()
 
 
-@task
+@shared_task
 def handle_job(jobid, steprunid):
     """
     根据jobid查询任务状态，每半分钟查询一次，如果完成就在steprun中写入DONE
@@ -102,7 +102,8 @@ def handle_job(jobid, steprunid):
     handle_func(jobid, steprunid)
 
 
-@task
+# @shared_task(bind=True, default_retry_delay=300, max_retries=5)  # 错误处理机制，因网络延迟等问题的重试；
+@shared_task
 def exec_script(steprunid, username, fullname):
     """
     执行当前步骤在指定系统下的所有脚本
@@ -308,7 +309,7 @@ def runstep(steprun):
         return 3
 
 
-@task
+@shared_task
 def exec_process(processrunid):
     """
     执行当前流程下的所有脚本

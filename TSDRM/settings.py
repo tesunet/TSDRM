@@ -15,6 +15,8 @@ import djcelery
 
 djcelery.setup_loader()
 BROKER_URL = 'django://'
+# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
+# BROKER_URL = 'amqp://root:password@localhost:5672/myvhost'
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
