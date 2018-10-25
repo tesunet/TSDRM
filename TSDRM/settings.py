@@ -15,13 +15,16 @@ import djcelery
 
 djcelery.setup_loader()
 BROKER_URL = 'django://'
+# BROKER_URL = 'redis://127.0.0.1:6379/0'
 # CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
 # BROKER_URL = 'amqp://root:password@localhost:5672/myvhost'
 
+CELERY_TIMEZONE = 'Asia/Shanghai'  # 时区
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'  # 定时任务
 
 
 
