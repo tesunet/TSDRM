@@ -3553,7 +3553,7 @@ def stop_current_process(request):
             myprocesstask.logtype = "STOP"
             myprocesstask.state = "1"
             myprocesstask.content = "流程被终止。"
-            myprocesstask.save()
+            myprocesstask.save() 
             return JsonResponse({"data": "流程已经被终止"})
         else:
             return JsonResponse({"data": "终止流程异常，请联系客服"})
