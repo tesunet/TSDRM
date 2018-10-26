@@ -32,7 +32,7 @@ $(document).ready(function () {
             "data": null,
             "width": "60px",  // 指定列宽；
             "render": function (data, type, full) {
-                return "<td><a href='/custom_pdf_report/?processrunid&processid'></td><i class='fa fa-arrow-down'></i></a>".replace("processrunid", "processrunid="+full.processrun_id).replace("processid", "processid="+full.process_id)
+                return "<td><button class='btn btn-xs btn-primary' type='button'><a href='/custom_pdf_report/?processrunid&processid'><i class='fa fa-arrow-circle-down' style='color: white'></i></a></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
             }
         }],
 
@@ -53,6 +53,33 @@ $(document).ready(function () {
 
         }
     });
+    $('#sample_1 tbody').on('click', 'button#delrow', function () {
+            if (confirm("确定要删除该条数据？")) {
+                var table = $('#sample_1').DataTable();
+                var data = table.row($(this).parents('tr')).data();
+                $.ajax({
+                    type: "POST",
+                    url: "../../delete_current_process_run/",
+                    data:
+                        {
+                            processrun_id: data.processrun_id
+                        },
+                    success: function (data) {
+                        if (data == 1) {
+                            table.ajax.reload();
+                            alert("删除成功！");
+                        }
+                        else
+                            alert("删除失败，请于管理员联系。");
+                    },
+                    error: function (e) {
+                        alert("删除失败，请于管理员联系。");
+                    }
+                });
+
+            }
+        });
+
     $('#startdate').datetimepicker({
         autoclose: true,
         minView: "month",

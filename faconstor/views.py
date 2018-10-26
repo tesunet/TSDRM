@@ -271,7 +271,6 @@ def index(request, funid):
             )
 
             rows = cursor.fetchall()
-            print("rows", rows)
             for row in rows:
                 try:
                     fun = Fun.objects.get(id=row[0])
@@ -352,7 +351,7 @@ def index(request, funid):
         # 成功率，恢复次数，平均RTO，最新切换
         all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
         successful_processruns = ProcessRun.objects.filter(state="DONE")
-        processrun_times_obj = ProcessRun.objects.exclude(state__in=["RUN", "REJECT"])
+        processrun_times_obj = ProcessRun.objects.exclude(state__in=["RUN", "REJECT"]).exclude(state="9")
 
         success_rate = "%.0f" % (len(successful_processruns) / len(
             all_processrun_objs) * 100) if all_processrun_objs and successful_processruns else 0
@@ -375,7 +374,7 @@ def index(request, funid):
             average_rto = "0时0分0秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"])
+        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(state="9")
         curren_processrun_info_list = []
 
         state_dict = {
@@ -1404,9 +1403,7 @@ def orgmove(request):
                     if (len(userinfos) > 0):
                         for userinfo in userinfos:
                             try:
-                                print(userinfo.id)
                                 userinfo.sort = userinfo.sort + 1
-                                print(userinfo.sort)
                                 userinfo.save()
                             except:
                                 pass
@@ -3565,7 +3562,6 @@ def stop_current_process(request):
 def verify_items(request):
     if request.user.is_authenticated():
         step_id = request.POST.get("step_id", "")
-        print("step_id", step_id)
         current_step_run = StepRun.objects.filter(id=step_id).exclude(state="9")
         if current_step_run:
             current_step_run = current_step_run[0]
@@ -3834,6 +3830,25 @@ def reject_invited(request):
         else:
             result = "计划流程不存在，取消失败！"
         return JsonResponse({"res": result})
+
+
+def delete_current_process_run(request):
+    if request.user.is_authenticated():
+        processrun_id = request.POST.get("processrun_id", "")
+
+        try:
+            processrun_id = int(processrun_id)
+        except:
+            return Http404()
+
+        current_process_run = ProcessRun.objects.filter(id=processrun_id)
+        if current_process_run:
+            current_process_run = current_process_run[0]
+            current_process_run.state = "9"
+            current_process_run.save()
+            return HttpResponse(1)
+        else:
+            return HttpResponse(0)
 
 
 def custom_pdf_report(request):

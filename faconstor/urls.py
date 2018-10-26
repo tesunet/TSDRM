@@ -79,6 +79,7 @@ urlpatterns = [
     url(r'^show_result/$', show_result),
     url(r'^reject_invited/$', reject_invited),
     url(r'^reload_task_nums/$', reload_task_nums),
+    url(r'^delete_current_process_run/$', delete_current_process_run),
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
