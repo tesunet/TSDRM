@@ -164,6 +164,7 @@ if (App.isAngularJsApp() === false) {
         }
 
         function getstep() {
+            console.log("刷新");
             $.ajax({
                 type: "POST",
                 url: "../../getrunsetps/",
@@ -492,46 +493,6 @@ if (App.isAngularJsApp() === false) {
 
                     });
 
-                    // 重试
-                    $('#exec').click(function () {
-                        $("#confirmbtn").parent().empty();
-                        $.ajax({
-                            type: "POST",
-                            dataType: 'json',
-                            url: "../../falconstorcontinue/",
-                            data:
-                                {
-                                    process: $('#process').val(),
-                                },
-                            success: function (data) {
-                                if (data["res"] == "执行成功。") {
-                                    $('#b1').hide()
-                                    $('#static').modal('hide');
-                                }
-                                else
-                                    alert(data["res"]);
-                            },
-                            error: function (e) {
-                                alert("执行失败，请于管理员联系。");
-                            }
-                        });
-                    });
-
-                    // 跳过脚本
-                    $("#ignore").click(function () {
-                        $("#confirmbtn").parent().empty();
-                        var scriptid = $("#script_button").val();
-                        $.ajax({
-                            url: "../../ignore_current_script/",
-                            type: "post",
-                            data: {"scriptid": scriptid},
-                            success: function (data) {
-                                alert(data.data);
-                                $('#static').modal('hide');
-                            }
-                        });
-                    });
-
                     // 停止脚本
                     $("#stopbtn").click(function () {
                         $("#confirmbtn").parent().empty();
@@ -613,5 +574,50 @@ if (App.isAngularJsApp() === false) {
                 }
             });
         }
+
+        // 重试
+        $('#exec').click(function () {
+            $("#confirmbtn").parent().empty();
+            $.ajax({
+                type: "POST",
+                dataType: 'json',
+                url: "../../falconstorcontinue/",
+                data:
+                    {
+                        process: $('#process').val(),
+                    },
+                success: function (data) {
+                    if (data["res"] == "执行成功。") {
+                        $('#b1').hide();
+                        $('#static').modal('hide');
+                        // 重启定时器
+                        t2 = window.setInterval(timefun, 1000);
+                    }
+                    else
+                        alert(data["res"]);
+                },
+                error: function (e) {
+                    alert("执行失败，请于管理员联系。");
+                }
+            });
+        });
+
+        // 跳过脚本
+        $("#ignore").click(function () {
+            $("#confirmbtn").parent().empty();
+            var scriptid = $("#script_button").val();
+            $.ajax({
+                url: "../../ignore_current_script/",
+                type: "post",
+                data: {"scriptid": scriptid},
+                success: function (data) {
+                    alert(data.data);
+                    $('#static').modal('hide');
+                    // 重启定时器
+                    t2 = window.setInterval(timefun, 1000);
+                }
+            });
+        });
+
     });
 }
