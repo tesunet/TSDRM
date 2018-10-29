@@ -187,6 +187,10 @@ def runstep(steprun):
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
     if processrun.state == "RUN" or processrun.state == "ERROR":
+        # 将错误流程改成RUN
+        processrun.state = "RUN"
+        processrun.save()
+
         if steprun.state != "DONE":
             # 判断是否有子步骤，如果有，先执行子步骤
             # 取消错误消息展示

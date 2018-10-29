@@ -48,8 +48,8 @@ var FormWizard = function () {
 
 if (App.isAngularJsApp() === false) {
     jQuery(document).ready(function () {
-        var t1 = window.setTimeout(getstep, 1000);
-        var t2 = window.setInterval(timefun, 1000);
+        var t1 = window.setTimeout(getstep, 1000);  // 访问页面之后10秒执行函数
+        var t2 = window.setInterval(timefun, 1000);  // 设置无限定时器
         var num = 0;
         var isinit = true;
         $(document).on('click', function () {
@@ -164,7 +164,6 @@ if (App.isAngularJsApp() === false) {
         }
 
         function getstep() {
-            console.log("刷新");
             $.ajax({
                 type: "POST",
                 url: "../../getrunsetps/",
@@ -267,7 +266,6 @@ if (App.isAngularJsApp() === false) {
                         }
 
                         if (step1_state == "CONFIRM") {
-                            showButtonId = step1_run_id
                             step1_state = "待确认";
                             expand = "collapse";
                             style = "";
@@ -362,7 +360,6 @@ if (App.isAngularJsApp() === false) {
                                 stepdonesteps = stepdonesteps + 1;
                             }
                             if (step2_state == "CONFIRM") {
-                                showButtonId = step2_run_id;
                                 step2_state = "待确认";
                                 step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\" hidden>\n" + "<input name='step_id' id='step_id' value='" + step2_run_id + "' hidden>" +
                                     "                                                <button id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
@@ -540,6 +537,8 @@ if (App.isAngularJsApp() === false) {
                                         if (data.data == "0") {
                                             alert("该步骤已确认，继续流程！");
                                             getstep();
+                                            window.clearInterval(t2);
+                                            t2 = window.setInterval(timefun, 1000);
                                         } else {
                                             alert("步骤确认异常，请联系客服！")
                                         }
@@ -557,6 +556,8 @@ if (App.isAngularJsApp() === false) {
                                     if (data.data == "0") {
                                         alert("该步骤已确认，继续流程！");
                                         getstep();
+                                        window.clearInterval(t2);
+                                        t2 = window.setInterval(timefun, 1000);
                                     } else {
                                         alert("步骤确认异常，请联系客服！")
                                     }
@@ -591,6 +592,7 @@ if (App.isAngularJsApp() === false) {
                         $('#b1').hide();
                         $('#static').modal('hide');
                         // 重启定时器
+                        window.clearInterval(t2);
                         t2 = window.setInterval(timefun, 1000);
                     }
                     else

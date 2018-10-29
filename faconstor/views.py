@@ -114,7 +114,7 @@ def getpagefuns(funid, request=""):
                 mygroup.append(str(curguoup.id))
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
-            "-starttime").all()
+            "-starttime").exclude(processrun__state="9")
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 send_time = task.starttime
@@ -4434,25 +4434,25 @@ def tasksearchdata(request):
         cursor = connection.cursor()
         exec_sql = """
         select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-        left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type!='INFO' and t.starttime between '{0}' and '{1}' order by t.starttime desc;
+        left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type!='INFO' and r.state!='9' and t.starttime between '{0}' and '{1}' order by t.starttime desc;
         """.format(start_time, end_time)
 
         if task_type != "" and has_finished != "":
             exec_sql = """
             select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type='{0}' and t.state='{1}' and t.starttime between '{2}' and '{3}' order by t.starttime desc;
+            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type='{0}' and r.state!='9' and t.state='{1}' and t.starttime between '{2}' and '{3}' order by t.starttime desc;
             """.format(task_type, has_finished, start_time, end_time)
 
         if task_type == "" and has_finished != "":
             exec_sql = """
             select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where  t.type!='INFO' and t.state='{0}' and t.starttime between '{1}' and '{2}' order by t.starttime desc;
+            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where  t.type!='INFO' and r.state!='9' and t.state='{0}' and t.starttime between '{1}' and '{2}' order by t.starttime desc;
             """.format(has_finished, start_time, end_time)
 
         if task_type != "" and has_finished == "":
             exec_sql = """
             select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type='{0}' and t.starttime between '{1}' and '{2}' order by t.starttime desc;
+            left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type='{0}' and r.state!='9' and t.starttime between '{1}' and '{2}' order by t.starttime desc;
             """.format(task_type, start_time, end_time)
 
         cursor.execute(exec_sql)
