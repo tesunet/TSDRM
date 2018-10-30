@@ -602,6 +602,7 @@ if (App.isAngularJsApp() === false) {
             else {
                 if (confirm("即将终止本次演练，注意，此操作不可逆！是否继续？")) {
                     var process_run_id = $("#process_run_id").val();
+                    
                     $.ajax({
                         url: "../../stop_current_process/",
                         type: "post",
