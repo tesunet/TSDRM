@@ -490,33 +490,6 @@ if (App.isAngularJsApp() === false) {
 
                     });
 
-                    // 停止脚本
-                    $("#stopbtn").click(function () {
-                        $("#confirmbtn").parent().empty();
-                        if ($("#process_note").val() == "")
-                            alert("请在说明项目输入停止原因！");
-                        else {
-                            if (confirm("即将终止本次演练，注意，此操作不可逆！是否继续？")) {
-                                var process_run_id = $("#process_run_id").val();
-                                $.ajax({
-                                    url: "../../stop_current_process/",
-                                    type: "post",
-                                    data: {
-                                        "process_run_id": process_run_id,
-                                        "process_note": $("#process_note").val(),
-                                    },
-                                    success: function (data) {
-                                        if (data.data = "流程已经被终止") {
-                                            alert(data.data);
-                                            getstep();
-                                        } else {
-                                            alert(data.data);
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    });
 
                     // 确认
                     $("#confirmbtn").click(function () {
@@ -619,6 +592,34 @@ if (App.isAngularJsApp() === false) {
                     t2 = window.setInterval(timefun, 1000);
                 }
             });
+        });
+
+        // 停止脚本
+        $("#stopbtn").click(function () {
+            $("#confirmbtn").parent().empty();
+            if ($("#process_note").val() == "")
+                alert("请在说明项目输入停止原因！");
+            else {
+                if (confirm("即将终止本次演练，注意，此操作不可逆！是否继续？")) {
+                    var process_run_id = $("#process_run_id").val();
+                    $.ajax({
+                        url: "../../stop_current_process/",
+                        type: "post",
+                        data: {
+                            "process_run_id": process_run_id,
+                            "process_note": $("#process_note").val(),
+                        },
+                        success: function (data) {
+                            if (data.data = "流程已经被终止") {
+                                alert(data.data);
+                                getstep();
+                            } else {
+                                alert(data.data);
+                            }
+                        }
+                    });
+                }
+            }
         });
 
     });
