@@ -69,6 +69,8 @@ class ServerByPara(object):
 
     def exec_win_cmd(self, succeedtext):
         data_init = ""
+        log = ""
+
         try:
             s = winrm.Session(self.host, auth=(self.user, self.pwd))
             ret = s.run_cmd(self.cmd)
@@ -77,12 +79,14 @@ class ServerByPara(object):
             return {
                 "exec_tag": 1,
                 "data": "连接服务器失败",
+                "log": "连接服务器失败",
             }
-        log = ""
+
         if ret.std_err.decode():
             exec_tag = 1
             for data in ret.std_err.decode().split("\r\n"):
                 data_init += data
+            log = ""
         else:
             exec_tag = 0
             for data in ret.std_out.decode().split("\r\n"):

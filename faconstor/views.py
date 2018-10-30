@@ -285,7 +285,7 @@ def index(request, funid):
         alltask = []
         cursor = connection.cursor()
         cursor.execute("""
-        select t.starttime, t.content, t.type, t.state, t.logtype, p.name, p.color from faconstor_processtask as t left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id order by t.starttime desc;
+        select t.starttime, t.content, t.type, t.state, t.logtype, p.name, p.color from faconstor_processtask as t left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where r.state!='9' order by t.starttime desc;
         """)
         rows = cursor.fetchall()
 
