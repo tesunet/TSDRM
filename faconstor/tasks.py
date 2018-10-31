@@ -177,12 +177,11 @@ def exec_script(steprunid, username, fullname):
                     myprocesstask.save()
 
 
-def runstep(steprun):
+def runstep(steprun, if_repeat=False):
     """
     执行当前步骤下的所有脚本
     返回值0,：错误，1：完成，2：确认，3：流程已结束
     """
-
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
@@ -200,15 +199,17 @@ def runstep(steprun):
                 task.state = "1"
                 task.save()
 
+            if not if_repeat:
+                steprun.starttime = datetime.datetime.now()  # 这个位置pnode的starttime存多次
             steprun.state = "RUN"
-            steprun.starttime = datetime.datetime.now()
             steprun.save()
+
             children = steprun.step.children.order_by("sort").exclude(state="9")
             if len(children) > 0:
                 for child in children:
                     childsteprun = child.steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
                     if len(childsteprun) > 0:
-                        childreturn = runstep(childsteprun[0])
+                        childreturn = runstep(childsteprun[0], if_repeat)
                         if childreturn == 0:
                             return 0
                         if childreturn == 2:
@@ -303,18 +304,36 @@ def runstep(steprun):
         if len(nextstep) > 0:
             nextsteprun = nextstep[0].steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
             if len(nextsteprun) > 0:
-                nextreturn = runstep(nextsteprun[0])
+                # 二级步骤首个对象starttime存在，表示一级步骤不需要再次写入starttime
+                start_time = ""
+                nextsteprun = nextsteprun[0]
+                child_related = nextsteprun.step.children.select_related()
+                if child_related:
+                    first_child_related = child_related[0]
+                    all_step_run_set = first_child_related.steprun_set.exclude(state="9").filter(
+                        processrun=nextsteprun.processrun)
+                    if all_step_run_set:
+                        step_run = all_step_run_set[0]
+                        start_time = step_run.starttime
+                if start_time:
+                    if_repeat = True
+                else:
+                    if_repeat = False
+
+                nextreturn = runstep(nextsteprun, if_repeat)
+
                 if nextreturn == 0:
                     return 0
                 if nextreturn == 2:
                     return 2
+
         return 1
     else:
         return 3
 
 
 @shared_task
-def exec_process(processrunid):
+def exec_process(processrunid, if_repeat=False):
     """
     执行当前流程下的所有脚本
     """
@@ -323,7 +342,7 @@ def exec_process(processrunid):
     processrun = processrun[0]
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
     if len(steprunlist) > 0:
-        end_step_tag = runstep(steprunlist[0])
+        end_step_tag = runstep(steprunlist[0], if_repeat)
     else:
         myprocesstask = ProcessTask()
         myprocesstask.processrun = processrun

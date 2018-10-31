@@ -358,33 +358,29 @@ def index(request, funid):
         last_processrun_time = successful_processruns.last().starttime if successful_processruns else ""
         all_processruns = len(processrun_times_obj) if processrun_times_obj else 0
         if successful_processruns:
-            all_rto = 0
+            rto_sum_seconds = 0
+
             for processrun in successful_processruns:
-                # 减去rto_count_in="0"部分
-                rto_not_count_in_time = 0
-                # 合并steprun与step
-                cursor = connection.cursor()
-                cursor.execute("""
-                select r.starttime, r.endtime from faconstor_steprun as r left join faconstor_step as s on r.step_id=s.id where r.processrun_id='{0}' and s.rto_count_in="0"
-                """.format(processrun.id))
-                rows = cursor.fetchall()
+                all_step_runs = processrun.steprun_set.exclude(state="9", step__rto_count_in="0").filter(
+                    step__pnode=None)
+                step_rto = 0
+                if all_step_runs:
+                    for step_run in all_step_runs:
+                        rto = 0
+                        end_time = step_run.endtime
+                        start_time = step_run.starttime
+                        if end_time and start_time:
+                            delta_time = (end_time - start_time)
+                            rto = delta_time.total_seconds()
+                        step_rto += rto
 
-                for row in rows:
-                    if row[0] and row[1]:
-                        rto_not_count_in_time += (row[1] - row[0]).total_seconds()
+                rto_sum_seconds += step_rto
 
-                end_time = processrun.endtime
-                start_time = processrun.starttime
-                if end_time and start_time:
-                    delta_time = (end_time - start_time)
-                    rto = delta_time.total_seconds() - rto_not_count_in_time
-                    all_rto += rto
-            m, s = divmod(all_rto / len(successful_processruns), 60)
+            m, s = divmod(rto_sum_seconds / len(successful_processruns), 60)
             h, m = divmod(m, 60)
             average_rto = "%d时%02d分%02d秒" % (h, m, s)
-
         else:
-            average_rto = "0时0分0秒"
+            average_rto = "00时00分00秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
         current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(state="9")
@@ -622,24 +618,20 @@ def get_process_rto(request):
                 processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
                 current_rto_list = []
                 for processrun_rto_obj in processrun_rto_obj_list:
-                    # 减去rto_count_in="0"部分
-                    rto_not_count_in_time = 0
-                    # 合并steprun与step
-                    cursor = connection.cursor()
-                    cursor.execute("""
-                    select r.starttime, r.endtime from faconstor_steprun as r left join faconstor_step as s on r.step_id=s.id where r.processrun_id='{0}' and s.rto_count_in="0"
-                    """.format(processrun_rto_obj.id))
-                    rows = cursor.fetchall()
+                    all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9", step__rto_count_in="0").filter(
+                        step__pnode=None)
+                    step_rto = 0
+                    if all_step_runs:
+                        for step_run in all_step_runs:
+                            rto = 0
+                            end_time = step_run.endtime
+                            start_time = step_run.starttime
+                            if end_time and start_time:
+                                delta_time = (end_time - start_time)
+                                rto = delta_time.total_seconds()
+                            step_rto += rto
+                    current_rto = float("%.2f" % (step_rto / 60))
 
-                    for row in rows:
-                        if row[0] and row[1]:
-                            rto_not_count_in_time += (row[1] - row[0]).total_seconds()
-
-                    start_time = processrun_rto_obj.starttime
-                    end_time = processrun_rto_obj.endtime
-                    delta_time = (end_time - start_time).total_seconds() if start_time and end_time else 0
-                    delta_time -= rto_not_count_in_time
-                    current_rto = float("%.2f" % (delta_time / 60))
                     current_rto_list.append(current_rto)
                 process_dict = {
                     "process_name": process_name,
@@ -647,7 +639,6 @@ def get_process_rto(request):
                     "color": process.color
                 }
                 process_rto_list.append(process_dict)
-
         return JsonResponse({"data": process_rto_list if len(process_rto_list) <= 12 else process_rto_list[-12:]})
 
 
@@ -3410,7 +3401,7 @@ def falconstorcontinue(request):
             process = int(process)
         except:
             raise Http404()
-        exec_process.delay(process)
+        exec_process.delay(process, if_repeat=True)
         result["res"] = "执行成功。"
         return HttpResponse(json.dumps(result))
 
@@ -3550,7 +3541,7 @@ def ignore_current_script(request):
             current_script_run = current_script_run[0]
             current_process_run = current_script_run.steprun.processrun
             current_process_run_id = current_process_run.id
-            exec_process.delay(current_process_run_id)
+            exec_process.delay(current_process_run_id, if_repeat=True)
 
             return JsonResponse({"data": "成功忽略当前脚本！", "result": 1})
         else:
@@ -3637,7 +3628,8 @@ def verify_items(request):
 
             # 运行流程
             current_process_run_id = current_step_run.processrun_id
-            exec_process.delay(current_process_run_id)
+            exec_process.delay(current_process_run_id, if_repeat=True)
+
             return JsonResponse({"data": "0"})
         else:
             return JsonResponse({"data": "1"})
@@ -3646,10 +3638,8 @@ def verify_items(request):
 def show_result(request):
     if request.user.is_authenticated():
         processrun_id = request.POST.get("process_run_id", "")
-        process_id = None
+
         show_result_dict = {}
-        process_name = ""
-        processrun_time = ""
 
         try:
             processrun_id = int(processrun_id)
@@ -3795,29 +3785,23 @@ def show_result(request):
         show_result_dict["end_time"] = current_processrun.endtime.strftime(
             "%Y-%m-%d %H:%M:%S") if current_processrun.endtime else ""
 
-        current_processrun_endtime = current_processrun.endtime.strftime("%Y-%m-%d %H:%M:%S")
-        current_processrun_starttime = current_processrun.starttime.strftime("%Y-%m-%d %H:%M:%S")
+        # current_processrun_endtime = current_processrun.endtime.strftime("%Y-%m-%d %H:%M:%S")
+        # current_processrun_starttime = current_processrun.starttime.strftime("%Y-%m-%d %H:%M:%S")
 
-        delta_seconds = datetime.datetime.strptime(current_processrun_endtime,
-                                                   '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
-            current_processrun_starttime, '%Y-%m-%d %H:%M:%S')
-        delta_seconds = delta_seconds.total_seconds()
+        all_step_runs = current_processrun.steprun_set.exclude(state="9", step__rto_count_in="0").filter(
+            step__pnode=None)
+        step_rto = 0
+        if all_step_runs:
+            for step_run in all_step_runs:
+                rto = 0
+                end_time = step_run.endtime
+                start_time = step_run.starttime
+                if end_time and start_time:
+                    delta_time = (end_time - start_time)
+                    rto = delta_time.total_seconds()
+                step_rto += rto
 
-        # 减去rto_count_in="0"部分
-        rto_not_count_in_time = 0
-        # 合并steprun与step
-        cursor = connection.cursor()
-        cursor.execute("""
-        select r.starttime, r.endtime from faconstor_steprun as r left join faconstor_step as s on r.step_id=s.id where r.processrun_id='{0}' and s.rto_count_in='0'
-        """.format(current_processrun.id))
-        rows = cursor.fetchall()
-        print(rows)
-        for row in rows:
-            if row[0] and row[1]:
-                rto_not_count_in_time += (row[1] - row[0]).total_seconds()
-
-        delta_seconds -= rto_not_count_in_time
-        m, s = divmod(delta_seconds, 60)
+        m, s = divmod(step_rto, 60)
         h, m = divmod(m, 60)
         show_result_dict["rto"] = "%d时%02d分%02d秒" % (h, m, s)
 
@@ -3913,34 +3897,23 @@ def custom_pdf_report(request):
         first_el_dict["end_time"] = r"{0}".format(
             end_time.strftime("%Y-%m-%d %H:%M:%S") if end_time else "")
 
-        if end_time and start_time:
-            end_time = end_time.strftime("%Y-%m-%d %H:%M:%S")
-            start_time = start_time.strftime("%Y-%m-%d %H:%M:%S")
+        all_step_runs = process_run_obj.steprun_set.exclude(state="9", step__rto_count_in="0").filter(
+            step__pnode=None)
+        step_rto = 0
+        if all_step_runs:
+            for step_run in all_step_runs:
+                rto = 0
+                end_time = step_run.endtime
+                start_time = step_run.starttime
+                if end_time and start_time:
+                    delta_time = (end_time - start_time)
+                    rto = delta_time.total_seconds()
+                step_rto += rto
 
-            delta_seconds = datetime.datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
-                start_time, '%Y-%m-%d %H:%M:%S')
-            delta_seconds = delta_seconds.total_seconds()
+        m, s = divmod(step_rto, 60)
+        h, m = divmod(m, 60)
+        first_el_dict["rto"] = "%d时%02d分%02d秒" % (h, m, s)
 
-            # 减去rto_count_in="0"部分
-            rto_not_count_in_time = 0
-            # 合并steprun与step
-            cursor = connection.cursor()
-            cursor.execute("""
-            select r.starttime, r.endtime from faconstor_steprun as r left join faconstor_step as s on r.step_id=s.id where r.processrun_id='{0}' and s.rto_count_in='0'
-            """.format(process_run_obj.id))
-            rows = cursor.fetchall()
-            print(rows)
-            for row in rows:
-                if row[0] and row[1]:
-                    rto_not_count_in_time += (row[1] - row[0]).total_seconds()
-
-            delta_seconds -= rto_not_count_in_time
-            m, s = divmod(delta_seconds, 60)
-            h, m = divmod(m, 60)
-
-            first_el_dict["rto"] = "%d时%02d分%02d秒" % (h, m, s)
-        else:
-            first_el_dict["rto"] = r"{0}".format("")
         first_el_dict["create_user"] = r"{0}".format(create_user)
 
         task_sign_obj = ProcessTask.objects.filter(processrun_id=processrun_id).exclude(state="9").filter(
@@ -3996,7 +3969,8 @@ def custom_pdf_report(request):
                 else:
                     second_el_dict["start_time"] = pnode_steprun.starttime.strftime("%Y-%m-%d %H:%M:%S") if \
                         pnode_steprun.starttime else ""
-                    second_el_dict["end_time"] = pnode_steprun.endtime.strftime("%Y-%m-%d %H:%M:%S") if pnode_steprun.endtime else ""
+                    second_el_dict["end_time"] = pnode_steprun.endtime.strftime(
+                        "%Y-%m-%d %H:%M:%S") if pnode_steprun.endtime else ""
 
                     if pnode_steprun.endtime and pnode_steprun.starttime:
                         end_time = pnode_steprun.endtime.strftime("%Y-%m-%d %H:%M:%S")
