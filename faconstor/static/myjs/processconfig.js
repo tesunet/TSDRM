@@ -47,7 +47,6 @@ function customTree() {
                                 $("#se_2").empty();
 
                                 $("#group").empty();
-                                // $("#group").attr("disabled", false);
                                 $("#title").text("新建");
                                 $("#id").val("0");
                                 $("#pid").val(obj.id);
@@ -55,6 +54,7 @@ function customTree() {
                                 $("#skip option:selected").removeProp("selected");
                                 $("#approval option:selected").removeProp("selected");
                                 $("#group option:selected").removeProp("selected");
+                                $("#rto_count_in option:selected").removeProp("selected");
                                 $("#name").val("");
 
                                 var groupInfoList = obj.data.allgroups.split("&");
@@ -157,9 +157,9 @@ function customTree() {
                     $("#time").val(data.node.data.time);
                     $("#approval option:selected").removeProp("selected");
                     $("#skip option:selected").removeProp("selected");
+                    $("#rto_count_in option:selected").removeProp("selected");
+
                     var groupInfoList = data.node.data.allgroups.split("&");
-                    // all_groups
-                    // if (data.node.data.approval == "1") {
                     for (var i = 0; i < groupInfoList.length - 1; i++) {
                         var singlegroupInfoList = groupInfoList[i].split("+");
                         if (singlegroupInfoList[0] == data.node.data.group) {
@@ -168,11 +168,10 @@ function customTree() {
                             $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
                         }
                     }
-                    // } else {
-                    //     $("#group").attr("disabled", true)
-                    // }
+                    console.log(data.node.data.rto_count_in);
                     $("#approval").find("option[value='" + data.node.data.approval + "']").prop("selected", true);
                     $("#skip").find("option[value='" + data.node.data.skip + "']").prop("selected", true);
+                    $("#rto_count_in").find("option[value='" + data.node.data.rto_count_in + "']").prop("selected", true);
 
                     if (data.node.data.verify != "first_node") {
                         var scriptInfoList = data.node.data.scripts.split("&");
@@ -611,6 +610,7 @@ $('#save').click(function () {
             skip: $("#skip").val(),
             approval: $("#approval").val(),
             group: $("#group").val(),
+            rto_count_in: $("#rto_count_in").val(),
             new: $("#new").val(),
             process_id: $("#process option:selected").val(),
         },

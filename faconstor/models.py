@@ -64,6 +64,7 @@ class Step(models.Model):
     time = models.IntegerField("预计耗时", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=10)
     sort = models.IntegerField("排序", blank=True, null=True)
+    rto_count_in = models.CharField("是否算入RTO", blank=True, null=True, max_length=10, default="1")
 
 
 class Script(models.Model):
