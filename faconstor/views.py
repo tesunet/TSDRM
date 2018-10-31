@@ -361,7 +361,7 @@ def index(request, funid):
             rto_sum_seconds = 0
 
             for processrun in successful_processruns:
-                all_step_runs = processrun.steprun_set.exclude(state="9", step__rto_count_in="0").filter(
+                all_step_runs = processrun.steprun_set.exclude(state="9").exclude(step__rto_count_in="0").filter(
                     step__pnode=None)
                 step_rto = 0
                 if all_step_runs:
@@ -618,7 +618,7 @@ def get_process_rto(request):
                 processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
                 current_rto_list = []
                 for processrun_rto_obj in processrun_rto_obj_list:
-                    all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9", step__rto_count_in="0").filter(
+                    all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(step__rto_count_in="0").filter(
                         step__pnode=None)
                     step_rto = 0
                     if all_step_runs:
@@ -3788,7 +3788,7 @@ def show_result(request):
         # current_processrun_endtime = current_processrun.endtime.strftime("%Y-%m-%d %H:%M:%S")
         # current_processrun_starttime = current_processrun.starttime.strftime("%Y-%m-%d %H:%M:%S")
 
-        all_step_runs = current_processrun.steprun_set.exclude(state="9", step__rto_count_in="0").filter(
+        all_step_runs = current_processrun.steprun_set.exclude(state="9").exclude(step__rto_count_in="0").filter(
             step__pnode=None)
         step_rto = 0
         if all_step_runs:
@@ -3897,11 +3897,12 @@ def custom_pdf_report(request):
         first_el_dict["end_time"] = r"{0}".format(
             end_time.strftime("%Y-%m-%d %H:%M:%S") if end_time else "")
 
-        all_step_runs = process_run_obj.steprun_set.exclude(state="9", step__rto_count_in="0").filter(
+        all_step_runs = process_run_obj.steprun_set.exclude(state="9").exclude(step__rto_count_in="0").filter(
             step__pnode=None)
         step_rto = 0
         if all_step_runs:
             for step_run in all_step_runs:
+                print(111111)
                 rto = 0
                 end_time = step_run.endtime
                 start_time = step_run.starttime
@@ -3909,6 +3910,8 @@ def custom_pdf_report(request):
                     delta_time = (end_time - start_time)
                     rto = delta_time.total_seconds()
                 step_rto += rto
+                print(rto)
+
 
         m, s = divmod(step_rto, 60)
         h, m = divmod(m, 60)
