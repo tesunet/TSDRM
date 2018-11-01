@@ -185,6 +185,7 @@ def runstep(steprun, if_repeat=False):
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
+
     if processrun.state == "RUN" or processrun.state == "ERROR":
         # 将错误流程改成RUN
         processrun.state = "RUN"
@@ -209,7 +210,13 @@ def runstep(steprun, if_repeat=False):
                 for child in children:
                     childsteprun = child.steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
                     if len(childsteprun) > 0:
-                        childreturn = runstep(childsteprun[0], if_repeat)
+                        childsteprun = childsteprun[0]
+                        start_time = childsteprun.starttime
+                        if start_time:
+                            if_repeat = True
+                        else:
+                            if_repeat = False
+                        childreturn = runstep(childsteprun, if_repeat)
                         if childreturn == 0:
                             return 0
                         if childreturn == 2:
@@ -269,6 +276,7 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.state = "1"
                 myprocesstask.content = "脚本" + script.script.name + "完成。"
                 myprocesstask.save()
+
             if steprun.step.approval == "1" or steprun.verifyitemsrun_set.all():
                 steprun.state = "CONFIRM"
                 steprun.endtime = datetime.datetime.now()
@@ -304,17 +312,10 @@ def runstep(steprun, if_repeat=False):
         if len(nextstep) > 0:
             nextsteprun = nextstep[0].steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
             if len(nextsteprun) > 0:
-                # 二级步骤首个对象starttime存在，表示一级步骤不需要再次写入starttime
-                start_time = ""
+                # starttime存在，一级步骤不需要再次写入starttime
                 nextsteprun = nextsteprun[0]
-                child_related = nextsteprun.step.children.select_related()
-                if child_related:
-                    first_child_related = child_related[0]
-                    all_step_run_set = first_child_related.steprun_set.exclude(state="9").filter(
-                        processrun=nextsteprun.processrun)
-                    if all_step_run_set:
-                        step_run = all_step_run_set[0]
-                        start_time = step_run.starttime
+                start_time = nextsteprun.starttime
+
                 if start_time:
                     if_repeat = True
                 else:
@@ -369,6 +370,7 @@ def exec_process(processrunid, if_repeat=False):
         myprocesstask.state = "1"
         myprocesstask.content = "流程结束。"
         myprocesstask.save()
+
     #
     #     processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
     #     if len(processtasks) > 0:

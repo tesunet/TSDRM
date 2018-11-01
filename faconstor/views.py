@@ -31,6 +31,8 @@ import re
 import pdfkit
 from django.template.response import TemplateResponse
 import sys
+import requests
+from operator import itemgetter
 
 funlist = []
 
@@ -631,7 +633,8 @@ def get_process_rto(request):
                 processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
                 current_rto_list = []
                 for processrun_rto_obj in processrun_rto_obj_list:
-                    all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(step__rto_count_in="0").filter(
+                    all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(
+                        step__rto_count_in="0").filter(
                         step__pnode=None)
                     step_rto = 0
                     if all_step_runs:
@@ -3435,6 +3438,112 @@ def falconstorcontinue(request):
         return HttpResponse(json.dumps(result))
 
 
+def get_celery_tasks_info(request):
+    if request.user.is_authenticated():
+        task_url = "http://127.0.0.1:5555/api/tasks"
+        try:
+            task_json_info = requests.get(task_url).text
+            task_dict_info = json.loads(task_json_info)
+            tasks_list = task_dict_info.items()
+        except:
+            tasks_list = []
+
+        result = []
+        if (len(tasks_list) > 0):
+            for key, value in tasks_list:
+                if value["state"] == "STARTED":
+                    received_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(value["received"])) if value[
+                        "received"] else ""
+                    succeeded = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(value["succeeded"])) if value[
+                        "succeeded"] else ""
+
+                    result.append({
+                        "uuid": value["uuid"],
+                        "args": value["args"],
+                        "result": value["result"],
+                        "received": received_time,
+                        "succeeded": succeeded,
+                        "state": value["state"],
+                    })
+        # # 根据字典中的值对字典进行排序
+        # result = sorted(result, key=itemgetter('received'), reverse=True)
+        return JsonResponse({"data": result})
+
+
+def set_error_state(temp_request, process_run_id, task_content):
+    current_process_runs = ProcessRun.objects.filter(id=process_run_id)
+    if current_process_runs:
+        current_process_run = current_process_runs[0]
+        current_process_run.state = "ERROR"
+        current_process_run.save()
+        current_step_runs = current_process_run.steprun_set.filter(state="RUN")
+        if len(current_step_runs) > 1:
+            for current_step_run in current_step_runs:
+                if current_step_run.step.pnode_id is not None:
+                    current_step_run.state = "ERROR"
+                    current_step_run.save()
+                    current_script_runs = current_step_run.scriptrun_set.filter(state="RUN")
+                    if current_script_runs:
+                        current_script_run = current_script_runs[0]
+                        current_script_run.state = "ERROR"
+                        current_script_run.explain = task_content
+                        current_script_run.save()
+        myprocesstask = ProcessTask()
+        myprocesstask.processrun_id = process_run_id
+        myprocesstask.starttime = datetime.datetime.now()
+        myprocesstask.senduser = temp_request.user.username
+        myprocesstask.type = "INFO"
+        myprocesstask.logtype = "ERROR"
+        myprocesstask.state = "1"
+        myprocesstask.content = task_content
+        myprocesstask.save()
+    else:
+        return Http404()
+
+
+def revoke_current_task(request):
+    if request.user.is_authenticated():
+        process_run_id = request.POST.get("process_run_id", "")
+        abnormal = request.POST.get("abnormal", "")
+        task_url = "http://127.0.0.1:5555/api/tasks"
+
+        task_json_info = requests.get(task_url).text
+        task_dict_info = json.loads(task_json_info)
+        task_id = ""
+
+        for key, value in task_dict_info.items():
+            if value["state"] == "STARTED":
+                task_id = key
+
+        if abnormal == "1":
+            stop_url = "http://127.0.0.1:5555/api/task/revoke/{0}?terminate=true".format(task_id)
+            response = requests.post(stop_url)
+            print(response.text)
+            task_content = "异步任务被自主关闭。"
+
+            # 终止任务
+            if task_id:
+                # 修改当前步骤/脚本/流程的状态为ERROR
+                set_error_state(request, process_run_id, task_content)
+
+                return JsonResponse({"data": task_content})
+
+            else:
+                return JsonResponse({"data": "当前任务不存在"})
+
+        else:
+            task_content = "异步任务异常关闭。"
+
+            # 终止任务
+            if not task_id:
+                # 修改当前步骤/脚本/流程的状态为ERROR
+                set_error_state(request, process_run_id, task_content)
+
+                return JsonResponse({"data": task_content})
+            else:
+                return JsonResponse({"data": "异步任务未出现异常"})
+
+
 def processsignsave(request):
     """
     判断是否最后一个签字，如果是,签字后启动程序
@@ -3826,7 +3935,6 @@ def show_result(request):
                     delta_time = (end_time - start_time)
                     rto = delta_time.total_seconds()
                 step_rto += rto
-
         # 扣除子级步骤中可能的rto_count_in的时间
         all_inner_step_runs = current_processrun.steprun_set.exclude(state="9").filter(
             step__rto_count_in="0").exclude(

@@ -80,6 +80,8 @@ urlpatterns = [
     url(r'^reject_invited/$', reject_invited),
     url(r'^reload_task_nums/$', reload_task_nums),
     url(r'^delete_current_process_run/$', delete_current_process_run),
+    url(r'^get_celery_tasks_info/$', get_celery_tasks_info),
+    url(r'^revoke_current_task/$', revoke_current_task),
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),

@@ -163,6 +163,69 @@ if (App.isAngularJsApp() === false) {
             });
         }
 
+
+        // 构造异步任务表
+        function customTasksTable() {
+            $("#task_info").dataTable().fnDestroy();
+            $("#task_info").dataTable({
+                "searching": false,
+                "paging": false,
+                "ordering": false,
+                "info": false,
+                "bAutoWidth": true,
+                "bSort": false,
+                "bProcessing": true,
+                "ajax": "../../get_celery_tasks_info/",
+                "columns": [
+                    {"data": "uuid"},
+                    {"data": "state"},
+                    {"data": "args"},
+                    {"data": "result"},
+                    {"data": "received"},
+                    {"data": "succeeded"},
+                ],
+
+                "columnDefs": [],
+                "oLanguage": {
+                    "sLengthMenu": "每页显示 _MENU_ 条记录",
+                    "sZeroRecords": "抱歉， 没有找到",
+                    "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
+                    "sInfoEmpty": "没有数据",
+                    "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
+                    "sSearch": "搜索",
+                    "oPaginate": {
+                        "sFirst": "首页",
+                        "sPrevious": "前一页",
+                        "sNext": "后一页",
+                        "sLast": "尾页"
+                    },
+                    "sZeroRecords": "没有检索到数据",
+
+                }
+            });
+        }
+
+
+        // 获取异步任务状态
+        function getTaskStatus(process_run_id, abnormal) {
+            // 判断获取异步任务状态
+            $.ajax({
+                url: "../../revoke_current_task/",
+                type: "post",
+                data: {
+                    "process_run_id": process_run_id,
+                    "abnormal": abnormal,
+                },
+                success: function (data) {
+                    if (abnormal == "1") {
+                        alert(data.data);
+                        customTasksTable();
+                    }
+                }
+            });
+        }
+
+
         function getstep() {
             $.ajax({
                 type: "POST",
@@ -178,7 +241,7 @@ if (App.isAngularJsApp() === false) {
                     $("#stopbtn").show();
                     $("#show_result").hide();
                     $("#process_run_id").val($("#process").val());
-                    $("#process_name").text(data["process_name"]);
+                    $("#process_name").html(data["process_name"] + "&nbsp&nbsp <button id='show_tasks' type='button' style='background-color: #1d89cf'><i class='fa fa-cogs'></i></button>");
                     $("#process_starttime").val(data["process_starttime"]);
                     $("#process_endtime").val(data["process_endtime"]);
                     $("#process_note").val(data["process_note"]);
@@ -299,8 +362,14 @@ if (App.isAngularJsApp() === false) {
                                 var color = ""
                                 if (data["step"][i]["scripts"][j]["scriptstate"] == "DONE")
                                     color = "#26C281"
-                                if (data["step"][i]["scripts"][j]["scriptstate"] == "RUN")
+                                if (data["step"][i]["scripts"][j]["scriptstate"] == "RUN") {
                                     color = "#32c5d2"
+                                    // 异常异步任务处理
+                                    var process_run_id = $("#process_run_id").val();
+                                    var abnormal = "0";
+                                    getTaskStatus(process_run_id, abnormal);
+                                }
+
                                 if (data["step"][i]["scripts"][j]["scriptstate"] == "IGNORE")
                                     color = "#ffd966"
                                 if (data["step"][i]["scripts"][j]["scriptstate"] == "ERROR")
@@ -392,8 +461,13 @@ if (App.isAngularJsApp() === false) {
                                     var color = "";
                                     if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "DONE")
                                         color = "#26C281";
-                                    if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "RUN")
+                                    if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "RUN") {
                                         color = "#32c5d2";
+                                        // 异常异步任务处理
+                                        var process_run_id = $("#process_run_id").val();
+                                        var abnormal = "0";
+                                        getTaskStatus(process_run_id, abnormal);
+                                    }
                                     if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "IGNORE")
                                         color = "#ffd966";
                                     if (data["step"][i]["children"][j]["scripts"][k]["scriptstate"] == "ERROR")
@@ -545,6 +619,11 @@ if (App.isAngularJsApp() === false) {
 
                         showResult();
                     });
+                    // 展示任务信息
+                    $("#show_tasks").click(function () {
+                        $("#static_tasks").modal({backdrop: "static"});
+                        customTasksTable();
+                    })
                 }
             });
         }
@@ -602,7 +681,7 @@ if (App.isAngularJsApp() === false) {
             else {
                 if (confirm("即将终止本次演练，注意，此操作不可逆！是否继续？")) {
                     var process_run_id = $("#process_run_id").val();
-                    
+
                     $.ajax({
                         url: "../../stop_current_process/",
                         type: "post",
@@ -622,6 +701,20 @@ if (App.isAngularJsApp() === false) {
                 }
             }
         });
+
+        // 撤销当前任务
+        $("#revoke_current_task").click(function () {
+            if (confirm("即将撤销当前任务，注意，此操作不可逆！是否继续？")) {
+                var process_run_id = $("#process_run_id").val();
+                var abnormal = "1";
+                getTaskStatus(process_run_id, abnormal);
+            }
+        })
+
+        // 刷新异步任务
+        $("#tasks_fresh").click(function () {
+            customTasksTable();
+        })
 
     });
 }
