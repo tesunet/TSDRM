@@ -373,8 +373,21 @@ def index(request, funid):
                             delta_time = (end_time - start_time)
                             rto = delta_time.total_seconds()
                         step_rto += rto
-
                 rto_sum_seconds += step_rto
+
+                # 扣除子级步骤中可能的rto_count_in的时间
+                all_inner_step_runs = processrun.steprun_set.exclude(state="9").filter(step__rto_count_in="0").exclude(
+                    step__pnode=None)
+                inner_rto_not_count_in = 0
+                if all_inner_step_runs:
+                    for inner_step_run in all_inner_step_runs:
+                        end_time = inner_step_run.endtime
+                        start_time = inner_step_run.starttime
+                        if end_time and start_time:
+                            delta_time = (end_time - start_time)
+                            rto = delta_time.total_seconds()
+                            inner_rto_not_count_in += rto
+                rto_sum_seconds -= inner_rto_not_count_in
 
             m, s = divmod(rto_sum_seconds / len(successful_processruns), 60)
             h, m = divmod(m, 60)
@@ -630,6 +643,22 @@ def get_process_rto(request):
                                 delta_time = (end_time - start_time)
                                 rto = delta_time.total_seconds()
                             step_rto += rto
+
+                    # 扣除子级步骤中可能的rto_count_in的时间
+                    all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
+                        step__rto_count_in="0").exclude(
+                        step__pnode=None)
+                    inner_rto_not_count_in = 0
+                    if all_inner_step_runs:
+                        for inner_step_run in all_inner_step_runs:
+                            end_time = inner_step_run.endtime
+                            start_time = inner_step_run.starttime
+                            if end_time and start_time:
+                                delta_time = (end_time - start_time)
+                                rto = delta_time.total_seconds()
+                                inner_rto_not_count_in += rto
+                                step_rto -= inner_rto_not_count_in
+
                     current_rto = float("%.2f" % (step_rto / 60))
 
                     current_rto_list.append(current_rto)
@@ -3785,9 +3814,6 @@ def show_result(request):
         show_result_dict["end_time"] = current_processrun.endtime.strftime(
             "%Y-%m-%d %H:%M:%S") if current_processrun.endtime else ""
 
-        # current_processrun_endtime = current_processrun.endtime.strftime("%Y-%m-%d %H:%M:%S")
-        # current_processrun_starttime = current_processrun.starttime.strftime("%Y-%m-%d %H:%M:%S")
-
         all_step_runs = current_processrun.steprun_set.exclude(state="9").exclude(step__rto_count_in="0").filter(
             step__pnode=None)
         step_rto = 0
@@ -3800,6 +3826,21 @@ def show_result(request):
                     delta_time = (end_time - start_time)
                     rto = delta_time.total_seconds()
                 step_rto += rto
+
+        # 扣除子级步骤中可能的rto_count_in的时间
+        all_inner_step_runs = current_processrun.steprun_set.exclude(state="9").filter(
+            step__rto_count_in="0").exclude(
+            step__pnode=None)
+        inner_rto_not_count_in = 0
+        if all_inner_step_runs:
+            for inner_step_run in all_inner_step_runs:
+                end_time = inner_step_run.endtime
+                start_time = inner_step_run.starttime
+                if end_time and start_time:
+                    delta_time = (end_time - start_time)
+                    rto = delta_time.total_seconds()
+                    inner_rto_not_count_in += rto
+                    step_rto -= inner_rto_not_count_in
 
         m, s = divmod(step_rto, 60)
         h, m = divmod(m, 60)
@@ -3902,7 +3943,6 @@ def custom_pdf_report(request):
         step_rto = 0
         if all_step_runs:
             for step_run in all_step_runs:
-                print(111111)
                 rto = 0
                 end_time = step_run.endtime
                 start_time = step_run.starttime
@@ -3910,8 +3950,21 @@ def custom_pdf_report(request):
                     delta_time = (end_time - start_time)
                     rto = delta_time.total_seconds()
                 step_rto += rto
-                print(rto)
 
+        # 扣除子级步骤中可能的rto_count_in的时间
+        all_inner_step_runs = process_run_obj.steprun_set.exclude(state="9").filter(
+            step__rto_count_in="0").exclude(
+            step__pnode=None)
+        inner_rto_not_count_in = 0
+        if all_inner_step_runs:
+            for inner_step_run in all_inner_step_runs:
+                end_time = inner_step_run.endtime
+                start_time = inner_step_run.starttime
+                if end_time and start_time:
+                    delta_time = (end_time - start_time)
+                    rto = delta_time.total_seconds()
+                    inner_rto_not_count_in += rto
+                    step_rto -= inner_rto_not_count_in
 
         m, s = divmod(step_rto, 60)
         h, m = divmod(m, 60)
