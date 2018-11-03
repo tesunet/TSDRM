@@ -47,7 +47,7 @@ def getfun(myfunlist, fun):
                 childfun = {}
                 if (fun.pnode_id != 1):
                     myfunlist = getfun(myfunlist, fun.pnode)
-                myfunlist.append(fun)
+                myfunlist.append(fun) 
     except:
         pass
     return myfunlist
