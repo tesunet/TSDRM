@@ -3456,6 +3456,19 @@ def falconstorcontinue(request):
             raise Http404()
         exec_process.delay(process, if_repeat=True)
         result["res"] = "执行成功。"
+
+        current_process_run = ProcessRun.objects.filter(id=process)
+        if current_process_run:
+            current_process_run = current_process_run[0]
+
+            all_tasks_ever = current_process_run.processtask_set.filter(state="0")
+            if all_tasks_ever:
+                for task in all_tasks_ever:
+                    task.endtime = datetime.datetime.now()
+                    task.state = "1"
+                    task.save()
+        else:
+            result["res"] = "流程不存在。"
         return HttpResponse(json.dumps(result))
 
 
@@ -3783,10 +3796,12 @@ def stop_current_process(request):
             current_process_run.note = process_note
             current_process_run.save()
 
-            all_tasks_ever = current_process_run.processtask_set.all()
-            for task in all_tasks_ever:
-                task.state = "1"
-                task.save()
+            all_tasks_ever = current_process_run.processtask_set.filter(state="0")
+            if all_tasks_ever:
+                for task in all_tasks_ever:
+                    task.endtime = datetime.datetime.now()
+                    task.state = "1"
+                    task.save()
 
             myprocesstask = ProcessTask()
             myprocesstask.processrun_id = process_run_id
@@ -3815,6 +3830,7 @@ def verify_items(request):
 
             all_current__tasks = current_step_run.processrun.processtask_set.exclude(state="1")
             for task in all_current__tasks:
+                task.endtime = datetime.datetime.now()
                 task.state = "1"
                 task.save()
 
