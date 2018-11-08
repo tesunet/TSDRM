@@ -158,6 +158,7 @@ function customTree() {
                     $("#approval option:selected").removeProp("selected");
                     $("#skip option:selected").removeProp("selected");
                     $("#rto_count_in option:selected").removeProp("selected");
+                    $("#remark").val(data.node.data.remark);
 
                     var groupInfoList = data.node.data.allgroups.split("&");
                     for (var i = 0; i < groupInfoList.length - 1; i++) {
@@ -226,6 +227,7 @@ function customTree() {
                         // $("#scriptmaxtime").val("");
                         // $("#scripttime").val("");
                         $("#success_text").val("");
+                        $("#log_address").val("");
 
                         document.getElementById("edit").click();
                     }
@@ -259,6 +261,7 @@ function customTree() {
                                         // $("#scriptparam").val(data.param);
                                         $("#scriptscriptpath").val(data.scriptpath);
                                         $("#success_text").val(data.success_text);
+                                        $("#log_address").val(data.log_address);
                                         // $("#scriptrunpath").val(data.runpath);
                                         // $("#scriptcommand").val("cd " + $("#scriptscriptpath").val() + ";" + $("#scriptrunpath").val() + "/" + $("#scriptfilename").val() + " " + $("#scriptparam").val());
                                         // $("#scriptmaxtime").val(data.maxtime);
@@ -415,40 +418,19 @@ function customTree() {
                     "targets": -1,
                     "data": null,
                     "defaultContent": "<button  id='select' title='选择'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-check'></i></button>"
-                },
-                    //     {
-                    //     "targets": [-2],
-                    //     "visible": false
-                    // }, {
-                    //     "targets": [-3],
-                    //     "visible": false
-                    // },
-                    {
-                        "targets": [-2],
-                        "visible": false
-                    },
-                    //     {
-                    //     "targets": [-5],
-                    //     "visible": false
-                    // }, {
-                    //     "targets": [-6],
-                    //     "visible": false
-                    // },
-                    {
-                        "targets": [-3],
-                        "visible": false
-                    }, {
-                        "targets": [-4],
-                        "visible": false
-                    },
-                    //     {
-                    //     "targets": [-9],
-                    //     "visible": false
-                    // },
-                    {
-                        "targets": [0],
-                        "visible": false
-                    }],
+                }, {
+                    "targets": [-2],
+                    "visible": false
+                }, {
+                    "targets": [-3],
+                    "visible": false
+                }, {
+                    "targets": [-4],
+                    "visible": false
+                }, {
+                    "targets": [0],
+                    "visible": false
+                }],
                 "oLanguage": {
                     "sLengthMenu": "每页显示 _MENU_ 条记录",
                     "sZeroRecords": "抱歉， 没有找到",
@@ -492,6 +474,9 @@ $('#sample_1 tbody').on('click', 'button#select', function () {
     // $("#scriptparamtype").val(data.paramtype);
     // $("#scriptparam").val(data.param);
     $("#scriptscriptpath").val(data.scriptpath);
+    $("#success_text").val(data.success_text);
+    $("#log_address").val(data.log_address);
+
     // $("#scriptrunpath").val(data.runpath);
     // $("#scriptcommand").val("cd " + $("#scriptscriptpath").val() + ";" + $("#scriptrunpath").val() + "/" + $("#scriptfilename").val() + " " + $("#scriptparam").val());
     // $("#scriptmaxtime").val(data.maxtime);
@@ -529,6 +514,8 @@ $('#scriptsave').click(function () {
             // param: $("#scriptparam").val(),
             scriptpath: $("#scriptscriptpath").val(),
             success_text: $("#success_text").val(),
+            log_address: $("#log_address").val(),
+
             // runpath: $("#scriptrunpath").val(),
             // maxtime: $("#scriptmaxtime").val(),
             // time: $("#scripttime").val(),
@@ -613,6 +600,7 @@ $('#save').click(function () {
             rto_count_in: $("#rto_count_in").val(),
             new: $("#new").val(),
             process_id: $("#process option:selected").val(),
+            remark: $("#remark").val()
         },
         success: function (data) {
             alert(data);

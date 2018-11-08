@@ -65,6 +65,7 @@ class Step(models.Model):
     state = models.CharField("状态", blank=True, null=True, max_length=10)
     sort = models.IntegerField("排序", blank=True, null=True)
     rto_count_in = models.CharField("是否算入RTO", blank=True, null=True, max_length=10, default="1")
+    remark = models.CharField("备注", blank=True, null=True, max_length=500, help_text="告知业务人员灾备环境地址等信息")
 
 
 class Script(models.Model):
@@ -88,6 +89,7 @@ class Script(models.Model):
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     sort = models.IntegerField("排序", blank=True, null=True)
     succeedtext = models.CharField("成功代码", blank=True, null=True, max_length=500)
+    log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
 
 
 class ProcessRun(models.Model):

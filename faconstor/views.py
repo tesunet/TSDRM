@@ -33,6 +33,7 @@ from django.template.response import TemplateResponse
 import sys
 import requests
 from operator import itemgetter
+from .remote import ServerByPara
 
 funlist = []
 
@@ -47,7 +48,7 @@ def getfun(myfunlist, fun):
                 childfun = {}
                 if (fun.pnode_id != 1):
                     myfunlist = getfun(myfunlist, fun.pnode)
-                myfunlist.append(fun) 
+                myfunlist.append(fun)
     except:
         pass
     return myfunlist
@@ -1765,7 +1766,7 @@ def scriptdata(request):
                      "username": script["username"], "password": script["password"], "filename": script["filename"],
                      "paramtype": script["paramtype"], "param": script["param"], "scriptpath": script["scriptpath"],
                      "runpath": script["runpath"], "maxtime": script["maxtime"], "time": script["time"],
-                     "success_text": script["succeedtext"]})
+                     "success_text": script["succeedtext"], "log_address": script["log_address"]})
         return HttpResponse(json.dumps({"data": result}))
 
 
@@ -1818,7 +1819,7 @@ def scriptsave(request):
             # maxtime = request.POST.get('maxtime', '')
             # time = request.POST.get('time', '')
             success_text = request.POST.get('success_text', '')
-
+            log_address = request.POST.get('log_address', '')
             try:
                 id = int(id)
             except:
@@ -1882,6 +1883,7 @@ def scriptsave(request):
                                                     # scriptsave.param = param
                                                     scriptsave.scriptpath = scriptpath
                                                     scriptsave.succeedtext = success_text
+                                                    scriptsave.log_address = log_address
                                                     # scriptsave.runpath = runpath
                                                     # try:
                                                     #     scriptsave.maxtime = int(maxtime)
@@ -1915,6 +1917,7 @@ def scriptsave(request):
                                                         # scriptsave.param = param
                                                         scriptsave.scriptpath = scriptpath
                                                         scriptsave.succeedtext = success_text
+                                                        scriptsave.log_address = log_address
                                                         # scriptsave.runpath = runpath
                                                         # try:
                                                         #     scriptsave.maxtime = int(maxtime)
@@ -2023,6 +2026,7 @@ def processscriptsave(request):
             # maxtime = request.POST.get('maxtime', '')
             # time = request.POST.get('time', '')
             success_text = request.POST.get('success_text', '')
+            log_address = request.POST.get('log_address', '')
             try:
                 id = int(id)
                 pid = int(pid)
@@ -2090,6 +2094,7 @@ def processscriptsave(request):
                                                         # scriptsave.param = param
                                                         scriptsave.scriptpath = scriptpath
                                                         scriptsave.succeedtext = success_text
+                                                        scriptsave.log_address = log_address
 
                                                         # scriptsave.runpath = runpath
                                                         # try:
@@ -2126,6 +2131,8 @@ def processscriptsave(request):
                                                         # scriptsave.param = param
                                                         scriptsave.scriptpath = scriptpath
                                                         scriptsave.succeedtext = success_text
+                                                        scriptsave.log_address = log_address
+
                                                         # scriptsave.runpath = runpath
                                                         # try:
                                                         #     scriptsave.maxtime = int(maxtime)
@@ -2229,7 +2236,7 @@ def get_script_data(request):
                                "paramtype": allscript[0].paramtype, "param": allscript[0].param,
                                "scriptpath": allscript[0].scriptpath, "success_text": allscript[0].succeedtext,
                                "runpath": allscript[0].runpath, "maxtime": allscript[0].maxtime,
-                               "time": allscript[0].time}
+                               "time": allscript[0].time, "log_address": allscript[0].log_address}
             return HttpResponse(json.dumps(script_data))
 
 
@@ -2261,6 +2268,7 @@ def setpsave(request):
         approval = request.POST.get('approval', '')
         group = request.POST.get('group', '')
         rto_count_in = request.POST.get('rto_count_in', '')
+        remark = request.POST.get('remark', '')
 
         if group == " ":
             group = None
@@ -2301,6 +2309,7 @@ def setpsave(request):
             step.process_id = process_id
             step.pnode_id = pid
             step.sort = my_sort
+            step.remark = remark
             step.save()
             # last_id
             current_steps = Step.objects.filter(pnode_id=pid).exclude(state="9").order_by("sort").filter(
@@ -2327,6 +2336,7 @@ def setpsave(request):
                 step[0].approval = approval
                 step[0].group = group
                 step[0].rto_count_in = rto_count_in
+                step[0].remark = remark
                 step[0].save()
                 result = "保存成功。"
             else:
@@ -2341,6 +2351,7 @@ def setpsave(request):
                 step.approval = approval
                 step.group = group
                 step.rto_count_in = rto_count_in
+                step.remark = remark
                 step.save()
                 result = "保存成功。"
         return HttpResponse(result)
@@ -2382,7 +2393,7 @@ def get_step_tree(parent, selectid):
 
         node["data"] = {"time": child.time, "approval": child.approval, "skip": child.skip, "group_name": group_name,
                         "group": child.group, "scripts": script_string, "allgroups": group_string,
-                        "rto_count_in": child.rto_count_in,
+                        "rto_count_in": child.rto_count_in, "remark": child.remark,
                         "verifyitems": verify_items_string}
         try:
             if int(selectid) == child.id:
@@ -2472,7 +2483,7 @@ def custom_step_tree(request):
                 root["data"] = {"time": rootnode.time, "approval": rootnode.approval, "skip": rootnode.skip,
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title,
-                                "rto_count_in": rootnode.rto_count_in,
+                                "rto_count_in": rootnode.rto_count_in, "remark": rootnode.remark,
                                 "verifyitems": verify_items_string}
                 root["children"] = get_step_tree(rootnode, selectid)
                 root["state"] = {"opened": True}
@@ -3120,8 +3131,18 @@ def falconstor(request, offset, funid):
             id = int(offset)
         except:
             raise Http404()
+
+        # 查看当前流程状态
+        current_process_run = ProcessRun.objects.filter(id=offset)
+        if current_process_run:
+            current_process_run = current_process_run[0]
+            current_run_state = current_process_run.state
+        else:
+            current_run_state = ""
+
         return render(request, 'falconstor.html',
                       {'username': request.user.userinfo.fullname, "process": id,
+                       "current_run_state": current_run_state,
                        "pagefuns": getpagefuns(funid, request)})
     else:
         return HttpResponseRedirect("/index")
@@ -3544,6 +3565,49 @@ def revoke_current_task(request):
                 return JsonResponse({"data": "异步任务未出现异常"})
 
 
+def get_script_log(request):
+    if request.user.is_authenticated():
+        script_run_id = request.POST.get("scriptRunId", "")
+        try:
+            script_run_id = int(script_run_id)
+        except:
+            return Http404()
+
+        current_script_run = ScriptRun.objects.filter(id=script_run_id)
+        log_info = ""
+        if current_script_run:
+            current_script_run = current_script_run[0]
+            log_address = current_script_run.script.log_address
+            remote_ip = current_script_run.script.ip
+            remote_user = current_script_run.script.username
+            remote_password = current_script_run.script.password
+            script_type = current_script_run.script.type
+            if script_type == "SSH":
+                remote_platform = "Linux"
+                remote_cmd = "cat {0}".format(log_address)
+            else:
+                remote_platform = "Windows"
+                remote_cmd = "type {0}".format(log_address)
+            server_obj = ServerByPara(r"{0}".format(remote_cmd), remote_ip, remote_user, remote_password,
+                                      remote_platform)
+            result = server_obj.run("")
+            base_data = result["data"]
+
+            if result["exec_tag"] == "1":
+                res = 0
+                data = "{0} 导致获取日志信息失败！".format(base_data)
+            else:
+                res = "1"
+                data = base_data
+        else:
+            res = "0"
+            data = "当前脚本不存在！"
+        return JsonResponse({
+            "res": res,
+            "log_info": data,
+        })
+
+
 def processsignsave(request):
     """
     判断是否最后一个签字，如果是,签字后启动程序
@@ -3660,7 +3724,8 @@ def get_current_scriptinfo(request):
                 "operator": scriptrun_obj.operator,
                 "explain": scriptrun_obj.explain,
                 "show_button": show_button,
-                "step_id_from_script": step_id_from_script
+                "step_id_from_script": step_id_from_script,
+                "show_log_btn": "1" if script_obj.log_address else "0",
             }
 
             return JsonResponse({"data": script_info})

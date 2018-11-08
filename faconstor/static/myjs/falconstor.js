@@ -52,6 +52,8 @@ if (App.isAngularJsApp() === false) {
         var t2 = window.setInterval(timefun, 1000);  // 设置无限定时器
         var num = 0;
         var isinit = true;
+        var currentRunState = $("#current_run_state").val();
+
         $(document).on('click', function () {
             num = 0;
         });
@@ -250,12 +252,16 @@ if (App.isAngularJsApp() === false) {
                         $("#process_state").val("完成");
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
-
-                        // 自动触发模态框
                         $("#show_result").show();
-                        $("#process_result").modal({backdrop: "static"});
 
-                        showResult();
+                        if (currentRunState != "DONE" && currentRunState != "STOP") {
+                            if (confirm("是否查看流程报告？")) {
+                                // 自动触发模态框
+                                $("#process_result").modal({backdrop: "static"});
+
+                                showResult();
+                            }
+                        }
                     }
                     if (data["process_state"] == "RUN")
                         $("#process_state").val("运行");
@@ -269,11 +275,16 @@ if (App.isAngularJsApp() === false) {
                         $("#process_state").val("停止");
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
-                        // 自动触发模态框
                         $("#show_result").show();
-                        $("#process_result").modal({backdrop: "static"});
 
-                        showResult();
+                        if (currentRunState != "DONE" && currentRunState != "STOP") {
+                            if (confirm("是否查看流程报告？")) {
+                                // 自动触发模态框
+                                $("#process_result").modal({backdrop: "static"});
+
+                                showResult();
+                            }
+                        }
                     }
                     var processallsteps = 0;
                     var processdonesteps = 0;
@@ -531,7 +542,9 @@ if (App.isAngularJsApp() === false) {
                             if ($(this).find('option:selected').length > 1) {
                                 alert("请不要选择多条记录。");
                             } else {
-                                $("#b1").hide();
+                                $("#exec").hide();
+                                $("#ignore").hide();
+
                                 $("#static").modal({backdrop: "static"});
                                 $("#script_button").val($(this).find('option:selected').val());
                                 // 获取当前步骤脚本信息
@@ -553,9 +566,16 @@ if (App.isAngularJsApp() === false) {
                                         $("#offtime").val(data.data["endtime"]);
                                         $("#errorinfo").val(data.data["explain"]);
                                         if (data.data["state"] == "执行失败" && data.data["processrunstate"] == "ERROR") {
-                                            $("#b1").show();
+                                            $("#exec").show();
+                                            $("#ignore").show();
                                         } else {
-                                            $("#b1").hide();
+                                            $("#exec").hide();
+                                            $("#ignore").hide();
+                                        }
+                                        if (data.data["show_log_btn"] == "1") {
+                                            $("#show_log").show();
+                                        } else {
+                                            $("#show_log").hide();
                                         }
                                     }
                                 });
@@ -641,7 +661,8 @@ if (App.isAngularJsApp() === false) {
                     },
                 success: function (data) {
                     if (data["res"] == "执行成功。") {
-                        $('#b1').hide();
+                        $("#exec").hide();
+                        $("#ignore").hide();
                         $('#static').modal('hide');
                         // 重启定时器
                         window.clearInterval(t2);
@@ -673,7 +694,29 @@ if (App.isAngularJsApp() === false) {
             });
         });
 
-        // 停止脚本
+
+        // 展示错误日志
+        $("#show_log").click(function () {
+            $("#static_log").modal({backdrop: "static"});
+
+            var scriptRunId = $("#script_button").val();
+            $.ajax({
+                url: "../../get_script_log/",
+                type: "post",
+                data: {
+                    "scriptRunId": scriptRunId
+                },
+                success: function (data) {
+                    if (data["res"] == "1"){
+                        $("#log_info").val(data["log_info"])
+                    } else{
+                        alert(data["log_info"])
+                    }
+                }
+            });
+        });
+
+        // 终止流程
         $("#stopbtn").click(function () {
             $("#confirmbtn").parent().empty();
             if ($("#process_note").val() == "")

@@ -11,6 +11,9 @@
                     <form class="bs-example form-horizontal activate-form" id="submit_form">
                         <input type="hidden" name="csrfmiddlewaretoken" value="Z4oof1pUpztfrL7Z9iubXVL7EJWDZhex">
                         <input hidden id="process" type="text" name="process" value="{{ process }}">
+                        <input hidden id="current_run_state" type="text" name="current_run_state"
+                               value="{{ current_run_state }}">
+
                         <div class="portlet box blue-madison">
                             <div class="portlet-title">
                                 <div id="process_name" class="caption">
@@ -21,7 +24,7 @@
 
                                 </div>
                             </div>
-                            <div class="portlet-body" style="display: none;">
+                            <div class="portlet-body" style="display: block;">
                                 <div class="row">
 
                                     <div class="panel-body">
@@ -223,30 +226,26 @@
                                                         <div class="form-control-focus"></div>
                                                     </div>
                                                 </div>
-
-                                            </div>
-                                            <div class="form-group">
-                                                <label class="col-md-2 control-label"><span
-                                                        style="color:red; "></span>脚本信息</label>
-                                                <div class="col-md-10">
+                                                <div class="form-group">
+                                                    <label class="col-md-2 control-label"><span
+                                                            style="color:red; "></span>脚本信息</label>
+                                                    <div class="col-md-10">
                                                                 <textarea name="errorinfo" id="errorinfo" cols="50"
                                                                           rows="10"
                                                                           style="resize:none;" autocomplete="off"
                                                                           class="form-control" readonly></textarea>
-                                                    <div class="form-control-focus"></div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="form-actions ">
-                                                <div class="modal-footer" id="b1" hidden>
-                                                    <button type="button" id="exec"
-                                                            name="exec"
-                                                            class="btn green" hidden>重试
-                                                    </button>
-                                                    <button type="button" id="ignore" name="ignore"
-                                                            class="btn green"
-                                                            hidden>跳过
-                                                    </button>
-                                                </div>
+
+                                            <div class="modal-footer">
+                                                <button type="button" id="show_log" name="show_log"
+                                                        class="btn green">查看日志
+                                                </button>
+                                                <button type="button" id="exec" name="exec" class="btn green">重试
+                                                </button>
+                                                <button type="button" id="ignore" name="ignore" class="btn green">跳过
+                                                </button>
                                             </div>
 
                                         </form>
@@ -254,6 +253,43 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div id="static_log" class="modal fade" tabindex="-1" data-backdrop="static"
+                             data-keyboard="false">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" data-dismiss="modal"
+                                                aria-hidden="true"></button>
+                                        <h4 class="modal-title">日志信息</h4>
+                                    </div>
+                                    <div class="panel-body">
+
+                                        <form class="bs-example form-horizontal activate-form">{% csrf_token %}
+
+                                            <div class="form-body">
+                                                <div class="form-group">
+                                                    <div class="col-md-12">
+                                                                <textarea name="log_info" id="log_info" cols="50"
+                                                                          rows="10"
+                                                                          style="resize:none;" autocomplete="off"
+                                                                          class="form-control" readonly></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="modal-footer">
+                                                <button type="button" data-dismiss="modal"
+                                                        class="btn dark btn-outline">关闭
+                                                </button>
+                                            </div>
+
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </form>
                 </div>
             </div>
@@ -365,7 +401,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="tasks_fresh" name="stasks_fresh" class="btn btn-primary">刷新
-                                </button>
+                    </button>
                     <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
                 </div>
             </div>

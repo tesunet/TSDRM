@@ -20,6 +20,7 @@ $(document).ready(function () {
             // {"data": "param"},
             {"data": "scriptpath"},
             {"data": "success_text"},
+            {"data": "log_address"},
             // {"data": "runpath"},
             // {"data": "maxtime"},
             {"data": null}
@@ -123,6 +124,7 @@ $(document).ready(function () {
         // $("#maxtime").val(data.maxtime);
         // $("#time").val(data.time);
         $("#success_text").val(data.success_text);
+        $("#log_address").val(data.log_address);
     });
 
     $("#new").click(function () {
@@ -142,6 +144,8 @@ $(document).ready(function () {
         // $("#maxtime").val("");
         // $("#time").val("");
         $("#success_text").val("");
+        $("#log_address").val("");
+
     });
 
     $('#save').click(function () {
@@ -170,6 +174,7 @@ $(document).ready(function () {
                     // maxtime: $("#maxtime").val(),
                     // time: $("#time").val(),
                     success_text: $("#success_text").val(),
+                    log_address: $("#log_address").val(),
                 },
             success: function (data) {
                 var myres = data["res"];
@@ -187,20 +192,20 @@ $(document).ready(function () {
         });
     })
 
-
-    $('#filename').change(function () {
-        $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
-    })
-    $('#scriptpath').change(function () {
-        $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
-    })
-    $('#runpath').change(function () {
-        $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
-    })
-    $('#param').change(function () {
-        $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
-    })
-    $('#error').click(function () {
-        $(this).hide()
-    })
+    //
+    // $('#filename').change(function () {
+    //     $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
+    // })
+    // $('#scriptpath').change(function () {
+    //     $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
+    // })
+    // $('#runpath').change(function () {
+    //     $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
+    // })
+    // $('#param').change(function () {
+    //     $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
+    // })
+    // $('#error').click(function () {
+    //     $(this).hide()
+    // })
 });

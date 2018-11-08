@@ -289,7 +289,7 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.receiveauth = steprun.step.group
                 myprocesstask.type = "RUN"
                 myprocesstask.state = "0"
-                myprocesstask.content = "步骤" + steprun.step.name + "等待确认，请处理。"
+                myprocesstask.content = "步骤" + steprun.step.name + "等待确认，请处理。" + "备注：" + steprun.step.remark
                 myprocesstask.save()
 
                 return 2
