@@ -698,7 +698,7 @@ if (App.isAngularJsApp() === false) {
         // 展示错误日志
         $("#show_log").click(function () {
             $("#static_log").modal({backdrop: "static"});
-
+            $("#log_info").val("");
             var scriptRunId = $("#script_button").val();
             $.ajax({
                 url: "../../get_script_log/",
@@ -752,12 +752,12 @@ if (App.isAngularJsApp() === false) {
                 var abnormal = "1";
                 getTaskStatus(process_run_id, abnormal);
             }
-        })
+        });
 
         // 刷新异步任务
         $("#tasks_fresh").click(function () {
             customTasksTable();
-        })
+        });
 
     });
 }
