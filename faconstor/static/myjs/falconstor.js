@@ -290,6 +290,7 @@ if (App.isAngularJsApp() === false) {
                     var processdonesteps = 0;
                     var showButtonId = "";
 
+                    var innerUl = "";
                     for (var i = 0; i < data["step"].length; i++) {
 
                         var first = "";
@@ -304,8 +305,18 @@ if (App.isAngularJsApp() === false) {
                         var tabrun = "";
                         if (data["step"][i]["state"] == "RUN" || data["step"][i]["state"] == "CONFIRM" || data["step"][i]["state"] == "ERROR" || ((i == data["step"].length - 1) && data["step"][i]["state"] == "DONE"))
                             tabrun = "active";
+                        /*
+                        innerUl += "<li style='text-align:center;' id='li_" + (i + 1).toString() + "' class='" + tabdone + " " + tabrun + "'><i style='display: none;' class='fa fa-check'></i>" + data["step"][i]["name"] + " </span></a></li>";
+                        var arrowStr = "<i class='fa fa-angle-right fa-3x'></i>";
+                        $("ul.steps").append("<li id='li_" + (i + 1).toString() + "' class='" + tabdone + " " + tabrun + "'><a href='#tab" + (i + 1).toString() + "' data-toggle='tab' class='step' aria-expanded='true'><span class='number' style='line-height: 100px;font-size: 40px;'> " + (i + 1).toString() + " </span></a></li>");
 
-                        $("ul.steps").append("<li id='li_" + (i + 1).toString() + "' class='" + tabdone + " " + tabrun + "'><a href='#tab" + (i + 1).toString() + "' data-toggle='tab' class='step' aria-expanded='true'><span class='number'> " + (i + 1).toString() + " </span><span class='desc'><i hidden class='fa fa-check'></i> " + data["step"][i]["name"] + " </span></a></li>");
+
+                        var arrowStr = "<i style='text-align: center' class='fa fa-angle-right fa-3x'></i><i style='text-align: center' class='fa fa-angle-right fa-3x'></i>";
+                        if (i==0){
+                            arrowStr = ""
+                        }
+                        */
+                        $("ul.steps").append("<li id='li_" + (i + 1).toString() + "' class='" + tabdone + " " + tabrun + "'><a href='#tab" + (i + 1).toString() + "' data-toggle='tab' class='step' aria-expanded='true'><span class='number' style='line-height: 100px;font-size: 40px;text-align: center;'> " + (i + 1).toString() + " </span></br><span class='desc'><i hidden class='fa fa-check'></i> " + data["step"][i]["name"] + " </span></a></li>");
                         $("div.tab-content").append("<div class='tab-pane " + tabrun + "' id='tab" + (i + 1).toString() + "'></div>");
 
                         $("#tab" + (i + 1).toString()).append("<div id='tabdiv" + (i + 1).toString() + "' class='mt-element-step'></div>");
@@ -416,7 +427,7 @@ if (App.isAngularJsApp() === false) {
                                 steprun = "active";
                                 style = ""
                             }
-                            $("#tabsteps" + (i + 1).toString()).append("<div id='step" + (i + 1).toString() + "_" + (j + 1).toString() + "' class='col-md-4 bg-grey-steel mt-step-col " + stepdone + " " + steprun + "'><div class='mt-step-number'>" + (j + 1).toString() + "</div><div class='mt-step-title uppercase font-grey-cascade'><i class='fa fa-hand-o-right' style='" + style + "'></i>     " + data["step"][i]["children"][j]["name"] + "</div><div class='mt-step-content font-grey-cascade'>开始时间:" + data["step"][i]["children"][j]["starttime"] + "</div><div class='mt-step-content font-grey-cascade'>结束时间:" + data["step"][i]["children"][j]["endtime"] + "</div></div>")
+                            $("#tabsteps" + (i + 1).toString()).append("<div id='step" + (i + 1).toString() + "_" + (j + 1).toString() + "' class='col-md-4 bg-grey-steel mt-step-col " + stepdone + " " + steprun + "' ><div class='mt-step-number'>" + (j + 1).toString() + "</div><div class='mt-step-title uppercase font-grey-cascade' style='font-size: 25px;'><i class='fa fa-hand-o-right' style='" + style + "'></i>     " + data["step"][i]["children"][j]["name"] + "</div><div class='mt-step-content font-grey-cascade'>开始时间:" + data["step"][i]["children"][j]["starttime"] + "</div><div class='mt-step-content font-grey-cascade'>结束时间:" + data["step"][i]["children"][j]["endtime"] + "</div></div>")
                             $("#tabdiv" + (i + 1).toString()).append("<div " + hidediv + " class='form-group tabdiv' id='div" + (i + 1).toString() + "_" + (j + 1).toString() + "'></div>");
 
                             var step2_name = data["step"][i]["children"][j]["name"];
@@ -511,6 +522,8 @@ if (App.isAngularJsApp() === false) {
 
 
                     }
+
+                    // $("ul.steps").append("<ul class='nav nav-pills nav-justified steps'>" + innerUl + "</ul>");
 
                     // 展示确认按钮
                     $("#confirmbtn").parent().show();
@@ -707,9 +720,9 @@ if (App.isAngularJsApp() === false) {
                     "scriptRunId": scriptRunId
                 },
                 success: function (data) {
-                    if (data["res"] == "1"){
+                    if (data["res"] == "1") {
                         $("#log_info").val(data["log_info"])
-                    } else{
+                    } else {
                         alert(data["log_info"])
                     }
                 }
