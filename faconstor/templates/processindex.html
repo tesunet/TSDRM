@@ -1,0 +1,124 @@
+﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标题</title>
+    <link rel="stylesheet" href="/static/processindex/css/style.css">
+    <script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+    <script src="/static/processindex/js/common.js"></script>
+</head>
+<body>
+<div class="wrapper">
+    <div class="head-content">
+        <div class="header-title">
+            <h2></h2>
+        </div>
+        <div class="header-timeout">
+            <ul>
+                <li><span>RTO</span></li>
+                <li><span>0</span></li>
+                <li><span>0</span></li>
+                <li><em>:</em></li>
+                <li><span>0</span></li>
+                <li><span>0</span></li>
+                <li><em>:</em></li>
+                <li><span>0</span></li>
+                <li><span>0</span></li>
+            </ul>
+        </div>
+    </div>
+    <div class="step-box">
+
+        <div class="box-left">
+            <div class="step-item step-left4">
+                <div class="lbox-4" style="display: none">
+                    <div class="con-circle"></div>
+                    <div class="con-text"></div>
+                </div>
+            </div>
+            <div class="step-item step-left3">
+                <div class="lbox-3" style="display: none">
+                    <div class="con-circle"></div>
+                    <div class="con-text"></div>
+                </div>
+            </div>
+            <div class="step-item step-left2">
+                <div class="lbox-2" style="display: none">
+                    <div class="con-circle"></div>
+                    <div class="con-text"></div>
+                </div>
+            </div>
+            <div class="step-item step-left1">
+                <div class="lbox-1" style="display: none">
+                    <div class="con-circle"></div>
+                    <div class="con-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box-center">
+            <div class="step-current">
+                <div class="step-item">
+                    <div class="cur-item-wb">
+                        <div class="progress-ring" data-name="" data-percent=""></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box-right">
+            <div class="step-item step-right1">
+                <div class="rbox-1" style="display: none;">
+                    <div class="con-circle"></div>
+                    <div class="con-text"></div>
+                </div>
+            </div>
+            <div class="step-item step-right2">
+                <div class="rbox-2" style="display: none;">
+                    <div class="con-circle"></div>
+                    <div class="con-text"></div>
+                </div>
+            </div>
+            <div class="step-item step-right3">
+                <div class="rbox-3" style="display: none;">
+                    <div class="con-circle"></div>
+                    <div class="con-text"></div>
+                </div>
+            </div>
+            <div class="step-item step-right4">
+                <div class="rbox-4" style="display: none;">
+                    <div class="con-circle"></div>
+                    <div class="con-text"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+     <div class="box-progress">
+         <div class="box-progress-container">
+             <div class="progress-left-time"></div>
+             <div class="progress-right-time"></div>
+             <div class='progress active'>
+                 <div class='progress-par bar' style='width:1%;'><span></span><i>0%</i></div>
+             </div>
+         </div>
+     </div>
+    <div style="height: 70px"/>
+</div>
+<script id="stepItemTpl" type="text/html">
+    <div class="step-item">
+        <div class="cur-item-wb">
+            <div class="progress-ring" data-name="{{ d.name }}" data-state="{{ d.state }}"
+                 data-percent="{{ d.percent }}">
+            </div>
+        </div>
+    </div>
+</script>
+<script>
+    util.run();
+</script>
+</body>
+</html>

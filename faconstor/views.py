@@ -203,6 +203,14 @@ def test(request):
     else:
         return HttpResponseRedirect("/login")
 
+def processindex(request):
+    if request.user.is_authenticated() and request.session['isadmin']:
+        errors = []
+        return render(request, 'processindex.html',
+                      {'username': request.user.userinfo.fullname, "errors": errors})
+    else:
+        return HttpResponseRedirect("/login")
+
 
 def custom_time(time):
     """

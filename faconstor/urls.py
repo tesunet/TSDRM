@@ -5,6 +5,7 @@ from django.conf import settings
 urlpatterns = [
     url(r'^$', index, {'funid': '2'}),
     url(r'^test/$', test),
+    url(r'^processindex/$', processindex),
     url(r'^index/$', index, {'funid': '2'}),
     url(r'^get_process_rto/$', get_process_rto),
     url(r'^get_daily_processrun/$', get_daily_processrun),
