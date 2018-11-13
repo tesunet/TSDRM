@@ -45,25 +45,6 @@
     <script src="/static/new/js/ie/html5shiv.js"></script>
     <script src="/static/new/js/ie/respond.min.js"></script>
     <script src="/static/new/js/ie/excanvas.js"></script>
-    <!-- 火狐栏目宽度修改 -->
-    <style>
-        @-moz-document url-prefix() {
-            header.bg-white.header.header-md.navbar.navbar-fixed-top-xs.box-shadow {
-                height: 60px;
-            }
-            li.dropdown.dropdown-user{
-                height: 60px;
-            }
-            ul.nav.navbar-nav.navbar-right.m-n.hidden-xs.nav-user.user{
-                height: 60px;
-
-            }
-            li:not(#header_notification_bar).dropdown{
-                position: relative;
-                bottom:7px;
-            }
-        }
-    </style>
     <![endif]-->
 </head>
 <body class="">
@@ -448,6 +429,29 @@
             }
         });
     });
+</script>
+
+<script>
+    // 针对火狐浏览器样式不正确的修改
+    if ($(".vbox").offset().top != 0) {
+        var explorer = window.navigator.userAgent;
+        if (explorer.indexOf("Firefox") >= 0) {
+            $("header.bg-white.header.header-md.navbar.navbar-fixed-top-xs.box-shadow").css({
+                "height": "60px"
+            })
+            $("li.dropdown.dropdown-user").css({
+                "position": "relative",
+                "height": "60px"
+            })
+            $("ul.nav.navbar-nav.navbar-right.m-n.hidden-xs.nav-user.user").css({
+                "height":"60px"
+            })
+            $("li:not(#header_notification_bar).dropdown").css({
+                "position": "position",
+                "bottom": "7px"
+            })
+        }
+    }
 </script>
 
 </html>
