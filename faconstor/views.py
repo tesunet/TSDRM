@@ -34,6 +34,7 @@ import sys
 import requests
 from operator import itemgetter
 from .remote import ServerByPara
+from django.views.decorators.csrf import csrf_exempt
 
 funlist = []
 
@@ -106,7 +107,7 @@ def getpagefuns(funid, request=""):
                 jsurl = compile_obj.findall(myurl)[0][:-1]
         mycurfun = {"id": curfun[0].id, "name": curfun[0].name, "url": myurl, "jsurl": jsurl}
     if request:
-        # 左上角消息下拉菜单
+        # 右上角消息下拉菜单
         mygroup = []
         userinfo = request.user.userinfo
         guoups = userinfo.group.all()
@@ -117,6 +118,7 @@ def getpagefuns(funid, request=""):
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
             "-starttime").exclude(processrun__state="9")
+        print("length", len(allprosstasks))
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 send_time = task.starttime
@@ -203,13 +205,113 @@ def test(request):
     else:
         return HttpResponseRedirect("/login")
 
-def processindex(request):
+
+def processindex(request, processrun_id):
     if request.user.is_authenticated() and request.session['isadmin']:
         errors = []
+        # processrun_id = request.GET.get("p_run_id", "")
         return render(request, 'processindex.html',
-                      {'username': request.user.userinfo.fullname, "errors": errors})
+                      {'username': request.user.userinfo.fullname, "errors": errors, "processrun_id": processrun_id})
     else:
         return HttpResponseRedirect("/login")
+
+
+def get_process_index_data(request):
+    if request.user.is_authenticated():
+        processrun_id = request.POST.get("p_run_id", "")
+        current_processruns = ProcessRun.objects.filter(id=processrun_id)
+
+        if current_processruns:
+            current_processrun = current_processruns[0]
+
+            name = current_processrun.process.name
+            starttime = current_processrun.starttime
+            endtime = current_processrun.endtime
+            rtoendtime = ""
+
+            state = current_processrun.state
+            rtostate = "RUN"
+            percent = 0
+
+            process_id = current_processrun.process_id
+
+            # 构造一个正确的步骤顺序列表
+            all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by(
+                "sort")
+            correct_step_id_list = []
+            if all_pnode_steps:
+                for pnode_step in all_pnode_steps:
+                    pnode_step_id = pnode_step.id
+                    correct_step_id_list.append(pnode_step_id)
+            else:
+                return Http404()
+
+            # 构造运行中流程步骤列表
+            correct_step_run_list = []
+            for step_id in correct_step_id_list:
+                current_step_run = StepRun.objects.filter(step_id=step_id).last()
+                correct_step_run_list.append(current_step_run)
+
+            # 构造当前流程步骤info
+            steps = []
+            c_index = 0
+            rtostate = "RUN"
+
+            if correct_step_run_list:
+                # rtostate
+                for c_step_run in correct_step_run_list:
+                    c_rto_count_in = c_step_run.step.rto_count_in
+                    if c_rto_count_in == "0" and c_step_run.state not in ["DONE", "STOP", "EDIT"]:
+                        rtostate = "DONE"
+                        rtoendtime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        break
+
+                for num, c_step_run in enumerate(correct_step_run_list):
+                    num += 1
+                    # 区分子父级步骤run
+                    if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
+                        c_step_run_type = "cur"
+                        c_index = num
+                    else:
+                        c_step_run_type = ""
+
+                    c_step_id = c_step_run.step.id
+                    c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id)
+                    inner_step_run_index = 0
+                    inner_step_run_percent = 0
+                    if c_inner_step_runs:
+                        for num, c_inner_step_run in enumerate(c_inner_step_runs):
+                            num += 1
+                            if c_inner_step_run.state == "RUN":
+                                inner_step_run_index = num
+                                break
+                        inner_step_run_percent = "%2d" % (inner_step_run_index / len(c_inner_step_runs) * 100)
+
+                    c_step_run_dict = {
+                        "name": c_step_run.step.name,
+                        "state": c_step_run.state.lower() if c_step_run.state else "",
+                        "starttime": c_step_run.starttime.strftime(
+                            '%Y-%m-%d %H:%M:%S') if c_step_run.starttime else None,
+                        "endtime": c_step_run.endtime.strftime('%Y-%m-%d %H:%M:%S') if c_step_run.endtime else None,
+                        "percent": inner_step_run_percent,
+                        "type": c_step_run_type,
+                    }
+                    steps.append(c_step_run_dict)
+                percent = "%02d" % (c_index / len(correct_step_run_list) * 100)
+
+            c_step_run_data = {
+                "name": name,
+                "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else "",
+                "rtoendtime": rtoendtime,
+                "endtime": endtime.strftime('%Y-%m-%d %H:%M:%S') if endtime else "",
+                "state": state,
+                "rtostate": rtostate,
+                "percent": percent,
+                "steps": steps
+            }
+        else:
+            c_step_run_data = {}
+        return JsonResponse(c_step_run_data)
 
 
 def custom_time(time):
@@ -419,6 +521,7 @@ def index(request, funid):
             "STOP": "终止",
             "PLAN": "计划",
             "REJECT": "取消",
+            "SIGN": "签到",
             "": "",
         }
 
@@ -445,79 +548,87 @@ def index(request, funid):
                 current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
                 current_processrun_id = current_processrun.id
 
-                # 构造所在步骤序列的对应关系
-                # 步骤顺序是错的,所以要构造一个正确的步骤顺序
-                # step -> step_run -> 对应关系 -> 取对象
-                all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by(
-                    "sort")
-                correct_step_id_list = []
-                if all_pnode_steps:
-                    for pnode_step in all_pnode_steps:
-                        pnode_step_id = pnode_step.id
-                        correct_step_id_list.append(pnode_step_id)
-                        inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id,
-                                                                             pnode_id=pnode_step_id).order_by("sort")
-                        if inner_steps:
-                            for inner_step in inner_steps:
-                                correct_step_id_list.append(inner_step.id)
-                else:
-                    return Http404()
-
-                correct_step_run_list = []
-                for step_id in correct_step_id_list:
-                    current_step_run = StepRun.objects.filter(step_id=step_id).last()
-                    correct_step_run_list.append(current_step_run)
-
-                index_dict = {}
-                if correct_step_run_list:
-                    for num, current_step in enumerate(correct_step_run_list):
-                        index_dict["{0}".format(current_step.id)] = num + 1
-
-                    current_run_step_id = None
-                    for step_run in correct_step_run_list[::-1]:
-                        if step_run.state not in ["DONE", "STOP", "EDIT"]:
-                            current_run_step_id = step_run.id
-                            current_step_name = step_run.step.name
-                            # 负责角色
-                            group_id = step_run.step.group
-                            if group_id:
-                                group_name = Group.objects.filter(id=int(group_id))[0].name
-                                users_from_group = Group.objects.filter(id=int(group_id))[
-                                    0].userinfo_set.all().values_list(
-                                    "fullname")
-                                users = ""
-                                for num, user in enumerate(users_from_group):
-                                    users += user[0] + "、"
-                                users = "({0})".format(users[:-1])
-                            break
-                    if current_run_step_id:
-                        if len(correct_step_run_list) > index_dict["{0}".format(current_run_step_id)] > 1:
-                            current_run_step_index = index_dict["{0}".format(current_run_step_id)]
-                            for num, step_run in enumerate(correct_step_run_list):
-                                if current_run_step_index - 2 == num or current_run_step_index == num or current_run_step_index - 1 == num:
-                                    all_steps.append({
-                                        "step_run_name": step_run.step.name,
-                                        "step_run_index": num + 1
-                                    })
-                        elif index_dict["{0}".format(current_run_step_id)] == 1:
-                            current_run_step_index = 1
-                            for num, step_run in enumerate(correct_step_run_list):
-                                if current_run_step_index + 1 == num or current_run_step_index == num or current_run_step_index - 1 == num:
-                                    all_steps.append({
-                                        "step_run_name": step_run.step.name,
-                                        "step_run_index": num + 1
-                                    })
-                        else:
-                            current_run_step_index = len(correct_step_run_list)
-                            for num, step_run in enumerate(correct_step_run_list):
-                                if current_run_step_index - 1 == num or current_run_step_index - 2 == num or current_run_step_index - 3 == num:
-                                    all_steps.append({
-                                        "step_run_name": step_run.step.name,
-                                        "step_run_index": num + 1
-                                    })
-
-                        process_rate = "%02d" % (
-                                index_dict["{0}".format(current_run_step_id)] / len(correct_step_run_list) * 100)
+                # # 构造一个正确的步骤顺序列表
+                # all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by(
+                #     "sort")
+                # correct_step_id_list = []
+                # if all_pnode_steps:
+                #     for pnode_step in all_pnode_steps:
+                #         pnode_step_id = pnode_step.id
+                #         correct_step_id_list.append(pnode_step_id)
+                #         inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id,
+                #                                                              pnode_id=pnode_step_id).order_by("sort")
+                #         if inner_steps:
+                #             for inner_step in inner_steps:
+                #                 correct_step_id_list.append(inner_step.id)
+                # else:
+                #     return Http404()
+                #
+                # # 构造运行中流程步骤列表
+                # correct_step_run_list = []
+                # for step_id in correct_step_id_list:
+                #     current_step_run = StepRun.objects.filter(step_id=step_id).last()
+                #     correct_step_run_list.append(current_step_run)
+                #
+                # # 通过1-n数字标记当前流程步骤
+                # index_dict = {}
+                # if correct_step_run_list:
+                #     for num, current_step in enumerate(correct_step_run_list):
+                #         index_dict["{0}".format(current_step.id)] = num + 1
+                #
+                #     current_run_step_id = None
+                #     # 倒序，指定二级步骤
+                #     for step_run in correct_step_run_list[::-1]:
+                #         if step_run.state not in ["DONE", "STOP", "EDIT"]:
+                #             current_run_step_id = step_run.id
+                #             current_step_name = step_run.step.name
+                #             # 负责角色
+                #             group_id = step_run.step.group
+                #             if group_id:
+                #                 group_name = Group.objects.filter(id=int(group_id))[0].name
+                #                 users_from_group = Group.objects.filter(id=int(group_id))[
+                #                     0].userinfo_set.all().values_list(
+                #                     "fullname")
+                #                 users = ""
+                #                 for num, user in enumerate(users_from_group):
+                #                     users += user[0] + "、"
+                #                 users = "({0})".format(users[:-1])
+                #             break
+                #     # 构造首页展示步骤
+                #     if current_run_step_id:
+                #         # 中间步骤
+                #         if len(correct_step_run_list) > index_dict["{0}".format(current_run_step_id)] > 1:
+                #             current_run_step_index = index_dict["{0}".format(current_run_step_id)]
+                #             # 取左4，中1，右4
+                #             for num, step_run in enumerate(correct_step_run_list):
+                #                 if current_run_step_index - 2 == num or current_run_step_index == num or current_run_step_index - 1 == num:
+                #                     all_steps.append({
+                #                         "step_run_name": step_run.step.name,
+                #                         "step_run_index": num + 1
+                #                     })
+                #         # 进行至第一步
+                #         elif index_dict["{0}".format(current_run_step_id)] == 1:
+                #             current_run_step_index = 1
+                #             # 取中1，右4
+                #             for num, step_run in enumerate(correct_step_run_list):
+                #                 if current_run_step_index + 1 == num or current_run_step_index == num or current_run_step_index - 1 == num:
+                #                     all_steps.append({
+                #                         "step_run_name": step_run.step.name,
+                #                         "step_run_index": num + 1
+                #                     })
+                #         # 最后一步
+                #         else:
+                #             # 取中1，左4
+                #             current_run_step_index = len(correct_step_run_list)
+                #             for num, step_run in enumerate(correct_step_run_list):
+                #                 if current_run_step_index - 1 == num or current_run_step_index - 2 == num or current_run_step_index - 3 == num:
+                #                     all_steps.append({
+                #                         "step_run_name": step_run.step.name,
+                #                         "step_run_index": num + 1
+                #                     })
+                #
+                #         process_rate = "%02d" % (
+                #                 index_dict["{0}".format(current_run_step_id)] / len(correct_step_run_list) * 100)
 
                 # 进程url
                 processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)
@@ -599,6 +710,7 @@ def index(request, funid):
                 current_processrun_dict["group_name"] = group_name
                 current_processrun_dict["users"] = users
                 current_processrun_dict["processrun_url"] = processrun_url
+                current_processrun_dict["processrun_id"] = current_processrun.id
 
                 curren_processrun_info_list.append(current_processrun_dict)
 
@@ -620,7 +732,7 @@ def index(request, funid):
                 }
                 process_success_rate_list.append(process_dict)
 
-        # 左上角消息任务
+        # 右上角消息任务
         return render(request, "index.html",
                       {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
                        "pagefuns": getpagefuns(funid, request), "success_rate": success_rate,
@@ -1154,7 +1266,6 @@ def organization(request, funid):
             newpassword = "hidden"
             editpassword = ""
             allgroup = Group.objects.exclude(state="9")
-
             if request.method == 'POST':
                 hiddendiv = ""
                 id = request.POST.get('id')
@@ -2933,6 +3044,7 @@ def falconstorswitchdata(request):
             "STOP": "终止",
             "PLAN": "计划",
             "REJECT": "取消",
+            "SIGN": "签到",
             "": "",
         }
 
@@ -3028,6 +3140,14 @@ def falconstorrun(request):
                             "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
                         if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                            # 将当前流程改成SIGN
+                            c_process_run_id = myprocessrun.id
+                            c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                            if c_process_run:
+                                c_process_run = c_process_run[0]
+                                c_process_run.state = "SIGN"
+                                c_process_run.save()
+
                             for group in allgroup:
                                 try:
                                     signgroup = Group.objects.get(id=int(group["group"]))
@@ -3092,6 +3212,13 @@ def falconstor_run_invited(request):
                 "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
             if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                # 将当前流程改成SIGN
+                c_process_run_id = current_process_run.id
+                c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                if c_process_run:
+                    c_process_run = c_process_run[0]
+                    c_process_run.state = "SIGN"
+                    c_process_run.save()
                 for group in allgroup:
                     try:
                         signgroup = Group.objects.get(id=int(group["group"]))
@@ -3653,8 +3780,12 @@ def processsignsave(request):
             process_task.save()
 
             myprocessrun = process_task.processrun
+
             prosssigns = ProcessTask.objects.filter(processrun=myprocessrun, state="0")
             if len(prosssigns) <= 0:
+                myprocessrun.state = "RUN"
+                myprocessrun.save()
+
                 myprocess = myprocessrun.process
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = myprocessrun
@@ -3680,6 +3811,20 @@ def processsignsave(request):
 def reload_task_nums(request):
     if request.user.is_authenticated():
         mygroup = []
+        task_id = request.POST.get("task_id", "")
+
+        try:
+            task_id = int(task_id)
+        except:
+            return Http404()
+
+        c_task = ProcessTask.objects.filter(id=task_id)
+        if c_task:
+            c_task = c_task[0]
+            c_task_type =c_task.type
+        else:
+            c_task_type = ""
+
         userinfo = request.user.userinfo
         guoups = userinfo.group.all()
         pop = False
@@ -3688,7 +3833,7 @@ def reload_task_nums(request):
                 mygroup.append(str(curguoup.id))
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
-            "-starttime").all()
+            "-starttime").filter(type=c_task_type)
         result = {
             "task_nums": len(allprosstasks)
         }
@@ -4463,7 +4608,8 @@ def falconstorsearch(request, funid):
             "ERROR": "执行失败",
             "IGNORE": "忽略",
             "STOP": "终止",
-            "PLAN": "计划"
+            "PLAN": "计划",
+            "SIGN": "签到",
         }
         return render(request, "falconstorsearch.html",
                       {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
@@ -4555,6 +4701,7 @@ def falconstorsearchdata(request):
             "STOP": "终止",
             "PLAN": "计划",
             "REJECT": "取消",
+            "SIGN": "签到",
             "": "",
         }
         cursor.execute(exec_sql)

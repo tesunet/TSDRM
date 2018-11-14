@@ -1,32 +1,39 @@
-﻿var state = '', interval = 0, tmInterval = 0, headerTitle = '';
+﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
+var state = '',
+    interval = 0,
+    tmInterval = 0,
+    headerTitle = '';
 var allState = ['run', 'done', 'error', 'stop', 'confirm', 'edit'];
 var util = {
-    run: function () {
+    run: function() {
         util.initExtend();
         util.request();
-        interval = setInterval(function () {
+        interval = setInterval(function() {
             if (state === 'DONE') {
                 clearInterval(interval);
             }
             util.request();
         }, 3 * 1000); //3秒/次请求
     },
-    request: function () {
+    request: function() {
         $.ajax({
-            url: '/static/processindex/data.json', //这里面是请求的接口地址
-            type: 'GET',
-            data: {},
+            url: '/get_process_index_data/', //这里面是请求的接口地址
+            type: 'POST',
+            data: {
+                p_run_id: $("#process_run_id").val(),
+                csrfmiddlewaretoken: csrfToken
+            },
             timeout: 2000,
             dataType: 'json',
-            success: function (data) {
+            success: function(data) {
                 util.makeHtml(data);
             },
-            error: function (xhr) {
-                alert('网络错误')
-            }
+            // error: function(xhr) {
+            //     alert('网络错误')
+            // }
         });
     },
-    makeHtml: function (data) {
+    makeHtml: function(data) {
         state = data.state;
         if (headerTitle === '') {
             headerTitle = data.name;
@@ -42,7 +49,7 @@ var util = {
         $('.progress-left-time').text(data.starttime);
         $('.progress-right-time').text(data.endtime);
 
-        util.makeTimer(data.state, data.starttime, data.endtime);
+        util.makeTimer(data.rtostate, data.starttime, data.endtime, data.rtoendtime);
 
         var leftData = [];
         var rightData = [];
@@ -85,7 +92,7 @@ var util = {
 
         var stateArr = ['DONE', 'STOP', 'ERROR'];
         if ($.inArray(state, stateArr) >= 0) {
-            setTimeout(function () {
+            setTimeout(function() {
                 $('.progress-par span').css({
                     'background': 'url("/static/processindex/images/done.png") no-repeat',
                     'background-size': '90px 70px'
@@ -95,7 +102,7 @@ var util = {
             clearInterval(tmInterval);
         }
     },
-    makeR: function (rightData) {
+    makeR: function(rightData) {
         for (var n = 0; n < 4; n++) {
             var rbox1 = $('.rbox-' + (n + 1));
             rbox1.find('.con-text').html('<div class="text"></div>');
@@ -119,7 +126,7 @@ var util = {
             }
         }
     },
-    makeL: function (leftData) {
+    makeL: function(leftData) {
         for (var n = 0; n < 4; n++) {
             var lbox1 = $('.lbox-' + (n + 1));
             lbox1.find('.con-text').html('<div class="text"></div>');
@@ -148,7 +155,7 @@ var util = {
             }
         }
     },
-    getTimerByIndex: function (index, startTime, endTime) {
+    getTimerByIndex: function(index, startTime, endTime) {
         var timer = util.timeFn(startTime, endTime);
         var str = '';
         switch (index) {
@@ -168,23 +175,23 @@ var util = {
 
         return str;
     },
-    makeTimer: function (state, starTime, endTime) {
+    makeTimer: function(state, starTime, endTime, rtoEndTime) {
         var timer;
         if (state === 'DONE') {
             clearInterval(tmInterval);
-            timer = util.timeFn(starTime, endTime);
+            timer = util.timeFn(starTime, rtoEndTime);
             util.showTimer(timer);
         } else {
             if (!tmInterval) {
                 clearInterval(tmInterval);
-                tmInterval = setInterval(function () {
+                tmInterval = setInterval(function() {
                     timer = util.timeFn(starTime, util.getNow());
                     util.showTimer(timer);
                 }, 1 * 1000); //定时刷新时间
             }
         }
     },
-    showTimer: function (timer) {
+    showTimer: function(timer) {
         var hours = timer.hours.split('');
         var minutes = timer.minutes.split('');
         var seconds = timer.seconds.split('');
@@ -196,15 +203,15 @@ var util = {
         headerTimeLi.eq(7).find('span').text(seconds[0]);
         headerTimeLi.eq(8).find('span').text(seconds[1]);
     },
-    initExtend: function () {
-        $.fn.loadingNow = function () {
+    initExtend: function() {
+        $.fn.loadingNow = function() {
             var defaultOpt = {
                 trackColor: '#f0f0f0',
                 progressColor: '#72B6E3',
                 percent: 75,
                 duration: 2000
             }; // 默认选项
-            $(this).each(function () {
+            $(this).each(function() {
                 var $target = $(this);
                 var color = $target.data('color'); // 颜色
                 var percent = parseInt($target.data('percent'), 10); // 百分比
@@ -262,25 +269,29 @@ var util = {
             });
         }
     },
-    timeFn: function (d1, d2) {
+    timeFn: function(d1, d2) {
         var dateBegin = new Date(d1.replace(/-/g, "/"));
         var dateEnd = new Date(d2.replace(/-/g, "/"));
         var dateDiff = dateEnd.getTime() - dateBegin.getTime();
         var dayDiff = Math.floor(dateDiff / (24 * 3600 * 1000));
-        var leave1 = dateDiff % (24 * 3600 * 1000);   //计算天数后剩余的毫秒数
-        var hours = Math.floor(leave1 / (3600 * 1000));//计算出小时数
+        var leave1 = dateDiff % (24 * 3600 * 1000); //计算天数后剩余的毫秒数
+        var hours = Math.floor(leave1 / (3600 * 1000)); //计算出小时数
         //计算相差分钟数
-        var leave2 = leave1 % (3600 * 1000);   //计算小时数后剩余的毫秒数
-        var minutes = Math.floor(leave2 / (60 * 1000));//计算相差分钟数
+        var leave2 = leave1 % (3600 * 1000); //计算小时数后剩余的毫秒数
+        var minutes = Math.floor(leave2 / (60 * 1000)); //计算相差分钟数
         //计算相差秒数
-        var leave3 = leave2 % (60 * 1000);      //计算分钟数后剩余的毫秒数
+        var leave3 = leave2 % (60 * 1000); //计算分钟数后剩余的毫秒数
         var seconds = Math.round(leave3 / 1000);
+
+        console.log(hours);
+        console.log(minutes);
+        console.log(seconds);
         hours = hours < 10 ? '0' + hours : '' + hours;
         minutes = minutes < 10 ? '0' + minutes : '' + minutes;
         seconds = seconds < 10 ? '0' + seconds : '' + seconds;
-        return {hours: hours, minutes: minutes, seconds: seconds};
+        return { hours: hours, minutes: minutes, seconds: seconds };
     },
-    getNow: function () {
+    getNow: function() {
         var d = new Date();
         var now = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
         return now;

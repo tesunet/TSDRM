@@ -413,6 +413,7 @@
                         url: "../reload_task_nums/",
                         data: {
                             "csrfmiddlewaretoken": csrfToken,
+                            "task_id": $("#mytask").val(),
                         },
                         success: function (data) {
                             $("#task_nums").val(data["task_nums"]);

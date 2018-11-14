@@ -212,5 +212,3 @@ $("ul#locate_task").on("click", " li", function () {
 
 
 
-
-

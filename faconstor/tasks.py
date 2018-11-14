@@ -253,6 +253,8 @@ def runstep(steprun, if_repeat=False):
                     script.save()
                     steprun.state = "ERROR"
                     steprun.save()
+
+                    script_name = script.script.name if script.script.name else ""
                     myprocesstask = ProcessTask()
                     myprocesstask.processrun = steprun.processrun
                     myprocesstask.starttime = datetime.datetime.now()
@@ -260,13 +262,16 @@ def runstep(steprun, if_repeat=False):
                     myprocesstask.receiveauth = steprun.step.group
                     myprocesstask.type = "ERROR"
                     myprocesstask.state = "0"
-                    myprocesstask.content = "脚本" + script.script.name + "执行错误，请处理。"
+                    myprocesstask.content = "脚本" + script_name + "执行错误，请处理。"
                     myprocesstask.save()
                     return 0
 
                 script.endtime = datetime.datetime.now()
                 script.state = "DONE"
                 script.save()
+
+                script_name = script.script.name if script.script.name else ""
+
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = steprun.processrun
                 myprocesstask.starttime = datetime.datetime.now()
@@ -274,7 +279,7 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.type = "INFO"
                 myprocesstask.logtype = "SCRIPT"
                 myprocesstask.state = "1"
-                myprocesstask.content = "脚本" + script.script.name + "完成。"
+                myprocesstask.content = "脚本" + script_name + "完成。"
                 myprocesstask.save()
 
             if steprun.step.approval == "1" or steprun.verifyitemsrun_set.all():
@@ -282,6 +287,8 @@ def runstep(steprun, if_repeat=False):
                 steprun.endtime = datetime.datetime.now()
                 steprun.save()
 
+                steprun_name = steprun.step.name if steprun.step.name else ""
+                steprun_remark = steprun.step.remark if steprun.step.remark else ""
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = steprun.processrun
                 myprocesstask.starttime = datetime.datetime.now()
@@ -289,7 +296,7 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.receiveauth = steprun.step.group
                 myprocesstask.type = "RUN"
                 myprocesstask.state = "0"
-                myprocesstask.content = "步骤" + steprun.step.name + "等待确认，请处理。" + "备注：" + steprun.step.remark
+                myprocesstask.content = "步骤" + steprun_name + "等待确认，请处理。" + "备注：" + steprun_remark
                 myprocesstask.save()
 
                 return 2
@@ -298,6 +305,7 @@ def runstep(steprun, if_repeat=False):
                 steprun.endtime = datetime.datetime.now()
                 steprun.save()
 
+                steprun_name = steprun.step.name if steprun.step.name else ""
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = steprun.processrun
                 myprocesstask.starttime = datetime.datetime.now()
@@ -305,7 +313,7 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.type = "INFO"
                 myprocesstask.logtype = "STEP"
                 myprocesstask.state = "1"
-                myprocesstask.content = "步骤" + steprun.step.name + "完成。"
+                myprocesstask.content = "步骤" + steprun_name + "完成。"
                 myprocesstask.save()
 
         nextstep = steprun.step.next.exclude(state="9")

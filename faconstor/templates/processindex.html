@@ -7,10 +7,11 @@
     <title>标题</title>
     <link rel="stylesheet" href="/static/processindex/css/style.css">
     <script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
-    <script src="/static/processindex/js/common.js"></script>
 </head>
 <body>
 <div class="wrapper">
+    <input type="text" id="process_run_id" name="process_run_id" value="{{ processrun_id }}" hidden>
+    {% csrf_token %}
     <div class="head-content">
         <div class="header-title">
             <h2></h2>
@@ -97,17 +98,27 @@
 
     </div>
 
-     <div class="box-progress">
-         <div class="box-progress-container">
-             <div class="progress-left-time"></div>
-             <div class="progress-right-time"></div>
-             <div class='progress active'>
-                 <div class='progress-par bar' style='width:1%;'><span></span><i>0%</i></div>
-             </div>
-         </div>
-     </div>
+    <div class="box-progress">
+        <div class="box-progress-container">
+            <div class="progress-left-time"></div>
+            <div class="progress-right-time"></div>
+            <div class='progress active'>
+                <div class='progress-par bar' style='width:1%;'><span></span><i>0%</i></div>
+            </div>
+        </div>
+    </div>
     <div style="height: 70px"/>
 </div>
+<script src="/static/processindex/js/common.js"></script>
+
+<script>
+    $("body").dblclick(function () {
+        var process_run_id = $("#process_run_id").val();
+        window.parent.location.href = "/processindex/" + process_run_id.toString()
+    })
+</script>
+
+
 <script id="stepItemTpl" type="text/html">
     <div class="step-item">
         <div class="cur-item-wb">
