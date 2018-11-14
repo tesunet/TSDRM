@@ -67,9 +67,10 @@
                 <!-- BEGIN NOTIFICATION DROPDOWN -->
                 <!-- DOC: Apply "dropdown-dark" class after below "dropdown-extended" to change the dropdown styte -->
                 <li class="dropdown dropdown-extended dropdown-notification" id="header_notification_bar">
-                    <a href="javascript:;" class="dropdown-toggle" data-toggle="dropdown" data-hover="dropdown"
+                    <a href="javascript:;" class="dropdown-toggle" data-toggle="dropdown"
+                       data-hover="dropdown"
                        data-close-others="true">
-                        <i style="font-size:18px" class="fa fa-bell-o"></i>
+                        <i id="dropdown_task_nums" style="font-size:18px" class="fa fa-bell-o"></i>
                         {% if pagefuns.task_nums > 0 %}
                             <span class="badge badge-default" id="task_nums"
                                   style="background-color: #36c6d3"> {{ pagefuns.task_nums }} </span>
@@ -84,16 +85,17 @@
                                         <li id="{{ task.task_id }}">
                                             {% if task.pop %}
                                                 <a href="" data-toggle="modal" data-target="#static_base_01">
-                                                <input id="task_id" type="text" value="{{ task.task_id }}" hidden>
-                                                <input id="process_name" type="text" value="{{ task.process_name }}"
-                                                       hidden>
-                                                <input id="send_time" type="text" value="{{ task.send_time }}" hidden>
-                                                <input id="sign_role" type="text" value="{{ task.group_name }}" hidden>
-                                                <input id="process_run_reason" type="text"
-                                                       value="{{ task.process_run_reason }}" hidden>
+
                                             {% else %}
-                                                <a href="{{ task.process_url }}">
+                                                <a href="" data-toggle="modal" data-target="#static_base_02">
                                             {% endif %}
+                                            <input id="task_id" type="text" value="{{ task.task_id }}" hidden>
+                                            <input id="process_name" type="text" value="{{ task.process_name }}"
+                                                   hidden>
+                                            <input id="send_time" type="text" value="{{ task.send_time }}" hidden>
+                                            <input id="sign_role" type="text" value="{{ task.group_name }}" hidden>
+                                            <input id="process_run_reason" type="text"
+                                                   value="{{ task.process_run_reason }}" hidden>
                                             <div class="col1">
                                                 <div class="cont">
                                                     <div class="cont-col1">
@@ -364,6 +366,82 @@
     </div>
 </div>
 
+<div id="static_base_02" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                <h4 class="modal-title">其他任务</h4>
+            </div>
+            <div class="modal-body" style="margin-bottom:40px">
+                <div id="myTabContent1" class="tab-content">
+                    <div>
+                        <form action="#" class="bs-example form-horizontal  activate-form"
+                              method="post">{% csrf_token %}
+                            <div class="form-body">{% csrf_token %}
+                                <div class="form-group ">
+                                    <label class="col-md-2 control-label">流程名称</label>
+                                    <div class="col-md-10 " style="padding-top:6px">
+                                        <input id="mytask_extra" type="text" hidden>
+                                        <input type="text" id="processname_extra" name="processname_extra"
+                                               style="width: 458px" disabled>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
+                                    <label class="col-md-2 control-label">发送时间</label>
+                                    <div class="col-md-4 " style="padding-top:6px">
+                                        <input type="text" id="sendtime_extra" name="sendtime_extra" disabled>
+                                    </div>
+                                    <label class="col-md-2 control-label">签到角色</label>
+                                    <div class="col-md-4 " style="padding-top:6px">
+                                        <input type="text" id="signrole_extra" name="signrole_extra"
+                                               style="width:165px;" disabled>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
+                                    <label class="col-md-2 control-label">启动说明</label>
+                                    <div class="col-md-10">
+                                                    <textarea id="processrunreason_extra" class="form-control" rows="3"
+                                                              name="processrunreason_extra" disabled></textarea>
+                                        <div class="form-control-focus"></div>
+
+                                    </div>
+                                </div>
+                                {#                                <div class="form-group ">#}
+                                {#                                    <label class="col-md-2 control-label">任务说明</label>#}
+                                {#                                    <div class="col-md-10">#}
+                                {#                                                    <textarea id="sign_info" class="form-control"#}
+                                {#                                                              placeholder="最大限制2500个汉字" rows="3"#}
+                                {#                                                              name="sign_info"></textarea>#}
+                                {#                                        <div class="form-control-focus"></div>#}
+                                {##}
+                                {#                                    </div>#}
+                                {#                                </div>#}
+
+                            </div>
+                            <div class="form-actions">
+                                <div class="row" style="TEXT-ALIGN: center;">
+                                    <div class="col-md-12">
+                                        <button type="button" class="btn green uppercase"
+                                                onclick="window.location.href='/tasksearch/'">查询任务
+                                        </button>
+                                        {#                                        <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭#}
+                                        {#                                        </button>#}
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+</div>
+
 <script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
 <script src="/static/assets/global/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
 <!-- App -->
@@ -378,14 +456,14 @@
     $.ajaxSetup({
         data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
     });
-
-
 </script>
 {% block script %}
 
 {% endblock %}
 <script src="/static/myjs{{ pagefuns.curfun.jsurl }}.js" type="text/javascript"></script>
 <script>
+
+    // 任务信息写入模态框
     $("ul#locate_task").on("click", " li", function () {
         var task_id = $(this).attr("id");
         $("#mytask").val($("#a".replace("a", task_id)).find("input#task_id").val());
@@ -393,8 +471,88 @@
         $("#sendtime").val($("#a".replace("a", task_id)).find("input#send_time").val());
         $("#signrole").val($("#a".replace("a", task_id)).find("input#sign_role").val());
         $("#processrunreason").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
+
+        $("#mytask_extra").val($("#a".replace("a", task_id)).find("input#task_id").val());
+        $("#processname_extra").val($("#a".replace("a", task_id)).find("input#process_name").val());
+        $("#sendtime_extra").val($("#a".replace("a", task_id)).find("input#send_time").val());
+        $("#signrole_extra").val($("#a".replace("a", task_id)).find("input#sign_role").val());
+        $("#processrunreason_extra").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
     });
 
+    var href = window.location.href
+    if (href.endsWith("/")) {
+        href = href.slice(0, -1)
+    }
+    a = href.split("//");
+    var b = a[1];
+
+    var preTag = ""
+    if (b.split("/").length > 1) {
+        var num = b.split("/").length - 1
+        for (var i = 0; i < num; i++) {
+            preTag += "../"
+        }
+    }
+    var getUrl = preTag + "reload_task_nums/"
+
+    // 定时查询任务(有流程进行中才会有任务)
+    function getTaskInfo() {
+        var csrfToken = $("[name='csrfmiddlewaretoken']").val();
+        // 请求到的参数：pop, task_id, process_name, send_time, group_name, process_run_reason, task_icon, content, task_color, time
+        $.ajax({
+            type: "POST",
+            url: getUrl,
+            data: {
+                "csrfmiddlewaretoken": csrfToken,
+            },
+            success: function (data) {
+                $("#locate_task").empty();
+                $("#dropdown_task_nums").siblings().empty();
+
+                // 刷新任务数量
+                if (data.task_nums) {
+                    var spanElements = "<span class='badge badge-default' id='task_nums' style='background-color: #36c6d3'> " +
+                        data.task_nums + "</span>"
+                    $("#dropdown_task_nums").after(spanElements)
+                }
+
+                // 重构任务下拉
+                for (var i = 0; i < data.message_task.length; i++) {
+                    c_message_task = data.message_task[i]
+                    var liElement = "<li id='task_id'>".replace('task_id', c_message_task.task_id);
+                    var modelTarget = "#static_base_02"
+                    if (c_message_task.pop) {
+                        modelTarget = "#static_base_01"
+                    }
+
+                    var aElement = "<a href='' data-toggle='modal' data-target='" + modelTarget + "'>"
+                    var inputElement = "<input id='task_id' type='text' value='" + c_message_task.task_id + "' hidden>\n" +
+                        "            <input id='process_name' type='text' value='" + c_message_task.process_name + "' hidden>\n" +
+                        "            <input id='send_time' type='text' value='" + c_message_task.send_time + "' hidden>\n" +
+                        "            <input id='sign_role' type='text' value='" + c_message_task.group_name + "' hidden>\n" +
+                        "            <input id='process_run_reason' type='text' value='" + c_message_task.process_run_reason + "' hidden>"
+                    var divElement = "<div class='col1'><div class='cont'><div class='cont-col1'><div class='label label-sm " +
+                        c_message_task.task_color + "'><i class='" + c_message_task.task_icon + "'></i></div></div><div class='cont-col2'><div class='desc'> <span class='label label-sm ' style='background-color:" +
+                        c_message_task.process_color + ";'> " + c_message_task.process_name + "</span>" + c_message_task.content +
+                        "</div></div></div></div><div class='col2'><div class='date'>" + c_message_task.time + "</div></div></li>"
+
+                    var linkedElement = liElement + modelTarget + aElement + inputElement + divElement
+                    $("#locate_task").append(linkedElement);
+                }
+
+            },
+        });
+    }
+
+    //if ($("#iframe").html() != undefined) {
+    //    alert("iframe")
+    var my_t = window.setInterval(getTaskInfo, 10000);
+    //} else {
+    //   window.clearInterval(my_t);
+    //}
+
+
+    // 签到
     $("#sign_save").click(function () {
         var csrfToken = $("[name='csrfmiddlewaretoken']").val();
         $.ajax({
@@ -408,17 +566,7 @@
             success: function (data) {
                 if (data["res"] == "签字成功,同时启动流程。") {
                     window.location.href = data["data"];
-                    $.ajax({
-                        type: "POST",
-                        url: "../reload_task_nums/",
-                        data: {
-                            "csrfmiddlewaretoken": csrfToken,
-                            "task_id": $("#mytask").val(),
-                        },
-                        success: function (data) {
-                            $("#task_nums").val(data["task_nums"]);
-                        },
-                    });
+                    getTaskInfo();
                 }
                 else {
                     alert(data["res"]);
@@ -445,7 +593,7 @@
                 "height": "60px"
             })
             $("ul.nav.navbar-nav.navbar-right.m-n.hidden-xs.nav-user.user").css({
-                "height":"60px"
+                "height": "60px"
             })
             $("li:not(#header_notification_bar).dropdown").css({
                 "position": "position",

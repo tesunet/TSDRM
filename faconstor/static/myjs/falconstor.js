@@ -619,6 +619,7 @@ if (App.isAngularJsApp() === false) {
                                             getstep();
                                             window.clearInterval(t2);
                                             t2 = window.setInterval(timefun, 1000);
+                                            getTaskInfo();
                                         } else {
                                             alert("步骤确认异常，请联系客服！")
                                         }
@@ -638,12 +639,14 @@ if (App.isAngularJsApp() === false) {
                                         getstep();
                                         window.clearInterval(t2);
                                         t2 = window.setInterval(timefun, 1000);
+                                        getTaskInfo();
                                     } else {
                                         alert("步骤确认异常，请联系客服！")
                                     }
                                 }
                             });
                         }
+
                     });
 
                     // 展示结果

@@ -258,14 +258,18 @@ def get_process_index_data(request):
             rtostate = "RUN"
 
             if correct_step_run_list:
+                c_step_index = 0
                 # rtostate
-                for c_step_run in correct_step_run_list:
+                for num, c_step_run in enumerate(correct_step_run_list):
                     c_rto_count_in = c_step_run.step.rto_count_in
                     if c_rto_count_in == "0" and c_step_run.state not in ["DONE", "STOP", "EDIT"]:
                         rtostate = "DONE"
-                        rtoendtime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        c_step_index = num
                         break
 
+                if c_step_index > 0 and rtostate == "DONE":
+                    pre_step_index = c_step_index - 1
+                    rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
                 for num, c_step_run in enumerate(correct_step_run_list):
                     num += 1
                     # 区分子父级步骤run
@@ -3808,23 +3812,10 @@ def processsignsave(request):
         return JsonResponse(result)
 
 
+@csrf_exempt
 def reload_task_nums(request):
     if request.user.is_authenticated():
         mygroup = []
-        task_id = request.POST.get("task_id", "")
-
-        try:
-            task_id = int(task_id)
-        except:
-            return Http404()
-
-        c_task = ProcessTask.objects.filter(id=task_id)
-        if c_task:
-            c_task = c_task[0]
-            c_task_type =c_task.type
-        else:
-            c_task_type = ""
-
         userinfo = request.user.userinfo
         guoups = userinfo.group.all()
         pop = False
@@ -3833,11 +3824,90 @@ def reload_task_nums(request):
                 mygroup.append(str(curguoup.id))
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
-            "-starttime").filter(type=c_task_type)
-        result = {
-            "task_nums": len(allprosstasks)
-        }
-        return JsonResponse(result)
+            "-starttime").exclude(processrun__state="9")
+        total_task_info = {}
+        message_task = []
+        if len(allprosstasks) > 0:
+            for task in allprosstasks:
+                send_time = task.starttime
+                process_name = task.processrun.process.name
+                process_run_reason = task.processrun.run_reason
+                task_id = task.id
+
+                task_nums = len(allprosstasks)
+                process_color = task.processrun.process.color
+                process_url = task.processrun.process.url + "/" + str(task.processrun.id)
+                time = task.starttime
+                time = time.replace(tzinfo=None)
+                timenow = datetime.datetime.now()
+                days = int((timenow - time).days)
+                hours = int((timenow - time).seconds / 3600)
+
+                # 图标与颜色
+                if task.type == "ERROR":
+                    current_icon = "fa fa-exclamation-triangle"
+                    current_color = "label-danger"
+                elif task.type == "SIGN":
+                    pop = True
+                    current_icon = "fa fa-user"
+                    current_color = "label-warning"
+                elif task.type == "RUN":
+                    current_icon = "fa fa-bell-o"
+                    current_color = "label-warning"
+                else:
+                    pass
+
+                if days > 1095:
+                    time = "很久以前"
+                else:
+                    if days > 730:
+                        time = "2年前"
+                    else:
+                        if days > 365:
+                            time = "1年前"
+                        else:
+                            if days > 182:
+                                time = "半年前"
+                            else:
+                                if days > 150:
+                                    time = "5月前"
+                                else:
+                                    if days > 120:
+                                        time = "4月前"
+                                    else:
+                                        if days > 90:
+                                            time = "3月前"
+                                        else:
+                                            if days > 60:
+                                                time = "2月前"
+                                            else:
+                                                if days > 30:
+                                                    time = "1月前"
+                                                else:
+                                                    if days >= 1:
+                                                        time = str(days) + "天前"
+                                                    else:
+                                                        hours = int((timenow - time).seconds / 3600)
+                                                        if hours >= 1:
+                                                            time = str(hours) + "小时"
+                                                        else:
+                                                            minutes = int((timenow - time).seconds / 60)
+                                                            if minutes >= 1:
+                                                                time = str(minutes) + "分钟"
+                                                            else:
+                                                                time = "刚刚"
+
+                message_task.append(
+                    {"content": task.content, "time": time, "process_name": process_name,
+                     "task_color": current_color.strip(),
+                     "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
+                     "pop": pop, "task_id": task_id, "send_time": send_time,
+                     "process_run_reason": process_run_reason, "group_name": guoups[0].name})
+
+        total_task_info["task_nums"] = len(allprosstasks)
+        total_task_info["message_task"] = message_task
+
+        return JsonResponse(total_task_info)
 
 
 def get_current_scriptinfo(request):
