@@ -119,6 +119,7 @@
                                             <div class="col2">
                                                 <div class="date"> {{ task.time }}</div>
                                             </div>
+                                            </a>
                                         </li>
                                     {% endfor %}
                                 </ul>
@@ -530,8 +531,8 @@
                     // 重构任务下拉
                     for (var i = 0; i < data.message_task.length; i++) {
                         c_message_task = data.message_task[i]
-                        var liElement = "<li id='task_id'>".replace('task_id', c_message_task.task_id);
-                        var aElement = "<a href='javascript:void(0)' id='a_" + c_message_task.task_id + "' name='" + c_message_task.pop +  "'>"
+                        var liElement = "<li id='" + c_message_task.task_id + "'>"
+                        var aElement = "<a href='javascript:void(0)' id='a_" + c_message_task.task_id + "' name='" + c_message_task.pop + "'>"
                         var inputElement = "<input id='task_type' type='text' value='" + c_message_task.task_type + "' hidden>\n" +
                             "            <input id='task_id' type='text' value='" + c_message_task.task_id + "' hidden>\n" +
                             "            <input id='process_name' type='text' value='" + c_message_task.process_name + "' hidden>\n" +
@@ -541,7 +542,7 @@
                         var divElement = "<div class='col1'><div class='cont'><div class='cont-col1'><div class='label label-sm " +
                             c_message_task.task_color + "'><i class='" + c_message_task.task_icon + "'></i></div></div><div class='cont-col2'><div class='desc'> <span class='label label-sm ' style='background-color:" +
                             c_message_task.process_color + ";'> " + c_message_task.process_name + "</span>" + c_message_task.content +
-                            "</div></div></div></div><div class='col2'><div class='date'>" + c_message_task.time + "</div></div></li>"
+                            "</div></div></div></div><div class='col2'><div class='date'>" + c_message_task.time + "</div></div></a></li>"
 
                         var linkedElement = liElement + aElement + inputElement + divElement
                         $("#locate_task").append(linkedElement);
@@ -555,12 +556,11 @@
                         // 获取li下a标签的data-target属性，弹出模态框
                         var popTag = cLi.children("a:eq(0)").prop("name");
                         var cLiId = cLi.children("a:eq(0)").prop("id");
-                        var taskType = cLi.children("a:eq(0)").children("input:eq(0)").val();
-
+                        var taskType = cLi.children("a:eq(0)").children("a:eq(0)").val();
                         // falconstorswitch页面不弹签字任务
                         var reg = RegExp("/falconstorswitch/(\\d+)");
                         if (reg.test(b) != true && taskType != "SIGN") {
-                            if (popTag != "False" && popTag != "false") {
+                            if (popTag.toUpperCase() == "TRUE") {
                                 $("#static_base_01").modal({backdrop: "static"});
                             } else {
                                 $("#static_base_02").modal({backdrop: "static"});
@@ -595,8 +595,8 @@
 
     // 任务信息写入模态框
     $("ul#locate_task").on("click", " li", function () {
-        var popTag = $(this).children("a:eq(0)").prop("name")
-        if (popTag != "False" && popTag != "false") {
+        var popTag = $(this).children("a:eq(0)").prop("name");
+        if (popTag.toUpperCase() == "TRUE") {
             $("#static_base_01").modal({backdrop: "static"});
         } else {
             $("#static_base_02").modal({backdrop: "static"});
