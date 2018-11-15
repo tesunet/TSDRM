@@ -190,7 +190,7 @@ def getpagefuns(funid, request=""):
                                                                 time = "刚刚"
                 message_task.append(
                     {"content": task.content, "time": time, "process_name": process_name,
-                     "task_color": current_color.strip(),
+                     "task_color": current_color.strip(), "task_type": task.type,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
                      "pop": pop, "task_id": task_id, "send_time": send_time,
                      "process_run_reason": process_run_reason, "group_name": guoups[0].name})
@@ -3913,7 +3913,7 @@ def reload_task_nums(request):
 
                 message_task.append(
                     {"content": task.content, "time": time, "process_name": process_name,
-                     "task_color": current_color.strip(),
+                     "task_color": current_color.strip(), "task_type": task.type,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
                      "pop": pop, "task_id": task_id, "send_time": send_time,
                      "process_run_reason": process_run_reason, "group_name": guoups[0].name})

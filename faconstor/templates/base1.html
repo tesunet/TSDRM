@@ -92,6 +92,7 @@
                                                 <a id="a_{{ task.task_id }}" href="javascript:void(0)"
                                                    name="{{ task.pop }}">
                                             {% endif %}
+                                            <input id="task_type" type="text" value="{{ task.task_type }}" hidden>
                                             <input id="task_id" type="text" value="{{ task.task_id }}" hidden>
                                             <input id="process_name" type="text" value="{{ task.process_name }}"
                                                    hidden>
@@ -530,8 +531,9 @@
                     for (var i = 0; i < data.message_task.length; i++) {
                         c_message_task = data.message_task[i]
                         var liElement = "<li id='task_id'>".replace('task_id', c_message_task.task_id);
-                        var aElement = "<a href='javascript:void(0)' id='a_" + c_message_task.task_id + "' name='" + c_message_task.pop + "'>"
-                        var inputElement = "<input id='task_id' type='text' value='" + c_message_task.task_id + "' hidden>\n" +
+                        var aElement = "<a href='javascript:void(0)' id='a_" + c_message_task.task_id + "' name='" + c_message_task.pop +  "'>"
+                        var inputElement = "<input id='task_type' type='text' value='" + c_message_task.task_type + "' hidden>\n" +
+                            "            <input id='task_id' type='text' value='" + c_message_task.task_id + "' hidden>\n" +
                             "            <input id='process_name' type='text' value='" + c_message_task.process_name + "' hidden>\n" +
                             "            <input id='send_time' type='text' value='" + c_message_task.send_time + "' hidden>\n" +
                             "            <input id='sign_role' type='text' value='" + c_message_task.group_name + "' hidden>\n" +
@@ -553,16 +555,17 @@
                         // 获取li下a标签的data-target属性，弹出模态框
                         var popTag = cLi.children("a:eq(0)").prop("name");
                         var cLiId = cLi.children("a:eq(0)").prop("id");
+                        var taskType = cLi.children("a:eq(0)").children("input:eq(0)").val();
 
-                        // 流程页面不弹任务
-                        //var reg = RegExp("/falconstor/(\\d+)");
-                        //if (reg.test(b) != true) {
-                        if (popTag != "False" && popTag != "false") {
-                            $("#static_base_01").modal({backdrop: "static"});
-                        } else {
-                            $("#static_base_02").modal({backdrop: "static"});
+                        // falconstorswitch页面不弹签字任务
+                        var reg = RegExp("/falconstorswitch/(\\d+)");
+                        if (reg.test(b) != true && taskType != "SIGN") {
+                            if (popTag != "False" && popTag != "false") {
+                                $("#static_base_01").modal({backdrop: "static"});
+                            } else {
+                                $("#static_base_02").modal({backdrop: "static"});
+                            }
                         }
-                        //}
 
                         $("#mytask").val($("#a".replace("a", cLiId)).find("input#task_id").val());
                         $("#processname").val($("#a".replace("a", cLiId)).find("input#process_name").val());
