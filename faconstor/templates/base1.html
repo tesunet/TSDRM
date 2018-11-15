@@ -85,10 +85,12 @@
                                     {% for task in pagefuns.message_task %}
                                         <li id="{{ task.task_id }}">
                                             {% if task.pop %}
-                                                <a href="" data-toggle="modal" data-target="#static_base_01">
+                                                <a id="a_{{ task.task_id }}" href="javascript:void(0)"
+                                                   name="{{ task.pop }}">
 
                                             {% else %}
-                                                <a href="" data-toggle="modal" data-target="#static_base_02">
+                                                <a id="a_{{ task.task_id }}" href="javascript:void(0)"
+                                                   name="{{ task.pop }}">
                                             {% endif %}
                                             <input id="task_id" type="text" value="{{ task.task_id }}" hidden>
                                             <input id="process_name" type="text" value="{{ task.process_name }}"
@@ -505,6 +507,9 @@
 
     // 定时查询任务(有流程进行中才会有任务)
     function getTaskInfo() {
+        // 查询原本ul下li数量
+        var preLiLength = $("#locate_task li").length;
+
         var getUrl = preTag + "reload_task_nums/"
         var csrfToken = $("[name='csrfmiddlewaretoken']").val();
         // 请求到的参数：pop, task_id, process_name, send_time, group_name, process_run_reason, task_icon, content, task_color, time
@@ -515,40 +520,68 @@
                 "csrfmiddlewaretoken": csrfToken,
             },
             success: function (data) {
-                $("#locate_task").empty();
-                $("#dropdown_task_nums").siblings().empty();
+                if (preLiLength != data.message_task.length) {
+                    $("#locate_task").empty();
+                    $("#dropdown_task_nums").siblings().empty();
 
-                // 刷新任务数量
-                if (data.task_nums) {
-                    var spanElements = "<span class='badge badge-default' id='task_nums' style='background-color: #36c6d3'> " +
-                        data.task_nums + "</span>"
-                    $("#dropdown_task_nums").after(spanElements)
-                }
-
-                // 重构任务下拉
-                for (var i = 0; i < data.message_task.length; i++) {
-                    c_message_task = data.message_task[i]
-                    var liElement = "<li id='task_id'>".replace('task_id', c_message_task.task_id);
-                    var modelTarget = "#static_base_02"
-                    if (c_message_task.pop) {
-                        modelTarget = "#static_base_01"
+                    // 刷新任务数量
+                    if (data.task_nums) {
+                        var spanElements = "<span class='badge badge-default' id='task_nums' style='background-color: #36c6d3'> " +
+                            data.task_nums + "</span>"
+                        $("#dropdown_task_nums").after(spanElements)
                     }
 
-                    var aElement = "<a href='' data-toggle='modal' data-target='" + modelTarget + "'>"
-                    var inputElement = "<input id='task_id' type='text' value='" + c_message_task.task_id + "' hidden>\n" +
-                        "            <input id='process_name' type='text' value='" + c_message_task.process_name + "' hidden>\n" +
-                        "            <input id='send_time' type='text' value='" + c_message_task.send_time + "' hidden>\n" +
-                        "            <input id='sign_role' type='text' value='" + c_message_task.group_name + "' hidden>\n" +
-                        "            <input id='process_run_reason' type='text' value='" + c_message_task.process_run_reason + "' hidden>"
-                    var divElement = "<div class='col1'><div class='cont'><div class='cont-col1'><div class='label label-sm " +
-                        c_message_task.task_color + "'><i class='" + c_message_task.task_icon + "'></i></div></div><div class='cont-col2'><div class='desc'> <span class='label label-sm ' style='background-color:" +
-                        c_message_task.process_color + ";'> " + c_message_task.process_name + "</span>" + c_message_task.content +
-                        "</div></div></div></div><div class='col2'><div class='date'>" + c_message_task.time + "</div></div></li>"
+                    // 重构任务下拉
+                    for (var i = 0; i < data.message_task.length; i++) {
+                        c_message_task = data.message_task[i]
+                        var liElement = "<li id='task_id'>".replace('task_id', c_message_task.task_id);
+                        //var modelTarget = "#static_base_02"
+                        //if (c_message_task.pop) {
+                        //    modelTarget = "#static_base_01"
+                        //}
 
-                    var linkedElement = liElement + aElement + inputElement + divElement
-                    $("#locate_task").append(linkedElement);
+                        var aElement = "<a href='javascript:void(0)' id='a_" + c_message_task.task_id + "' name='" + c_message_task.pop + "'>"
+                        var inputElement = "<input id='task_id' type='text' value='" + c_message_task.task_id + "' hidden>\n" +
+                            "            <input id='process_name' type='text' value='" + c_message_task.process_name + "' hidden>\n" +
+                            "            <input id='send_time' type='text' value='" + c_message_task.send_time + "' hidden>\n" +
+                            "            <input id='sign_role' type='text' value='" + c_message_task.group_name + "' hidden>\n" +
+                            "            <input id='process_run_reason' type='text' value='" + c_message_task.process_run_reason + "' hidden>"
+                        var divElement = "<div class='col1'><div class='cont'><div class='cont-col1'><div class='label label-sm " +
+                            c_message_task.task_color + "'><i class='" + c_message_task.task_icon + "'></i></div></div><div class='cont-col2'><div class='desc'> <span class='label label-sm ' style='background-color:" +
+                            c_message_task.process_color + ";'> " + c_message_task.process_name + "</span>" + c_message_task.content +
+                            "</div></div></div></div><div class='col2'><div class='date'>" + c_message_task.time + "</div></div></li>"
+
+                        var linkedElement = liElement + aElement + inputElement + divElement
+                        $("#locate_task").append(linkedElement);
+                    }
+
+                    // 任务自动弹框
+                    // 判断请求前与请求后任务数量是否增多，如增多，选择最后一个task_id任务弹出模态框
+                    cLiLength = $("#locate_task li").length;
+                    if (cLiLength > preLiLength) {
+                        var cLi = $("#locate_task li").first();
+                        // 获取li下a标签的data-target属性，弹出模态框
+                        var popTag = cLi.children("a:eq(0)").prop("name");
+                        var cLiId = cLi.children("a:eq(0)").prop("id");
+                        if (popTag != "False" && popTag != "false") {
+                            $("#static_base_01").modal({backdrop: "static"});
+                        } else {
+                            $("#static_base_02").modal({backdrop: "static"});
+                        }
+
+                        $("#mytask").val($("#a".replace("a", cLiId)).find("input#task_id").val());
+                        $("#processname").val($("#a".replace("a", cLiId)).find("input#process_name").val());
+                        $("#sendtime").val($("#a".replace("a", cLiId)).find("input#send_time").val());
+                        $("#signrole").val($("#a".replace("a", cLiId)).find("input#sign_role").val());
+                        $("#processrunreason").val($("#a".replace("a", cLiId)).find("input#process_run_reason").val());
+
+                        $("#mytask_extra").val($("#a".replace("a", cLiId)).find("input#task_id").val());
+                        $("#processname_extra").val($("#a".replace("a", cLiId)).find("input#process_name").val());
+                        $("#sendtime_extra").val($("#a".replace("a", cLiId)).find("input#send_time").val());
+                        $("#signrole_extra").val($("#a".replace("a", cLiId)).find("input#sign_role").val());
+                        $("#processrunreason_extra").val($("#a".replace("a", cLiId)).find("input#process_run_reason").val());
+                    }
                 }
-
             },
         });
     }
@@ -564,6 +597,12 @@
 
     // 任务信息写入模态框
     $("ul#locate_task").on("click", " li", function () {
+        var popTag = $(this).children("a:eq(0)").prop("name")
+        if (popTag != "False" && popTag != "false") {
+            $("#static_base_01").modal({backdrop: "static"});
+        } else {
+            $("#static_base_02").modal({backdrop: "static"});
+        }
         var task_id = $(this).attr("id");
         $("#mytask").val($("#a".replace("a", task_id)).find("input#task_id").val());
         $("#processname").val($("#a".replace("a", task_id)).find("input#process_name").val());
