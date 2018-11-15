@@ -239,7 +239,7 @@ if (App.isAngularJsApp() === false) {
                 dataType: "json",
                 success: function (data) {
                     $("ul.steps").empty();
-                    $("div.tab-content").empty();
+                    $("div#tab-content").empty();
                     $("#stopbtn").show();
                     $("#show_result").hide();
                     $("#process_run_id").val($("#process").val());
@@ -323,7 +323,7 @@ if (App.isAngularJsApp() === false) {
                         }
                         */
                         $("ul.steps").append("<li id='li_" + (i + 1).toString() + "' class='" + tabdone + " " + tabrun + "'><a href='#tab" + (i + 1).toString() + "' data-toggle='tab' class='step' aria-expanded='true'><span class='number' style='line-height: 100px;font-size: 40px;text-align: center;'> " + (i + 1).toString() + " </span></br><span class='desc'><i hidden class='fa fa-check'></i> " + data["step"][i]["name"] + " </span></a></li>");
-                        $("div.tab-content").append("<div class='tab-pane " + tabrun + "' id='tab" + (i + 1).toString() + "'></div>");
+                        $("div#tab-content").append("<div class='tab-pane " + tabrun + "' id='tab" + (i + 1).toString() + "'></div>");
 
                         $("#tab" + (i + 1).toString()).append("<div id='tabdiv" + (i + 1).toString() + "' class='mt-element-step'></div>");
                         var step1_id = data["step"][i]["id"];

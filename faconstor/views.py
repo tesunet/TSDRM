@@ -3061,7 +3061,6 @@ def falconstorswitchdata(request):
 
         cursor.execute(exec_sql)
         rows = cursor.fetchall()
-
         for processrun_obj in rows:
             if processrun_obj[9] == "falconstor":
                 create_users = processrun_obj[2] if processrun_obj[2] else ""
@@ -3812,7 +3811,6 @@ def processsignsave(request):
         return JsonResponse(result)
 
 
-
 def save_task_remark(request):
     if request.user.is_authenticated():
         task_id = request.POST.get("task_id", "")
@@ -3829,7 +3827,6 @@ def save_task_remark(request):
             return JsonResponse({"result": 0})
 
 
-@csrf_exempt
 def reload_task_nums(request):
     if request.user.is_authenticated():
         mygroup = []

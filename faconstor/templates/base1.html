@@ -307,7 +307,7 @@
                 <div id="myTabContent1" class="tab-content">
                     <div>
                         <form action="#" class="bs-example form-horizontal" method="post">{% csrf_token %}
-                            <div class="form-body">{% csrf_token %}
+                            <div class="form-body">
                                 <div class="form-group ">
                                     <label class="col-md-2 control-label">流程名称</label>
                                     <div class="col-md-10 " style="padding-top:6px">
@@ -381,7 +381,7 @@
                     <div>
                         <form action="#" class="bs-example form-horizontal  activate-form"
                               method="post">{% csrf_token %}
-                            <div class="form-body">{% csrf_token %}
+                            <div class="form-body">
                                 <div class="form-group ">
                                     <label class="col-md-2 control-label">流程名称</label>
                                     <div class="col-md-10 " style="padding-top:6px">
@@ -483,14 +483,12 @@
     function searchTaskClicked() {
         // 存入任务说明
         var saveTaskRemark = preTag + "save_task_remark/"
-        var csrfToken = $("[name='csrfmiddlewaretoken']").val();
         $.ajax({
             type: "POST",
             url: saveTaskRemark,
             data: {
                 "task_id": $("#mytask").val(),
                 "sign_info_extra": $("#sign_info_extra").val(),
-                "csrfmiddlewaretoken": csrfToken,
             },
             success: function (data) {
                 if (data.result == 0) {
@@ -511,14 +509,11 @@
         var preLiLength = $("#locate_task li").length;
 
         var getUrl = preTag + "reload_task_nums/"
-        var csrfToken = $("[name='csrfmiddlewaretoken']").val();
         // 请求到的参数：pop, task_id, process_name, send_time, group_name, process_run_reason, task_icon, content, task_color, time
         $.ajax({
             type: "POST",
             url: getUrl,
-            data: {
-                "csrfmiddlewaretoken": csrfToken,
-            },
+            data: {},
             success: function (data) {
                 if (preLiLength != data.message_task.length) {
                     $("#locate_task").empty();
@@ -535,11 +530,6 @@
                     for (var i = 0; i < data.message_task.length; i++) {
                         c_message_task = data.message_task[i]
                         var liElement = "<li id='task_id'>".replace('task_id', c_message_task.task_id);
-                        //var modelTarget = "#static_base_02"
-                        //if (c_message_task.pop) {
-                        //    modelTarget = "#static_base_01"
-                        //}
-
                         var aElement = "<a href='javascript:void(0)' id='a_" + c_message_task.task_id + "' name='" + c_message_task.pop + "'>"
                         var inputElement = "<input id='task_id' type='text' value='" + c_message_task.task_id + "' hidden>\n" +
                             "            <input id='process_name' type='text' value='" + c_message_task.process_name + "' hidden>\n" +
@@ -565,14 +555,14 @@
                         var cLiId = cLi.children("a:eq(0)").prop("id");
 
                         // 流程页面不弹任务
-                        var reg = RegExp("/falconstor/(\\d+)");
-                        if (reg.test(b) != true) {
-                            if (popTag != "False" && popTag != "false") {
-                                $("#static_base_01").modal({backdrop: "static"});
-                            } else {
-                                $("#static_base_02").modal({backdrop: "static"});
-                            }
+                        //var reg = RegExp("/falconstor/(\\d+)");
+                        //if (reg.test(b) != true) {
+                        if (popTag != "False" && popTag != "false") {
+                            $("#static_base_01").modal({backdrop: "static"});
+                        } else {
+                            $("#static_base_02").modal({backdrop: "static"});
                         }
+                        //}
 
                         $("#mytask").val($("#a".replace("a", cLiId)).find("input#task_id").val());
                         $("#processname").val($("#a".replace("a", cLiId)).find("input#process_name").val());
@@ -593,7 +583,7 @@
 
     //var loadTasksTag = $("#load_tasks_tag").val();
     // if (loadTasksTag == 1) {
-    var my_t = window.setInterval(getTaskInfo, 10000);
+    var my_t = window.setInterval(getTaskInfo, 6000);
     //}
     //else {
     //    window.clearInterval(my_t)
@@ -626,14 +616,12 @@
     // 签到
     $("#sign_save").click(function () {
         var signUrl = preTag + "processsignsave/"
-        var csrfToken = $("[name='csrfmiddlewaretoken']").val();
         $.ajax({
             type: "POST",
             url: signUrl,
             data: {
                 "task_id": $("#mytask").val(),
                 "sign_info": $("#sign_info").val(),
-                "csrfmiddlewaretoken": csrfToken,
             },
             success: function (data) {
                 if (data["res"] == "签字成功,同时启动流程。") {
