@@ -563,10 +563,15 @@
                         // 获取li下a标签的data-target属性，弹出模态框
                         var popTag = cLi.children("a:eq(0)").prop("name");
                         var cLiId = cLi.children("a:eq(0)").prop("id");
-                        if (popTag != "False" && popTag != "false") {
-                            $("#static_base_01").modal({backdrop: "static"});
-                        } else {
-                            $("#static_base_02").modal({backdrop: "static"});
+
+                        // 流程页面不弹任务
+                        var reg = RegExp("/falconstor/(\\d+)");
+                        if (reg.test(b) != true) {
+                            if (popTag != "False" && popTag != "false") {
+                                $("#static_base_01").modal({backdrop: "static"});
+                            } else {
+                                $("#static_base_02").modal({backdrop: "static"});
+                            }
                         }
 
                         $("#mytask").val($("#a".replace("a", cLiId)).find("input#task_id").val());

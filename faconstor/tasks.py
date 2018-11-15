@@ -185,6 +185,7 @@ def runstep(steprun, if_repeat=False):
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
+    time.sleep(2)
     if processrun.state == "RUN" or processrun.state == "ERROR":
         # 将错误流程改成RUN
         processrun.state = "RUN"
