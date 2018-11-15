@@ -61,6 +61,7 @@
             <a class="btn btn-link visible-xs" data-toggle="dropdown" data-target=".user">
                 <i class="fa fa-cog"></i>
             </a>
+            <input type="text" value="" id="load_tasks_tag" name="load_tasks_tag" hidden>
         </div>
         <div class="top-menu">
             <ul class="nav navbar-nav pull-right">
@@ -407,26 +408,24 @@
 
                                     </div>
                                 </div>
-                                {#                                <div class="form-group ">#}
-                                {#                                    <label class="col-md-2 control-label">任务说明</label>#}
-                                {#                                    <div class="col-md-10">#}
-                                {#                                                    <textarea id="sign_info" class="form-control"#}
-                                {#                                                              placeholder="最大限制2500个汉字" rows="3"#}
-                                {#                                                              name="sign_info"></textarea>#}
-                                {#                                        <div class="form-control-focus"></div>#}
-                                {##}
-                                {#                                    </div>#}
-                                {#                                </div>#}
+                                <div class="form-group ">
+                                    <label class="col-md-2 control-label">任务说明</label>
+                                    <div class="col-md-10">
+                                                    <textarea id="sign_info_extra" class="form-control"
+                                                              placeholder="最大限制2500个汉字" rows="3"
+                                                              name="sign_info_extra"></textarea>
+                                        <div class="form-control-focus"></div>
+
+                                    </div>
+                                </div>
 
                             </div>
                             <div class="form-actions">
                                 <div class="row" style="TEXT-ALIGN: center;">
                                     <div class="col-md-12">
                                         <button type="button" class="btn green uppercase"
-                                                onclick="window.location.href='/tasksearch/'">查询任务
+                                                onclick="searchTaskClicked();">查询任务
                                         </button>
-                                        {#                                        <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭#}
-                                        {#                                        </button>#}
                                     </div>
                                 </div>
                             </div>
@@ -462,23 +461,7 @@
 {% endblock %}
 <script src="/static/myjs{{ pagefuns.curfun.jsurl }}.js" type="text/javascript"></script>
 <script>
-
-    // 任务信息写入模态框
-    $("ul#locate_task").on("click", " li", function () {
-        var task_id = $(this).attr("id");
-        $("#mytask").val($("#a".replace("a", task_id)).find("input#task_id").val());
-        $("#processname").val($("#a".replace("a", task_id)).find("input#process_name").val());
-        $("#sendtime").val($("#a".replace("a", task_id)).find("input#send_time").val());
-        $("#signrole").val($("#a".replace("a", task_id)).find("input#sign_role").val());
-        $("#processrunreason").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
-
-        $("#mytask_extra").val($("#a".replace("a", task_id)).find("input#task_id").val());
-        $("#processname_extra").val($("#a".replace("a", task_id)).find("input#process_name").val());
-        $("#sendtime_extra").val($("#a".replace("a", task_id)).find("input#send_time").val());
-        $("#signrole_extra").val($("#a".replace("a", task_id)).find("input#sign_role").val());
-        $("#processrunreason_extra").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
-    });
-
+    // 构造前缀
     var href = window.location.href
     if (href.endsWith("/")) {
         href = href.slice(0, -1)
@@ -493,10 +476,36 @@
             preTag += "../"
         }
     }
-    var getUrl = preTag + "reload_task_nums/"
+
+    // 单点查询任务
+    function searchTaskClicked() {
+        // 存入任务说明
+        var saveTaskRemark = preTag + "save_task_remark/"
+        var csrfToken = $("[name='csrfmiddlewaretoken']").val();
+        $.ajax({
+            type: "POST",
+            url: saveTaskRemark,
+            data: {
+                "task_id": $("#mytask").val(),
+                "sign_info_extra": $("#sign_info_extra").val(),
+                "csrfmiddlewaretoken": csrfToken,
+            },
+            success: function (data) {
+                if (data.result == 0) {
+                    alert("任务不存在，网络异常。")
+                }
+            },
+            error: function (e) {
+                alert("任务说明存入失败，请与管理员联系。");
+            }
+        });
+
+        window.location.href = '/tasksearch/'
+    }
 
     // 定时查询任务(有流程进行中才会有任务)
     function getTaskInfo() {
+        var getUrl = preTag + "reload_task_nums/"
         var csrfToken = $("[name='csrfmiddlewaretoken']").val();
         // 请求到的参数：pop, task_id, process_name, send_time, group_name, process_run_reason, task_icon, content, task_color, time
         $.ajax({
@@ -536,7 +545,7 @@
                         c_message_task.process_color + ";'> " + c_message_task.process_name + "</span>" + c_message_task.content +
                         "</div></div></div></div><div class='col2'><div class='date'>" + c_message_task.time + "</div></div></li>"
 
-                    var linkedElement = liElement + modelTarget + aElement + inputElement + divElement
+                    var linkedElement = liElement + aElement + inputElement + divElement
                     $("#locate_task").append(linkedElement);
                 }
 
@@ -544,20 +553,39 @@
         });
     }
 
-    //if ($("#iframe").html() != undefined) {
-    //    alert("iframe")
+    //var loadTasksTag = $("#load_tasks_tag").val();
+    // if (loadTasksTag == 1) {
     var my_t = window.setInterval(getTaskInfo, 10000);
-    //} else {
-    //   window.clearInterval(my_t);
     //}
+    //else {
+    //    window.clearInterval(my_t)
+    //}
+
+
+    // 任务信息写入模态框
+    $("ul#locate_task").on("click", " li", function () {
+        var task_id = $(this).attr("id");
+        $("#mytask").val($("#a".replace("a", task_id)).find("input#task_id").val());
+        $("#processname").val($("#a".replace("a", task_id)).find("input#process_name").val());
+        $("#sendtime").val($("#a".replace("a", task_id)).find("input#send_time").val());
+        $("#signrole").val($("#a".replace("a", task_id)).find("input#sign_role").val());
+        $("#processrunreason").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
+
+        $("#mytask_extra").val($("#a".replace("a", task_id)).find("input#task_id").val());
+        $("#processname_extra").val($("#a".replace("a", task_id)).find("input#process_name").val());
+        $("#sendtime_extra").val($("#a".replace("a", task_id)).find("input#send_time").val());
+        $("#signrole_extra").val($("#a".replace("a", task_id)).find("input#sign_role").val());
+        $("#processrunreason_extra").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
+    });
 
 
     // 签到
     $("#sign_save").click(function () {
+        var signUrl = preTag + "processsignsave/"
         var csrfToken = $("[name='csrfmiddlewaretoken']").val();
         $.ajax({
             type: "POST",
-            url: "../processsignsave/",
+            url: signUrl,
             data: {
                 "task_id": $("#mytask").val(),
                 "sign_info": $("#sign_info").val(),

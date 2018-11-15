@@ -262,7 +262,13 @@ if (App.isAngularJsApp() === false) {
                                 showResult();
                             }
                         }
+
+                        $("#load_tasks_tag").val("");
+                    } else {
+                        // 刷新右上角异步任务定时器的判定标签
+                        $("#load_tasks_tag").val(1);
                     }
+
                     if (data["process_state"] == "RUN")
                         $("#process_state").val("运行");
                     if (data["process_state"] == "PLAN")

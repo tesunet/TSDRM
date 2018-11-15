@@ -3812,6 +3812,23 @@ def processsignsave(request):
         return JsonResponse(result)
 
 
+
+def save_task_remark(request):
+    if request.user.is_authenticated():
+        task_id = request.POST.get("task_id", "")
+        sign_info_extra = request.POST.get("sign_info_extra", "")
+
+        if task_id:
+            c_process_task = ProcessTask.objects.filter(id=task_id)
+            if c_process_task:
+                c_process_task = c_process_task[0]
+                c_process_task.explain = sign_info_extra
+                c_process_task.save()
+            return JsonResponse({"result": 1})
+        else:
+            return JsonResponse({"result": 0})
+
+
 @csrf_exempt
 def reload_task_nums(request):
     if request.user.is_authenticated():

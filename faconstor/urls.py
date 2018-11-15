@@ -85,6 +85,7 @@ urlpatterns = [
     url(r'^get_celery_tasks_info/$', get_celery_tasks_info),
     url(r'^revoke_current_task/$', revoke_current_task),
     url(r'^get_script_log/$', get_script_log),
+    url(r'^save_task_remark/$', save_task_remark),
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
