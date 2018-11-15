@@ -100,6 +100,9 @@
                                             <input id="sign_role" type="text" value="{{ task.group_name }}" hidden>
                                             <input id="process_run_reason" type="text"
                                                    value="{{ task.process_run_reason }}" hidden>
+                                            <input id="task_extra" type="text"
+                                                   value="{{ task.task_extra }}" hidden>
+
                                             <div class="col1">
                                                 <div class="cont">
                                                     <div class="cont-col1">
@@ -393,11 +396,19 @@
                                     </div>
                                 </div>
                                 <div class="form-group ">
+                                    <label class="col-md-2 control-label">任务内容</label>
+                                    <div class="col-md-10 " style="padding-top:6px">
+                                        <input id="mytask_extra" type="text" hidden>
+                                        <input type="text" id="taskcontent_extra" name="taskcontent_extra"
+                                               style="width: 458px" disabled>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
                                     <label class="col-md-2 control-label">发送时间</label>
                                     <div class="col-md-4 " style="padding-top:6px">
                                         <input type="text" id="sendtime_extra" name="sendtime_extra" disabled>
                                     </div>
-                                    <label class="col-md-2 control-label">签到角色</label>
+                                    <label class="col-md-2 control-label">当前角色</label>
                                     <div class="col-md-4 " style="padding-top:6px">
                                         <input type="text" id="signrole_extra" name="signrole_extra"
                                                style="width:165px;" disabled>
@@ -538,7 +549,9 @@
                             "            <input id='process_name' type='text' value='" + c_message_task.process_name + "' hidden>\n" +
                             "            <input id='send_time' type='text' value='" + c_message_task.send_time + "' hidden>\n" +
                             "            <input id='sign_role' type='text' value='" + c_message_task.group_name + "' hidden>\n" +
-                            "            <input id='process_run_reason' type='text' value='" + c_message_task.process_run_reason + "' hidden>"
+                            "            <input id='process_run_reason' type='text' value='" + c_message_task.process_run_reason + "' hidden>" +
+                            "            <input id='task_extra' type='text' value='" + c_message_task.task_extra + "' hidden>"
+
                         var divElement = "<div class='col1'><div class='cont'><div class='cont-col1'><div class='label label-sm " +
                             c_message_task.task_color + "'><i class='" + c_message_task.task_icon + "'></i></div></div><div class='cont-col2'><div class='desc'> <span class='label label-sm ' style='background-color:" +
                             c_message_task.process_color + ";'> " + c_message_task.process_name + "</span>" + c_message_task.content +
@@ -575,6 +588,7 @@
 
                         $("#mytask_extra").val($("#a".replace("a", cLiId)).find("input#task_id").val());
                         $("#processname_extra").val($("#a".replace("a", cLiId)).find("input#process_name").val());
+                        $("#taskcontent_extra").val($("#a".replace("a", cLiId)).find("input#task_extra").val());
                         $("#sendtime_extra").val($("#a".replace("a", cLiId)).find("input#send_time").val());
                         $("#signrole_extra").val($("#a".replace("a", cLiId)).find("input#sign_role").val());
                         $("#processrunreason_extra").val($("#a".replace("a", cLiId)).find("input#process_run_reason").val());
@@ -610,6 +624,7 @@
 
         $("#mytask_extra").val($("#a".replace("a", task_id)).find("input#task_id").val());
         $("#processname_extra").val($("#a".replace("a", task_id)).find("input#process_name").val());
+        $("#taskcontent_extra").val($("#a".replace("a", task_id)).find("input#task_extra").val());
         $("#sendtime_extra").val($("#a".replace("a", task_id)).find("input#send_time").val());
         $("#signrole_extra").val($("#a".replace("a", task_id)).find("input#sign_role").val());
         $("#processrunreason_extra").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());

@@ -295,7 +295,10 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.receiveauth = steprun.step.group
                 myprocesstask.type = "RUN"
                 myprocesstask.state = "0"
-                myprocesstask.content = "步骤" + steprun_name + "等待确认，请处理。" + "备注：" + steprun_remark
+                task_content = "步骤" + steprun_name + "等待确认，请处理。"
+                if steprun_remark:
+                    task_content += "备注：{0}".format(steprun_remark)
+                myprocesstask.content = task_content
                 myprocesstask.save()
 
                 return 2
