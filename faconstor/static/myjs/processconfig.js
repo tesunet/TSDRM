@@ -616,9 +616,8 @@ $('#save').click(function () {
             if ($("#skip").val() == "1")
                 skiptext = "可跳过"
             $("#curstring_" + $("#id").val()).text(approvaltext + skiptext);
-            $('#static').modal('hide');
+            // $('#static').modal('hide');
 
-            $("#formdiv").hide();
             $('#tree_2').jstree("destroy");
 
             customTree();

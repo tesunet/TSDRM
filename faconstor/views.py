@@ -711,7 +711,6 @@ def index(request, funid):
                 # 当前系统任务
                 current_process_task_info = get_c_process_run_tasks(current_processrun.id)
 
-
                 current_processrun_dict["current_process_run_state"] = state_dict[
                     "{0}".format(current_processrun.state)]
                 current_processrun_dict["current_process_task_info"] = current_process_task_info
@@ -2511,12 +2510,14 @@ def get_step_tree(parent, selectid):
             verify_items_string += id_name_plus
 
         group_name = ""
-        if child.group:
+        if child.group and child.group != " ":
             group_id = child.group
-            if not group_id:
-                group_id = None
-            group_name = Group.objects.filter(id=group_id)[0].name
+            try:
+                group_id = int(group_id)
+            except:
+                raise Http404()
 
+            group_name = Group.objects.filter(id=group_id)[0].name
         all_groups = Group.objects.exclude(state="9")
         group_string = " " + "+" + " -------------- " + "&"
         for group in all_groups:
@@ -2544,7 +2545,6 @@ def custom_step_tree(request):
         pid = request.POST.get('pid', "")
         name = request.POST.get('name', "")
         process_id = request.POST.get("process", "")
-
         current_process = Process.objects.filter(id=process_id)
         if current_process:
             current_process = current_process[0]
@@ -2611,7 +2611,6 @@ def custom_step_tree(request):
                 if rootnode.group:
                     group_id = rootnode.group
                     group_name = Group.objects.filter(id=group_id)[0].name
-
                 root["data"] = {"time": rootnode.time, "approval": rootnode.approval, "skip": rootnode.skip,
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title,
