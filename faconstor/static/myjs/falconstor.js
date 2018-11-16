@@ -341,7 +341,7 @@ if (App.isAngularJsApp() === false) {
                         var step1_starttime = data["step"][i]["starttime"];
                         var step1_endtime = data["step"][i]["endtime"];
                         var step1_rto = data["step"][i]["rto"];
-                        var step1_group = data["step"][i]["group"];
+                        var step1_group = data["step"][i]["group"]!=null?data["step"][i]["group"]:"";
                         var step1_operator = data["step"][i]["operator"];
                         var step1_note = data["step"][i]["note"];
                         var step1_verify = data["step"][i]["verify"];
@@ -450,7 +450,7 @@ if (App.isAngularJsApp() === false) {
                             var step2_starttime = data["step"][i]["children"][j]["starttime"];
                             var step2_endtime = data["step"][i]["children"][j]["endtime"];
                             var step2_rto = data["step"][i]["children"][j]["rto"];
-                            var step2_group = data["step"][i]["children"][j]["group"];
+                            var step2_group = data["step"][i]["children"][j]["group"]!=null?data["step"][i]["children"][j]["group"]:"";
                             var step2_operator = data["step"][i]["children"][j]["operator"];
                             var step2_note = data["step"][i]["children"][j]["note"];
                             var step2_verify = data["step"][i]["children"][j]["verify"];

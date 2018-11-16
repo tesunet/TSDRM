@@ -2405,9 +2405,6 @@ def setpsave(request):
         rto_count_in = request.POST.get('rto_count_in', '')
         remark = request.POST.get('remark', '')
 
-        if group == " ":
-            group = None
-
         process_id = request.POST.get('process_id', '')
         try:
             id = int(id)
