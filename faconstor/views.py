@@ -244,7 +244,7 @@ def get_process_index_data(request):
                     pnode_step_id = pnode_step.id
                     correct_step_id_list.append(pnode_step_id)
             else:
-                return Http404()
+                raise Http404()
 
             # 构造运行中流程步骤列表
             correct_step_run_list = []
@@ -637,7 +637,7 @@ def index(request, funid):
                 #             for inner_step in inner_steps:
                 #                 correct_step_id_list.append(inner_step.id)
                 # else:
-                #     return Http404()
+                #     raise Http404()
                 #
                 # # 构造运行中流程步骤列表
                 # correct_step_run_list = []
@@ -2552,7 +2552,7 @@ def custom_step_tree(request):
         if current_process:
             current_process = current_process[0]
         else:
-            return Http404()
+            raise Http404()
         process_name = current_process.name
 
         if id == 0:
@@ -3686,7 +3686,7 @@ def set_error_state(temp_request, process_run_id, task_content):
         myprocesstask.content = task_content
         myprocesstask.save()
     else:
-        return Http404()
+        raise Http404()
 
 
 def revoke_current_task(request):
@@ -3738,7 +3738,7 @@ def get_script_log(request):
         try:
             script_run_id = int(script_run_id)
         except:
-            return Http404()
+            raise Http404()
 
         current_script_run = ScriptRun.objects.filter(id=script_run_id)
         log_info = ""
@@ -4025,7 +4025,7 @@ def stop_current_process(request):
         if process_run_id:
             process_run_id = int(process_run_id)
         else:
-            return Http404()
+            raise Http404()
 
         current_process_run = ProcessRun.objects.exclude(state="9").filter(id=process_run_id)
         if current_process_run:
@@ -4116,14 +4116,14 @@ def show_result(request):
         try:
             processrun_id = int(processrun_id)
         except:
-            return Http404()
+            raise Http404()
 
         current_processrun = ProcessRun.objects.filter(id=processrun_id)
         if current_processrun:
             current_processrun = current_processrun[0]
             process_id = current_processrun.process.id
         else:
-            return Http404()
+            raise Http404()
 
         process_name = current_processrun.process.name if current_processrun else ""
         processrun_time = current_processrun.starttime.strftime("%Y-%m-%d")
@@ -4324,7 +4324,7 @@ def delete_current_process_run(request):
         try:
             processrun_id = int(processrun_id)
         except:
-            return Http404()
+            raise Http404()
 
         current_process_run = ProcessRun.objects.filter(id=processrun_id)
         if current_process_run:
@@ -4351,7 +4351,7 @@ def custom_pdf_report(request):
         if process_run_objs:
             process_run_obj = process_run_objs[0]
         else:
-            return Http404()
+            raise Http404()
 
         # 2.报表封页文字
         title_xml = "飞康自动化恢复流程"
@@ -4363,7 +4363,7 @@ def custom_pdf_report(request):
 
         # 4.构造第一章数据: first_el_dict
         # 切换概述节点下内容,有序字典中存放
-        first_el_dict = dict()
+        first_el_dict = {}
 
         start_time = process_run_obj.starttime
         end_time = process_run_obj.endtime
@@ -4372,7 +4372,7 @@ def custom_pdf_report(request):
         if users:
             create_user = users[0].userinfo.fullname
         else:
-            return Http404()
+            create_user = ""
         run_reason = process_run_obj.run_reason
 
         first_el_dict["start_time"] = r"{0}".format(
@@ -4450,7 +4450,6 @@ def custom_pdf_report(request):
         step_info_list = []
         pnode_steplist = Step.objects.exclude(state="9").filter(process_id=process_id).order_by("sort").filter(
             pnode_id=None)
-
         for num, pstep in enumerate(pnode_steplist):
             second_el_dict = dict()
             step_name = "{0}.{1}".format(num + 1, pstep.name)
@@ -4650,7 +4649,6 @@ def custom_pdf_report(request):
                              {"step_info_list": step_info_list, "first_el_dict": first_el_dict, "ele_xml01": ele_xml01,
                               "ele_xml02": ele_xml02, "title_xml": title_xml, "abstract_xml": abstract_xml})
         t.render()
-
         current_path = os.getcwd()
 
         if sys.platform.startswith("win"):

@@ -1,6 +1,6 @@
 from django.conf.urls import url
 from faconstor.views import *
-from django.conf import settings
+
 
 urlpatterns = [
     url(r'^$', index, {'funid': '2'}),
