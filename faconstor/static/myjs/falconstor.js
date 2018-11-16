@@ -240,6 +240,7 @@ if (App.isAngularJsApp() === false) {
                 success: function (data) {
                     $("ul.steps").empty();
                     $("div#tab-content").empty();
+                    $("#current_process_task_info").empty()
                     $("#stopbtn").show();
                     $("#show_result").hide();
                     $("#process_run_id").val($("#process").val());
@@ -248,6 +249,18 @@ if (App.isAngularJsApp() === false) {
                     $("#process_endtime").val(data["process_endtime"]);
                     $("#process_note").val(data["process_note"]);
                     $("#process_rto").val(data["process_rto"]);
+
+                    var totalTaskLi = ''
+                    // 右侧当前任务
+                    for (var i=0; i<data["current_process_task_info"].length;i++){
+                        var currentTaskLi = '<li class="col-md-12"><div class="col1"><div class="cont"><div class="cont-col1"><div class="label label-sm ' +
+                            data["current_process_task_info"][i].task_color + '"><i class="' + data["current_process_task_info"][i].task_icon +
+                            '"></i></div></div><div class="cont-col2"><div class="desc"> ' + data["current_process_task_info"][i].content +
+                            '</div></div></div></div><div class="col2"><div class="date"> ' + data["current_process_task_info"][i].time + '</div></div></li>'
+                        totalTaskLi += currentTaskLi
+                    }
+                    $("#current_process_task_info").append(totalTaskLi);
+
                     if (data["process_state"] == "DONE") {
                         $("#process_state").val("完成");
                         $("#stopbtn").hide();
@@ -263,11 +276,6 @@ if (App.isAngularJsApp() === false) {
                             }
                         }
                     }
-                    //     $("#load_tasks_tag").val("");
-                    // } else {
-                    //     // 刷新右上角异步任务定时器的判定标签
-                    //     $("#load_tasks_tag").val(1);
-                    // }
 
                     if (data["process_state"] == "RUN")
                         $("#process_state").val("运行");

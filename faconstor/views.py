@@ -370,6 +370,77 @@ def custom_time(time):
     return time
 
 
+def get_c_process_run_tasks(current_processrun_id):
+    """
+    获取当前系统任务
+    :return:
+    """
+    # 当前系统任务
+    current_process_task_info = []
+
+    cursor = connection.cursor()
+    cursor.execute("""
+    select t.starttime, t.content, t.type, t.state, t.logtype from faconstor_processtask as t where t.processrun_id = '{0}' order by t.starttime desc;
+    """.format(current_processrun_id))
+    rows = cursor.fetchall()
+    if len(rows) > 0:
+        for task in rows:
+            time = task[0]
+            content = task[1]
+            task_type = task[2]
+            task_state = task[3]
+            task_logtype = task[4]
+
+            # 图标与颜色
+            if task_type == "ERROR":
+                current_icon = "fa fa-exclamation-triangle"
+                if task_state == "0":
+                    current_color = "label-danger"
+                if task_state == "1":
+                    current_color = "label-default"
+            elif task_type == "SIGN":
+                current_icon = "fa fa-user"
+                if task_state == "0":
+                    current_color = "label-warning"
+                if task_state == "1":
+                    current_color = "label-info"
+            elif task_type == "RUN":
+                current_icon = "fa fa-bell-o"
+                if task_state == "0":
+                    current_color = "label-warning"
+                if task_state == "1":
+                    current_color = "label-info"
+            else:
+                current_color = "label-success"
+                if task_logtype == "START":
+                    current_icon = "fa fa-power-off"
+                elif task_logtype == "START":
+                    current_icon = "fa fa-power-off"
+                elif task_logtype == "STEP":
+                    current_icon = "fa fa-cog"
+                elif task_logtype == "SCRIPT":
+                    current_icon = "fa fa-cog"
+                elif task_logtype == "STOP":
+                    current_icon = "fa fa-stop"
+                elif task_logtype == "CONTINUE":
+                    current_icon = "fa fa-play"
+                elif task_logtype == "IGNORE":
+                    current_icon = "fa fa-share"
+                elif task_logtype == "START":
+                    current_icon = "fa fa-power-off"
+                elif task_logtype == "END":
+                    current_icon = "fa fa-lock"
+                else:
+                    current_icon = "fa fa-info-circle"
+
+            time = custom_time(time)
+
+            current_process_task_info.append(
+                {"content": content, "time": time, "task_color": current_color,
+                 "task_icon": current_icon})
+    return current_process_task_info
+
+
 def index(request, funid):
     if request.user.is_authenticated():
         global funlist
@@ -638,68 +709,9 @@ def index(request, funid):
                 processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)
 
                 # 当前系统任务
-                current_process_task_info = []
+                current_process_task_info = get_c_process_run_tasks(current_processrun.id)
 
-                cursor = connection.cursor()
-                cursor.execute("""
-                select t.starttime, t.content, t.type, t.state, t.logtype from faconstor_processtask as t where t.processrun_id = '{0}' order by t.starttime desc;
-                """.format(current_processrun.id))
-                rows = cursor.fetchall()
-                if len(rows) > 0:
-                    for task in rows:
-                        time = task[0]
-                        content = task[1]
-                        task_type = task[2]
-                        task_state = task[3]
-                        task_logtype = task[4]
 
-                        # 图标与颜色
-                        if task_type == "ERROR":
-                            current_icon = "fa fa-exclamation-triangle"
-                            if task_state == "0":
-                                current_color = "label-danger"
-                            if task_state == "1":
-                                current_color = "label-default"
-                        elif task_type == "SIGN":
-                            current_icon = "fa fa-user"
-                            if task_state == "0":
-                                current_color = "label-warning"
-                            if task_state == "1":
-                                current_color = "label-info"
-                        elif task_type == "RUN":
-                            current_icon = "fa fa-bell-o"
-                            if task_state == "0":
-                                current_color = "label-warning"
-                            if task_state == "1":
-                                current_color = "label-info"
-                        else:
-                            current_color = "label-success"
-                            if task_logtype == "START":
-                                current_icon = "fa fa-power-off"
-                            elif task_logtype == "START":
-                                current_icon = "fa fa-power-off"
-                            elif task_logtype == "STEP":
-                                current_icon = "fa fa-cog"
-                            elif task_logtype == "SCRIPT":
-                                current_icon = "fa fa-cog"
-                            elif task_logtype == "STOP":
-                                current_icon = "fa fa-stop"
-                            elif task_logtype == "CONTINUE":
-                                current_icon = "fa fa-play"
-                            elif task_logtype == "IGNORE":
-                                current_icon = "fa fa-share"
-                            elif task_logtype == "START":
-                                current_icon = "fa fa-power-off"
-                            elif task_logtype == "END":
-                                current_icon = "fa fa-lock"
-                            else:
-                                current_icon = "fa fa-info-circle"
-
-                        time = custom_time(time)
-
-                        current_process_task_info.append(
-                            {"content": content, "time": time, "task_color": current_color,
-                             "task_icon": current_icon})
                 current_processrun_dict["current_process_run_state"] = state_dict[
                     "{0}".format(current_processrun.state)]
                 current_processrun_dict["current_process_task_info"] = current_process_task_info
@@ -3451,6 +3463,10 @@ def getrunsetps(request):
                     h, m = divmod(m, 60)
                     process_rto = "%d时%02d分%02d秒" % (h, m, s)
 
+                # 当前流程所有任务
+                current_process_task_info = get_c_process_run_tasks(processrun)
+
+                processresult["current_process_task_info"] = current_process_task_info
                 processresult["step"] = result
                 processresult["process_name"] = process_name
                 processresult["process_state"] = process_state
