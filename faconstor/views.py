@@ -2409,6 +2409,7 @@ def setpsave(request):
             id = int(id)
         except:
             raise Http404()
+        data = ""
         # 新增步骤
         if id == 0:
             # process_name下右键新增
@@ -2454,6 +2455,7 @@ def setpsave(request):
                 last_id = step.id
                 step.save()
             result = "保存成功。"
+            data = step.id
         else:
             step = Step.objects.filter(id=id)
             if (len(step) > 0):
@@ -2471,21 +2473,26 @@ def setpsave(request):
                 step[0].save()
                 result = "保存成功。"
             else:
-                step = Step()
-                step[0].name = name
-                try:
-                    time = int(time)
-                    step[0].time = time
-                except:
-                    pass
-                step.skip = skip
-                step.approval = approval
-                step.group = group
-                step.rto_count_in = rto_count_in
-                step.remark = remark
-                step.save()
-                result = "保存成功。"
-        return HttpResponse(result)
+                result = "当前步骤不存在，请联系客服！"
+            # else:
+            #     step = Step()
+            #     step[0].name = name
+            #     try:
+            #         time = int(time)
+            #         step[0].time = time
+            #     except:
+            #         pass
+            #     step.skip = skip
+            #     step.approval = approval
+            #     step.group = group
+            #     step.rto_count_in = rto_count_in
+            #     step.remark = remark
+            #     step.save()
+            #     result = "保存成功。"
+        return JsonResponse({
+            "result": result,
+            "data": data
+        })
 
 
 def get_step_tree(parent, selectid):

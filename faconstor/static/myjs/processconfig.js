@@ -541,7 +541,7 @@ $('#scriptsave').click(function () {
             }
         },
         error: function (e) {
-            alert("页面出现错误，请于管理员联系。");
+            alert("请保存当前步骤后，再添加关联脚本。");
         }
     });
 })
@@ -579,7 +579,7 @@ $('#verify_items_save').click(function () {
             alert(myres);
         },
         error: function (e) {
-            alert("页面出现错误，请于管理员联系。");
+            alert("请保存当前步骤后，再添加关联确认项。");
         }
     });
 });
@@ -603,20 +603,21 @@ $('#save').click(function () {
             remark: $("#remark").val()
         },
         success: function (data) {
-            alert(data);
-            $("#name_" + $("#id").val()).text($("#name").val());
-            $("#time_" + $("#id").val()).val($("#time").val());
-            $("#approval_" + $("#id").val()).val($("#approval").val());
-            $("#skip_" + $("#id").val()).val($("#skip").val());
-            $("#group_" + $("#id").val()).val($("#group").val());
-            var approvaltext = ""
-            if ($("#approval").val() == "1")
-                approvaltext = "需审批"
-            var skiptext = ""
-            if ($("#skip").val() == "1")
-                skiptext = "可跳过"
-            $("#curstring_" + $("#id").val()).text(approvaltext + skiptext);
-            // $('#static').modal('hide');
+            // $("#name_" + $("#id").val()).text($("#name").val());
+            // $("#time_" + $("#id").val()).val($("#time").val());
+            // $("#approval_" + $("#id").val()).val($("#approval").val());
+            // $("#skip_" + $("#id").val()).val($("#skip").val());
+            // $("#group_" + $("#id").val()).val($("#group").val());
+            // var approvaltext = ""
+            // if ($("#approval").val() == "1")
+            //     approvaltext = "需审批"
+            // var skiptext = ""
+            // if ($("#skip").val() == "1")
+            //     skiptext = "可跳过"
+            // $("#curstring_" + $("#id").val()).text(approvaltext + skiptext);
+            if (data["data"]) {
+                $("#id").val(data.data);
+            }
 
             $('#tree_2').jstree("destroy");
 
