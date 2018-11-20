@@ -28,7 +28,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'  # 定时任务
 
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -58,6 +57,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE_CLASSES = [
+    # 'django.middleware.cache.UpdateCacheMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -67,7 +67,9 @@ MIDDLEWARE_CLASSES = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    # 'django.middleware.cache.FetchFromCacheMiddleware',
 ]
+
 
 ROOT_URLCONF = 'TSDRM.urls'
 
@@ -150,3 +152,15 @@ EMAIL_HOST = 'smtp.exmail.qq.com'
 EMAIL_HOST_USER = 'huangzx@tesunet.com.cn'
 EMAIL_HOST_PASSWORD = 'China320701045'
 EMAIL_PORT = 25
+
+# CASHES_DIR = BASE_DIR + os.sep + "faconstor"+ os.sep + "static"+ os.sep + "mem"
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+#         'LOCATION': CASHES_DIR,  # 设置缓存文件的目录
+#         'OPTIONS': {
+#             'MAX_ENTRIES': 300,  # 最大缓存个数（默认300）
+#             'CULL_FREQUENCY': 3,  # 缓存到达最大个数之后，剔除缓存个数的比例，即：1/CULL_FREQUENCY（默认3）
+#         },
+#     }
+# }

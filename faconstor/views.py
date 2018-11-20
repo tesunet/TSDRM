@@ -35,6 +35,7 @@ import requests
 from operator import itemgetter
 from .remote import ServerByPara
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import cache_page
 
 funlist = []
 
