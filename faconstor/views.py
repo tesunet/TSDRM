@@ -3691,7 +3691,11 @@ def revoke_current_task(request):
         abnormal = request.POST.get("abnormal", "")
         task_url = "http://127.0.0.1:5555/api/tasks"
 
-        task_json_info = requests.get(task_url).text
+        try:
+            task_json_info = requests.get(task_url).text
+        except:
+            return JsonResponse({"data": "终端未启动flower异步任务监控！"})
+
         task_dict_info = json.loads(task_json_info)
         task_id = ""
 

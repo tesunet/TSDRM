@@ -210,7 +210,7 @@ if (App.isAngularJsApp() === false) {
 
         // 获取异步任务状态
         function getTaskStatus(process_run_id, abnormal) {
-            // 判断获取异步任务状态
+            // 判断获取异步任务状态,"1"表示自主关闭，"0"表示异常关闭
             $.ajax({
                 url: "../../revoke_current_task/",
                 type: "post",
@@ -222,6 +222,8 @@ if (App.isAngularJsApp() === false) {
                     if (abnormal == "1") {
                         alert(data.data);
                         customTasksTable();
+                    } else if(data.data != "异步任务未出现异常"){
+                        alert(data.data);
                     }
                 }
             });
