@@ -258,8 +258,10 @@ def get_process_index_data(request):
             # 构造运行中流程步骤列表
             correct_step_run_list = []
             for step_id in correct_step_id_list:
-                current_step_run = StepRun.objects.filter(step_id=step_id).last()
-                correct_step_run_list.append(current_step_run)
+                current_step_run = StepRun.objects.filter(step_id=step_id).filter(processrun_id=processrun_id)
+                if current_step_run.exists():
+                    current_step_run = current_step_run[0]
+                    correct_step_run_list.append(current_step_run)
 
             # 构造当前流程步骤info
             steps = []
