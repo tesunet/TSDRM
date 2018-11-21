@@ -271,6 +271,18 @@ def get_process_index_data(request):
                 c_step_index = 0
                 # 流程结束前后的rtostate
                 if c_process_run_state != "DONE":
+                    # 确认后
+                    for num, c_step_run in enumerate(correct_step_run_list):
+                        c_rto_count_in = c_step_run.step.rto_count_in
+                        if c_rto_count_in == "0" and c_step_run.state == "DONE":
+                            rtostate = "DONE"
+                            c_step_index = num
+                            break
+                    if c_step_index > 0 and rtostate == "DONE":
+                        pre_step_index = c_step_index - 1
+                        rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+
+                    # 确认前
                     for num, c_step_run in enumerate(correct_step_run_list):
                         c_rto_count_in = c_step_run.step.rto_count_in
                         if c_rto_count_in == "0" and c_step_run.state not in ["DONE", "STOP", "EDIT"]:
