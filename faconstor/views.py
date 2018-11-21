@@ -297,12 +297,19 @@ def get_process_index_data(request):
 
                 for num, c_step_run in enumerate(correct_step_run_list):
                     num += 1
-                    # 区分子父级步骤run
-                    if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
-                        c_step_run_type = "cur"
-                        c_index = num
+                    if c_process_run_state == "DONE":
+                        if num == len(correct_step_run_list):
+                            c_step_run_type = "cur"
+                        else:
+                            c_step_run_type = ""
                     else:
-                        c_step_run_type = ""
+                        # 区分子父级步骤run
+                        if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
+                            c_step_run_type = "cur"
+                            c_index = num
+                        else:
+                            c_step_run_type = ""
+
 
                     c_step_id = c_step_run.step.id
                     c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id)
@@ -328,7 +335,8 @@ def get_process_index_data(request):
                     steps.append(c_step_run_dict)
                 percent = "%02d" % (
                             c_index / len(correct_step_run_list) * 100) if c_process_run_state != "DONE" else 100
-            steps.reverse()
+            # if c_process_run_state == "DONE":
+            #     steps.reverse()
             c_step_run_data = {
                 "name": name,
                 "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else "",
