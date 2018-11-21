@@ -119,7 +119,6 @@ def getpagefuns(funid, request=""):
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
             "-starttime").exclude(processrun__state="9")
-        print("length", len(allprosstasks))
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 send_time = task.starttime
@@ -303,7 +302,8 @@ def get_process_index_data(request):
                     if c_step_index > 0 and rtostate == "DONE":
                         pre_step_index = c_step_index - 1
                         rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
-                        print(rtoendtime)
+
+                c_step_run_percent = 0
 
                 for num, c_step_run in enumerate(correct_step_run_list):
                     num += 1
@@ -313,13 +313,11 @@ def get_process_index_data(request):
                         else:
                             c_step_run_type = ""
                     else:
-                        # 区分子父级步骤run
                         if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
                             c_step_run_type = "cur"
                             c_index = num
                         else:
                             c_step_run_type = ""
-
 
                     c_step_id = c_step_run.step.id
                     c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id)
@@ -332,6 +330,8 @@ def get_process_index_data(request):
                                 inner_step_run_index = num
                                 break
                         inner_step_run_percent = "%2d" % (inner_step_run_index / len(c_inner_step_runs) * 100)
+                        if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
+                            c_step_run_percent = inner_step_run_percent
 
                     c_step_run_dict = {
                         "name": c_step_run.step.name,
@@ -343,10 +343,14 @@ def get_process_index_data(request):
                         "type": c_step_run_type,
                     }
                     steps.append(c_step_run_dict)
+                # 精确步骤百分比
+                if c_index> 1:
+                    r_percent = c_index - 1 + int(c_step_run_percent) / 100
+                else:
+                    r_percent = int(c_step_run_percent) / 100
                 percent = "%02d" % (
-                            c_index / len(correct_step_run_list) * 100) if c_process_run_state != "DONE" else 100
-            # if c_process_run_state == "DONE":
-            #     steps.reverse()
+                            r_percent / len(correct_step_run_list) * 100) if c_process_run_state != "DONE" else 100
+
             c_step_run_data = {
                 "name": name,
                 "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else "",
@@ -360,7 +364,6 @@ def get_process_index_data(request):
         else:
             c_step_run_data = {}
 
-        print(c_step_run_data)
         return JsonResponse(c_step_run_data)
 
 
@@ -3985,7 +3988,7 @@ def reload_task_nums(request):
                     {"content": task.content, "time": time, "process_name": process_name,
                      "task_color": current_color.strip(), "task_type": task.type, "task_extra": task.content,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
-                     "pop": pop, "task_id": task_id, "send_time": send_time,
+                     "pop": pop, "task_id": task_id, "send_time": send_time.strftime("%Y-%m-%d %H:%M:%S"),
                      "process_run_reason": process_run_reason, "group_name": guoups[0].name})
 
         total_task_info["task_nums"] = len(allprosstasks)
@@ -4932,7 +4935,6 @@ def tasksearchdata(request):
 
         cursor.execute(exec_sql)
         rows = cursor.fetchall()
-
         type_dict = {
             "SIGN": "签到",
             "RUN": "操作",

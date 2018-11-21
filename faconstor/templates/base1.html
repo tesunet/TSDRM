@@ -92,7 +92,7 @@
                                                 <a id="a_{{ task.task_id }}" href="javascript:void(0)"
                                                    name="{{ task.pop }}">
                                             {% endif %}
-                                            <input id="task_type" type="text" value="{{ task.task_type }}" hidden>
+                                            <input id="tasktype" type="text" value="{{ task.task_type }}" hidden>
                                             <input id="task_id" type="text" value="{{ task.task_id }}" hidden>
                                             <input id="process_name" type="text" value="{{ task.process_name }}"
                                                    hidden>
@@ -544,7 +544,7 @@
                         c_message_task = data.message_task[i]
                         var liElement = "<li id='" + c_message_task.task_id + "'>"
                         var aElement = "<a href='javascript:void(0)' id='a_" + c_message_task.task_id + "' name='" + c_message_task.pop + "'>"
-                        var inputElement = "<input id='task_type' type='text' value='" + c_message_task.task_type + "' hidden>\n" +
+                        var inputElement = "<input id='tasktype' type='text' value='" + c_message_task.task_type + "' hidden>\n" +
                             "            <input id='task_id' type='text' value='" + c_message_task.task_id + "' hidden>\n" +
                             "            <input id='process_name' type='text' value='" + c_message_task.process_name + "' hidden>\n" +
                             "            <input id='send_time' type='text' value='" + c_message_task.send_time + "' hidden>\n" +
