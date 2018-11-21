@@ -277,7 +277,6 @@ def get_process_index_data(request):
                             rtostate = "DONE"
                             c_step_index = num
                             break
-
                     if c_step_index > 0 and rtostate == "DONE":
                         pre_step_index = c_step_index - 1
                         rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
