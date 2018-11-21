@@ -275,7 +275,6 @@ def get_process_index_data(request):
                         c_rto_count_in = c_step_run.step.rto_count_in
                         if c_rto_count_in == "0" and c_step_run.state not in ["DONE", "STOP", "EDIT"]:
                             rtostate = "DONE"
-                            print("1", c_step_run.id, c_step_run.step.id)
                             c_step_index = num
                             break
 
@@ -287,7 +286,6 @@ def get_process_index_data(request):
                         c_rto_count_in = c_step_run.step.rto_count_in
                         if c_rto_count_in == "0" and c_step_run.state == "DONE":
                             rtostate = "DONE"
-                            print("2", c_step_run.id, c_step_run.step.id)
                             c_step_index = num
                             break
 
