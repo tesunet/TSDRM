@@ -291,6 +291,7 @@ def get_process_index_data(request):
                     if c_step_index > 0 and rtostate == "DONE":
                         pre_step_index = c_step_index - 1
                         rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+                        print(rtoendtime)
 
                 for num, c_step_run in enumerate(correct_step_run_list):
                     num += 1
@@ -346,6 +347,8 @@ def get_process_index_data(request):
             }
         else:
             c_step_run_data = {}
+
+        print(c_step_run_data)
         return JsonResponse(c_step_run_data)
 
 
@@ -3841,6 +3844,7 @@ def processsignsave(request):
             prosssigns = ProcessTask.objects.filter(processrun=myprocessrun, state="0")
             if len(prosssigns) <= 0:
                 myprocessrun.state = "RUN"
+                myprocessrun.starttime = datetime.datetime.now()
                 myprocessrun.save()
 
                 myprocess = myprocessrun.process
