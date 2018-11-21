@@ -165,6 +165,9 @@ var Dashboard = function () {
                     $(".fc-day-grid-event.fc-h-event.fc-event.fc-start.fc-end.invite.fc-draggable").each(function () {
                         var processName = $(this).find('.fc-title').text();
                         $(this).find('.fc-title').html("<font color='red'>*</font> " + processName);
+                    });
+                    $(".fc-day-grid-event.fc-h-event.fc-event.fc-start.fc-end.fc-draggable").each(function () {
+                        $(this).prop("target", "_blank");
                     })
                 }
             });

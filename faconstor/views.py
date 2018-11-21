@@ -211,8 +211,15 @@ def processindex(request, processrun_id):
     if request.user.is_authenticated() and request.session['isadmin']:
         errors = []
         # processrun_id = request.GET.get("p_run_id", "")
+        c_process_run = ProcessRun.objects.filter(id=processrun_id)
+        if c_process_run.exists():
+            process_url = c_process_run[0].process.url
+            process_name = c_process_run[0].process.name
+        else:
+            raise Http404()
         return render(request, 'processindex.html',
-                      {'username': request.user.userinfo.fullname, "errors": errors, "processrun_id": processrun_id})
+                      {'username': request.user.userinfo.fullname, "errors": errors, "processrun_id": processrun_id,
+                       "process_url": process_url, "process_name": process_name})
     else:
         return HttpResponseRedirect("/login")
 
@@ -225,6 +232,8 @@ def get_process_index_data(request):
         if current_processruns:
             current_processrun = current_processruns[0]
 
+            # 当前流程状态
+            c_process_run_state = current_processrun.state
             name = current_processrun.process.name
             starttime = current_processrun.starttime
             endtime = current_processrun.endtime
@@ -260,17 +269,32 @@ def get_process_index_data(request):
 
             if correct_step_run_list:
                 c_step_index = 0
-                # rtostate
-                for num, c_step_run in enumerate(correct_step_run_list):
-                    c_rto_count_in = c_step_run.step.rto_count_in
-                    if c_rto_count_in == "0" and c_step_run.state not in ["DONE", "STOP", "EDIT"]:
-                        rtostate = "DONE"
-                        c_step_index = num
-                        break
+                # 流程结束前后的rtostate
+                if c_process_run_state != "DONE":
+                    for num, c_step_run in enumerate(correct_step_run_list):
+                        c_rto_count_in = c_step_run.step.rto_count_in
+                        if c_rto_count_in == "0" and c_step_run.state not in ["DONE", "STOP", "EDIT"]:
+                            rtostate = "DONE"
+                            print("1", c_step_run.id, c_step_run.step.id)
+                            c_step_index = num
+                            break
 
-                if c_step_index > 0 and rtostate == "DONE":
-                    pre_step_index = c_step_index - 1
-                    rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+                    if c_step_index > 0 and rtostate == "DONE":
+                        pre_step_index = c_step_index - 1
+                        rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    for num, c_step_run in enumerate(correct_step_run_list):
+                        c_rto_count_in = c_step_run.step.rto_count_in
+                        if c_rto_count_in == "0" and c_step_run.state == "DONE":
+                            rtostate = "DONE"
+                            print("2", c_step_run.id, c_step_run.step.id)
+                            c_step_index = num
+                            break
+
+                    if c_step_index > 0 and rtostate == "DONE":
+                        pre_step_index = c_step_index - 1
+                        rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+
                 for num, c_step_run in enumerate(correct_step_run_list):
                     num += 1
                     # 区分子父级步骤run
@@ -298,11 +322,12 @@ def get_process_index_data(request):
                         "starttime": c_step_run.starttime.strftime(
                             '%Y-%m-%d %H:%M:%S') if c_step_run.starttime else None,
                         "endtime": c_step_run.endtime.strftime('%Y-%m-%d %H:%M:%S') if c_step_run.endtime else None,
-                        "percent": inner_step_run_percent,
+                        "percent": inner_step_run_percent if c_process_run_state != "DONE" else 100,
                         "type": c_step_run_type,
                     }
                     steps.append(c_step_run_dict)
-                percent = "%02d" % (c_index / len(correct_step_run_list) * 100)
+                percent = "%02d" % (
+                            c_index / len(correct_step_run_list) * 100) if c_process_run_state != "DONE" else 100
 
             c_step_run_data = {
                 "name": name,
@@ -316,6 +341,7 @@ def get_process_index_data(request):
             }
         else:
             c_step_run_data = {}
+        print("c_step_run_data", c_step_run_data)
         return JsonResponse(c_step_run_data)
 
 
@@ -823,7 +849,7 @@ def get_daily_processrun(request):
                 process_color = process_run.process.color
                 process_run_id = process_run.id
                 # 进程url
-                processrun_url = process_run.process.url + "/" + str(process_run.id)
+                processrun_url = "/processindex/" + str(process_run.id)
 
                 process_run_dict = {
                     "process_name": process_name,
