@@ -329,6 +329,8 @@ def get_process_index_data(request):
                 percent = "%02d" % (
                             c_index / len(correct_step_run_list) * 100) if c_process_run_state != "DONE" else 100
 
+            if c_process_run_state == "DONE":
+                steps.reverse()
             c_step_run_data = {
                 "name": name,
                 "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else "",
@@ -341,7 +343,6 @@ def get_process_index_data(request):
             }
         else:
             c_step_run_data = {}
-        print("c_step_run_data", c_step_run_data)
         return JsonResponse(c_step_run_data)
 
 
