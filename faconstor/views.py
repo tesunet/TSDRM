@@ -304,7 +304,6 @@ def get_process_index_data(request):
                         pre_step_index = c_step_index - 1
                         rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
 
-                c_step_run_percent = 0
                 for num, c_step_run in enumerate(correct_step_run_list):
                     num += 1
                     # 流程结束后的当前步骤
@@ -322,24 +321,26 @@ def get_process_index_data(request):
                             c_step_run_type = ""
 
                     c_step_id = c_step_run.step.id
-                    c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id).order_by("step__sort")
+                    c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id).filter(step__state__in=["9"])
 
-                    inner_step_run_percent = 0
-                    if c_inner_step_runs:
-                        for num, c_inner_step_run in enumerate(c_inner_step_runs):
-                            num += 1
-                            if c_inner_step_run.state not in ["DONE", "STOP", "EDIT"]:
-                                inner_step_run_index = num - 1
-                                # 当前步骤百分比
-                                inner_step_run_percent = "%2d" % (inner_step_run_index / len(c_inner_step_runs) * 100)
-                                break
 
-                    if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
-                        c_step_run_percent = inner_step_run_percent
-                    elif c_step_run.state in ["DONE", "STOP"]:
-                        c_step_run_percent = 100
+                    # 未完成
+                    all_steps = c_step_run.step.children.exclude(state="9")
+                    all_done_step_list = []
+                    for step in all_steps:
+                        step_id = step.id
+                        done_step_run = StepRun.objects.filter(step_id=step_id).filter(processrun_id=processrun_id).filter(state="DONE")
+                        if done_step_run.exists():
+                            all_done_step_list.append(done_step_run[0])
+
+                    if all_done_step_list:
+                        inner_step_run_percent = "%2d" % (len(all_done_step_list) / len(all_steps) * 100)
                     else:
-                        c_step_run_percent = 0
+                        inner_step_run_percent = 0
+
+                    if c_step_run.state in ["DONE", "STOP"]:
+                        inner_step_run_percent = 100
+
 
                     c_step_run_dict = {
                         "name": c_step_run.step.name,
@@ -347,49 +348,19 @@ def get_process_index_data(request):
                         "starttime": c_step_run.starttime.strftime(
                             '%Y-%m-%d %H:%M:%S') if c_step_run.starttime else None,
                         "endtime": c_step_run.endtime.strftime('%Y-%m-%d %H:%M:%S') if c_step_run.endtime else None,
-                        "percent": c_step_run_percent,
+                        "percent": inner_step_run_percent,
                         "type": c_step_run_type,
                     }
                     steps.append(c_step_run_dict)
 
-            # 构造一个正确的步骤顺序列表
-            all_correct_step_id_list = []
-            if all_pnode_steps:
-                for pnode_step in all_pnode_steps:
-                    pnode_step_id = pnode_step.id
-                    all_correct_step_id_list.append(pnode_step_id)
-                    inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id,
-                                                                         pnode_id=pnode_step_id).order_by("sort")
-                    if inner_steps:
-                        for inner_step in inner_steps:
-                            all_correct_step_id_list.append(inner_step.id)
+            done_step_run = current_processrun.steprun_set.filter(state="DONE")
+            if done_step_run.exists():
+                done_num = len(done_step_run)
             else:
-                raise Http404()
-
-            # 构造运行中流程步骤列表
-            correct_step_run_list = []
-            for step_id in all_correct_step_id_list:
-                current_step_run = StepRun.objects.filter(step_id=step_id).last()
-                correct_step_run_list.append(current_step_run)
-
-            # 通过1-n数字标记当前流程步骤
-            index_dict = {}
-            for num, current_step in enumerate(correct_step_run_list):
-                index_dict["{0}".format(current_step.id)] = num + 1
-
-            rate_param = 0
-            if current_processrun.state == "DONE":
-                rate_param = len(correct_step_run_list)
-            else:
-                # 倒序，指定二级步骤
-                for step_run in correct_step_run_list[::-1]:
-                    if step_run.state in ["RUN", "CONFIRM"]:
-                        current_run_step_id = step_run.id
-                        rate_param = index_dict["{0}".format(current_run_step_id)] - 1
-                        break
+                done_num = 0
 
             # 构造展示步骤
-            process_rate = "%02d" % (rate_param/ len(correct_step_run_list) * 100)
+            process_rate = "%02d" % (done_num/ len(current_processrun.steprun_set.all()) * 100)
 
             c_step_run_data = {
                 "name": name,
@@ -403,7 +374,6 @@ def get_process_index_data(request):
             }
         else:
             c_step_run_data = {}
-
         return JsonResponse(c_step_run_data)
 
 
