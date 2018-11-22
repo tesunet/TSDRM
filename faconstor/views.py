@@ -125,6 +125,7 @@ def getpagefuns(funid, request=""):
                 process_name = task.processrun.process.name
                 process_run_reason = task.processrun.run_reason
                 task_id = task.id
+                processrunid = task.processrun.id
 
                 task_nums = len(allprosstasks)
                 process_color = task.processrun.process.color
@@ -192,7 +193,7 @@ def getpagefuns(funid, request=""):
                      "task_color": current_color.strip(), "task_type": task.type, "task_extra": task.content,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
                      "pop": True if task.type == "SIGN" else False, "task_id": task_id, "send_time": send_time,
-                     "process_run_reason": process_run_reason, "group_name": guoups[0].name})
+                     "processrunid": processrunid, "process_run_reason": process_run_reason, "group_name": guoups[0].name})
     return {"pagefuns": pagefuns, "curfun": mycurfun, "message_task": message_task, "task_nums": task_nums}
 
 
@@ -323,13 +324,13 @@ def get_process_index_data(request):
                     c_step_id = c_step_run.step.id
                     c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id).filter(step__state__in=["9"])
 
-
                     # 未完成
                     all_steps = c_step_run.step.children.exclude(state="9")
                     all_done_step_list = []
                     for step in all_steps:
                         step_id = step.id
-                        done_step_run = StepRun.objects.filter(step_id=step_id).filter(processrun_id=processrun_id).filter(state="DONE")
+                        done_step_run = StepRun.objects.filter(step_id=step_id).filter(
+                            processrun_id=processrun_id).filter(state="DONE")
                         if done_step_run.exists():
                             all_done_step_list.append(done_step_run[0])
 
@@ -340,7 +341,6 @@ def get_process_index_data(request):
 
                     if c_step_run.state in ["DONE", "STOP"]:
                         inner_step_run_percent = 100
-
 
                     c_step_run_dict = {
                         "name": c_step_run.step.name,
@@ -360,7 +360,7 @@ def get_process_index_data(request):
                 done_num = 0
 
             # 构造展示步骤
-            process_rate = "%02d" % (done_num/ len(current_processrun.steprun_set.all()) * 100)
+            process_rate = "%02d" % (done_num / len(current_processrun.steprun_set.all()) * 100)
 
             c_step_run_data = {
                 "name": name,
@@ -3259,7 +3259,7 @@ def falconstorrun(request):
 
                                 exec_process.delay(myprocessrun.id)
                                 result["res"] = "新增成功。"
-                                result["data"] = process[0].url + "/" + str(myprocessrun.id)
+                                result["data"] = "/processindex/" + str(myprocessrun.id)
         return HttpResponse(json.dumps(result))
 
 
@@ -3886,7 +3886,7 @@ def processsignsave(request):
 
                 exec_process.delay(myprocessrun.id)
                 result["res"] = "签字成功,同时启动流程。"
-                result["data"] = myprocess.url + "/" + str(myprocessrun.id)
+                result["data"] = "/processindex/" + str(myprocessrun.id)
             else:
                 result["res"] = "签字成功。"
         except:

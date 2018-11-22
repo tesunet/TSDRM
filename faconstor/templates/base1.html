@@ -97,7 +97,8 @@
                                                        value="{{ task.process_run_reason }}" hidden>
                                                 <input id="task_extra" type="text"
                                                        value="{{ task.task_extra }}" hidden>
-
+                                                <input id="processrunid" type="text"
+                                                       value="{{ task.processrunid }}" hidden>
                                                 <div class="col1">
                                                     <div class="cont">
                                                         <div class="cont-col1">
@@ -386,6 +387,7 @@
                                     <label class="col-md-2 control-label">流程名称</label>
                                     <div class="col-md-10 " style="padding-top:6px">
                                         <input id="mytask_extra" type="text" hidden>
+
                                         <input type="text" id="processname_extra" name="processname_extra"
                                                style="width: 458px" disabled>
                                     </div>
@@ -393,7 +395,6 @@
                                 <div class="form-group ">
                                     <label class="col-md-2 control-label">任务内容</label>
                                     <div class="col-md-10 " style="padding-top:6px">
-                                        <input id="mytask_extra" type="text" hidden>
                                         <input type="text" id="taskcontent_extra" name="taskcontent_extra"
                                                style="width: 458px" disabled>
                                     </div>
@@ -434,8 +435,9 @@
                                 <div class="row" style="TEXT-ALIGN: center;">
                                     <div class="col-md-12">
                                         <button type="button" class="btn green uppercase"
-                                                onclick="searchTaskClicked();">查询任务
+                                                onclick="searchTaskClicked(this);">查询任务
                                         </button>
+                                        <input id="processrun_id_extra" type="text" hidden>
                                     </div>
                                 </div>
                             </div>
@@ -488,14 +490,15 @@
     }
 
     // 单点查询任务
-    function searchTaskClicked() {
+    function searchTaskClicked(param) {
+        var processRunId = $(param).next().val();
         // 存入任务说明
         var saveTaskRemark = preTag + "save_task_remark/"
         $.ajax({
             type: "POST",
             url: saveTaskRemark,
             data: {
-                "task_id": $("#mytask").val(),
+                "task_id": $("#mytask_extra").val(),
                 "sign_info_extra": $("#sign_info_extra").val(),
             },
             success: function (data) {
@@ -508,7 +511,7 @@
             }
         });
 
-        window.location.href = '/tasksearch/'
+        window.location.href = '/falconstor/' + processRunId
     }
 
     // 定时查询任务(有流程进行中才会有任务)
@@ -609,11 +612,11 @@
                                 //隐藏指定模态框
                                 // 获取当前模态框
                                 var myTaskModel = $("#static_base_01").find("input#mytask").val();
-                                if (myTaskModel == preDataArray[i]){
+                                if (myTaskModel == preDataArray[i]) {
                                     $("#static_base_01").modal("hide");
                                 }
                                 var myTaskExtraModel = $("#static_base_02").find("input#mytask_extra").val();
-                                if (myTaskExtraModel == preDataArray[i]){
+                                if (myTaskExtraModel == preDataArray[i]) {
                                     $("#static_base_02").modal("hide");
                                 }
                             }
@@ -655,6 +658,7 @@
         $("#sendtime_extra").val($("#a".replace("a", task_id)).find("input#send_time").val());
         $("#signrole_extra").val($("#a".replace("a", task_id)).find("input#sign_role").val());
         $("#processrunreason_extra").val($("#a".replace("a", task_id)).find("input#process_run_reason").val());
+        $("#processrun_id_extra").val($("#a".replace("a", task_id)).find("input#processrunid").val());
     });
 
 
@@ -670,7 +674,9 @@
             },
             success: function (data) {
                 if (data["res"] == "签字成功,同时启动流程。") {
-                    window.location.href = data["data"];
+                    //window.location.href = data["data"];
+                    window.open(data["data"]);
+
                     getTaskInfo();
                 }
                 else {
