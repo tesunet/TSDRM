@@ -109,8 +109,8 @@ input {
     /*background: #fafafa;*/
     /*background-image:url(/static/processindex/images/bg.jpg);*/
     /*background-size: 100% 100%;*/
-  /*-moz-background-size: 100% 100%;*/
-  /*-webkit-background-size: 100% 100%;*/
+    /*-moz-background-size: 100% 100%;*/
+    /*-webkit-background-size: 100% 100%;*/
 }
 
 .wrapper li {
@@ -179,88 +179,36 @@ input {
 /*end*/
 
 /*圆形进度*/
-@-webkit-keyframes toggle {
-    0% {
-        opacity: 0;
-    }
-
-    100% {
-        opacity: 1;
-    }
+.circles-text {
+    font-size: 22px !important;
+    line-height: 1.2em !important;
 }
 
-@keyframes toggle {
-    0% {
-        opacity: 0;
-    }
+.circles-wrp {
 
-    100% {
-        opacity: 1;
-    }
 }
 
-.progress-ring {
-    position: relative;
-    top: 0;
-    left: 0;
-    height: 160px;
-    width: 160px;
-}
-
-.progress-ring div {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 250px;
-    width: 250px;
-    /* 圆环宽高，可自定义 */
-    border: 15px solid transparent;
-    border-radius: 50%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box;
-}
-
-.progress-ring .progress-left, .progress-ring .progress-right, .progress-ring .progress-cover {
-    clip: rect(0 125px 250px 0);
-    /* rect( [0 | <width/2> | <height> | 0] ) */
-}
-
-.progress-ring .progress-right {
-    opacity: 0;
-    -webkit-transform: rotate(180deg);
-    -ms-transform: rotate(180deg);
-    transform: rotate(180deg);
-}
-
-.progress-ring .progress-text p {
-    overflow: inherit;
-    font-weight: bold;
-}
-
-.progress-ring .progress-text {
-    border: none;
-    font-family: "Arial", sans-serif;
-    text-align: center;
-    font-size: 28px;
-    color: #424141;
-    padding-top: 90px;
-}
-
-.progress-ring .progress-percent {
-    font-size: .55em;
-    font-style: italic;
-    font-family: "Microsoft Yahei", sans-serif;
-}
-
-.progress-ring .inner-progress {
-    width: 200px;
-    height: 200px;
+.circles-wrp .inner-progress {
+    width: 150px;
+    height: 150px;
     border: 5px #eee solid;
     margin: 0 auto;
     position: absolute;
-    top: 25px;
-    left: 25px;
+    top: 20px;
+    left: 20px;
+    border-radius: 50%;
+}
+
+.circles-wrp .con-text {
+    display: table;
+    height: 100%;
+    width: 100%;
+}
+
+.circles-wrp .con-text .text {
+    display: table-cell;
+    vertical-align: middle;
+    text-align: center;
 }
 
 /*end*/
@@ -334,31 +282,31 @@ input {
     background-size: 10px 10px;
 }
 
-.setp-run,.setp-run .con-circle {
+.setp-run, .setp-run .con-circle {
     border-color: #5091C7 !important;
 }
 
-.step-done,.step-done .con-circle {
+.step-done, .step-done .con-circle {
     border-color: #32c5d2 !important;
     opacity: 0.5;
 }
 
-.step-stop,.step-edit .con-circle {
+.step-stop, .step-edit .con-circle {
     border-color: #5091C7 !important;
     opacity: 0.5;
 }
 
-.step-error,.step-edit .con-circle {
+.step-error, .step-edit .con-circle {
     border-color: #ff0000 !important;
     opacity: 0.5;
 }
 
-.step-confirm,.step-edit .con-circle {
+.step-confirm, .step-edit .con-circle {
     border-color: #e0b200 !important;
     opacity: 0.5;
 }
 
-.step-edit,.step-edit .con-circle {
+.step-edit, .step-edit .con-circle {
     border-color: #949494 !important;
     opacity: 0.5;
 }
@@ -545,7 +493,7 @@ input {
 }
 
 .box-left .lbox-2 p {
-   /* padding-top: 30px;*/
+    /* padding-top: 30px;*/
 }
 
 .box-left .lbox-2 em {
@@ -574,7 +522,7 @@ input {
 }
 
 .box-left .lbox-3 p {
-  /*  padding-top: 20px;*/
+    /*  padding-top: 20px;*/
     white-space: nowrap;
     overflow: hidden;
     width: 76px;
@@ -643,8 +591,8 @@ input {
 
 .box-center .step-current {
     position: absolute;
-    bottom: 0;
-    bottom: 60px;
+    left: 25px;
+    bottom: -20px;
 }
 
 /*右边*/
@@ -666,14 +614,14 @@ input {
     position: absolute;
     border-radius: 50%;
     border: 3px #dcdcdc solid;
-    width:125px;
+    width: 125px;
     height: 125px;
     left: 6px;
     top: 6px;
 }
 
 .box-right .rbox-1 p {
-   /* padding-top: 40px;*/
+    /* padding-top: 40px;*/
 }
 
 .box-right .rbox-2 {

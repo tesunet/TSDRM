@@ -225,8 +225,11 @@ def processindex(request, processrun_id):
 
 def get_process_index_data(request):
     if request.user.is_authenticated():
+        print('************')
         processrun_id = request.POST.get("p_run_id", "")
-        current_processruns = ProcessRun.objects.filter(id=processrun_id)
+        print(processrun_id)
+
+        current_processruns = ProcessRun.objects.filter(id=int(processrun_id))
 
         if current_processruns:
             current_processrun = current_processruns[0]

@@ -6,7 +6,6 @@ var state = '',
 var allState = ['run', 'done', 'error', 'stop', 'confirm', 'edit'];
 var util = {
     run: function () {
-        util.initExtend();
         util.request();
         interval = setInterval(function () {
             if (state === 'DONE') {
@@ -39,13 +38,16 @@ var util = {
         if (headerTitle === '') {
             headerTitle = data.name;
             var process_run_url = $("#process_url").val() + "/" + $("#process_run_id").val()
-            $('.header-title h2').html("<a href='"+ process_run_url +"' target='_parent' style='color:#778899'>"+headerTitle+"</a>");
+            $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#778899'>" + headerTitle + "</a>");
         }
 
         var progressBar = $('.progress-par');
         var percent = parseInt(data.percent);
         progressBar.attr('style', 'width:' + percent + '%');
         progressBar.find('i').text(percent + '%');
+        for (var cindex = 0; cindex < allState.length; cindex++) {
+            progressBar.removeClass(allState[cindex]);
+        }
         progressBar.addClass(state.toLocaleLowerCase());
 
         $('.progress-left-time').text(data.starttime);
@@ -74,7 +76,6 @@ var util = {
         }
 
         //current step
-        var loadingNow = $(".progress-ring");
         var color = {
             run: '#5091C7',
             done: '#32c5d2 ',
@@ -84,10 +85,22 @@ var util = {
             edit: '#c4c4c4'
         };
         var curState = curStep.state.toLocaleLowerCase();
-        loadingNow.attr('data-name', curStep.name);
-        loadingNow.attr('data-percent', curStep.percent);
-        loadingNow.attr('data-color', '#f0f0f0,' + color[curState]);
-        loadingNow.loadingNow();
+        Circles.create({
+            id: 'current-circles',
+            radius: 100, //半径宽度，基准100px。半径100，则是200px的宽度
+            value: curStep.percent,
+            maxValue: 100,
+            width: 10, //圆环宽度
+            text: function (value) {
+                return '<div class="inner-progress"></div><div class="con-text"><div class="text"><p>' + curStep.name + '</p><p>' + value + '%</p></div></div>';
+            },
+            colors: ['#f0f0f0', color[curState]],
+            duration: 400, //动画时长
+            wrpClass: 'circles-wrp',
+            textClass: 'circles-text',
+            styleWrapper: true,
+            styleText: true
+        });
 
         util.makeR(rightData);
         util.makeL(leftData);
@@ -100,8 +113,18 @@ var util = {
                     'background-size': '90px 70px'
                 });
             }, 1 * 1000);
-            clearInterval(interval);
+
+            //停止
+            if ($.inArray(state, ['DONE', 'STOP']) >= 0) {
+                clearInterval(interval);
+            }
+
             clearInterval(tmInterval);
+        } else {
+            $('.progress-par span').css({
+                'background': 'url("/static/processindex/images/loading.gif") no-repeat',
+                'background-size': '90px 70px'
+            });
         }
     },
     makeR: function (rightData) {
@@ -205,72 +228,6 @@ var util = {
         headerTimeLi.eq(7).find('span').text(seconds[0]);
         headerTimeLi.eq(8).find('span').text(seconds[1]);
     },
-    initExtend: function () {
-        $.fn.loadingNow = function () {
-            var defaultOpt = {
-                trackColor: '#f0f0f0',
-                progressColor: '#72B6E3',
-                percent: 75,
-                duration: 2000
-            }; // 默认选项
-            $(this).each(function () {
-                var $target = $(this);
-                var color = $target.data('color'); // 颜色
-                var percent = parseInt($target.data('percent'), 10); // 百分比
-                var duration = parseFloat($target.data('duration'), 10) * 1000; // 持续时间
-                var trackColor, progressColor;
-                if (color && color.split(',').length === 2) {
-                    var colorSet = color.split(',');
-                    trackColor = colorSet[0];
-                    progressColor = colorSet[1];
-                } else {
-                    trackColor = defaultOpt.trackColor;
-                    progressColor = defaultOpt.progressColor;
-                }
-                if (!percent)
-                    percent = defaultOpt.percent;
-                if (!duration)
-                    duration = defaultOpt.duration;
-
-                var textName = $target.attr('data-name');
-
-                $target.html('<div class="inner-progress"></div><div class="progress-track"></div><div class="progress-left"></div><div class="progress-right"></div><div class="progress-cover"></div><div class="progress-text"><p>' + textName + '</p><p>' + percent + '%</p></div>');
-
-                var x = $target.find('.progress-cover').height(); // 触发 Layout
-                // http://stackoverflow.com/questions/12088819/css-transitions-on-new-elements
-
-                $target.find('.progress-track, .progress-cover').css('border-color', trackColor);
-                $target.find('.progress-left, .progress-right').css('border-color', progressColor);
-
-                $target.find('.progress-left').css({
-                    'transform': 'rotate(' + percent * 3.6 + 'deg)',
-                    '-o-transform': 'rotate(' + percent * 3.6 + 'deg)',
-                    '-ms-transform': 'rotate(' + percent * 3.6 + 'deg)',
-                    '-moz-transform': 'rotate(' + percent * 3.6 + 'deg)',
-                    '-webkit-transform': 'rotate(' + percent * 3.6 + 'deg)',
-                    'transition': 'transform ' + duration + 'ms linear',
-                    '-o-transition': '-o-transform ' + duration + 'ms linear',
-                    '-ms-transition': '-ms-transform ' + duration + 'ms linear',
-                    '-moz-transition': '-moz-transform ' + duration + 'ms linear',
-                    '-webkit-transition': '-webkit-transform ' + duration + 'ms linear'
-                });
-
-                if (percent > 50) {
-                    var animation = 'toggle ' + (duration * 50 / percent) + 'ms'
-                    $target.find('.progress-right').css({
-                        'opacity': 1,
-                        'animation': animation,
-                        'animation-timing-function': 'step-end'
-                    });
-                    $target.find('.progress-cover').css({
-                        'opacity': 0,
-                        'animation': animation,
-                        'animation-timing-function': 'step-start'
-                    });
-                }
-            });
-        }
-    },
     timeFn: function (d1, d2) {
         var dateBegin = new Date(d1.replace(/-/g, "/"));
         var dateEnd = new Date(d2.replace(/-/g, "/"));
@@ -285,9 +242,9 @@ var util = {
         var leave3 = leave2 % (60 * 1000); //计算分钟数后剩余的毫秒数
         var seconds = Math.round(leave3 / 1000);
 
-        console.log(hours);
-        console.log(minutes);
-        console.log(seconds);
+        // console.log(hours);
+        // console.log(minutes);
+        // console.log(seconds);
         hours = hours < 10 ? '0' + hours : '' + hours;
         minutes = minutes < 10 ? '0' + minutes : '' + minutes;
         seconds = seconds < 10 ? '0' + seconds : '' + seconds;

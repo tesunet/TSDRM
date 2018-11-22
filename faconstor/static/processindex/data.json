@@ -17,11 +17,11 @@
     },
     {
       "name": "灾备服务启用",
-      "state": "error",
+      "state": "RUN",
       "starttime": "2018-11-10 11:00:30",
       "endtime": "2018-11-10 11:01:00",
-      "percent": "0",
-      "type": ""
+      "percent": "60",
+      "type": "cur"
     },
     {
       "name": "启动应用服务",
