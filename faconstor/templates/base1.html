@@ -314,25 +314,25 @@
                                     <div class="col-md-10 " style="padding-top:6px">
                                         <input id="mytask" type="text" hidden>
                                         <input type="text" id="processname" name="processname"
-                                               style="width: 458px" disabled>
+                                               style="width: 458px" class="form-control" readonly>
                                     </div>
                                 </div>
                                 <div class="form-group ">
                                     <label class="col-md-2 control-label">发送时间</label>
                                     <div class="col-md-4 " style="padding-top:6px">
-                                        <input type="text" id="sendtime" name="sendtime" disabled>
+                                        <input type="text" id="sendtime" name="sendtime" class="form-control" readonly>
                                     </div>
                                     <label class="col-md-2 control-label">签到角色</label>
                                     <div class="col-md-4 " style="padding-top:6px">
                                         <input type="text" id="signrole" name="signrole"
-                                               style="width:165px;" disabled>
+                                               style="width:165px;" class="form-control" readonly>
                                     </div>
                                 </div>
                                 <div class="form-group ">
                                     <label class="col-md-2 control-label">启动说明</label>
                                     <div class="col-md-10">
                                                     <textarea id="processrunreason" class="form-control" rows="3"
-                                                              name="processrunreason" disabled></textarea>
+                                                              name="processrunreason" readonly></textarea>
                                         <div class="form-control-focus"></div>
 
                                     </div>
@@ -389,32 +389,32 @@
                                         <input id="mytask_extra" type="text" hidden>
 
                                         <input type="text" id="processname_extra" name="processname_extra"
-                                               style="width: 458px" disabled>
+                                               style="width: 458px" class="form-control" readonly>
                                     </div>
                                 </div>
                                 <div class="form-group ">
                                     <label class="col-md-2 control-label">任务内容</label>
                                     <div class="col-md-10 " style="padding-top:6px">
                                         <input type="text" id="taskcontent_extra" name="taskcontent_extra"
-                                               style="width: 458px" disabled>
+                                               style="width: 458px" class="form-control" readonly>
                                     </div>
                                 </div>
                                 <div class="form-group ">
                                     <label class="col-md-2 control-label">发送时间</label>
                                     <div class="col-md-4 " style="padding-top:6px">
-                                        <input type="text" id="sendtime_extra" name="sendtime_extra" disabled>
+                                        <input type="text" id="sendtime_extra" name="sendtime_extra" class="form-control" readonly>
                                     </div>
                                     <label class="col-md-2 control-label">当前角色</label>
                                     <div class="col-md-4 " style="padding-top:6px">
                                         <input type="text" id="signrole_extra" name="signrole_extra"
-                                               style="width:165px;" disabled>
+                                               style="width:165px;" class="form-control" readonly>
                                     </div>
                                 </div>
                                 <div class="form-group ">
                                     <label class="col-md-2 control-label">启动说明</label>
                                     <div class="col-md-10">
                                                     <textarea id="processrunreason_extra" class="form-control" rows="3"
-                                                              name="processrunreason_extra" disabled></textarea>
+                                                              name="processrunreason_extra" readonly></textarea>
                                         <div class="form-control-focus"></div>
 
                                     </div>
@@ -492,7 +492,6 @@
     // 单点查询任务
     function searchTaskClicked(param) {
         var processRunId = $(param).next().val();
-        alert($("#mytask_extra").val())
         // 存入任务说明
         var saveTaskRemark = preTag + "save_task_remark/"
         $.ajax({
@@ -563,7 +562,8 @@
                             "            <input id='send_time' type='text' value='" + c_message_task.send_time + "' hidden>\n" +
                             "            <input id='sign_role' type='text' value='" + c_message_task.group_name + "' hidden>\n" +
                             "            <input id='process_run_reason' type='text' value='" + c_message_task.process_run_reason + "' hidden>" +
-                            "            <input id='task_extra' type='text' value='" + c_message_task.task_extra + "' hidden>"
+                            "            <input id='task_extra' type='text' value='" + c_message_task.task_extra + "' hidden>" +
+                            "            <input id='processrunid' type='text' value='" + c_message_task.processrunid + "' hidden>"
 
                         var divElement = "<div class='col1'><div class='cont'><div class='cont-col1'><div class='label label-sm " +
                             c_message_task.task_color + "'><i class='" + c_message_task.task_icon + "'></i></div></div><div class='cont-col2'><div class='desc'> <span class='label label-sm ' style='background-color:" +
@@ -605,7 +605,7 @@
                         $("#sendtime_extra").val($("#a".replace("a", cLiId)).find("input#send_time").val());
                         $("#signrole_extra").val($("#a".replace("a", cLiId)).find("input#sign_role").val());
                         $("#processrunreason_extra").val($("#a".replace("a", cLiId)).find("input#process_run_reason").val());
-                        $("#processrun_id_extra").val($("#a".replace("a", task_id)).find("input#processrunid").val());
+                        $("#processrun_id_extra").val($("#a".replace("a", cLiId)).find("input#processrunid").val());
                     } else if (cLiLength < preLiLength) {
                         for (var i = 0; i < preDataArray.length; i++) {
                             var cParam = parseInt(preDataArray[i])

@@ -3944,6 +3944,7 @@ def reload_task_nums(request):
                 process_name = task.processrun.process.name
                 process_run_reason = task.processrun.run_reason
                 task_id = task.id
+                processrunid = task.processrun.id
 
                 task_nums = len(allprosstasks)
                 process_color = task.processrun.process.color
@@ -4009,7 +4010,7 @@ def reload_task_nums(request):
                                                                 time = "刚刚"
 
                 message_task.append(
-                    {"content": task.content, "time": time, "process_name": process_name,
+                    {"content": task.content, "time": time, "process_name": process_name, "processrunid": processrunid,
                      "task_color": current_color.strip(), "task_type": task.type, "task_extra": task.content,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
                      "pop": pop, "task_id": task_id, "send_time": send_time.strftime("%Y-%m-%d %H:%M:%S"),
