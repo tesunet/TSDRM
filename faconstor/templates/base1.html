@@ -435,7 +435,7 @@
                                 <div class="row" style="TEXT-ALIGN: center;">
                                     <div class="col-md-12">
                                         <button type="button" class="btn green uppercase"
-                                                onclick="searchTaskClicked(this);">查询任务
+                                                onclick="searchTaskClicked(this);">查看任务
                                         </button>
                                         <input id="processrun_id_extra" type="text" hidden>
                                     </div>
@@ -492,6 +492,7 @@
     // 单点查询任务
     function searchTaskClicked(param) {
         var processRunId = $(param).next().val();
+        alert($("#mytask_extra").val())
         // 存入任务说明
         var saveTaskRemark = preTag + "save_task_remark/"
         $.ajax({
@@ -604,6 +605,7 @@
                         $("#sendtime_extra").val($("#a".replace("a", cLiId)).find("input#send_time").val());
                         $("#signrole_extra").val($("#a".replace("a", cLiId)).find("input#sign_role").val());
                         $("#processrunreason_extra").val($("#a".replace("a", cLiId)).find("input#process_run_reason").val());
+                        $("#processrun_id_extra").val($("#a".replace("a", task_id)).find("input#processrunid").val());
                     } else if (cLiLength < preLiLength) {
                         for (var i = 0; i < preDataArray.length; i++) {
                             var cParam = parseInt(preDataArray[i])

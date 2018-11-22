@@ -305,6 +305,16 @@ def get_process_index_data(request):
                         pre_step_index = c_step_index - 1
                         rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
 
+                if_has_run = False
+                if_has_index = 0
+                for num, c_step_run in enumerate(correct_step_run_list):
+                    num += 1
+                    if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
+                        if_has_run = True
+                        break
+                    elif c_step_run.state == "DONE":
+                        if_has_index = num
+
                 for num, c_step_run in enumerate(correct_step_run_list):
                     num += 1
                     # 流程结束后的当前步骤
@@ -320,6 +330,10 @@ def get_process_index_data(request):
                         else:
                             # 这里还要加一个没有RUN的判断
                             c_step_run_type = ""
+
+                    if not if_has_run and num == if_has_index:
+                        c_step_run_type = "cur"
+
 
                     c_step_id = c_step_run.step.id
                     c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id).filter(step__state__in=["9"])
