@@ -1,4 +1,4 @@
-﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
+﻿﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
 var state = '',
     interval = 0,
     tmInterval = 0,
@@ -18,6 +18,7 @@ var util = {
     request: function () {
         $.ajax({
             url: '/get_process_index_data/', //这里面是请求的接口地址
+            //url: '/static/processindex/data.json', //这里面是请求的接口地址
             type: 'POST',
             data: {
                 p_run_id: $("#process_run_id").val(),

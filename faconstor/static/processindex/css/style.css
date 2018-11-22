@@ -274,14 +274,14 @@ input {
 .box-progress-container .progress-left-time {
     position: absolute;
     left: 0;
-    top: -30px;
+    top: 35px;
     font-size: 16px;
 }
 
 .box-progress-container .progress-right-time {
     position: absolute;
-    right: 20px;
-    top: -30px;
+    right: 0px;
+    top: 35px;
     font-size: 16px;
 }
 

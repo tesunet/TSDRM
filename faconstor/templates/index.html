@@ -59,7 +59,7 @@
 
                             {% for current_processrun in curren_processrun_info_list %}
                                 {% if current_processrun.current_process_run_state == "执行中" %}
-                                    <iframe id="iframe" src="/processindex/{{ current_processrun.processrun_id }}"
+                                    <iframe  src="/processindex/{{ current_processrun.processrun_id }}"
                                             width="100%"
                                             height="740" frameborder="no" border="0" marginwidth="0" marginheight="0"
                                             scrolling="no" allowtransparency="yes"></iframe>
