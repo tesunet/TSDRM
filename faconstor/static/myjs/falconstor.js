@@ -222,7 +222,7 @@ if (App.isAngularJsApp() === false) {
                     if (abnormal == "1") {
                         alert(data.data);
                         customTasksTable();
-                    } else if(data.data != "异步任务未出现异常"){
+                    } else if (data.data != "异步任务未出现异常") {
                         alert(data.data);
                     }
                 }
@@ -254,7 +254,7 @@ if (App.isAngularJsApp() === false) {
 
                     var totalTaskLi = ''
                     // 右侧当前任务
-                    for (var i=0; i<data["current_process_task_info"].length;i++){
+                    for (var i = 0; i < data["current_process_task_info"].length; i++) {
                         var currentTaskLi = '<li class="col-md-12"><div class="col1"><div class="cont"><div class="cont-col1"><div class="label label-sm ' +
                             data["current_process_task_info"][i].task_color + '"><i class="' + data["current_process_task_info"][i].task_icon +
                             '"></i></div></div><div class="cont-col2"><div class="desc"> ' + data["current_process_task_info"][i].content +
@@ -264,6 +264,9 @@ if (App.isAngularJsApp() === false) {
                     $("#current_process_task_info").append(totalTaskLi);
 
                     if (data["process_state"] == "DONE") {
+                        // 隐藏查看异步任务的按钮
+                        $("#process_name").html(data["process_name"]);
+
                         $("#process_state").val("完成");
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
@@ -289,6 +292,9 @@ if (App.isAngularJsApp() === false) {
                     }
                     if (data["process_state"] == "STOP") {
                         $("#process_state").val("停止");
+                        // 隐藏查看异步任务的按钮
+                        $("#process_name").html(data["process_name"]);
+
                         $("#stopbtn").hide();
                         window.clearInterval(t2);
                         $("#show_result").show();
@@ -343,7 +349,7 @@ if (App.isAngularJsApp() === false) {
                         var step1_starttime = data["step"][i]["starttime"];
                         var step1_endtime = data["step"][i]["endtime"];
                         var step1_rto = data["step"][i]["rto"];
-                        var step1_group = data["step"][i]["group"]!=null?data["step"][i]["group"]:"";
+                        var step1_group = data["step"][i]["group"] != null ? data["step"][i]["group"] : "";
                         var step1_operator = data["step"][i]["operator"];
                         var step1_note = data["step"][i]["note"];
                         var step1_verify = data["step"][i]["verify"];
@@ -452,7 +458,7 @@ if (App.isAngularJsApp() === false) {
                             var step2_starttime = data["step"][i]["children"][j]["starttime"];
                             var step2_endtime = data["step"][i]["children"][j]["endtime"];
                             var step2_rto = data["step"][i]["children"][j]["rto"];
-                            var step2_group = data["step"][i]["children"][j]["group"]!=null?data["step"][i]["children"][j]["group"]:"";
+                            var step2_group = data["step"][i]["children"][j]["group"] != null ? data["step"][i]["children"][j]["group"] : "";
                             var step2_operator = data["step"][i]["children"][j]["operator"];
                             var step2_note = data["step"][i]["children"][j]["note"];
                             var step2_verify = data["step"][i]["children"][j]["verify"];
