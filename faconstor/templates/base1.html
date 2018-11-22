@@ -84,44 +84,39 @@
                                 <ul class="feeds" id="locate_task">
                                     {% for task in pagefuns.message_task %}
                                         <li id="{{ task.task_id }}">
-                                            {% if task.pop %}
-                                                <a id="a_{{ task.task_id }}" href="javascript:void(0)"
-                                                   name="{{ task.pop }}">
+                                            <a id="a_{{ task.task_id }}" href="javascript:void(0)"
+                                               name="{{ task.pop }}">
 
-                                            {% else %}
-                                                <a id="a_{{ task.task_id }}" href="javascript:void(0)"
-                                                   name="{{ task.pop }}">
-                                            {% endif %}
-                                            <input id="tasktype" type="text" value="{{ task.task_type }}" hidden>
-                                            <input id="task_id" type="text" value="{{ task.task_id }}" hidden>
-                                            <input id="process_name" type="text" value="{{ task.process_name }}"
-                                                   hidden>
-                                            <input id="send_time" type="text" value="{{ task.send_time }}" hidden>
-                                            <input id="sign_role" type="text" value="{{ task.group_name }}" hidden>
-                                            <input id="process_run_reason" type="text"
-                                                   value="{{ task.process_run_reason }}" hidden>
-                                            <input id="task_extra" type="text"
-                                                   value="{{ task.task_extra }}" hidden>
+                                                <input id="tasktype" type="text" value="{{ task.task_type }}" hidden>
+                                                <input id="task_id" type="text" value="{{ task.task_id }}" hidden>
+                                                <input id="process_name" type="text" value="{{ task.process_name }}"
+                                                       hidden>
+                                                <input id="send_time" type="text" value="{{ task.send_time }}" hidden>
+                                                <input id="sign_role" type="text" value="{{ task.group_name }}" hidden>
+                                                <input id="process_run_reason" type="text"
+                                                       value="{{ task.process_run_reason }}" hidden>
+                                                <input id="task_extra" type="text"
+                                                       value="{{ task.task_extra }}" hidden>
 
-                                            <div class="col1">
-                                                <div class="cont">
-                                                    <div class="cont-col1">
-                                                        <div class="label label-sm {{ task.task_color }}">
-                                                            <i class="{{ task.task_icon }}"></i>
+                                                <div class="col1">
+                                                    <div class="cont">
+                                                        <div class="cont-col1">
+                                                            <div class="label label-sm {{ task.task_color }}">
+                                                                <i class="{{ task.task_icon }}"></i>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="cont-col2">
-                                                        <div class="desc"> <span class="label label-sm "
-                                                                                 style="background-color:{{ task.process_color }};"> {{ task.process_name }}
+                                                        <div class="cont-col2">
+                                                            <div class="desc"> <span class="label label-sm "
+                                                                                     style="background-color:{{ task.process_color }};"> {{ task.process_name }}
                                                         </span>{{ task.content }}
 
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="col2">
-                                                <div class="date"> {{ task.time }}</div>
-                                            </div>
+                                                <div class="col2">
+                                                    <div class="date"> {{ task.time }}</div>
+                                                </div>
                                             </a>
                                         </li>
                                     {% endfor %}
@@ -518,6 +513,15 @@
 
     // 定时查询任务(有流程进行中才会有任务)
     function getTaskInfo() {
+        // 获取当前所有taskid[] 1
+        // 请求之后所有taskid[] 2
+        // 遍历1 元素不在2中的taskid,选择模态框关闭
+        var preDataArray = [];
+        $('ul#locate_task').children('li').each(function () {
+            var cTaskId = $(this).children("a").children("input:eq(1)").val()
+            preDataArray.push(cTaskId);
+        });
+
         // 查询原本ul下li数量
         var preLiLength = $("#locate_task li").length;
 
@@ -539,9 +543,14 @@
                         $("#dropdown_task_nums").after(spanElements)
                     }
 
+                    var afterDataArray = []
+
                     // 重构任务下拉
                     for (var i = 0; i < data.message_task.length; i++) {
                         c_message_task = data.message_task[i]
+
+                        afterDataArray.push(c_message_task.task_id);
+
                         var liElement = "<li id='" + c_message_task.task_id + "'>"
                         var aElement = "<a href='javascript:void(0)' id='a_" + c_message_task.task_id + "' name='" + c_message_task.pop + "'>"
                         var inputElement = "<input id='tasktype' type='text' value='" + c_message_task.task_type + "' hidden>\n" +
@@ -592,6 +601,24 @@
                         $("#sendtime_extra").val($("#a".replace("a", cLiId)).find("input#send_time").val());
                         $("#signrole_extra").val($("#a".replace("a", cLiId)).find("input#sign_role").val());
                         $("#processrunreason_extra").val($("#a".replace("a", cLiId)).find("input#process_run_reason").val());
+                    } else if (cLiLength < preLiLength) {
+                        for (var i = 0; i < preDataArray.length; i++) {
+                            var cParam = parseInt(preDataArray[i])
+                            var cVerify = $.inArray(cParam, afterDataArray)
+                            if (cVerify === -1) {
+                                //隐藏指定模态框
+                                // 获取当前模态框
+                                var myTaskModel = $("#static_base_01").find("input#mytask").val();
+                                if (myTaskModel == preDataArray[i]){
+                                    $("#static_base_01").modal("hide");
+                                }
+                                var myTaskExtraModel = $("#static_base_02").find("input#mytask_extra").val();
+                                if (myTaskExtraModel == preDataArray[i]){
+                                    $("#static_base_02").modal("hide");
+                                }
+                            }
+                        }
+
                     }
                 }
             },
