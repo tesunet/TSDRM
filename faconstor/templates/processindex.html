@@ -65,7 +65,7 @@
             <div class="step-current">
                 <div class="step-item">
                     <div class="cur-item-wb">
-                        <div class="progress-ring" data-name="" data-percent=""></div>
+                        <div class="circle progress-circle" id="current-circles"></div>
                     </div>
                 </div>
             </div>
@@ -112,23 +112,13 @@
     <div style="height: 70px"/>
 </div>
 <script src="/static/processindex/js/common.js"></script>
+<script src="/static/processindex/js/circles.min.js"></script>
 
 <script>
     $("body").dblclick(function () {
         var process_run_id = $("#process_run_id").val();
         window.parent.open("/processindex/" + process_run_id.toString());
     })
-</script>
-
-
-<script id="stepItemTpl" type="text/html">
-    <div class="step-item">
-        <div class="cur-item-wb">
-            <div class="progress-ring" data-name="{{ d.name }}" data-state="{{ d.state }}"
-                 data-percent="{{ d.percent }}">
-            </div>
-        </div>
-    </div>
 </script>
 <script>
     util.run();
