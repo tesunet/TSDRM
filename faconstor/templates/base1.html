@@ -592,7 +592,7 @@
                                 $("#static_base_02").modal({backdrop: "static"});
                             }
                         }
-    
+
                         $("#mytask").val($("#a".replace("a", cLiId)).find("input#task_id").val());
                         $("#processname").val($("#a".replace("a", cLiId)).find("input#process_name").val());
                         $("#sendtime").val($("#a".replace("a", cLiId)).find("input#send_time").val());
@@ -676,8 +676,8 @@
             },
             success: function (data) {
                 if (data["res"] == "签字成功,同时启动流程。") {
-                    //window.location.href = data["data"];
-                    window.open(data["data"]);
+                    window.location.href = data["data"];
+                    //window.open(data["data"]);
 
                     getTaskInfo();
                 }
