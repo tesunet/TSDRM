@@ -1,4 +1,4 @@
-﻿﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
+﻿// ﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
 var state = '',
     interval = 0,
     tmInterval = 0,
@@ -21,7 +21,7 @@ var util = {
             type: 'POST',
             data: {
                 p_run_id: $("#process_run_id").val(),
-                csrfmiddlewaretoken: csrfToken
+                // csrfmiddlewaretoken: csrfToken
             },
             timeout: 2000,
             dataType: 'json',
