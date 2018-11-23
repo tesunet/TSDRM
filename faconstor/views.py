@@ -3188,7 +3188,7 @@ def falconstorrun(request):
         if (len(process) <= 0):
             result["res"] = '流程启动失败，该流程不存在。'
         else:
-            running_process = ProcessRun.objects.filter(process=process[0], state="RUN")
+            running_process = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
             if (len(running_process) > 0):
                 result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
             else:
@@ -5036,72 +5036,78 @@ def save_invitation(request):
         except:
             raise Http404()
 
+
         if start_time:
             if end_time:
                 process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
                 if (len(process) <= 0):
                     result["res"] = '流程计划失败，该流程不存在。'
                 else:
-                    curprocessrun = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "STOP", "ERROR"])
-                    if (len(curprocessrun) > 0):
-                        result["res"] = '流程计划失败，有流程正在进行中，请勿重复启动。'
+
+                    planning_process = ProcessRun.objects.filter(process=process[0], state="PLAN")
+                    if (len(planning_process) > 0):
+                        result["res"] = '流程计划失败，已经存在计划流程，务必先完成该计划流程。'
                     else:
-                        myprocessrun = ProcessRun()
-                        myprocessrun.process = process[0]
-                        myprocessrun.state = "PLAN"
-                        myprocessrun.starttime = datetime.datetime.now()
-                        myprocessrun.save()
-                        current_process_run_id = myprocessrun.id
-
-                        process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
-                        mystep = process[0].step_set.exclude(state="9")
-                        if (len(mystep) <= 0):
-                            result["res"] = '流程启动失败，没有找到可用步骤。'
+                        curprocessrun = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
+                        if (len(curprocessrun) > 0):
+                            result["res"] = '流程计划失败，有流程正在进行中，请勿重复启动。'
                         else:
-                            for step in mystep:
-                                mysteprun = StepRun()
-                                mysteprun.step = step
-                                mysteprun.processrun = myprocessrun
-                                mysteprun.state = "EDIT"
-                                mysteprun.save()
+                            myprocessrun = ProcessRun()
+                            myprocessrun.process = process[0]
+                            myprocessrun.state = "PLAN"
+                            myprocessrun.starttime = datetime.datetime.now()
+                            myprocessrun.save()
+                            current_process_run_id = myprocessrun.id
 
-                                myscript = step.script_set.exclude(state="9")
-                                for script in myscript:
-                                    myscriptrun = ScriptRun()
-                                    myscriptrun.script = script
-                                    myscriptrun.steprun = mysteprun
-                                    myscriptrun.state = "EDIT"
-                                    myscriptrun.save()
+                            process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+                            mystep = process[0].step_set.exclude(state="9")
+                            if (len(mystep) <= 0):
+                                result["res"] = '流程启动失败，没有找到可用步骤。'
+                            else:
+                                for step in mystep:
+                                    mysteprun = StepRun()
+                                    mysteprun.step = step
+                                    mysteprun.processrun = myprocessrun
+                                    mysteprun.state = "EDIT"
+                                    mysteprun.save()
 
-                                myverifyitems = step.verifyitems_set.exclude(state="9")
-                                for verifyitems in myverifyitems:
-                                    myverifyitemsrun = VerifyItemsRun()
-                                    myverifyitemsrun.verify_items = verifyitems
-                                    myverifyitemsrun.steprun = mysteprun
-                                    myverifyitemsrun.save()
+                                    myscript = step.script_set.exclude(state="9")
+                                    for script in myscript:
+                                        myscriptrun = ScriptRun()
+                                        myscriptrun.script = script
+                                        myscriptrun.steprun = mysteprun
+                                        myscriptrun.state = "EDIT"
+                                        myscriptrun.save()
 
-                        # 保存邀请函
-                        current_invitation = Invitation()
-                        current_invitation.process_run_id = current_process_run_id
-                        current_invitation.start_time = start_time
-                        current_invitation.end_time = end_time
-                        current_invitation.purpose = purpose
-                        current_invitation.current_time = datetime.datetime.now()
-                        current_invitation.save()
+                                    myverifyitems = step.verifyitems_set.exclude(state="9")
+                                    for verifyitems in myverifyitems:
+                                        myverifyitemsrun = VerifyItemsRun()
+                                        myverifyitemsrun.verify_items = verifyitems
+                                        myverifyitemsrun.steprun = mysteprun
+                                        myverifyitemsrun.save()
 
-                        # 生成邀请任务信息
-                        myprocesstask = ProcessTask()
-                        myprocesstask.processrun_id = current_process_run_id
-                        myprocesstask.starttime = datetime.datetime.now()
-                        myprocesstask.senduser = request.user.username
-                        myprocesstask.type = "INFO"
-                        myprocesstask.logtype = "PLAN"
-                        myprocesstask.state = "1"
-                        myprocesstask.content = "创建演练计划。"
-                        myprocesstask.save()
+                            # 保存邀请函
+                            current_invitation = Invitation()
+                            current_invitation.process_run_id = current_process_run_id
+                            current_invitation.start_time = start_time
+                            current_invitation.end_time = end_time
+                            current_invitation.purpose = purpose
+                            current_invitation.current_time = datetime.datetime.now()
+                            current_invitation.save()
 
-                        result["data"] = current_process_run_id
-                        result["res"] = "流程计划成功，待开启流程。"
+                            # 生成邀请任务信息
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun_id = current_process_run_id
+                            myprocesstask.starttime = datetime.datetime.now()
+                            myprocesstask.senduser = request.user.username
+                            myprocesstask.type = "INFO"
+                            myprocesstask.logtype = "PLAN"
+                            myprocesstask.state = "1"
+                            myprocesstask.content = "创建演练计划。"
+                            myprocesstask.save()
+
+                            result["data"] = current_process_run_id
+                            result["res"] = "流程计划成功，待开启流程。"
             else:
                 result["res"] = "演练结束时间必须填写！"
         else:
