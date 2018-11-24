@@ -2,6 +2,7 @@ body {
     margin: 0;
     padding: 0;
     font: 12px/1.5 helvetica, arial, "Microsoft YaHei", \5b8b\4f53;
+    color:#fff;
 
     /*background: #fff;*/
     background-image:url(/static/processindex/images/bg.jpg);
@@ -171,7 +172,7 @@ input {
 }
 
 .header-timeout li em {
-
+    color: #fff;
     font-size: 46px;
     padding: 5px;
 }
@@ -197,6 +198,17 @@ input {
     top: 20px;
     left: 20px;
     border-radius: 50%;
+}
+
+.circles-wrp .inner-progress1 {
+    width: 180px;
+    height: 180px;
+    border: 10px #eee solid;
+    margin: 0 auto;
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.5;
+/*        z-index:-100;position: relative;*/
 }
 
 .circles-wrp .con-text {
@@ -234,7 +246,7 @@ input {
 }
 
 .box-progress-container {
-    width: 700px;
+    width: 900px;
     margin: 0 auto;
     position: relative;
 }
@@ -245,6 +257,7 @@ input {
     background-color: #e8e8e8;
     margin-top: 8px;
     /* overflow: hidden;*/
+        box-shadow:20px 10px 20px #0c203a;
 }
 
 .progress-par {
@@ -283,32 +296,32 @@ input {
 }
 
 .setp-run, .setp-run .con-circle {
-    border-color: #5091C7 !important;
+    border-color: #00c4ff !important;
 }
 
 .step-done, .step-done .con-circle {
-    border-color: #32c5d2 !important;
-    opacity: 0.5;
+    border-color:#00aaaa !important;
+/*    opacity: 0.5;*/
 }
 
-.step-stop, .step-edit .con-circle {
-    border-color: #5091C7 !important;
-    opacity: 0.5;
-}
-
-.step-error, .step-edit .con-circle {
+.step-stop, .step-stop .con-circle {
     border-color: #ff0000 !important;
-    opacity: 0.5;
+/*    opacity: 0.5;*/
 }
 
-.step-confirm, .step-edit .con-circle {
+.step-error, .step-error .con-circle {
+    border-color: #ff0000 !important;
+/*    opacity: 0.5;*/
+}
+
+.step-confirm, .step-confirm .con-circle {
     border-color: #e0b200 !important;
-    opacity: 0.5;
+/*    opacity: 0.5;*/
 }
 
 .step-edit, .step-edit .con-circle {
-    border-color: #949494 !important;
-    opacity: 0.5;
+    border-color: #e8e8e8 !important;
+/*    opacity: 0.5;*/
 }
 
 .progress .bar, .progress .bar.run, .progress .bar.done {
@@ -389,6 +402,7 @@ input {
     float: left;
     clear: both;
     margin: 80px 0 60px 0px;
+    text-shadow:10px 5px 8px #000000;
 }
 
 .step-box .box-left, .step-box .box-center, .step-box .box-right {
@@ -410,12 +424,13 @@ input {
 .box-right .rbox-1, .box-right .rbox-2, .box-right .rbox-3, .box-right .rbox-4 {
     border-radius: 50%;
     text-align: center;
+    box-shadow:20px 20px 20px #0c203a;
 }
 
 /*左边*/
 .step-left1, .step-left2, .step-left3, .step-left4,
 .step-right1, .step-right2, .step-right3, .step-right4 {
-    height: 100%
+    height: 100%;
 }
 
 .step-left1, .step-right1 {
@@ -587,6 +602,7 @@ input {
     width: 250px;
     float: left;
     position: relative;
+
 }
 
 .box-center .step-current {
@@ -705,6 +721,12 @@ input {
     display: table;
     height: 100%;
     width: 100%;
+}
+.step-box .step-left1 .con-text,.step-box .step-right .con-text,.step-box .box-center .con-text {
+    display: table;
+    height: 100%;
+    width: 70%;
+    padding-left:15%
 }
 
 .step-box .step-item .con-text .text {

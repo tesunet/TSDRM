@@ -38,7 +38,7 @@ var util = {
         if (headerTitle === '') {
             headerTitle = data.name;
             var process_run_url = $("#process_url").val() + "/" + $("#process_run_id").val()
-            $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#778899'>" + headerTitle + "</a>");
+            $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#e8e8e8 '>" + headerTitle + "</a>");
         }
 
         var progressBar = $('.progress-par');
@@ -60,6 +60,7 @@ var util = {
         var curStep = [];
         var curIndex = 0;
         for (var j = 0; j < data.steps.length; j++) {
+
             if (data.steps[j].type === 'cur') {
                 curIndex = j;
                 break;
@@ -77,12 +78,12 @@ var util = {
 
         //current step
         var color = {
-            run: '#5091C7',
-            done: '#32c5d2 ',
+            run: '#00c4ff',
+            done: '#00aaaa',
             stop: '#ff0000',
             error: '#ff0000',
             confirm: '#e0b200',
-            edit: '#c4c4c4'
+            edit: '#cccfd0'
         };
         var curState = curStep.state.toLocaleLowerCase();
         Circles.create({
@@ -92,7 +93,7 @@ var util = {
             maxValue: 100,
             width: 10, //圆环宽度
             text: function (value) {
-                return '<div class="inner-progress"></div><div class="con-text"><div class="text"><p>' + curStep.name + '</p><p>' + value + '%</p></div></div>';
+                return '<div class="inner-progress"></div><div class="inner-progress1" style="box-shadow:20px 20px 20px #000000;"></div><div class="con-text"><div class="text"><p>' + curStep.name + '</p><p>' + value + '%</p></div></div>';
             },
             colors: ['#f0f0f0', color[curState]],
             duration: 400, //动画时长
