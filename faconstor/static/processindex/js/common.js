@@ -93,7 +93,7 @@ var util = {
             maxValue: 100,
             width: 10, //圆环宽度
             text: function (value) {
-                return '<div class="inner-progress"></div><div class="inner-progress1" style="box-shadow:20px 20px 20px #000000;"></div><div class="con-text"><div class="text"><p>' + curStep.name + '</p><p>' + value + '%</p></div></div>';
+                return '<div class="inner-progress"></div><div class="inner-progress1" style="box-shadow:-20px 20px 20px #000000;"></div><div class="con-text"><div class="text"><p>' + curStep.name + '</p><p>' + value + '%</p></div></div>';
             },
             colors: ['#f0f0f0', color[curState]],
             duration: 400, //动画时长

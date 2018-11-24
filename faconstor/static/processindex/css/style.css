@@ -257,7 +257,7 @@ input {
     background-color: #e8e8e8;
     margin-top: 8px;
     /* overflow: hidden;*/
-        box-shadow:20px 10px 20px #0c203a;
+    box-shadow:-20px 10px 20px #0c203a;
 }
 
 .progress-par {
@@ -424,7 +424,7 @@ input {
 .box-right .rbox-1, .box-right .rbox-2, .box-right .rbox-3, .box-right .rbox-4 {
     border-radius: 50%;
     text-align: center;
-    box-shadow:20px 20px 20px #0c203a;
+    box-shadow:-20px 20px 20px #0c203a;
 }
 
 /*左边*/
