@@ -6,7 +6,7 @@ windows下可以接收到错误信息并作出判断；
 import paramiko
 import winrm
 import json
-
+from paramiko import py3compat
 
 class ServerByPara(object):
     def __init__(self, cmd, host, user, password, system_choice):
@@ -46,21 +46,29 @@ class ServerByPara(object):
         else:
             exec_tag = 0
             log = ""
-            for data in stdout.readlines():
-                data_init += data
-            if "command not found" in data_init:  # 命令不存在
-                exec_tag = 1
-                log = "命令不存在"
-            elif "syntax error" in data_init:  # 语法错误
-                exec_tag = 1
-                log = "语法错误"
-            elif "No such file or directory" in data_init:  # 脚本不存在
-                exec_tag = 1
-                log = "脚本不存在"
-            elif succeedtext is not None:
-                if succeedtext not in data_init:
+
+            try:
+                for data in stdout.readlines():
+                    data_init += data
+
+                if "command not found" in data_init:  # 命令不存在
                     exec_tag = 1
-                    log = "未匹配"
+                    log = "命令不存在"
+                elif "syntax error" in data_init:  # 语法错误
+                    exec_tag = 1
+                    log = "语法错误"
+                elif "No such file or directory" in data_init:  # 脚本不存在
+                    exec_tag = 1
+                    log = "脚本不存在"
+                elif succeedtext is not None:
+                    if succeedtext not in data_init:
+                        exec_tag = 1
+                        log = "未匹配"
+            except:
+                exec_tag = 1
+                log = "编码错误"
+                data_init = "编码错误"
+
         return {
             "exec_tag": exec_tag,
             "data": data_init,

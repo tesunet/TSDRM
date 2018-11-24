@@ -618,7 +618,7 @@ $('#save').click(function () {
             if (data["data"]) {
                 $("#id").val(data.data);
             }
-
+            alert("保存成功！");
             $('#tree_2').jstree("destroy");
 
             customTree();

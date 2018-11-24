@@ -262,6 +262,7 @@ def runstep(steprun, if_repeat=False):
                     myprocesstask.type = "ERROR"
                     myprocesstask.state = "0"
                     myprocesstask.content = "脚本" + script_name + "执行错误，请处理。"
+                    myprocesstask.steprun_id = steprun.id
                     myprocesstask.save()
                     return 0
 
@@ -287,7 +288,6 @@ def runstep(steprun, if_repeat=False):
                 steprun.save()
 
                 steprun_name = steprun.step.name if steprun.step.name else ""
-                steprun_remark = steprun.step.remark if steprun.step.remark else ""
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun = steprun.processrun
                 myprocesstask.starttime = datetime.datetime.now()
@@ -296,9 +296,9 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.type = "RUN"
                 myprocesstask.state = "0"
                 task_content = "步骤" + steprun_name + "等待确认，请处理。"
-                if steprun_remark:
-                    task_content += "备注：{0}".format(steprun_remark)
                 myprocesstask.content = task_content
+                myprocesstask.steprun_id = steprun.id
+
                 myprocesstask.save()
 
                 return 2

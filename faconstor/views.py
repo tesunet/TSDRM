@@ -127,6 +127,12 @@ def getpagefuns(funid, request=""):
                 task_id = task.id
                 processrunid = task.processrun.id
 
+                c_task_step_run = task.steprun
+                if c_task_step_run:
+                    address = c_task_step_run.step.remark
+                else:
+                    address = ""
+
                 task_nums = len(allprosstasks)
                 process_color = task.processrun.process.color
                 process_url = task.processrun.process.url + "/" + str(task.processrun.id)
@@ -189,7 +195,7 @@ def getpagefuns(funid, request=""):
                                                             else:
                                                                 time = "刚刚"
                 message_task.append(
-                    {"content": task.content, "time": time, "process_name": process_name,
+                    {"content": task.content, "time": time, "process_name": process_name, "address": address,
                      "task_color": current_color.strip(), "task_type": task.type, "task_extra": task.content,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
                      "pop": True if task.type == "SIGN" else False, "task_id": task_id, "send_time": send_time,
@@ -3949,6 +3955,12 @@ def reload_task_nums(request):
                 task_id = task.id
                 processrunid = task.processrun.id
 
+                c_task_step_run = task.steprun
+                if c_task_step_run:
+                    address = c_task_step_run.step.remark
+                else:
+                    address = ""
+
                 task_nums = len(allprosstasks)
                 process_color = task.processrun.process.color
                 process_url = task.processrun.process.url + "/" + str(task.processrun.id)
@@ -4017,7 +4029,7 @@ def reload_task_nums(request):
                      "task_color": current_color.strip(), "task_type": task.type, "task_extra": task.content,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
                      "pop": pop, "task_id": task_id, "send_time": send_time.strftime("%Y-%m-%d %H:%M:%S"),
-                     "process_run_reason": process_run_reason, "group_name": guoups[0].name})
+                     "process_run_reason": process_run_reason, "group_name": guoups[0].name, "address": address})
 
         total_task_info["task_nums"] = len(allprosstasks)
         total_task_info["message_task"] = message_task
