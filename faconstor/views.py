@@ -199,7 +199,8 @@ def getpagefuns(funid, request=""):
                      "task_color": current_color.strip(), "task_type": task.type, "task_extra": task.content,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
                      "pop": True if task.type == "SIGN" else False, "task_id": task_id, "send_time": send_time,
-                     "processrunid": processrunid, "process_run_reason": process_run_reason, "group_name": guoups[0].name})
+                     "processrunid": processrunid, "process_run_reason": process_run_reason,
+                     "group_name": guoups[0].name})
     return {"pagefuns": pagefuns, "curfun": mycurfun, "message_task": message_task, "task_nums": task_nums}
 
 
@@ -216,7 +217,7 @@ def processindex(request, processrun_id):
     if request.user.is_authenticated() and request.session['isadmin']:
         errors = []
         # processrun_id = request.GET.get("p_run_id", "")
-        c_process_run = ProcessRun.objects.filter(id=processrun_id)
+        c_process_run = ProcessRun.objects.filter(id=processrun_id).select_related("process")
         if c_process_run.exists():
             process_url = c_process_run[0].process.url
             process_name = c_process_run[0].process.name
@@ -342,7 +343,6 @@ def get_process_index_data(request):
 
                     if not if_has_run and num == if_has_index:
                         c_step_run_type = "cur"
-
 
                     c_step_id = c_step_run.step.id
                     c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id).filter(step__state__in=["9"])
@@ -666,7 +666,7 @@ def index(request, funid):
             average_rto = "00时00分00秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(state="9")
+        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(state="9").select_related("process")
         curren_processrun_info_list = []
 
         state_dict = {
@@ -894,7 +894,7 @@ def get_process_rto(request):
 
 def get_daily_processrun(request):
     if request.user.is_authenticated():
-        all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
+        all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).select_related("process")
         process_success_rate_list = []
         if all_processrun_objs:
             for process_run in all_processrun_objs:
@@ -916,7 +916,7 @@ def get_daily_processrun(request):
                     "invite": "0"
                 }
                 process_success_rate_list.append(process_run_dict)
-        all_process_run_invited = ProcessRun.objects.filter(state="PLAN")
+        all_process_run_invited = ProcessRun.objects.filter(state="PLAN").select_related("process")
         if all_process_run_invited:
             for process_run_invited in all_process_run_invited:
                 invitations_dict = {
@@ -3829,7 +3829,7 @@ def get_script_log(request):
         except:
             raise Http404()
 
-        current_script_run = ScriptRun.objects.filter(id=script_run_id)
+        current_script_run = ScriptRun.objects.filter(id=script_run_id).select_related("script")
         log_info = ""
         if current_script_run:
             current_script_run = current_script_run[0]
@@ -3944,7 +3944,8 @@ def reload_task_nums(request):
                 mygroup.append(str(curguoup.id))
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
-            "-starttime").exclude(processrun__state="9")
+            "-starttime").exclude(processrun__state="9").select_related("processrun", "processrun__process",
+                                                                        "steprun__step", "steprun")
         total_task_info = {}
         message_task = []
         if len(allprosstasks) > 0:
@@ -4170,7 +4171,8 @@ def stop_current_process(request):
 def verify_items(request):
     if request.user.is_authenticated():
         step_id = request.POST.get("step_id", "")
-        current_step_run = StepRun.objects.filter(id=step_id).exclude(state="9")
+        current_step_run = StepRun.objects.filter(id=step_id).exclude(state="9").select_related("processrun",
+                                                                                                "step").all()
         if current_step_run:
             current_step_run = current_step_run[0]
             # CONFIRM修改成DONE
@@ -5047,7 +5049,6 @@ def save_invitation(request):
             process_id = int(process_id)
         except:
             raise Http404()
-
 
         if start_time:
             if end_time:
