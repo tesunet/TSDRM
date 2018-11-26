@@ -257,7 +257,7 @@ input {
     background-color: #e8e8e8;
     margin-top: 8px;
     /* overflow: hidden;*/
-    box-shadow:-20px 10px 20px #0c203a;
+    box-shadow:-5px 10px 20px #181a1c;
 }
 
 .progress-par {
@@ -277,7 +277,8 @@ input {
 
 .progress .bar i {
     line-height: 2em;
-    font-size: 16px;
+    font-size: 19px;!important;
+    font-weight:700;
 }
 
 .progress .bar {
@@ -325,7 +326,7 @@ input {
 }
 
 .progress .bar, .progress .bar.run, .progress .bar.done {
-    background-color: #5091C7;
+    background-color: #87cefa;
     background-image: -webkit-gradient(linear, left top, right bottom, color-stop(0.25, #06b7f1), color-stop(0.25, transparent), color-stop(0.5, transparent), color-stop(0.5, #06b7f1), color-stop(0.75, #06b7f1), color-stop(0.75, transparent), to(transparent));
     background-image: -webkit-linear-gradient(135deg, #06b7f1 25%, transparent 25%, transparent 50%, #06b7f1 50%, #06b7f1 75%, transparent 75%, transparent);
     background-image: -moz-linear-gradient(135deg, #06b7f1 25%, transparent 25%, transparent 50%, #06b7f1 50%, #06b7f1 75%, transparent 75%, transparent);
@@ -435,21 +436,25 @@ input {
 
 .step-left1, .step-right1 {
     width: 175px;
+    z-index:90
     /*background: #dadfe6;*/
 }
 
 .step-left2, .step-right2 {
     width: 115px;
+    z-index:70
     /* background: #fff;*/
 }
 
 .step-left3, .step-right3 {
     width: 100px;
+    z-index:50
     /* background: #ccc;*/
 }
 
 .step-left4, .step-right4 {
     width: 85px;
+    z-index:30
     /*background: #eee;*/
 }
 
