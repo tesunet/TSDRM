@@ -190,24 +190,26 @@ input {
 }
 
 .circles-wrp .inner-progress {
-    width: 150px;
-    height: 150px;
-    border: 5px #eee solid;
+    width: 0px;
+    height: 0px;
+    border: 80px #eee solid;
     margin: 0 auto;
     position: absolute;
     top: 20px;
     left: 20px;
     border-radius: 50%;
+    z-index:-90;
 }
 
 .circles-wrp .inner-progress1 {
-    width: 180px;
-    height: 180px;
-    border: 10px #eee solid;
+    width: 190px;
+    height: 190px;
+    border: 0px #eee solid;
     margin: 0 auto;
     position: absolute;
     border-radius: 50%;
-    opacity: 0.5;
+    box-shadow:-20px 20px 20px #0c203a;
+    z-index:-90;"
 /*        z-index:-100;position: relative;*/
 }
 
@@ -246,7 +248,7 @@ input {
 }
 
 .box-progress-container {
-    width: 900px;
+    width: 1100px;
     margin: 0 auto;
     position: relative;
 }
@@ -296,26 +298,26 @@ input {
     background-size: 10px 10px;
 }
 
-.setp-run, .setp-run .con-circle {
+.setp-run, .setp-run .con-circle, .inner-run {
     border-color: #00c4ff !important;
 }
 
-.step-done, .step-done .con-circle {
+.step-done, .step-done .con-circle, .inner-done {
     border-color:#00aaaa !important;
 /*    opacity: 0.5;*/
 }
 
-.step-stop, .step-stop .con-circle {
+.step-stop, .step-stop .con-circle, .inner-stop {
     border-color: #ff0000 !important;
 /*    opacity: 0.5;*/
 }
 
-.step-error, .step-error .con-circle {
+.step-error, .step-error .con-circle, .inner-error {
     border-color: #ff0000 !important;
 /*    opacity: 0.5;*/
 }
 
-.step-confirm, .step-confirm .con-circle {
+.step-confirm, .step-confirm .con-circle, .inner-confirm {
     border-color: #e0b200 !important;
 /*    opacity: 0.5;*/
 }
@@ -403,7 +405,9 @@ input {
     float: left;
     clear: both;
     margin: 80px 0 60px 0px;
-    text-shadow:10px 5px 8px #000000;
+/*    text-shadow:-5px 5px 10px #2a4d6c;*/
+    color:#2a4d6c;
+    font-weight:700;
 }
 
 .step-box .box-left, .step-box .box-center, .step-box .box-right {
@@ -475,11 +479,12 @@ input {
 .box-left .lbox-1 .con-circle {
     position: absolute;
     border-radius: 50%;
-    border: 3px green solid;
-    width: 125px;
-    height: 125px;
+    border: 65px green solid;
+    width: 0px;
+    height: 0px;
     left: 6px;
     top: 6px;
+    z-index:-90;
 }
 
 .box-left .lbox-1 p {
@@ -505,11 +510,12 @@ input {
 .box-left .lbox-2 .con-circle {
     position: absolute;
     border-radius: 50%;
-    border: 3px green solid;
-    width: 98px;
-    height: 98px;
+    border: 53px green solid;
+    width: 0px;
+    height: 0px;
     left: 5px;
     top: 5px;
+    z-index:-90;
 }
 
 .box-left .lbox-2 p {
@@ -534,11 +540,12 @@ input {
 .box-left .lbox-3 .con-circle {
     position: absolute;
     border-radius: 50%;
-    border: 3px green solid;
-    width: 76px;
-    height: 76px;
+    border: 41px green solid;
+    width: 0px;
+    height: 0px;
     left: 4px;
     top: 4px;
+    z-index:-90;
 }
 
 .box-left .lbox-3 p {
@@ -566,11 +573,12 @@ input {
 .box-left .lbox-4 .con-circle {
     position: absolute;
     border-radius: 50%;
-    border: 2px green solid;
-    width: 65px;
-    height: 65px;
+    border: 35px green solid;
+    width: 0px;
+    height: 0px;
     left: 3px;
     top: 3px;
+    z-index:-90;
 }
 
 .box-left .lbox-4 span, .box-right .rbox-4 span {
@@ -581,7 +589,7 @@ input {
     /*padding-top: 20px;
     white-space: nowrap;*/
     overflow: hidden;
-    font-size: 10px;
+    font-size: 12px;
     transform: scale(0.8);
     width: 65px;
 }
@@ -634,11 +642,12 @@ input {
 .box-right .rbox-1 .con-circle {
     position: absolute;
     border-radius: 50%;
-    border: 3px #dcdcdc solid;
-    width: 125px;
-    height: 125px;
+    border: 65px #dcdcdc solid;
+    width: 0px;
+    height: 0px;
     left: 6px;
     top: 6px;
+    z-index:-90;
 }
 
 .box-right .rbox-1 p {
@@ -658,11 +667,12 @@ input {
 .box-right .rbox-2 .con-circle {
     position: absolute;
     border-radius: 50%;
-    border: 3px #dcdcdc solid;
-    width: 98px;
-    height: 98px;
+    border: 53px #dcdcdc solid;
+    width: 0px;
+    height: 0px;
     left: 5px;
     top: 5px;
+    z-index:-90;
 }
 
 .box-right .rbox-2 p {
@@ -681,11 +691,12 @@ input {
 .box-right .rbox-3 .con-circle {
     position: absolute;
     border-radius: 50%;
-    border: 3px #dcdcdc solid;
-    width: 76px;
-    height: 76px;
+    border: 41px #dcdcdc solid;
+    width: 0px;
+    height: 0px;
     left: 4px;
     top: 4px;
+    z-index:-90;
 }
 
 .box-right .rbox-3 p {
@@ -707,11 +718,12 @@ input {
 .box-right .rbox-4 .con-circle {
     position: absolute;
     border-radius: 50%;
-    border: 2px green solid;
-    width: 65px;
-    height: 65px;
+    border: 35px green solid;
+    width: 0px;
+    height: 0px;
     left: 3px;
     top: 3px;
+    z-index:-90;
 }
 
 .box-right .rbox-4 p {

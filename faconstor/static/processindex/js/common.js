@@ -38,7 +38,7 @@ var util = {
         if (headerTitle === '') {
             headerTitle = data.name;
             var process_run_url = $("#process_url").val() + "/" + $("#process_run_id").val()
-            $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#e8e8e8 '>" + headerTitle + "</a>");
+            $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#e8e8e8 '>" + headerTitle + "灾备切换</a>");
         }
 
         var progressBar = $('.progress-par');
@@ -93,7 +93,7 @@ var util = {
             maxValue: 100,
             width: 10, //圆环宽度
             text: function (value) {
-                return '<div class="inner-progress"></div><div class="inner-progress1" style="box-shadow:-20px 20px 20px #000000;"></div><div class="con-text"><div class="text"><p>' + curStep.name + '</p><p>' + value + '%</p></div></div>';
+                return '<div class="inner-progress inner-' + curState + '"></div><div class="inner-progress1"></div><div class="con-text"><div class="text"><p>' + curStep.name + '</p><p>' + value + '%</p></div></div>';
             },
             colors: ['#f0f0f0', color[curState]],
             duration: 400, //动画时长
@@ -171,10 +171,10 @@ var util = {
                 var lbox = $('.lbox-' + (i + 1));
                 lbox.show();
                 var html = '<p>' + leftData[i].name + '</p>';
-                if (leftData[i].state.toLocaleLowerCase() === 'done') {
+/*                if (leftData[i].state.toLocaleLowerCase() === 'done') {
                     var timer = util.getTimerByIndex(i, leftData[i].starttime, leftData[i].endtime);
                     html += '<em>' + timer + '</em>';
-                }
+                }*/
                 lbox.find('.con-text').html('<div class="text">' + html + '</div>');
                 lbox.addClass('step-' + leftData[i].state.toLocaleLowerCase());
                 index++;
