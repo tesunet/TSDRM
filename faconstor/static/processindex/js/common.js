@@ -13,6 +13,16 @@ var util = {
             }
             util.request();
         }, 3 * 1000); //3秒/次请求
+        if(document.body.clientHeight>900 && document.body.clientHeight<1000){
+            $(".step-box").css("margin","230px 0 60px 0px");
+            $(".header-title").css("margin","50px 0");
+            $(".start_hand").css("top","580px");
+        }
+        else{
+            $(".step-box").css("margin","100px 0 60px 0px");
+            $(".header-title").css("margin","0px 0");
+            $(".start_hand").css("top","300px");
+        }
     },
     request: function () {
         $.ajax({
@@ -62,7 +72,7 @@ var util = {
             var year = date.getFullYear();
             headerTitle = data.name;
             var process_run_url = $("#process_url").val() + "/" + $("#process_run_id").val()
-            $('.header-title h1').html("<span style='color:#e8e8e8'>" + year + "太平资产容灾演练" + "</span>");
+            $('.header-title h1').html("<span >" + year + "太平资产容灾演练" + "</span>");
             $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#e8e8e8 '>" + headerTitle + "灾备切换</a>");
         }
 
@@ -126,7 +136,7 @@ var util = {
 
         Circles.create({
             id: 'current-circles',
-            radius: 100, //半径宽度，基准100px。半径100，则是200px的宽度
+            radius: 120, //半径宽度，基准100px。半径100，则是200px的宽度
             value: curStepPercent,
             maxValue: 100,
             width: 10, //圆环宽度
