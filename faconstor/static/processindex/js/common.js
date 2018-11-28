@@ -57,7 +57,6 @@ var util = {
             $(".header-timeout").show();
         }
 
-
         if (headerTitle === '') {
             var date = new Date;
             var year = date.getFullYear();
