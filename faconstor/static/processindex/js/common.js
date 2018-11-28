@@ -17,11 +17,13 @@ var util = {
             $(".step-box").css("margin","230px 0 60px 0px");
             $(".header-title").css("margin","50px 0");
             $(".start_hand").css("top","580px");
+            $(".end_pic").css("top","300px");
         }
         else{
             $(".step-box").css("margin","100px 0 60px 0px");
             $(".header-title").css("margin","0px 0");
             $(".start_hand").css("top","300px");
+            $(".end_pic").css("top","200px");
         }
     },
     request: function () {

@@ -770,7 +770,7 @@ input {
     text-align: center;
 }
 
-/*开始进度*/
+
 .start_hand{
     position: absolute;
     text-align: center;
@@ -788,4 +788,16 @@ input {
     background-image: url(/static/processindex/images/shine.gif);
     width:304px;
     height:304px;
+}
+/*结束*/
+.end_pic{
+    width:450px;
+    position: absolute;
+    text-align: center;
+    top:300px;
+    left: 370px;
+}
+.endtext {
+    font-size: 90px;
+    color: #e8e8e8 !important;
 }
