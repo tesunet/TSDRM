@@ -35,16 +35,42 @@ var util = {
     },
     makeHtml: function (data) {
         state = data.state;
+        var sTag = $("#s_tag").val()
+        // 判断是否为计划
+        if (state === "PLAN") {
+            $(".step-box").hide();
+            $(".box-progress").hide();
+            $(".header-timeout").hide();
+            $(".end_pic").hide();
+            $(".start_hand").show();
+        } else if (state === "DONE" && sTag !== "true") {
+            $(".step-box").hide();
+            $(".box-progress").hide();
+            $(".header-timeout").hide();
+            $(".start_hand").hide();
+            $(".end_pic").show();
+        } else {
+            $(".end_pic").hide();
+            $(".start_hand").hide();
+            $(".step-box").show();
+            $(".box-progress").show();
+            $(".header-timeout").show();
+        }
+
+
         if (headerTitle === '') {
+            var date = new Date;
+            var year = date.getFullYear();
             headerTitle = data.name;
             var process_run_url = $("#process_url").val() + "/" + $("#process_run_id").val()
+            $('.header-title h1').html("<span style='color:#e8e8e8'>" + year + "太平资产容灾演练" + "</span>");
             $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#e8e8e8 '>" + headerTitle + "灾备切换</a>");
         }
 
         var progressBar = $('.progress-par');
         var percent = parseInt(data.percent);
         progressBar.attr('style', 'width:' + percent + '%');
-        progressBar.find('i').text(percent + '%');
+        progressBar.find('i').text(percent + '%')
         for (var cindex = 0; cindex < allState.length; cindex++) {
             progressBar.removeClass(allState[cindex]);
         }
@@ -86,10 +112,23 @@ var util = {
             edit: '#cccfd0'
         };
         var curState = curStep.state.toLocaleLowerCase();
+        var curStepPercent = curStep.percent;
+
+        // 启动应用服务步骤：当前时间减去当前步骤开始时间的秒数作为百分比，如未结束，差值大于99，停留在99%。
+        // 没有子步骤 不需要确认 有脚本
+        if (curStep.c_tag === "yes") {
+            var deltaTime = curStep.delta_time;
+            if (deltaTime <= 99) {
+                curStepPercent = deltaTime
+            } else {
+                curStepPercent = 99
+            }
+        }
+
         Circles.create({
             id: 'current-circles',
             radius: 100, //半径宽度，基准100px。半径100，则是200px的宽度
-            value: curStep.percent,
+            value: curStepPercent,
             maxValue: 100,
             width: 10, //圆环宽度
             text: function (value) {
@@ -111,7 +150,7 @@ var util = {
             setTimeout(function () {
                 $('.progress-par span').css({
                     'background': 'url("/static/processindex/images/done.png") no-repeat',
-                    'background-size': '90px 70px'
+                    'background-size': '180px 140px'
                 });
             }, 1 * 1000);
 
@@ -124,7 +163,7 @@ var util = {
         } else {
             $('.progress-par span').css({
                 'background': 'url("/static/processindex/images/loading.gif") no-repeat',
-                'background-size': '90px 70px'
+                'background-size': '180px 140px'
             });
         }
     },
@@ -171,10 +210,10 @@ var util = {
                 var lbox = $('.lbox-' + (i + 1));
                 lbox.show();
                 var html = '<p>' + leftData[i].name + '</p>';
-/*                if (leftData[i].state.toLocaleLowerCase() === 'done') {
-                    var timer = util.getTimerByIndex(i, leftData[i].starttime, leftData[i].endtime);
-                    html += '<em>' + timer + '</em>';
-                }*/
+                /*                if (leftData[i].state.toLocaleLowerCase() === 'done') {
+                                    var timer = util.getTimerByIndex(i, leftData[i].starttime, leftData[i].endtime);
+                                    html += '<em>' + timer + '</em>';
+                                }*/
                 lbox.find('.con-text').html('<div class="text">' + html + '</div>');
                 lbox.addClass('step-' + leftData[i].state.toLocaleLowerCase());
                 index++;

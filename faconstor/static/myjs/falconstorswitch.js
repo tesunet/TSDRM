@@ -26,7 +26,7 @@ $(document).ready(function () {
             "columnDefs": [{
                 "targets": 1,
                 "render": function (data, type, full) {
-                    return "<td><a href='process_url' target='_blank'>data</a></td>".replace("data", full.process_name).replace("process_url", "/processindex/" + full.processrun_id)
+                    return "<td><a href='process_url' target='_blank'>data</a></td>".replace("data", full.process_name).replace("process_url", "/processindex/" + full.processrun_id + "?s=true")
                 }
             }, {
                 "visible": false,
@@ -238,8 +238,9 @@ $(document).ready(function () {
                     $("#download_div").show();
                     $("#plan_process_run_id").val(data["data"]);
                     $("#static01").modal("hide");
-                    $("#sample_1").DataTable().destroy();
-                    customProcessDataTable();
+                    // $("#sample_1").DataTable().destroy();
+                    // customProcessDataTable();
+                    window.location.href = "/"
                 }
                 else
                     alert(data["res"]);

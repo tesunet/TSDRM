@@ -19,7 +19,7 @@ $(document).ready(function () {
         "columnDefs": [{
             "targets": 1,
             "render": function (data, type, full) {
-                return "<td><a href='process_url' target='_blank'>data</a></td>".replace("data", full.process_name).replace("process_url", "/processindex/" + full.processrun_id)
+                return "<td><a href='process_url' target='_blank'>data</a></td>".replace("data", full.process_name).replace("process_url", "/processindex/" + full.processrun_id + "?s=true")
             }
         }, {
             "visible": false,

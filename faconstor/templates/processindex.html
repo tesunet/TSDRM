@@ -12,13 +12,17 @@
 <div class="wrapper">
     <input type="text" id="process_run_id" name="process_run_id" value="{{ processrun_id }}" hidden>
     <input type="text" id="process_url" name="process_url" value="{{ process_url }}" hidden>
+    <input type="text" id="process_id" name="process_id" value="{{ process_id }}" hidden>
+    <input type="text" id="s_tag" name="s_tag" value="{{ s_tag }}" hidden>
 
     {% csrf_token %}
-    <div class="head-content">
+    <div class="head-content" style="z-index: 100">
         <div class="header-title">
+            <h1></h1>
             <h2></h2>
         </div>
-        <div class="header-timeout">
+
+        <div class="header-timeout" hidden>
             <ul>
                 <li><span>RTO</span></li>
                 <li><span>0</span></li>
@@ -31,8 +35,17 @@
                 <li><span>0</span></li>
             </ul>
         </div>
+
     </div>
-    <div class="step-box">
+    <div class="start_hand" style="position: absolute;left:400px;top:250px;width:400px;height: 600px;" hidden>
+        <img src="/static/processindex/images/hand.png" alt="启动手掌">
+    </div>
+
+    <div class="end_pic" style="position: absolute;left:400px;top:250px;width:400px;height: 600px;" hidden>
+        <img src="/static/processindex/images/endpic.jpg" alt="结束">
+    </div>
+
+    <div class="step-box" hidden>
 
         <div class="box-left">
             <div class="step-item step-left4">
@@ -101,12 +114,13 @@
 
     </div>
 
-    <div class="box-progress">
+    <div class="box-progress" hidden>
         <div class="box-progress-container">
             <div class="progress-left-time"></div>
             <div class="progress-right-time"></div>
             <div class='progress active'>
-                <div class='progress-par bar' style='width:1%;'><span></span><i>0%</i></div>
+                <div class='progress-par bar' style='width:1%;text-align: center;'><span></span><i
+                        style="position: absolute;top:15px;">0%</i></div>
             </div>
         </div>
     </div>
@@ -116,13 +130,44 @@
 <script src="/static/processindex/js/circles.min.js"></script>
 
 <script>
+    util.run();
+</script>
+<script>
     $("body").dblclick(function () {
         var process_run_id = $("#process_run_id").val();
         window.parent.open("/processindex/" + process_run_id.toString());
     })
-</script>
-<script>
-    util.run();
+    $(".start_hand").click(function () {
+        var planProcessRunId = $("#process_run_id").val()
+        var processId = $("#process_id").val()
+
+        // 需邀请流程启动
+        $.ajax({
+            type: "POST",
+            dataType: 'json',
+            url: "../../falconstor_run_invited/",
+            data:
+                {
+                    processid: processId,
+                    plan_process_run_id: planProcessRunId,
+                    csrfmiddlewaretoken: csrfToken
+                },
+            success: function (data) {
+                if (data["res"] == "新增成功。") {
+                    $(".start_hand").hide();
+                    $(".step-box").show();
+                    $(".box-progress").show();
+                    $(".header-timeout").show();
+                    // window.location.href = data["data"];
+                }
+                else
+                    alert(data["res"]);
+            },
+            error: function (e) {
+                alert("流程启动失败，请于管理员联系。");
+            }
+        });
+    })
 </script>
 </body>
 </html>

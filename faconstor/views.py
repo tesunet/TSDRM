@@ -217,15 +217,17 @@ def processindex(request, processrun_id):
     if request.user.is_authenticated() and request.session['isadmin']:
         errors = []
         # processrun_id = request.GET.get("p_run_id", "")
+        s_tag = request.GET.get("s", "")
         c_process_run = ProcessRun.objects.filter(id=processrun_id).select_related("process")
         if c_process_run.exists():
             process_url = c_process_run[0].process.url
             process_name = c_process_run[0].process.name
+            process_id = c_process_run[0].process.id
         else:
             raise Http404()
         return render(request, 'processindex.html',
                       {'username': request.user.userinfo.fullname, "errors": errors, "processrun_id": processrun_id,
-                       "process_url": process_url, "process_name": process_name})
+                       "process_url": process_url, "process_name": process_name, "process_id": process_id, "s_tag": s_tag})
     else:
         return HttpResponseRedirect("/login")
 
@@ -249,7 +251,6 @@ def get_process_index_data(request):
             rtoendtime = ""
 
             state = current_processrun.state
-            rtostate = "RUN"
             percent = 0
 
             process_id = current_processrun.process_id
@@ -365,14 +366,31 @@ def get_process_index_data(request):
                     if c_step_run.state in ["DONE", "STOP"]:
                         inner_step_run_percent = 100
 
+                    start_time = c_step_run.starttime
+                    end_time = c_step_run.endtime
+
+                    delta_time = 0
+                    if c_step_run.step.children.all().exclude(state="9").count()==0 and c_step_run.verifyitemsrun_set.all().count()==0 and c_step_run.scriptrun_set.all().exists():
+                        # 用于判断 没有子步骤，不需要确认，有脚本的步骤
+                        now_time = datetime.datetime.now()
+                        if not end_time and start_time:
+                            delta_time = (now_time - start_time)
+                            if delta_time:
+                                delta_time = "%.f"%delta_time.total_seconds()
+                            else:
+                                delta_time = 0
+                        c_tag = "yes"
+                    else:
+                        c_tag = "no"
                     c_step_run_dict = {
                         "name": c_step_run.step.name,
                         "state": c_step_run.state if c_step_run.state else "",
-                        "starttime": c_step_run.starttime.strftime(
-                            '%Y-%m-%d %H:%M:%S') if c_step_run.starttime else None,
-                        "endtime": c_step_run.endtime.strftime('%Y-%m-%d %H:%M:%S') if c_step_run.endtime else None,
+                        "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else None,
+                        "endtime": endtime.strftime('%Y-%m-%d %H:%M:%S') if endtime else None,
                         "percent": inner_step_run_percent,
                         "type": c_step_run_type,
+                        "delta_time": delta_time,
+                        "c_tag": c_tag,
                     }
                     steps.append(c_step_run_dict)
 
@@ -384,6 +402,10 @@ def get_process_index_data(request):
 
             # 构造展示步骤
             process_rate = "%02d" % (done_num / len(current_processrun.steprun_set.all()) * 100)
+
+            if current_processrun.state == "SIGN":
+                rtostate = "DONE"
+                rtoendtime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             c_step_run_data = {
                 "name": name,
@@ -904,7 +926,7 @@ def get_daily_processrun(request):
                 process_color = process_run.process.color
                 process_run_id = process_run.id
                 # 进程url
-                processrun_url = "/processindex/" + str(process_run.id)
+                processrun_url = "/processindex/" + str(process_run.id) + "?s=true"
 
                 process_run_dict = {
                     "process_name": process_name,
