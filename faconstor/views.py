@@ -649,6 +649,7 @@ def index(request, funid):
             all_processrun_objs) * 100) if all_processrun_objs and successful_processruns else 0
         last_processrun_time = successful_processruns.last().starttime if successful_processruns else ""
         all_processruns = len(processrun_times_obj) if processrun_times_obj else 0
+
         if successful_processruns:
             rto_sum_seconds = 0
 
@@ -725,6 +726,7 @@ def index(request, funid):
                 m, s = divmod(current_delta_time, 60)
                 h, m = divmod(m, 60)
                 current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
+
                 current_processrun_id = current_processrun.id
 
                 # # 构造一个正确的步骤顺序列表
@@ -874,8 +876,7 @@ def get_process_rto(request):
                 current_rto_list = []
                 for processrun_rto_obj in processrun_rto_obj_list:
                     all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(
-                        step__rto_count_in="0").filter(
-                        step__pnode=None)
+                        step__rto_count_in="0").filter(step__pnode=None)
                     step_rto = 0
                     if all_step_runs:
                         for step_run in all_step_runs:
@@ -886,11 +887,10 @@ def get_process_rto(request):
                                 delta_time = (end_time - start_time)
                                 rto = delta_time.total_seconds()
                             step_rto += rto
-
                     # 扣除子级步骤中可能的rto_count_in的时间
                     all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
                         step__rto_count_in="0").exclude(
-                        step__pnode=None)
+                        step__pnode=None).filter(step__pnode__rto_count_in="1")
                     inner_rto_not_count_in = 0
                     if all_inner_step_runs:
                         for inner_step_run in all_inner_step_runs:
