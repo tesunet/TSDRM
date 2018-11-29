@@ -289,8 +289,10 @@ input {
 }
 
 .progress .bar i {
+    position: absolute;
+    top:4px;
     line-height: 2em;
-    font-size: 19px;
+    font-size: 30px;
 !important;
     font-weight: 700;
 }
