@@ -3,7 +3,6 @@ body {
     padding: 0;
     font: 12px/1.5 helvetica, arial, "Microsoft YaHei", \5b8b\4f53;
     color: #fff;
-
     /*background: #fff;*/
     background-image: url(/static/processindex/images/bg.jpg);
     background-size: 100% 100%;
@@ -774,7 +773,7 @@ input {
 .start_hand{
     position: absolute;
     text-align: center;
-    top:300px;
+    top:580px;
     left: 448px;
 }
 .hand{

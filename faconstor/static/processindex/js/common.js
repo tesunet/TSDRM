@@ -74,8 +74,8 @@ var util = {
             var year = date.getFullYear();
             headerTitle = data.name;
             var process_run_url = $("#process_url").val() + "/" + $("#process_run_id").val()
-            $('.header-title h1').html("<span >" + year + "太平资产容灾演练" + "</span>");
-            $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#e8e8e8 '>" + headerTitle + "灾备切换</a>");
+            $('.header-title h1').html("<span >" + year + "太平资产灾备演练" + "</span>");
+            $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#e8e8e8 '>" + headerTitle + "</a>");
         }
 
         var progressBar = $('.progress-par');
