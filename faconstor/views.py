@@ -3665,16 +3665,14 @@ def get_celery_tasks_info(request):
                 if value["state"] == "STARTED":
                     received_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(value["received"])) if value[
                         "received"] else ""
-                    succeeded = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(value["succeeded"])) if value[
-                        "succeeded"] else ""
+                    # succeeded = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(value["succeeded"])) if value[
+                    #     "succeeded"] else ""
 
                     result.append({
                         "uuid": value["uuid"],
-                        "args": value["args"],
-                        "result": value["result"],
+                        "args": value["args"][1:-1],
                         "received": received_time,
-                        "succeeded": succeeded,
-                        "state": value["state"],
+                        "state": "执行中",
                     })
         # # 根据字典中的值对字典进行排序
         # result = sorted(result, key=itemgetter('received'), reverse=True)

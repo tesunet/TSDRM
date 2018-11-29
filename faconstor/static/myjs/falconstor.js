@@ -182,12 +182,12 @@ if (App.isAngularJsApp() === false) {
                     {"data": "uuid"},
                     {"data": "state"},
                     {"data": "args"},
-                    {"data": "result"},
                     {"data": "received"},
-                    {"data": "succeeded"},
                 ],
-
-                "columnDefs": [],
+                "columnDefs": [{
+                  targets: 0,
+                  width:"340px",
+                },],
                 "oLanguage": {
                     "sLengthMenu": "每页显示 _MENU_ 条记录",
                     "sZeroRecords": "抱歉， 没有找到",
@@ -204,7 +204,7 @@ if (App.isAngularJsApp() === false) {
                     "sZeroRecords": "没有检索到数据",
 
                 }
-            });
+            })
         }
 
 
