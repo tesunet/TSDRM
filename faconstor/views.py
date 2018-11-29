@@ -130,6 +130,8 @@ def getpagefuns(funid, request=""):
                 c_task_step_run = task.steprun
                 if c_task_step_run:
                     address = c_task_step_run.step.remark
+                    if not address:
+                        address = ""
                 else:
                     address = ""
 
@@ -746,7 +748,6 @@ def index(request, funid):
 
                 curren_processrun_info_list.append(current_processrun_dict)
 
-        print("curren_processrun_info_list", curren_processrun_info_list)
         # 系统切换成功率
         all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
         process_success_rate_list = []
@@ -3895,6 +3896,8 @@ def reload_task_nums(request):
                 c_task_step_run = task.steprun
                 if c_task_step_run:
                     address = c_task_step_run.step.remark
+                    if not address:
+                        address = ""
                 else:
                     address = ""
 
