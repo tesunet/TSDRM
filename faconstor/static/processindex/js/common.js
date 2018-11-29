@@ -13,10 +13,10 @@ var util = {
             }
             util.request();
         }, 3 * 1000); //3秒/次请求
-        if (document.body.clientHeight > 900 && document.body.clientHeight < 1000) {
+        if (document.body.clientHeight > 900 ) {
             $(".step-box").css("margin", "230px 0 60px 0px");
             $(".header-title").css("margin", "50px 0");
-            $(".start_hand").css("top", "580px");
+            $(".start_hand").css("top", "380px");
             $(".end_pic").css("top", "300px");
         }
         else {
@@ -74,7 +74,7 @@ var util = {
             var year = date.getFullYear();
             headerTitle = data.name;
             var process_run_url = $("#process_url").val() + "/" + $("#process_run_id").val()
-            $('.header-title h1').html("<span >" + year + "太平资产灾备演练" + "</span>");
+            $('.header-title h1').html("<span >" + year + "上海特速灾备演练" + "</span>");
             $('.header-title h2').html("<a href='" + process_run_url + "' target='_parent' style='color:#e8e8e8 '>" + headerTitle + "</a>");
         }
 
