@@ -161,10 +161,11 @@
                     },
                 success: function (data) {
                     if (data["res"] === "新增成功。") {
-                        $(".start_hand").hide();
-                        $(".step-box").show();
-                        $(".box-progress").show();
-                        $(".header-timeout").show();
+                        //$(".start_hand").hide();
+                        //$(".step-box").show();
+                        //$(".box-progress").show();
+                        //$(".header-timeout").show();
+                        window.location.reload()
                         // window.location.href = data["data"];
                     } else if (data["res"]==="请勿重复启动该流程。"){
                         //.. 不作为

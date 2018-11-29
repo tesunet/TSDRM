@@ -238,7 +238,7 @@ def get_process_index_data(request):
         processrun_id = request.POST.get("p_run_id", "")
         print(processrun_id)
 
-        current_processruns = ProcessRun.objects.filter(id=int(processrun_id))
+        current_processruns = ProcessRun.objects.filter(id=int(processrun_id)).select_related("process")
 
         if current_processruns:
             current_processrun = current_processruns[0]
@@ -269,7 +269,7 @@ def get_process_index_data(request):
             # 正确顺序的父级StepRun
             correct_step_run_list = []
             for step_id in correct_step_id_list:
-                current_step_run = StepRun.objects.filter(step_id=step_id).filter(processrun_id=processrun_id)
+                current_step_run = StepRun.objects.filter(step_id=step_id).filter(processrun_id=processrun_id).select_related("step")
                 if current_step_run.exists():
                     current_step_run = current_step_run[0]
                     correct_step_run_list.append(current_step_run)
