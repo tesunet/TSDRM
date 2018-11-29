@@ -407,7 +407,7 @@ input {
     background-size: 180px 140px;
     height: 140px;
     width: 180px;
-    z-index: 100;
+    z-index: 120;
 }
 
 .progress-par:after {

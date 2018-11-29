@@ -5,7 +5,7 @@
   "endtime": "2018-11-10 12:05:00",
   "state": "RUN",
   "rtostate": "RUN",
-  "percent": 80,
+  "percent": 50,
   "steps": [
     {
       "name": "灾备服务器环境检查",
