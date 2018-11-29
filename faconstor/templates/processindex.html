@@ -160,14 +160,15 @@
                         csrfmiddlewaretoken: csrfToken
                     },
                 success: function (data) {
-                    if (data["res"] == "新增成功。") {
+                    if (data["res"] === "新增成功。") {
                         $(".start_hand").hide();
                         $(".step-box").show();
                         $(".box-progress").show();
                         $(".header-timeout").show();
                         // window.location.href = data["data"];
-                    }
-                    else {
+                    } else if (data["res"]==="请勿重复启动该流程。"){
+                        //.. 不作为
+                    } else {
                         $(".shine").hide()
                         alert(data["res"]);
                     }

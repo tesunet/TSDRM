@@ -13,17 +13,17 @@ var util = {
             }
             util.request();
         }, 3 * 1000); //3秒/次请求
-        if(document.body.clientHeight>900 && document.body.clientHeight<1000){
-            $(".step-box").css("margin","230px 0 60px 0px");
-            $(".header-title").css("margin","50px 0");
-            $(".start_hand").css("top","580px");
-            $(".end_pic").css("top","300px");
+        if (document.body.clientHeight > 900 && document.body.clientHeight < 1000) {
+            $(".step-box").css("margin", "230px 0 60px 0px");
+            $(".header-title").css("margin", "50px 0");
+            $(".start_hand").css("top", "580px");
+            $(".end_pic").css("top", "300px");
         }
-        else{
-            $(".step-box").css("margin","100px 0 60px 0px");
-            $(".header-title").css("margin","0px 0");
-            $(".start_hand").css("top","300px");
-            $(".end_pic").css("top","200px");
+        else {
+            $(".step-box").css("margin", "100px 0 60px 0px");
+            $(".header-title").css("margin", "0px 0");
+            $(".start_hand").css("top", "300px");
+            $(".end_pic").css("top", "200px");
         }
     },
     request: function () {
@@ -268,16 +268,18 @@ var util = {
         }
     },
     showTimer: function (timer) {
+        console.log(timer)
         var hours = timer.hours.split('');
         var minutes = timer.minutes.split('');
         var seconds = timer.seconds.split('');
         var headerTimeLi = $('.header-timeout li');
-        headerTimeLi.eq(1).find('span').text(hours[0]);
-        headerTimeLi.eq(2).find('span').text(hours[1]);
-        headerTimeLi.eq(4).find('span').text(minutes[0]);
-        headerTimeLi.eq(5).find('span').text(minutes[1]);
-        headerTimeLi.eq(7).find('span').text(seconds[0]);
-        headerTimeLi.eq(8).find('span').text(seconds[1]);
+        console.log(hours[0],hours[0], minutes[0], minutes[1], seconds[0], seconds[1])
+        headerTimeLi.eq(3).find('span').text(hours[0]);
+        headerTimeLi.eq(4).find('span').text(hours[1]);
+        headerTimeLi.eq(6).find('span').text(minutes[0]);
+        headerTimeLi.eq(7).find('span').text(minutes[1]);
+        headerTimeLi.eq(9).find('span').text(seconds[0]);
+        headerTimeLi.eq(10).find('span').text(seconds[1]);
     },
     timeFn: function (d1, d2) {
         var dateBegin = new Date(d1.replace(/-/g, "/"));

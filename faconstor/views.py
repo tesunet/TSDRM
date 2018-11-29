@@ -691,7 +691,6 @@ def index(request, funid):
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
         current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(state="9").select_related("process")
         curren_processrun_info_list = []
-
         state_dict = {
             "DONE": "已完成",
             "EDIT": "未执行",
@@ -729,88 +728,6 @@ def index(request, funid):
 
                 current_processrun_id = current_processrun.id
 
-                # # 构造一个正确的步骤顺序列表
-                # all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by(
-                #     "sort")
-                # correct_step_id_list = []
-                # if all_pnode_steps:
-                #     for pnode_step in all_pnode_steps:
-                #         pnode_step_id = pnode_step.id
-                #         correct_step_id_list.append(pnode_step_id)
-                #         inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id,
-                #                                                              pnode_id=pnode_step_id).order_by("sort")
-                #         if inner_steps:
-                #             for inner_step in inner_steps:
-                #                 correct_step_id_list.append(inner_step.id)
-                # else:
-                #     raise Http404()
-                #
-                # # 构造运行中流程步骤列表
-                # correct_step_run_list = []
-                # for step_id in correct_step_id_list:
-                #     current_step_run = StepRun.objects.filter(step_id=step_id).last()
-                #     correct_step_run_list.append(current_step_run)
-                #
-                # # 通过1-n数字标记当前流程步骤
-                # index_dict = {}
-                # if correct_step_run_list:
-                #     for num, current_step in enumerate(correct_step_run_list):
-                #         index_dict["{0}".format(current_step.id)] = num + 1
-                #
-                #     current_run_step_id = None
-                #     # 倒序，指定二级步骤
-                #     for step_run in correct_step_run_list[::-1]:
-                #         if step_run.state not in ["DONE", "STOP", "EDIT"]:
-                #             current_run_step_id = step_run.id
-                #             current_step_name = step_run.step.name
-                #             # 负责角色
-                #             group_id = step_run.step.group
-                #             if group_id:
-                #                 group_name = Group.objects.filter(id=int(group_id))[0].name
-                #                 users_from_group = Group.objects.filter(id=int(group_id))[
-                #                     0].userinfo_set.all().values_list(
-                #                     "fullname")
-                #                 users = ""
-                #                 for num, user in enumerate(users_from_group):
-                #                     users += user[0] + "、"
-                #                 users = "({0})".format(users[:-1])
-                #             break
-                #     # 构造首页展示步骤
-                #     if current_run_step_id:
-                #         # 中间步骤
-                #         if len(correct_step_run_list) > index_dict["{0}".format(current_run_step_id)] > 1:
-                #             current_run_step_index = index_dict["{0}".format(current_run_step_id)]
-                #             # 取左4，中1，右4
-                #             for num, step_run in enumerate(correct_step_run_list):
-                #                 if current_run_step_index - 2 == num or current_run_step_index == num or current_run_step_index - 1 == num:
-                #                     all_steps.append({
-                #                         "step_run_name": step_run.step.name,
-                #                         "step_run_index": num + 1
-                #                     })
-                #         # 进行至第一步
-                #         elif index_dict["{0}".format(current_run_step_id)] == 1:
-                #             current_run_step_index = 1
-                #             # 取中1，右4
-                #             for num, step_run in enumerate(correct_step_run_list):
-                #                 if current_run_step_index + 1 == num or current_run_step_index == num or current_run_step_index - 1 == num:
-                #                     all_steps.append({
-                #                         "step_run_name": step_run.step.name,
-                #                         "step_run_index": num + 1
-                #                     })
-                #         # 最后一步
-                #         else:
-                #             # 取中1，左4
-                #             current_run_step_index = len(correct_step_run_list)
-                #             for num, step_run in enumerate(correct_step_run_list):
-                #                 if current_run_step_index - 1 == num or current_run_step_index - 2 == num or current_run_step_index - 3 == num:
-                #                     all_steps.append({
-                #                         "step_run_name": step_run.step.name,
-                #                         "step_run_index": num + 1
-                #                     })
-                #
-                #         process_rate = "%02d" % (
-                #                 index_dict["{0}".format(current_run_step_id)] / len(correct_step_run_list) * 100)
-
                 # 进程url
                 processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)
 
@@ -835,6 +752,7 @@ def index(request, funid):
 
                 curren_processrun_info_list.append(current_processrun_dict)
 
+        print("curren_processrun_info_list", curren_processrun_info_list)
         # 系统切换成功率
         all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
         process_success_rate_list = []
@@ -3321,60 +3239,64 @@ def falconstor_run_invited(request):
 
         if current_process_run:
             current_process_run = current_process_run[0]
-            current_process_run.starttime = datetime.datetime.now()
-            current_process_run.creatuser = request.user.username
-            current_process_run.run_reason = run_reason
-            current_process_run.state = "RUN"
-            current_process_run.DataSet_id = 89
-            current_process_run.save()
 
-            process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+            if current_process_run.state == "RUN":
+                result["res"] = '请勿重复启动该流程。'
+            else:
+                current_process_run.starttime = datetime.datetime.now()
+                current_process_run.creatuser = request.user.username
+                current_process_run.run_reason = run_reason
+                current_process_run.state = "RUN"
+                current_process_run.DataSet_id = 89
+                current_process_run.save()
 
-            allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-                "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+                process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
 
-            if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
-                # 将当前流程改成SIGN
-                c_process_run_id = current_process_run.id
-                c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
-                if c_process_run:
-                    c_process_run = c_process_run[0]
-                    c_process_run.state = "SIGN"
-                    c_process_run.save()
-                for group in allgroup:
-                    try:
-                        signgroup = Group.objects.get(id=int(group["group"]))
-                        groupname = signgroup.name
+                allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                    "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+                if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                    # 将当前流程改成SIGN
+                    c_process_run_id = current_process_run.id
+                    c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                    if c_process_run:
+                        c_process_run = c_process_run[0]
+                        c_process_run.state = "SIGN"
+                        c_process_run.save()
+                    for group in allgroup:
+                        try:
+                            signgroup = Group.objects.get(id=int(group["group"]))
+                            groupname = signgroup.name
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun = current_process_run
+                            myprocesstask.starttime = datetime.datetime.now()
+                            myprocesstask.senduser = request.user.username
+                            myprocesstask.receiveauth = group["group"]
+                            myprocesstask.type = "SIGN"
+                            myprocesstask.state = "0"
+                            myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                            myprocesstask.save()
+                        except:
+                            pass
+                    result["res"] = "新增成功。"
+                    result["data"] = "/"
+
+                else:
+                    prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
+                    if len(prosssigns) <= 0:
                         myprocesstask = ProcessTask()
                         myprocesstask.processrun = current_process_run
                         myprocesstask.starttime = datetime.datetime.now()
+                        myprocesstask.type = "INFO"
+                        myprocesstask.logtype = "START"
+                        myprocesstask.state = "1"
                         myprocesstask.senduser = request.user.username
-                        myprocesstask.receiveauth = group["group"]
-                        myprocesstask.type = "SIGN"
-                        myprocesstask.state = "0"
-                        myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                        myprocesstask.content = "流程已启动。"
                         myprocesstask.save()
-                    except:
-                        pass
-                result["res"] = "新增成功。"
-                result["data"] = "/"
 
-            else:
-                prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
-                if len(prosssigns) <= 0:
-                    myprocesstask = ProcessTask()
-                    myprocesstask.processrun = current_process_run
-                    myprocesstask.starttime = datetime.datetime.now()
-                    myprocesstask.type = "INFO"
-                    myprocesstask.logtype = "START"
-                    myprocesstask.state = "1"
-                    myprocesstask.senduser = request.user.username
-                    myprocesstask.content = "流程已启动。"
-                    myprocesstask.save()
-
-                    exec_process.delay(current_process_run.id)
-                    result["res"] = "新增成功。"
-                    result["data"] = process[0].url + "/" + str(current_process_run.id)
+                        exec_process.delay(current_process_run.id)
+                        result["res"] = "新增成功。"
+                        result["data"] = process[0].url + "/" + str(current_process_run.id)
         else:
             result["res"] = '流程启动异常，请联系客服。'
 
