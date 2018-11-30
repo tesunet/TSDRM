@@ -65,7 +65,7 @@ class ServerByPara(object):
                         exec_tag = 1
                         log = "未匹配"
             except:
-                exec_tag = 1
+                exec_tag = 0  # 不抛错
                 log = "编码错误"
                 data_init = "编码错误"
 
