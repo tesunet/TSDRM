@@ -13,7 +13,7 @@ var util = {
             }
             util.request();
         }, 3 * 1000); //3秒/次请求
-        if (document.body.clientHeight > 900 ) {
+        if (document.body.clientHeight > 900) {
             $(".step-box").css("margin", "230px 0 60px 0px");
             $(".header-title").css("margin", "50px 0");
             $(".start_hand").css("top", "380px");
@@ -258,22 +258,20 @@ var util = {
             timer = util.timeFn(starTime, rtoEndTime);
             util.showTimer(timer);
         } else {
-            if (!tmInterval) {
-                clearInterval(tmInterval);
-                tmInterval = setInterval(function () {
-                    timer = util.timeFn(starTime, util.getNow());
-                    util.showTimer(timer);
-                }, 1 * 1000); //定时刷新时间
-            }
+            // if (!tmInterval) {
+            clearInterval(tmInterval);
+            tmInterval = setInterval(function () {
+                timer = util.timeFn(starTime, util.getNow());
+                util.showTimer(timer);
+            }, 1 * 1000); //定时刷新时间
+            // }
         }
     },
     showTimer: function (timer) {
-        console.log(timer)
         var hours = timer.hours.split('');
         var minutes = timer.minutes.split('');
         var seconds = timer.seconds.split('');
         var headerTimeLi = $('.header-timeout li');
-        console.log(hours[0],hours[0], minutes[0], minutes[1], seconds[0], seconds[1])
         headerTimeLi.eq(3).find('span').text(hours[0]);
         headerTimeLi.eq(4).find('span').text(hours[1]);
         headerTimeLi.eq(6).find('span').text(minutes[0]);
@@ -295,9 +293,6 @@ var util = {
         var leave3 = leave2 % (60 * 1000); //计算分钟数后剩余的毫秒数
         var seconds = Math.round(leave3 / 1000);
 
-        // console.log(hours);
-        // console.log(minutes);
-        // console.log(seconds);
         hours = hours < 10 ? '0' + hours : '' + hours;
         minutes = minutes < 10 ? '0' + minutes : '' + minutes;
         seconds = seconds < 10 ? '0' + seconds : '' + seconds;
