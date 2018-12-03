@@ -3222,7 +3222,7 @@ def falconstorrun(request):
 
 
 def falconstor_run_invited(request):
-    if request.user.is_authenticated():
+    if request.user.is_authenticated() and request.session['isadmin']:
         result = {}
         process_id = request.POST.get('processid', '')
         run_person = request.POST.get('run_person', '')
