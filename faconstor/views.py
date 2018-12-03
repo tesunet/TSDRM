@@ -414,7 +414,6 @@ def get_process_index_data(request):
             }
         else:
             c_step_run_data = {}
-        print("c_step_run_data",c_step_run_data)
         return JsonResponse(c_step_run_data)
 
 
