@@ -2,7 +2,8 @@
 var state = '',
     interval = 0,
     tmInterval = 0,
-    headerTitle = '';
+    headerTitle = '',
+    end = false;
 var allState = ['run', 'done', 'error', 'stop', 'confirm', 'edit'];
 var util = {
     run: function () {
@@ -90,8 +91,6 @@ var util = {
         $('.progress-left-time').text(data.starttime);
         $('.progress-right-time').text(data.endtime);
 
-        util.makeTimer(data.rtostate, data.starttime, data.endtime, data.rtoendtime);
-
         var leftData = [];
         var rightData = [];
         var curStep = [];
@@ -169,14 +168,19 @@ var util = {
             if ($.inArray(state, ['DONE', 'STOP']) >= 0) {
                 clearInterval(interval);
             }
-
             clearInterval(tmInterval);
+            end = true;
         } else {
+            end = false;
             $('.progress-par span').css({
                 'background': 'url("/static/processindex/images/loading.gif") no-repeat',
                 'background-size': '180px 140px'
             });
         }
+
+        // 写入RTO
+        util.makeTimer(data.rtostate, data.starttime, data.endtime, data.rtoendtime);
+
     },
     makeR: function (rightData) {
         for (var n = 0; n < 4; n++) {
@@ -258,13 +262,13 @@ var util = {
             timer = util.timeFn(starTime, rtoEndTime);
             util.showTimer(timer);
         } else {
-            // if (!tmInterval) {
-            clearInterval(tmInterval);
-            tmInterval = setInterval(function () {
-                timer = util.timeFn(starTime, util.getNow());
-                util.showTimer(timer);
-            }, 1 * 1000); //定时刷新时间
-            // }
+            if (!end) {
+                clearInterval(tmInterval);
+                tmInterval = setInterval(function () {
+                    timer = util.timeFn(starTime, util.getNow());
+                    util.showTimer(timer);
+                }, 1 * 1000); //定时刷新时间
+            }
         }
     },
     showTimer: function (timer) {
