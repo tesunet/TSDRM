@@ -4402,7 +4402,7 @@ def custom_pdf_report(request):
             raise Http404()
 
         # 2.报表封页文字
-        title_xml = "飞康自动化恢复流程"
+        title_xml = "自动化切换流程"
         abstract_xml = "切换报告"
 
         # 3.章节名称
