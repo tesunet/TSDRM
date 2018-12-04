@@ -277,7 +277,6 @@ var util = {
                         },
                         dataType: 'json',
                         success: function (data) {
-                            // console.log(typeof (data.current_time))
                             currentTime = data.current_time
                             timer = util.timeFn(starTime, currentTime);
                             util.showTimer(timer);
