@@ -167,9 +167,10 @@ var util = {
             //停止
             if ($.inArray(state, ['DONE', 'STOP']) >= 0) {
                 clearInterval(interval);
+                clearInterval(tmInterval);
+                end = true;
             }
-            clearInterval(tmInterval);
-            end = true;
+            // 步骤出错，仍旧记时
         } else {
             end = false;
             $('.progress-par span').css({

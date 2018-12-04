@@ -284,20 +284,23 @@ def get_process_index_data(request):
                 c_step_index = 0
                 # 流程运行中的rtostate
                 if c_process_run_state != "DONE":
-                    c_state = False
-                    for num, c_step_run in enumerate(correct_step_run_list):
-                        c_rto_count_in = c_step_run.step.rto_count_in
-                        if c_rto_count_in == "0" and c_step_run.state in ["CONFIRM", "DONE"]:
-                            c_state = True
-                            rtostate = "DONE"
-                            c_step_index = num
-                            break
+                    if c_process_run_state == "ERROR":
+                        rtostate = "RUN"
+                    else:
+                        c_state = False
+                        for num, c_step_run in enumerate(correct_step_run_list):
+                            c_rto_count_in = c_step_run.step.rto_count_in
+                            if c_rto_count_in == "0" and c_step_run.state in ["CONFIRM", "DONE"]:
+                                c_state = True
+                                rtostate = "DONE"
+                                c_step_index = num
+                                break
 
-                    if c_state:
-                        # 表示需要计入rto的步骤已经完成
-                        if c_step_index > 0 and rtostate == "DONE":
-                            pre_step_index = c_step_index - 1
-                            rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+                        if c_state:
+                            # 表示需要计入rto的步骤已经完成
+                            if c_step_index > 0 and rtostate == "DONE":
+                                pre_step_index = c_step_index - 1
+                                rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
                 # 流程结束后的rtostate
                 else:
                     for num, c_step_run in enumerate(correct_step_run_list):
@@ -414,6 +417,7 @@ def get_process_index_data(request):
             }
         else:
             c_step_run_data = {}
+        # print("c_step_run_data", c_step_run_data)
         return JsonResponse(c_step_run_data)
 
 
