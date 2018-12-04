@@ -181,6 +181,7 @@ def runstep(steprun, if_repeat=False):
     """
     执行当前步骤下的所有脚本
     返回值0,：错误，1：完成，2：确认，3：流程已结束
+    if_repeat用于避免已执行步骤重复执行。
     """
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
