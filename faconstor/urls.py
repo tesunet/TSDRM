@@ -86,6 +86,7 @@ urlpatterns = [
     url(r'^revoke_current_task/$', revoke_current_task),
     url(r'^get_script_log/$', get_script_log),
     url(r'^save_task_remark/$', save_task_remark),
+    url(r'^get_server_time_very_second/$', get_server_time_very_second),
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),

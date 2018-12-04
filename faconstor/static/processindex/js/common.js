@@ -169,6 +169,8 @@ var util = {
                 clearInterval(interval);
                 clearInterval(tmInterval);
                 end = true;
+            } else {
+                end = false;
             }
             // 步骤出错，仍旧记时
         } else {
@@ -256,7 +258,7 @@ var util = {
 
         return str;
     },
-    makeTimer: function (state, starTime, endTime, rtoEndTime, currentTime) {
+    makeTimer: function (state, starTime, endTime, rtoEndTime) {
         var timer;
         if (state === 'DONE') {
             clearInterval(tmInterval);
@@ -266,9 +268,21 @@ var util = {
             if (!end) {
                 clearInterval(tmInterval);
                 tmInterval = setInterval(function () {
-                    timer = util.timeFn(starTime, currentTime);
-                    // timer = util.timeFn(starTime, util.getNow());
-                    util.showTimer(timer);
+                    var currentTime = 0
+                    $.ajax({
+                        url: '/get_server_time_very_second/',
+                        type: 'POST',
+                        data: {
+                            csrfmiddlewaretoken: csrfToken
+                        },
+                        dataType: 'json',
+                        success: function (data) {
+                            // console.log(typeof (data.current_time))
+                            currentTime = data.current_time
+                            timer = util.timeFn(starTime, currentTime);
+                            util.showTimer(timer);
+                        },
+                    });
                 }, 1 * 1000); //定时刷新时间
             }
         }
@@ -287,6 +301,7 @@ var util = {
     },
     timeFn: function (d1, d2) {
         var dateBegin = new Date(d1.replace(/-/g, "/"));
+        // console.log(d2)
         var dateEnd = new Date(d2.replace(/-/g, "/"));
         var dateDiff = dateEnd.getTime() - dateBegin.getTime();
         var dayDiff = Math.floor(dateDiff / (24 * 3600 * 1000));
@@ -305,9 +320,9 @@ var util = {
         return {hours: hours, minutes: minutes, seconds: seconds};
     },
     getNow: function () {
-        var d = new Date();
-        var now = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
-        return now;
+        // var d = new Date();
+        // var now = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
+        // return now;
     }
 };
 window.util = util;

@@ -422,6 +422,12 @@ def get_process_index_data(request):
         return JsonResponse(c_step_run_data)
 
 
+def get_server_time_very_second(request):
+    if request.user.is_authenticated():
+        current_time = datetime.datetime.now()
+        return JsonResponse({"current_time":current_time.strftime('%Y-%m-%d %H:%M:%S')})
+
+
 def custom_time(time):
     """
     构造最新操作的时间
