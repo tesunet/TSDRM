@@ -180,7 +180,7 @@ var util = {
         }
 
         // 写入RTO
-        util.makeTimer(data.rtostate, data.starttime, data.endtime, data.rtoendtime);
+        util.makeTimer(data.rtostate, data.starttime, data.endtime, data.rtoendtime, data.current_time);
 
     },
     makeR: function (rightData) {
@@ -256,7 +256,7 @@ var util = {
 
         return str;
     },
-    makeTimer: function (state, starTime, endTime, rtoEndTime) {
+    makeTimer: function (state, starTime, endTime, rtoEndTime, currentTime) {
         var timer;
         if (state === 'DONE') {
             clearInterval(tmInterval);
@@ -266,7 +266,8 @@ var util = {
             if (!end) {
                 clearInterval(tmInterval);
                 tmInterval = setInterval(function () {
-                    timer = util.timeFn(starTime, util.getNow());
+                    timer = util.timeFn(starTime, currentTime);
+                    // timer = util.timeFn(starTime, util.getNow());
                     util.showTimer(timer);
                 }, 1 * 1000); //定时刷新时间
             }

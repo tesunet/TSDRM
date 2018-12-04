@@ -404,8 +404,9 @@ def get_process_index_data(request):
             if current_processrun.state == "SIGN":
                 rtostate = "DONE"
                 rtoendtime = current_processrun.starttime.strftime('%Y-%m-%d %H:%M:%S')
-
+            current_time = datetime.datetime.now()
             c_step_run_data = {
+                "current_time": current_time.strftime('%Y-%m-%d %H:%M:%S'),
                 "name": name,
                 "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else "",
                 "rtoendtime": rtoendtime,
