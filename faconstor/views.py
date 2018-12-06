@@ -36,11 +36,22 @@ from operator import itemgetter
 from .remote import ServerByPara
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_page
+from TSDRM import settings
 
 funlist = []
 
 info = {"webaddr": "cv-server", "port": "81", "username": "admin", "passwd": "Admin@2017", "token": "",
         "lastlogin": 0}
+
+
+def file_iterator(file_name, chunk_size=512):
+    with open(file_name, "rb") as f:
+        while True:
+            c = f.read(chunk_size)
+            if c:
+                yield c
+            else:
+                break
 
 
 def getfun(myfunlist, fun):
@@ -216,7 +227,7 @@ def test(request):
 
 
 def processindex(request, processrun_id):
-    if request.user.is_authenticated() and request.session['isadmin']:
+    if request.user.is_authenticated():
         errors = []
         # processrun_id = request.GET.get("p_run_id", "")
         s_tag = request.GET.get("s", "")
@@ -229,7 +240,8 @@ def processindex(request, processrun_id):
             raise Http404()
         return render(request, 'processindex.html',
                       {'username': request.user.userinfo.fullname, "errors": errors, "processrun_id": processrun_id,
-                       "process_url": process_url, "process_name": process_name, "process_id": process_id, "s_tag": s_tag})
+                       "process_url": process_url, "process_name": process_name, "process_id": process_id,
+                       "s_tag": s_tag})
     else:
         return HttpResponseRedirect("/login")
 
@@ -271,7 +283,8 @@ def get_process_index_data(request):
             # 正确顺序的父级StepRun
             correct_step_run_list = []
             for step_id in correct_step_id_list:
-                current_step_run = StepRun.objects.filter(step_id=step_id).filter(processrun_id=processrun_id).select_related("step")
+                current_step_run = StepRun.objects.filter(step_id=step_id).filter(
+                    processrun_id=processrun_id).select_related("step")
                 if current_step_run.exists():
                     current_step_run = current_step_run[0]
                     correct_step_run_list.append(current_step_run)
@@ -368,13 +381,14 @@ def get_process_index_data(request):
                     end_time = c_step_run.endtime
 
                     delta_time = 0
-                    if c_step_run.step.children.all().exclude(state="9").count()==0 and c_step_run.verifyitemsrun_set.all().count()==0 and c_step_run.scriptrun_set.all().exists():
+                    if c_step_run.step.children.all().exclude(
+                            state="9").count() == 0 and c_step_run.verifyitemsrun_set.all().count() == 0 and c_step_run.scriptrun_set.all().exists():
                         # 用于判断 没有子步骤，不需要确认，有脚本的步骤
                         now_time = datetime.datetime.now()
                         if not end_time and start_time:
                             delta_time = (now_time - start_time)
                             if delta_time:
-                                delta_time = "%.f"%delta_time.total_seconds()
+                                delta_time = "%.f" % delta_time.total_seconds()
                             else:
                                 delta_time = 0
                         c_tag = "yes"
@@ -425,7 +439,7 @@ def get_process_index_data(request):
 def get_server_time_very_second(request):
     if request.user.is_authenticated():
         current_time = datetime.datetime.now()
-        return JsonResponse({"current_time":current_time.strftime('%Y-%m-%d %H:%M:%S')})
+        return JsonResponse({"current_time": current_time.strftime('%Y-%m-%d %H:%M:%S')})
 
 
 def custom_time(time):
@@ -695,7 +709,8 @@ def index(request, funid):
             average_rto = "00时00分00秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(state="9").select_related("process")
+        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(
+            state="9").select_related("process")
         curren_processrun_info_list = []
         state_dict = {
             "DONE": "已完成",
@@ -2144,15 +2159,6 @@ def scriptexport(request):
                 sheet.write(i + 1, 8, allscript[i].succeedtext)
 
         filename.save(myfilepath)
-
-        def file_iterator(file_name, chunk_size=512):
-            with open(file_name, "rb") as f:
-                while True:
-                    c = f.read(chunk_size)
-                    if c:
-                        yield c
-                    else:
-                        break
 
         the_file_name = "scriptexport.xls"
         response = StreamingHttpResponse(file_iterator(myfilepath))
@@ -4721,15 +4727,6 @@ def custom_pdf_report(request):
         pdfkit.from_string(t.content.decode(encoding="utf-8"), r"falconstor.pdf", configuration=config,
                            options=options, css=css)
 
-        def file_iterator(file_name, chunk_size=512):
-            with open(file_name, "rb") as f:
-                while True:
-                    c = f.read(chunk_size)
-                    if c:
-                        yield c
-                    else:
-                        break
-
         the_file_name = "falconstor.pdf"
         response = StreamingHttpResponse(file_iterator(the_file_name))
         response['Content-Type'] = 'application/octet-stream; charset=unicode'
@@ -4955,29 +4952,102 @@ def tasksearchdata(request):
 
 def downloadlist(request, funid):
     if request.user.is_authenticated():
+        errors = []
+        if request.method == 'POST':
+            file_remark = request.POST.get("file_remark", "")
+            my_file = request.FILES.get("myfile", None)
+            if not my_file:
+                errors.append("请选择要导入的文件。")
+            else:
+                filetype = my_file.name.split(".")[-1]
+                myfilepath = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep + my_file.name
+
+                if os.path.exists(myfilepath):
+                    errors.append("该文件已存在,请勿重复上传。")
+                else:
+                    with open(myfilepath, 'wb+') as f:
+                        for chunk in my_file.chunks():  # 分块写入文件
+                            f.write(chunk)
+
+                    # 存入字段：备注，上传时间，上传人
+                    c_file = KnowledgeFileDownload()
+                    c_file.file_name = my_file.name
+                    c_file.person = request.user.userinfo.fullname
+                    c_file.remark = file_remark
+                    c_file.upload_time = datetime.datetime.now()
+                    c_file.save()
+
+                    errors.append("导入成功。")
         return render(request, "downloadlist.html",
-                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request)})
+                      {'username': request.user.userinfo.fullname, "errors": errors,
+                       "pagefuns": getpagefuns(funid, request=request)})
     else:
         return HttpResponseRedirect("/login")
 
 
+def download_list_data(request):
+    if request.user.is_authenticated():
+        result = []
+        c_files = KnowledgeFileDownload.objects.exclude(state="9")
+        if c_files.exists():
+            for file in c_files:
+                result.append({
+                    "id": file.id,
+                    "name": file.person,
+                    "up_time": "{0:%Y-%m-%d %H:%M:%S}".format(file.upload_time),
+                    "remark": file.remark,
+                    "file_name": file.file_name,
+                })
+        else:
+            pass
+
+        return JsonResponse({
+            "data": result
+        })
+
+
+def knowledge_file_del(request):
+    if request.user.is_authenticated():
+        file_id = request.POST.get("id", "")
+        assert int(file_id), "网页异常"
+
+        c_file = KnowledgeFileDownload.objects.filter(id=file_id)
+        if c_file.exists():
+            c_file = c_file[0]
+            c_file.delete()
+            c_file_name = c_file.file_name
+            the_file_name = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep + c_file_name
+            if os.path.exists(the_file_name):
+                os.remove(the_file_name)
+                result = "删除成功。"
+            else:
+                result = "文件不存在，删除失败,请于管理员联系。"
+        else:
+            result = "文件不存在，删除失败,请于管理员联系。"
+
+        return JsonResponse({
+            "data": result
+        })
+
+
+
 def download(request):
     if request.user.is_authenticated():
-        try:
-            def file_iterator(file_name, chunk_size=512):
-                with open(file_name, "rb") as f:
-                    while True:
-                        c = f.read(chunk_size)
-                        if c:
-                            yield c
-                        else:
-                            break
+        file_id = request.GET.get("file_id", "")
+        assert int(file_id), "网页异常"
 
-            # the_file_name = "/var/www/TSDRM/download/" + request.GET.get('filename', '').replace('^', ' ')
-            the_file_name = "download/" + request.GET.get('filename', '').replace('^', ' ')
+        c_file = KnowledgeFileDownload.objects.filter(id=file_id)
+        if c_file.exists():
+            c_file = c_file[0]
+            c_file_name = c_file.file_name
+        else:
+            raise Http404()
+
+        try:
+            the_file_name = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep +c_file_name
             response = StreamingHttpResponse(file_iterator(the_file_name))
             response['Content-Type'] = 'application/octet-stream; charset=unicode'
-            response['Content-Disposition'] = 'attachment;filename="{0}"'.format(the_file_name)
+            response['Content-Disposition'] = 'attachment;filename="{0}"'.format(c_file_name)
             return response
         except:
             return HttpResponseRedirect("/downloadlist")
@@ -5295,15 +5365,6 @@ def invite(request):
 
         pdfkit.from_string(t.content.decode(encoding="utf-8"), r"invitation.pdf", configuration=config, options=options,
                            css=css)
-
-        def file_iterator(file_name, chunk_size=512):
-            with open(file_name, "rb") as f:
-                while True:
-                    c = f.read(chunk_size)
-                    if c:
-                        yield c
-                    else:
-                        break
 
         the_file_name = "invitation.pdf"
         response = StreamingHttpResponse(file_iterator(the_file_name))

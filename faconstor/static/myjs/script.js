@@ -205,7 +205,7 @@ $(document).ready(function () {
     // $('#param').change(function () {
     //     $("#command").val("cd " + $("#scriptpath").val() + ";" + $("#runpath").val() + "/" + $("#filename").val() + " " + $("#param").val());
     // })
-    // $('#error').click(function () {
-    //     $(this).hide()
-    // })
+    $('#error').click(function () {
+        $(this).hide()
+    })
 });

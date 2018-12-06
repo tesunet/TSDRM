@@ -98,6 +98,8 @@ urlpatterns = [
     # 其他
     url(r'^downloadlist/$', downloadlist, {'funid': '7'}),
     url(r'^download/$', download),
+    url(r'^download_list_data/$', download_list_data),
+    url(r'^knowledge_file_del/$', knowledge_file_del),
 
     # 邀请
     url(r'^invite/$', invite),

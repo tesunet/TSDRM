@@ -164,3 +164,14 @@ class Invitation(models.Model):
     end_time = models.DateTimeField("结束时间", blank=True, null=True)
     purpose = models.CharField("演练目的", max_length=5000, blank=True, null=True)
     current_time = models.DateTimeField("邀请时间", blank=True, null=True)
+
+
+class KnowledgeFileDownload(models.Model):
+    """
+    知识库
+    """
+    person = models.CharField("上传人", blank=True, null=True, max_length=64)
+    upload_time = models.DateTimeField("上传时间", blank=True, null=True)
+    remark = models.CharField("备注", blank=True, null=True, max_length=500)
+    file_name = models.CharField("文件名称", blank=True, null=True, max_length=128)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
