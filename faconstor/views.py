@@ -37,6 +37,7 @@ from .remote import ServerByPara
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_page
 from TSDRM import settings
+from django.utils.encoding import escape_uri_path
 
 funlist = []
 
@@ -4959,25 +4960,29 @@ def downloadlist(request, funid):
             if not my_file:
                 errors.append("请选择要导入的文件。")
             else:
-                filetype = my_file.name.split(".")[-1]
-                myfilepath = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep + my_file.name
-
-                if os.path.exists(myfilepath):
-                    errors.append("该文件已存在,请勿重复上传。")
+                if os.sep in my_file.name:
+                    errors.append(r"""请注意文件命名格式，'\ / " * ? < > '符号文件不允许上传。""")
                 else:
-                    with open(myfilepath, 'wb+') as f:
-                        for chunk in my_file.chunks():  # 分块写入文件
-                            f.write(chunk)
+                    myfilepath = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep + my_file.name
 
-                    # 存入字段：备注，上传时间，上传人
-                    c_file = KnowledgeFileDownload()
-                    c_file.file_name = my_file.name
-                    c_file.person = request.user.userinfo.fullname
-                    c_file.remark = file_remark
-                    c_file.upload_time = datetime.datetime.now()
-                    c_file.save()
+                    c_exist_model = KnowledgeFileDownload.objects.filter(file_name=my_file.name)
 
-                    errors.append("导入成功。")
+                    if os.path.exists(myfilepath) or c_exist_model.exists():
+                        errors.append("该文件已存在,请勿重复上传。")
+                    else:
+                        with open(myfilepath, 'wb+') as f:
+                            for chunk in my_file.chunks():  # 分块写入文件
+                                f.write(chunk)
+
+                        # 存入字段：备注，上传时间，上传人
+                        c_file = KnowledgeFileDownload()
+                        c_file.file_name = my_file.name
+                        c_file.person = request.user.userinfo.fullname
+                        c_file.remark = file_remark
+                        c_file.upload_time = datetime.datetime.now()
+                        c_file.save()
+
+                        errors.append("导入成功。")
         return render(request, "downloadlist.html",
                       {'username': request.user.userinfo.fullname, "errors": errors,
                        "pagefuns": getpagefuns(funid, request=request)})
@@ -4998,8 +5003,6 @@ def download_list_data(request):
                     "remark": file.remark,
                     "file_name": file.file_name,
                 })
-        else:
-            pass
 
         return JsonResponse({
             "data": result
@@ -5019,9 +5022,7 @@ def knowledge_file_del(request):
             the_file_name = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep + c_file_name
             if os.path.exists(the_file_name):
                 os.remove(the_file_name)
-                result = "删除成功。"
-            else:
-                result = "文件不存在，删除失败,请于管理员联系。"
+            result = "删除成功。"
         else:
             result = "文件不存在，删除失败,请于管理员联系。"
 
@@ -5035,19 +5036,17 @@ def download(request):
     if request.user.is_authenticated():
         file_id = request.GET.get("file_id", "")
         assert int(file_id), "网页异常"
-
         c_file = KnowledgeFileDownload.objects.filter(id=file_id)
         if c_file.exists():
             c_file = c_file[0]
             c_file_name = c_file.file_name
         else:
             raise Http404()
-
         try:
             the_file_name = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep +c_file_name
             response = StreamingHttpResponse(file_iterator(the_file_name))
             response['Content-Type'] = 'application/octet-stream; charset=unicode'
-            response['Content-Disposition'] = 'attachment;filename="{0}"'.format(c_file_name)
+            response['Content-Disposition'] = 'attachment;filename="{0}"'.format(escape_uri_path(c_file_name))  # escape_uri_path()解决中文名文件
             return response
         except:
             return HttpResponseRedirect("/downloadlist")
