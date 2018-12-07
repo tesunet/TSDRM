@@ -4965,7 +4965,7 @@ def downloadlist(request, funid):
                 else:
                     myfilepath = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep + my_file.name
 
-                    c_exist_model = KnowledgeFileDownload.objects.filter(file_name=my_file.name)
+                    c_exist_model = KnowledgeFileDownload.objects.filter(file_name=my_file.name).exclude(state="9")
 
                     if os.path.exists(myfilepath) or c_exist_model.exists():
                         errors.append("该文件已存在,请勿重复上传。")
