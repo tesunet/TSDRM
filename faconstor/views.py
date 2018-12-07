@@ -4951,6 +4951,14 @@ def tasksearchdata(request):
         return JsonResponse({"data": result})
 
 
+def if_contains_sign(file_name):
+    sign_string = '\/"*?<>'
+    for i in sign_string:
+        if i in file_name:
+            return True
+    return False
+
+
 def downloadlist(request, funid):
     if request.user.is_authenticated():
         errors = []
@@ -4960,8 +4968,8 @@ def downloadlist(request, funid):
             if not my_file:
                 errors.append("请选择要导入的文件。")
             else:
-                if os.sep in my_file.name:
-                    errors.append(r"""请注意文件命名格式，'\ / " * ? < > '符号文件不允许上传。""")
+                if if_contains_sign(my_file.name):
+                    errors.append(r"""请注意文件命名格式，'\/"*?<>'符号文件不允许上传。""")
                 else:
                     myfilepath = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep + my_file.name
 
