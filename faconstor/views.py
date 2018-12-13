@@ -1,43 +1,45 @@
 # coding:utf-8
+import time
+import datetime
+import sys
+import os
+import json
+import random
+import uuid
+import xml.dom.minidom
+from xml.dom.minidom import parse, parseString
+import xlrd
+import xlwt
+import pymssql
+from lxml import etree
+import re
+import pdfkit
+import sys
+import requests
+from operator import itemgetter
+
 from django.utils.timezone import utc
 from django.utils.timezone import localtime
 from django.shortcuts import render
 from django.contrib import auth
 from django.template import RequestContext
 from django.http import HttpResponseRedirect, Http404, HttpResponse, JsonResponse
-from faconstor.models import *
 from django.http import StreamingHttpResponse
-import time
-import datetime
 from django.db.models import Q
-import sys
-import os
-import json
-import random
-from django.core.mail import send_mail
-from TSDRM import settings
-import uuid
-import xml.dom.minidom
-from xml.dom.minidom import parse, parseString
-from faconstor.tasks import *
 from django.db.models import Count
 from django.db.models import Sum, Max
 from django.db import connection
-import xlrd, xlwt
-import pymssql
-from lxml import etree
-from django.forms.models import model_to_dict
-import re
-import pdfkit
-from django.template.response import TemplateResponse
-import sys
-import requests
-from operator import itemgetter
-from .remote import ServerByPara
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import cache_page
-from TSDRM import settings
 from django.utils.encoding import escape_uri_path
+from django.core.mail import send_mail
+from django.forms.models import model_to_dict
+from django.template.response import TemplateResponse
+
+from faconstor.tasks import *
+from faconstor.models import *
+from .remote import ServerByPara
+from TSDRM import settings
 
 funlist = []
 
@@ -90,6 +92,58 @@ def childfun(myfun, funid):
     return {"fun": mychildfun, "isselected": pisselected}
 
 
+def custom_time(time):
+    """
+    构造最新操作的时间
+    :param time:
+    :return:
+    """
+    time = time.replace(tzinfo=None)
+    timenow = datetime.datetime.now()
+    days = int((timenow - time).days)
+
+    if days > 1095:
+        time = "很久以前"
+    else:
+        if days > 730:
+            time = "2年前"
+        else:
+            if days > 365:
+                time = "1年前"
+            else:
+                if days > 182:
+                    time = "半年前"
+                else:
+                    if days > 150:
+                        time = "5月前"
+                    else:
+                        if days > 120:
+                            time = "4月前"
+                        else:
+                            if days > 90:
+                                time = "3月前"
+                            else:
+                                if days > 60:
+                                    time = "2月前"
+                                else:
+                                    if days > 30:
+                                        time = "1月前"
+                                    else:
+                                        if days >= 1:
+                                            time = str(days) + "天前"
+                                        else:
+                                            hours = int((timenow - time).seconds / 3600)
+                                            if hours >= 1:
+                                                time = str(hours) + "小时"
+                                            else:
+                                                minutes = int((timenow - time).seconds / 60)
+                                                if minutes >= 1:
+                                                    time = str(minutes) + "分钟"
+                                                else:
+                                                    time = "刚刚"
+    return time
+
+
 def getpagefuns(funid, request=""):
     pagefuns = []
     mycurfun = {}
@@ -130,7 +184,8 @@ def getpagefuns(funid, request=""):
                 mygroup.append(str(curguoup.id))
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
-            "-starttime").exclude(processrun__state="9")
+            "-starttime").exclude(processrun__state="9").select_related("processrun", "processrun__process",
+                                                                        "steprun__step")
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 send_time = task.starttime
@@ -151,10 +206,6 @@ def getpagefuns(funid, request=""):
                 process_color = task.processrun.process.color
                 process_url = task.processrun.process.url + "/" + str(task.processrun.id)
                 time = task.starttime
-                time = time.replace(tzinfo=None)
-                timenow = datetime.datetime.now()
-                days = int((timenow - time).days)
-                hours = int((timenow - time).seconds / 3600)
 
                 # 图标与颜色
                 if task.type == "ERROR":
@@ -169,50 +220,14 @@ def getpagefuns(funid, request=""):
                 else:
                     pass
 
-                if days > 1095:
-                    time = "很久以前"
-                else:
-                    if days > 730:
-                        time = "2年前"
-                    else:
-                        if days > 365:
-                            time = "1年前"
-                        else:
-                            if days > 182:
-                                time = "半年前"
-                            else:
-                                if days > 150:
-                                    time = "5月前"
-                                else:
-                                    if days > 120:
-                                        time = "4月前"
-                                    else:
-                                        if days > 90:
-                                            time = "3月前"
-                                        else:
-                                            if days > 60:
-                                                time = "2月前"
-                                            else:
-                                                if days > 30:
-                                                    time = "1月前"
-                                                else:
-                                                    if days >= 1:
-                                                        time = str(days) + "天前"
-                                                    else:
-                                                        hours = int((timenow - time).seconds / 3600)
-                                                        if hours >= 1:
-                                                            time = str(hours) + "小时"
-                                                        else:
-                                                            minutes = int((timenow - time).seconds / 60)
-                                                            if minutes >= 1:
-                                                                time = str(minutes) + "分钟"
-                                                            else:
-                                                                time = "刚刚"
+                time = custom_time(time)
+
                 message_task.append(
                     {"content": task.content, "time": time, "process_name": process_name, "address": address,
                      "task_color": current_color.strip(), "task_type": task.type, "task_extra": task.content,
                      "task_icon": current_icon, "process_color": process_color.strip(), "process_url": process_url,
-                     "pop": True if task.type == "SIGN" else False, "task_id": task_id, "send_time": send_time,
+                     "pop": True if task.type == "SIGN" else False, "task_id": task_id,
+                     "send_time": send_time.strftime("%Y-%m-%d %H:%M:%S"),
                      "processrunid": processrunid, "process_run_reason": process_run_reason,
                      "group_name": guoups[0].name})
     return {"pagefuns": pagefuns, "curfun": mycurfun, "message_task": message_task, "task_nums": task_nums}
@@ -443,56 +458,55 @@ def get_server_time_very_second(request):
         return JsonResponse({"current_time": current_time.strftime('%Y-%m-%d %H:%M:%S')})
 
 
-def custom_time(time):
+def custom_c_color(task_type, task_state, task_logtype):
     """
-    构造最新操作的时间
-    :param time:
-    :return:
+    构造图标与颜色
+    :param task_type:
+    :param task_state:
+    :param task_logtype:
+    :return: current_icon, current_color
     """
-    time = time.replace(tzinfo=None)
-    timenow = datetime.datetime.now()
-    days = int((timenow - time).days)
-
-    if days > 1095:
-        time = "很久以前"
+    if task_type == "ERROR":
+        current_icon = "fa fa-exclamation-triangle"
+        if task_state == "0":
+            current_color = "label-danger"
+        if task_state == "1":
+            current_color = "label-default"
+    elif task_type == "SIGN":
+        current_icon = "fa fa-user"
+        if task_state == "0":
+            current_color = "label-warning"
+        if task_state == "1":
+            current_color = "label-info"
+    elif task_type == "RUN":
+        current_icon = "fa fa-bell-o"
+        if task_state == "0":
+            current_color = "label-warning"
+        if task_state == "1":
+            current_color = "label-info"
     else:
-        if days > 730:
-            time = "2年前"
+        current_color = "label-success"
+        if task_logtype == "START":
+            current_icon = "fa fa-power-off"
+        elif task_logtype == "START":
+            current_icon = "fa fa-power-off"
+        elif task_logtype == "STEP":
+            current_icon = "fa fa-cog"
+        elif task_logtype == "SCRIPT":
+            current_icon = "fa fa-cog"
+        elif task_logtype == "STOP":
+            current_icon = "fa fa-stop"
+        elif task_logtype == "CONTINUE":
+            current_icon = "fa fa-play"
+        elif task_logtype == "IGNORE":
+            current_icon = "fa fa-share"
+        elif task_logtype == "START":
+            current_icon = "fa fa-power-off"
+        elif task_logtype == "END":
+            current_icon = "fa fa-lock"
         else:
-            if days > 365:
-                time = "1年前"
-            else:
-                if days > 182:
-                    time = "半年前"
-                else:
-                    if days > 150:
-                        time = "5月前"
-                    else:
-                        if days > 120:
-                            time = "4月前"
-                        else:
-                            if days > 90:
-                                time = "3月前"
-                            else:
-                                if days > 60:
-                                    time = "2月前"
-                                else:
-                                    if days > 30:
-                                        time = "1月前"
-                                    else:
-                                        if days >= 1:
-                                            time = str(days) + "天前"
-                                        else:
-                                            hours = int((timenow - time).seconds / 3600)
-                                            if hours >= 1:
-                                                time = str(hours) + "小时"
-                                            else:
-                                                minutes = int((timenow - time).seconds / 60)
-                                                if minutes >= 1:
-                                                    time = str(minutes) + "分钟"
-                                                else:
-                                                    time = "刚刚"
-    return time
+            current_icon = "fa fa-info-circle"
+    return current_icon, current_color
 
 
 def get_c_process_run_tasks(current_processrun_id):
@@ -517,46 +531,7 @@ def get_c_process_run_tasks(current_processrun_id):
             task_logtype = task[4]
 
             # 图标与颜色
-            if task_type == "ERROR":
-                current_icon = "fa fa-exclamation-triangle"
-                if task_state == "0":
-                    current_color = "label-danger"
-                if task_state == "1":
-                    current_color = "label-default"
-            elif task_type == "SIGN":
-                current_icon = "fa fa-user"
-                if task_state == "0":
-                    current_color = "label-warning"
-                if task_state == "1":
-                    current_color = "label-info"
-            elif task_type == "RUN":
-                current_icon = "fa fa-bell-o"
-                if task_state == "0":
-                    current_color = "label-warning"
-                if task_state == "1":
-                    current_color = "label-info"
-            else:
-                current_color = "label-success"
-                if task_logtype == "START":
-                    current_icon = "fa fa-power-off"
-                elif task_logtype == "START":
-                    current_icon = "fa fa-power-off"
-                elif task_logtype == "STEP":
-                    current_icon = "fa fa-cog"
-                elif task_logtype == "SCRIPT":
-                    current_icon = "fa fa-cog"
-                elif task_logtype == "STOP":
-                    current_icon = "fa fa-stop"
-                elif task_logtype == "CONTINUE":
-                    current_icon = "fa fa-play"
-                elif task_logtype == "IGNORE":
-                    current_icon = "fa fa-share"
-                elif task_logtype == "START":
-                    current_icon = "fa fa-power-off"
-                elif task_logtype == "END":
-                    current_icon = "fa fa-lock"
-                else:
-                    current_icon = "fa fa-info-circle"
+            current_icon, current_color = custom_c_color(task_type, task_state, task_logtype)
 
             time = custom_time(time)
 
@@ -613,46 +588,7 @@ def index(request, funid):
                 process_color = task[6]
 
                 # 图标与颜色
-                if task_type == "ERROR":
-                    current_icon = "fa fa-exclamation-triangle"
-                    if task_state == "0":
-                        current_color = "label-danger"
-                    if task_state == "1":
-                        current_color = "label-default"
-                elif task_type == "SIGN":
-                    current_icon = "fa fa-user"
-                    if task_state == "0":
-                        current_color = "label-warning"
-                    if task_state == "1":
-                        current_color = "label-info"
-                elif task_type == "RUN":
-                    current_icon = "fa fa-bell-o"
-                    if task_state == "0":
-                        current_color = "label-warning"
-                    if task_state == "1":
-                        current_color = "label-info"
-                else:
-                    current_color = "label-success"
-                    if task_logtype == "START":
-                        current_icon = "fa fa-power-off"
-                    elif task_logtype == "START":
-                        current_icon = "fa fa-power-off"
-                    elif task_logtype == "STEP":
-                        current_icon = "fa fa-briefcase"
-                    elif task_logtype == "SCRIPT":
-                        current_icon = "fa fa-cog"
-                    elif task_logtype == "STOP":
-                        current_icon = "fa fa-stop"
-                    elif task_logtype == "CONTINUE":
-                        current_icon = "fa fa-play"
-                    elif task_logtype == "IGNORE":
-                        current_icon = "fa fa-share"
-                    elif task_logtype == "START":
-                        current_icon = "fa fa-power-off"
-                    elif task_logtype == "END":
-                        current_icon = "fa fa-lock"
-                    else:
-                        current_icon = "fa fa-info-circle"
+                current_icon, current_color = custom_c_color(task_type, task_state, task_logtype)
 
                 time = custom_time(time)
 
@@ -3922,10 +3858,6 @@ def reload_task_nums(request):
                 process_color = task.processrun.process.color
                 process_url = task.processrun.process.url + "/" + str(task.processrun.id)
                 time = task.starttime
-                time = time.replace(tzinfo=None)
-                timenow = datetime.datetime.now()
-                days = int((timenow - time).days)
-                hours = int((timenow - time).seconds / 3600)
 
                 # 图标与颜色
                 if task.type == "ERROR":
@@ -3941,45 +3873,7 @@ def reload_task_nums(request):
                 else:
                     pass
 
-                if days > 1095:
-                    time = "很久以前"
-                else:
-                    if days > 730:
-                        time = "2年前"
-                    else:
-                        if days > 365:
-                            time = "1年前"
-                        else:
-                            if days > 182:
-                                time = "半年前"
-                            else:
-                                if days > 150:
-                                    time = "5月前"
-                                else:
-                                    if days > 120:
-                                        time = "4月前"
-                                    else:
-                                        if days > 90:
-                                            time = "3月前"
-                                        else:
-                                            if days > 60:
-                                                time = "2月前"
-                                            else:
-                                                if days > 30:
-                                                    time = "1月前"
-                                                else:
-                                                    if days >= 1:
-                                                        time = str(days) + "天前"
-                                                    else:
-                                                        hours = int((timenow - time).seconds / 3600)
-                                                        if hours >= 1:
-                                                            time = str(hours) + "小时"
-                                                        else:
-                                                            minutes = int((timenow - time).seconds / 60)
-                                                            if minutes >= 1:
-                                                                time = str(minutes) + "分钟"
-                                                            else:
-                                                                time = "刚刚"
+                time = custom_time(time)
 
                 message_task.append(
                     {"content": task.content, "time": time, "process_name": process_name, "processrunid": processrunid,
@@ -5039,7 +4933,6 @@ def knowledge_file_del(request):
         })
 
 
-
 def download(request):
     if request.user.is_authenticated():
         file_id = request.GET.get("file_id", "")
@@ -5051,10 +4944,11 @@ def download(request):
         else:
             raise Http404()
         try:
-            the_file_name = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep +c_file_name
+            the_file_name = settings.BASE_DIR + os.sep + "faconstor" + os.sep + "upload" + os.sep + "knowledgefiles" + os.sep + c_file_name
             response = StreamingHttpResponse(file_iterator(the_file_name))
             response['Content-Type'] = 'application/octet-stream; charset=unicode'
-            response['Content-Disposition'] = 'attachment;filename="{0}"'.format(escape_uri_path(c_file_name))  # escape_uri_path()解决中文名文件
+            response['Content-Disposition'] = 'attachment;filename="{0}"'.format(
+                escape_uri_path(c_file_name))  # escape_uri_path()解决中文名文件
             return response
         except:
             return HttpResponseRedirect("/downloadlist")
