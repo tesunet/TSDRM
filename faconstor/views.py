@@ -761,6 +761,7 @@ def get_process_rto(request):
                             if end_time and start_time:
                                 delta_time = (end_time - start_time)
                                 rto = delta_time.total_seconds()
+
                             step_rto += rto
                     # 扣除子级步骤中可能的rto_count_in的时间
                     all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
@@ -775,7 +776,7 @@ def get_process_rto(request):
                                 delta_time = (end_time - start_time)
                                 rto = delta_time.total_seconds()
                                 inner_rto_not_count_in += rto
-                                step_rto -= inner_rto_not_count_in
+                    step_rto -= inner_rto_not_count_in
 
                     current_rto = float("%.2f" % (step_rto / 60))
 
