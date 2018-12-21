@@ -198,6 +198,7 @@
                     <form action="" enctype="multipart/form-data" class="form-horizontal"
                           method="post">{% csrf_token %}
                         <div class="form-body">
+                            <!--
                             <div class="form-group">
                                 <div class="fileinput fileinput-new col-md-2" data-provides="fileinput" style="position: relative;left: 30px;width:500px">
                                     <span class="btn green btn-file">
@@ -211,6 +212,31 @@
 
                                 </div>
                             </div>
+                            -->
+
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; "></span>文件</label>
+                                <div class="col-md-10">
+                                    <div class="fileinput fileinput-new" data-provides="fileinput">
+                                        <div class="input-group input-large">
+                                            <div class="form-control uneditable-input input-fixed input-medium"
+                                                 data-trigger="fileinput">
+                                                <i class="fa fa-file fileinput-exists"></i>&nbsp;
+                                                <span class="fileinput-filename"> </span>
+                                            </div>
+                                            <span class="input-group-addon btn default btn-file">
+                                                <span class="fileinput-new"> 选择文件 </span>
+                                                <span class="fileinput-exists"> 重新选择 </span>
+                                                <input type="file" name="myfile">
+                                            </span>
+                                            <a href="javascript:;" class="input-group-addon btn red fileinput-exists"
+                                               data-dismiss="fileinput"> 移除 </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>备注</label>
