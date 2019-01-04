@@ -62,7 +62,7 @@ urlpatterns = [
     url(r'^remove_verify_item/$', remove_verify_item),
 
     # 切换演练
-    url(r'^falconstorswitch/(?P<process_id>\d+)$', falconstorswitch, {'funid': '41'}),
+    url(r'^falconstorswitch/(?P<process_id>\d+)$', falconstorswitch),
     url(r'^falconstorswitchdata/$', falconstorswitchdata),
     url(r'^falconstorrun/$', falconstorrun),
     url(r'^falconstor/(\d+)/$', falconstor, {'funid': '49'}),

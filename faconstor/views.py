@@ -2914,7 +2914,7 @@ def process_del(request):
             return HttpResponse(0)
 
 
-def falconstorswitch(request, funid, process_id):
+def falconstorswitch(request, process_id):
     if request.user.is_authenticated():
         all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None)
         wrapper_step_list = []
@@ -3013,6 +3013,17 @@ def falconstorswitch(request, funid, process_id):
             plan_process_run_id = plan_process_run.id
         else:
             plan_process_run_id = ""
+
+        # 根据url寻找到funid
+        falconstor_url = "/falconstorswitch/{0}".format(process_id)
+
+        c_fun = Fun.objects.filter(url=falconstor_url)
+        if c_fun.exists():
+            c_fun = c_fun[0]
+            funid = str(c_fun.id)
+        else:
+            return Http404()
+
         return render(request, 'falconstorswitch.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                        "wrapper_step_list": wrapper_step_list, "process_id": process_id,
