@@ -823,7 +823,7 @@ def get_daily_processrun(request):
                     "end_time": process_run_invited.endtime,
                     "process_color": process_run_invited.process.color,
                     "process_run_id": process_run_invited.id,
-                    "url": "/falconstorswitch/12",
+                    "url": "/falconstorswitch/{0}".format(process_run_invited.process_id),
                     "invite": "1"
                 }
                 process_success_rate_list.append(invitations_dict)
