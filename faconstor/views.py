@@ -824,7 +824,7 @@ def get_daily_processrun(request):
                     "process_color": process_run_invited.process.color,
                     "process_run_id": process_run_invited.id,
                     "url": "/falconstorswitch/{0}".format(process_run_invited.process_id),
-                    "invite": "1"
+                    "invite": "1",
                 }
                 process_success_rate_list.append(invitations_dict)
         return JsonResponse({"data": process_success_rate_list})
