@@ -837,7 +837,7 @@ def login(request):
         del request.session['isadmin']
     except KeyError:
         pass
-    return render(request, 'login.html', context_instance=RequestContext(request))
+    return render(request, 'login.html')
 
 
 def userlogin(request):
