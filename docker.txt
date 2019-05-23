@@ -1,0 +1,180 @@
+#************************* Centos7 安装docker *******************
+# 参考：https://yeasy.gitbooks.io/docker_practice/install/centos.html
+# 将docker添加至用户组，不需要使用sudo命令
+sudo groupadd docker
+sudo gpasswd -a $USER docker
+newgrp docker
+docker ps  # 测试是否不需要sudo
+
+# 查看官方镜像
+docker search --filter=is-official=true mysql
+
+#************************* MySQL容器 **************************
+# 宿主机相关文件
+mysql >> conf >> my.cnf   # 配置文件
+         data             # 挂载的数据库文件
+         logs             # 挂载的日志文件
+        
+# 创建容器(mysql目录下执行)
+docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/conf:/etc/mysql/conf.d -v $PWD/logs:/logs -v $PWD/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d mysql:5.6
+
+# 进入容器
+docker exec -it mysql_tsdrm /bin/bash  # 容器开启的状态下
+
+# 复制sql文件至容器
+docker cp /home/miaokela/桌面/tesudrm.sql mysql_tsdrm:/
+
+# 创建数据库/导入数据
+mysql -uroot -p
+create dababase example charset=utf8;
+
+mysql -uroot -p example < tesudrm.sql
+
+# ************************* Redis容器 **************************
+# 宿主机相关文件
+redis >> conf  >> redis.conf
+         data
+
+# docker中redis默认无配置文件启动
+# 配置文件redis.conf(根据需求自己配置,参数说明：https://www.cnblogs.com/qq78292959/archive/2013/09/21/3331032.html)
+requirepass tesunet
+daemonize no
+port 6379
+
+# 启动/拉取redis:4.0，同时命名，同时挂载配置文件/数据文件至宿主机当前文件下(执行命令的位置)
+docker run -p 6378:6379 --name redis_tsdrm -v $PWD/conf/redis.conf:/etc/redis/redis.conf -v $PWD/data:/data -d redis:4.0 redis-server /etc/redis/redis.conf  
+
+# 添加账户:requirepass tesunet
+# 认证: redis-cli: >> AUTH "tesunet"
+
+# ********************* Python镜像+django项目 ******************
+# 宿主机相关文件
+django_tsdrm >> requirements.txt
+             >> TSDRM(项目)
+
+# settings.py mysql的host改成db,mysql_tsdrm表示mysql容器的名称(容器间通信)。
+docker run -p 8080:80 --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm  -itd python:3.5  (命令位置写错很麻烦)
+
+# 复制requiremens.txt至容器
+docker cp requirements.txt django_tsdrm:/
+# 进入容器
+docker exec -it django_tsdrm /bin/bash
+# 安装依赖
+pip3 install -r requirements.txt
+# 复制项目至容器
+# 修改settings.py >>> redis/mysql的host改为:db_server/redis_server
+docker cp TSDRM django_tsdrm:/
+
+# 运行项目
+python manage.py runserver 0.0.0.0:80
+
+# 访问项目url
+http://ip:8080
+
+# 运行celery/celery beat/celery flower
+python manage.py celery -A TSDRM worker -l info
+python manage.py celery -A TSDRM flower -l info
+python manage.py celery -A TSDRM beat -l info
+
+# ****************** 在django镜像中安装生成pdf文件的软件 wkhtmltopdf ************
+# 1.在wkhtmltopdf官网下载指定系统的wkhtmltopdf安装包
+    容器中时debian，所以下载了：wkhtmltox_0.12.5-1.jessie_amd64.deb
+    dpkg -i wkhtmltox_0.12.5-1.jessie_amd64.deb
+# 2.安装过程中需要以下依赖，通通下载通过dpkg安装，再去安装wkhtmltopdf
+    xfonts-75dpi
+    xfonts-base
+        xfonts-utils
+            libfontenc1
+            xfonts-encodings
+# 3.解决pdf中文显示问题
+    下载宋体:simsun.ttc 复制到容器的/usr/share/fonts/truetype/文件夹下
+
+
+# *********************** 其他操作 *************************
+# 1.基于当前容器重新创建镜像
+docker commit -m "初始化TSDRM项目" -a "miaokela" -p django_tsdrm django_tsdrm:1.0 # -p表示提交时停止容器
+
+# 2.上传mysql镜像
+·上传镜像(默认上传到Docker Hub官方仓库，需要登录)
+    docker login
+    # 为镜像添加新的标签
+    docker tag test:latest 用户名/test:latest
+    # 上传镜像至仓库
+    docker push 用户名/test:latest
+    # 此时，你的dockerhub就会多一个repository。
+
+# 3.下载镜像，运行
+tsdrm
+    django_tsdrm >> requirements.txt
+                 >> TSDRM(项目)
+    redis >> conf  >> redis.conf
+             data
+    mysql >> conf >> my.cnf   # 配置文件
+             data             # 挂载的数据库文件
+             logs             # 挂载的日志文件
+    setup.sh
+    # 1.下拉启动镜像
+    docker pull miaokela/tp_pro:1.0
+    docker pull miaokela/tp_db:1.0
+    docker pull miaokela/tp_cache:1.0
+
+    # 2.创建实例
+    docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/mysql/conf:/etc/mysql/conf.d -v $PWD/mysql/logs:/logs -v $PWD/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d miaokela/tp_db:1.0
+    docker run -p 6378:6379 --name redis_tsdrm -v $PWD/redis/conf/redis.conf:/etc/redis/redis.conf -v $PWD//redis/data:/data -d miaokela/tp_cache:1.0 redis-server /etc/redis/redis.conf
+    docker run -p 8080:80 --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm -itd miaokela/tp_pro:1.0
+
+    # 3.运行项目
+    /
+    # 1.下拉启动镜像，同时运行多个命令
+
+    # 4.查看mysql与redis是否可用
+    import pymysql.cursors
+
+    connection = pymysql.connect(host='db_server',user='root',password='password',db='tesudrm',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor)
+
+# 退出容器
+exit或者ctrl+d退出的容器
+
+# 启动容器
+docker start mysql_tsdrm
+
+# 关闭容器
+docker stop 容器id
+docker pause 容器id
+docker kill 容器id
+
+# 删除容器
+docker rm
+
+# 查看容器
+docker container inspect 容器id
+docker top 容器id
+docker stats 容器id
+docker ps -qa
+
+# ************** docker容器中安装命令(容器内置apt-get商店)
+# 1.使用国内源(先备份，后重新写入)
+mv /etc/apt/sources.list /etc/apt/sources.list.bak && \
+echo "deb http://mirrors.163.com/debian/ jessie main non-free contrib" >/etc/apt/sources.list && \
+echo "deb http://mirrors.163.com/debian/ jessie-proposed-updates main non-free contrib" >>/etc/apt/sources.list && \
+echo "deb-src http://mirrors.163.com/debian/ jessie main non-free contrib" >>/etc/apt/sources.list && \
+echo "deb-src http://mirrors.163.com/debian/ jessie-proposed-updates main non-free contrib" >>/etc/apt/sources.list
+# 实践中发现需要重启实例或者宿主机，否则无法应用
+
+# 2.更新apt-get商店
+apt-get update   
+
+# 3.安装apt
+apt install vim
+apt install rpm
+apt install yum  
+apt install net-tools       
+
+# *********************** Nginx容器 **************************
+
+
+# ********************** 执行脚本 ***************************
+
+
+
+
