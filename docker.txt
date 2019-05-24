@@ -14,7 +14,7 @@ docker search --filter=is-official=true mysql
 mysql >> conf >> my.cnf   # 配置文件
          data             # 挂载的数据库文件
          logs             # 挂载的日志文件
-        
+
 # 创建容器(mysql目录下执行)
 docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/conf:/etc/mysql/conf.d -v $PWD/logs:/logs -v $PWD/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d mysql:5.6
 
@@ -42,10 +42,43 @@ daemonize no
 port 6379
 
 # 启动/拉取redis:4.0，同时命名，同时挂载配置文件/数据文件至宿主机当前文件下(执行命令的位置)
-docker run -p 6378:6379 --name redis_tsdrm -v $PWD/conf/redis.conf:/etc/redis/redis.conf -v $PWD/data:/data -d redis:4.0 redis-server /etc/redis/redis.conf  
+docker run -p 6378:6379 --name redis_tsdrm -v $PWD/conf/redis.conf:/etc/redis/redis.conf -v $PWD/data:/data -d redis:4.0 redis-server /etc/redis/redis.conf
 
 # 添加账户:requirepass tesunet
 # 认证: redis-cli: >> AUTH "tesunet"
+
+# ********************** nginx容器 *************************
+# 1.下载镜像/安装容器
+docker run --link django_tsdrm:django_server --name nginx -d -p 8081:80 nginx
+
+# 2.进入容器
+docker exec -it nginx /bin/bash
+# 缺省的Nginx安装在/var/lib/nginx下，配置在/etc/nginx下面，包括nginx.conf主配置文件，conf.d和site-enabled是附加的配置文件。后面，我们将会该目录映射到宿主机目录，以便于修改和管理。
+
+# 3.配置nginx
+worker_processes  1;
+events {
+    worker_connections  1024;
+}
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    server {
+        listen       80;
+        server_name  django_server;
+        charset utf-8;
+        location / {
+            include uwsgi_params;
+            uwsgi_pass 127.0.0.1:8997;
+            uwsgi_param UWSGI_SCRIPT TSDRM.wsgi;
+            uwsgi_param UWSGI_CHDIR /TSDRM;
+        }
+        location /static/ {
+            alias /TSDRM/faconstor/static/;
+        }
+    }
+}
 
 # ********************* Python镜像+django项目 ******************
 # 宿主机相关文件
@@ -53,7 +86,7 @@ django_tsdrm >> requirements.txt
              >> TSDRM(项目)
 
 # settings.py mysql的host改成db,mysql_tsdrm表示mysql容器的名称(容器间通信)。
-docker run -p 8080:80 --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm  -itd python:3.5  (命令位置写错很麻烦)
+docker run -p 8080:80 --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm -itd miaokela/tp_pro:1.1  (命令位置写错很麻烦)
 
 # 复制requiremens.txt至容器
 docker cp requirements.txt django_tsdrm:/
@@ -75,6 +108,42 @@ http://ip:8080
 python manage.py celery -A TSDRM worker -l info
 python manage.py celery -A TSDRM flower -l info
 python manage.py celery -A TSDRM beat -l info
+
+# *********************   uwsgi运行项目 ******************************
+# 1.安装uwsgi
+pip3 install uwsgi
+
+# 2.配置uwsgi.ini
+#socket=127.0.0.1:80  # 配置nginx代理时使用
+http=0.0.0.0:80
+chdir=/TSDRM
+#module=TSDRM.wsgi:application
+wsgi-file=/TSDRM/TSDRM/wsgi.py
+master=True
+process=4
+pidfile=/TSDRM/TSDRM-master.pid
+vacuum=True
+max-requests=5000
+daemonize=/TSDRM/log/wsgi.log
+static-map=/static=/TSDRM/static
+
+# 3.collectstatic命令收集静态文件至项目目录下
+python manage.py collectstatic
+
+# 4.注释掉STATIC_ROOT，添加
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static")
+]
+
+# 5.urls.py添加
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# 附：
+# 命令的方式启动
+uwsgi --static-map /static=/TSDRM/static --http 0.0.0.0:80 --chdir /TSDRM --wsgi-file /TSDRM/TSDRM/wsgi.py
 
 # ****************** 在django镜像中安装生成pdf文件的软件 wkhtmltopdf ************
 # 1.在wkhtmltopdf官网下载指定系统的wkhtmltopdf安装包
@@ -162,15 +231,53 @@ echo "deb-src http://mirrors.163.com/debian/ jessie-proposed-updates main non-fr
 # 实践中发现需要重启实例或者宿主机，否则无法应用
 
 # 2.更新apt-get商店
-apt-get update   
+apt-get update
 
 # 3.安装apt
 apt install vim
+# 配置vim
+set number
+set nu
+set nobackup
+set cursorline
+set ruler
+set autoindent
+set paste
+syntax on
+set background=dark
+set nocompatible
+if has( 'mouse' )
+     set mouse-=a
+endif
+
 apt install rpm
-apt install yum  
-apt install net-tools       
+apt install yum
+apt install net-tools
 
 # *********************** Nginx容器 **************************
+worker_processes  1;
+events {
+    worker_connections  1024;
+}
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    server {
+        listen       80;
+        server_name  localhost;
+        charset utf-8;
+        location / {
+            include uwsgi_params;
+            uwsgi_pass 127.0.0.1:8997;
+            uwsgi_param UWSGI_SCRIPT TSDRM.wsgi;
+            uwsgi_param UWSGI_CHDIR /var/www/html/TSDRM;
+        }
+        location /static/ {
+            alias /var/www/html/TSDRM/static/;
+        }
+    }
+}
 
 
 # ********************** 执行脚本 ***************************
