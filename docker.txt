@@ -15,14 +15,14 @@ mysql >> conf >> my.cnf   # 配置文件
          data             # 挂载的数据库文件
          logs             # 挂载的日志文件
 
-# 创建容器(mysql目录下执行)
-docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/conf:/etc/mysql/conf.d -v $PWD/logs:/logs -v $PWD/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d mysql:5.6
+# 创建容器(mysql目录下执行):宿主机3306端口可能被宿主机占用
+docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/mysql/conf:/etc/mysql/conf.d -v $PWD/mysql/logs:/logs -v $PWD/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d mysql:5.6
 
 # 进入容器
 docker exec -it mysql_tsdrm /bin/bash  # 容器开启的状态下
 
 # 复制sql文件至容器
-docker cp /home/miaokela/桌面/tesudrm.sql mysql_tsdrm:/
+docker cp /home/username/桌面/tesudrm.sql mysql_tsdrm:/
 
 # 创建数据库/导入数据
 mysql -uroot -p
@@ -42,43 +42,10 @@ daemonize no
 port 6379
 
 # 启动/拉取redis:4.0，同时命名，同时挂载配置文件/数据文件至宿主机当前文件下(执行命令的位置)
-docker run -p 6378:6379 --name redis_tsdrm -v $PWD/conf/redis.conf:/etc/redis/redis.conf -v $PWD/data:/data -d redis:4.0 redis-server /etc/redis/redis.conf
+docker run -p 6378:6379 --name redis_tsdrm -v $PWD/redis/conf/redis.conf:/etc/redis/redis.conf -v $PWD/redis/data:/data -d redis:4.0 redis-server /etc/redis/redis.conf
 
 # 添加账户:requirepass tesunet
 # 认证: redis-cli: >> AUTH "tesunet"
-
-# ********************** nginx容器 *************************
-# 1.下载镜像/安装容器
-docker run --link django_tsdrm:django_server --name nginx -d -p 8081:80 nginx
-
-# 2.进入容器
-docker exec -it nginx /bin/bash
-# 缺省的Nginx安装在/var/lib/nginx下，配置在/etc/nginx下面，包括nginx.conf主配置文件，conf.d和site-enabled是附加的配置文件。后面，我们将会该目录映射到宿主机目录，以便于修改和管理。
-
-# 3.配置nginx
-worker_processes  1;
-events {
-    worker_connections  1024;
-}
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-    sendfile        on;
-    server {
-        listen       80;
-        server_name  django_server;
-        charset utf-8;
-        location / {
-            include uwsgi_params;
-            uwsgi_pass 127.0.0.1:8997;
-            uwsgi_param UWSGI_SCRIPT TSDRM.wsgi;
-            uwsgi_param UWSGI_CHDIR /TSDRM;
-        }
-        location /static/ {
-            alias /TSDRM/faconstor/static/;
-        }
-    }
-}
 
 # ********************* Python镜像+django项目 ******************
 # 宿主机相关文件
@@ -86,8 +53,7 @@ django_tsdrm >> requirements.txt
              >> TSDRM(项目)
 
 # settings.py mysql的host改成db,mysql_tsdrm表示mysql容器的名称(容器间通信)。
-docker run -p 8080:80 --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm -itd miaokela/tp_pro:1.1  (命令位置写错很麻烦)
-
+docker run -p 8000:8000 -v $PWD/django_data/TSDRM:/TSDRM --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm -itd username/tp_pro:1.1  (命令位置写错很麻烦)
 # 复制requiremens.txt至容器
 docker cp requirements.txt django_tsdrm:/
 # 进入容器
@@ -99,10 +65,10 @@ pip3 install -r requirements.txt
 docker cp TSDRM django_tsdrm:/
 
 # 运行项目
-python manage.py runserver 0.0.0.0:80
+python manage.py runserver 0.0.0.0:8000
 
 # 访问项目url
-http://ip:8080
+http://ip:8000
 
 # 运行celery/celery beat/celery flower
 python manage.py celery -A TSDRM worker -l info
@@ -114,8 +80,9 @@ python manage.py celery -A TSDRM beat -l info
 pip3 install uwsgi
 
 # 2.配置uwsgi.ini
-#socket=127.0.0.1:80  # 配置nginx代理时使用
-http=0.0.0.0:80
+[uwsgi]
+socket=0.0.0.0:8000 # 配置nginx代理时使用
+#http=0.0.0.0:8000
 chdir=/TSDRM
 #module=TSDRM.wsgi:application
 wsgi-file=/TSDRM/TSDRM/wsgi.py
@@ -126,6 +93,7 @@ vacuum=True
 max-requests=5000
 daemonize=/TSDRM/log/wsgi.log
 static-map=/static=/TSDRM/static
+
 
 # 3.collectstatic命令收集静态文件至项目目录下
 python manage.py collectstatic
@@ -142,8 +110,42 @@ from django.conf.urls.static import static
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # 附：
-# 命令的方式启动
+# 1.命令的方式启动
 uwsgi --static-map /static=/TSDRM/static --http 0.0.0.0:80 --chdir /TSDRM --wsgi-file /TSDRM/TSDRM/wsgi.py
+# 2.配置文件的方式启动
+uwsgi --ini uwsgi.ini
+
+# ********************** nginx容器 *************************
+# 1.下载镜像/安装容器(将django项目里的static文件挂载至nginx容器中做静态文件代理)
+docker run -v $PWD/nginx/log:/var/log/nginx/ -v $PWD/nginx/nginx.conf:/etc/nginx/nginx.conf -v $PWD/django_data/TSDRM/static:/static --link django_tsdrm:django_server --name nginx_tsdrm -d -p 8888:80 nginx
+# 2.进入容器
+docker exec -it nginx /bin/bash
+# 缺省的Nginx安装在/var/lib/nginx下，配置在/etc/nginx下面，包括nginx.conf主配置文件，conf.d和site-enabled是附加的配置文件。后面，我们将会该目录映射到宿主机目录，以便于修改和管理。
+
+# 3.配置nginx
+worker_processes  1;
+events {
+    worker_connections  1024;
+}
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile        on;
+    server {
+        listen       80;
+        server_name  localhost;
+        charset utf-8;
+        location / {
+            include uwsgi_params;
+            uwsgi_pass django_server:8000;
+            uwsgi_param UWSGI_SCRIPT TSDRM.wsgi;
+            uwsgi_param UWSGI_CHDIR /TSDRM;
+        }
+        location /static/ {
+            alias /static/;
+        }
+    }
+}
 
 # ****************** 在django镜像中安装生成pdf文件的软件 wkhtmltopdf ************
 # 1.在wkhtmltopdf官网下载指定系统的wkhtmltopdf安装包
@@ -160,8 +162,16 @@ uwsgi --static-map /static=/TSDRM/static --http 0.0.0.0:80 --chdir /TSDRM --wsgi
 
 
 # *********************** 其他操作 *************************
+附录：使用第三方容器仓库：阿里云
+docker login --username=username registry.cn-hangzhou.aliyuncs.com
+docker tag [ImageId] registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_pro:[镜像版本号]
+docker push registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_pro:[镜像版本号]
+
+docker pull registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_pro:[镜像版本号]
+
+
 # 1.基于当前容器重新创建镜像
-docker commit -m "初始化TSDRM项目" -a "miaokela" -p django_tsdrm django_tsdrm:1.0 # -p表示提交时停止容器
+docker commit -m "初始化TSDRM项目" -a "username" -p django_tsdrm django_tsdrm:1.0 # -p表示提交时停止容器
 
 # 2.上传mysql镜像
 ·上传镜像(默认上传到Docker Hub官方仓库，需要登录)
@@ -183,14 +193,14 @@ tsdrm
              logs             # 挂载的日志文件
     setup.sh
     # 1.下拉启动镜像
-    docker pull miaokela/tp_pro:1.0
-    docker pull miaokela/tp_db:1.0
-    docker pull miaokela/tp_cache:1.0
+    docker pull username/tp_pro:1.0
+    docker pull username/tp_db:1.0
+    docker pull username/tp_cache:1.0
 
     # 2.创建实例
-    docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/mysql/conf:/etc/mysql/conf.d -v $PWD/mysql/logs:/logs -v $PWD/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d miaokela/tp_db:1.0
-    docker run -p 6378:6379 --name redis_tsdrm -v $PWD/redis/conf/redis.conf:/etc/redis/redis.conf -v $PWD//redis/data:/data -d miaokela/tp_cache:1.0 redis-server /etc/redis/redis.conf
-    docker run -p 8080:80 --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm -itd miaokela/tp_pro:1.0
+    docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/mysql/conf:/etc/mysql/conf.d -v $PWD/mysql/logs:/logs -v $PWD/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d username/tp_db:1.0
+    docker run -p 6378:6379 --name redis_tsdrm -v $PWD/redis/conf/redis.conf:/etc/redis/redis.conf -v $PWD//redis/data:/data -d username/tp_cache:1.0 redis-server /etc/redis/redis.conf
+    docker run -p 8080:80 --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm -itd username/tp_pro:1.0
 
     # 3.运行项目
     /
@@ -236,51 +246,71 @@ apt-get update
 # 3.安装apt
 apt install vim
 # 配置vim
-set number
-set nu
-set nobackup
-set cursorline
-set ruler
+set hlsearch
+set backspace=2
 set autoindent
-set paste
+set ruler
+set showmode
+set nu
+"set bg=dark
 syntax on
-set background=dark
-set nocompatible
+set paste
 if has( 'mouse' )
      set mouse-=a
 endif
+set nocompatible
+set cursorline
+set nobackup
+
 
 apt install rpm
 apt install yum
 apt install net-tools
 
-# *********************** Nginx容器 **************************
-worker_processes  1;
-events {
-    worker_connections  1024;
-}
-http {
-    include       mime.types;
-    default_type  application/octet-stream;
-    sendfile        on;
-    server {
-        listen       80;
-        server_name  localhost;
-        charset utf-8;
-        location / {
-            include uwsgi_params;
-            uwsgi_pass 127.0.0.1:8997;
-            uwsgi_param UWSGI_SCRIPT TSDRM.wsgi;
-            uwsgi_param UWSGI_CHDIR /var/www/html/TSDRM;
-        }
-        location /static/ {
-            alias /var/www/html/TSDRM/static/;
-        }
-    }
-}
+
+https://cr.console.aliyun.com/
+
+# ***************************** DockerFile ******************************
+
+# 1.配置指令
+ARG         创建镜像时使用的变量，创建后不再存在
+FROM        基础镜像
+    ARG VERSION=9.3
+    FROM debian:${VERSION}
+LABEL       过滤镜像信息的条件:version/author/description
+EXPOSE      镜像内服务监听端口，只是申明，并没有端口映射
+ENV         容器启动后依旧存在的环境变量
+    docker run --env可以覆盖
+ENTRYPOSINT["param1", "param2"] 默认入口命令
+    exec调用执行
+    可以被--entrypoint覆盖
+VOLUME      数据卷挂载点
+    VOLUME["/data"]
+USER
+WORKDIR     为RUN/CMD/ENTRYPOINT配置工作目录
+    WORKDIR /path/to/workdir
+ONBUILD
+STOPSIGNAL
+HEALTHCHECK
+SHELL
+
+# 2.操作指令
+RUN         运行命令
+CMD         启动容器时默认执行的命令
+ADD         内容添加到镜像
+    ADD 宿主机相对路径 容器绝对路径
+COPY        复制内容至镜像(推荐使用)
+
+# 3.创建镜像
+docker build -t builder/first_image:1.0 /yemp/docker_builder/
+    -t      生成镜像的标签信息
+    -f      指定非上下文的Dockerfile路径
 
 
-# ********************** 执行脚本 ***************************
+
+
+
+
 
 
 
