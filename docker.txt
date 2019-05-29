@@ -16,7 +16,13 @@ mysql >> conf >> my.cnf   # 配置文件
          logs             # 挂载的日志文件
 
 # 创建容器(mysql目录下执行):宿主机3306端口可能被宿主机占用
-docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/mysql/conf:/etc/mysql/conf.d -v $PWD/mysql/logs:/logs -v $PWD/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d mysql:5.6
+docker run -p 3307:3306 --name mysql_tsdrm \
+    -v $PWD/mysql/conf:/etc/mysql/conf.d \
+    -v $PWD/mysql/logs:/logs \
+    -v $PWD/mysql/data:/var/lib/mysql \
+    -e MYSQL_ROOT_PASSWORD=password \
+    -d \
+    registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_db:1.0
 
 # 进入容器
 docker exec -it mysql_tsdrm /bin/bash  # 容器开启的状态下
@@ -42,7 +48,12 @@ daemonize no
 port 6379
 
 # 启动/拉取redis:4.0，同时命名，同时挂载配置文件/数据文件至宿主机当前文件下(执行命令的位置)
-docker run -p 6378:6379 --name redis_tsdrm -v $PWD/redis/conf/redis.conf:/etc/redis/redis.conf -v $PWD/redis/data:/data -d redis:4.0 redis-server /etc/redis/redis.conf
+docker run -p 6378:6379 --name redis_tsdrm \
+    -v $PWD/redis/conf/redis.conf:/etc/redis/redis.conf \
+    -v $PWD/redis/data:/data \
+    -d \
+    registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_cache:1.0 \
+    redis-server /etc/redis/redis.conf
 
 # 添加账户:requirepass tesunet
 # 认证: redis-cli: >> AUTH "tesunet"
@@ -53,7 +64,14 @@ django_tsdrm >> requirements.txt
              >> TSDRM(项目)
 
 # settings.py mysql的host改成db,mysql_tsdrm表示mysql容器的名称(容器间通信)。
-docker run -p 8000:8000 -v $PWD/django_data/TSDRM:/TSDRM --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm -itd username/tp_pro:1.1  (命令位置写错很麻烦)
+docker run -p 8000:8000 \
+    -v $PWD/django_data/TSDRM:/TSDRM \
+    --link mysql_tsdrm:db_server \
+    --link redis_tsdrm:redis_server \
+    --name django_tsdrm \
+    -itd \
+    registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_pro:1.2
+    # (命令位置写错很麻烦)
 # 复制requiremens.txt至容器
 docker cp requirements.txt django_tsdrm:/
 # 进入容器
@@ -71,9 +89,17 @@ python manage.py runserver 0.0.0.0:8000
 http://ip:8000
 
 # 运行celery/celery beat/celery flower
-python manage.py celery -A TSDRM worker -l info
-python manage.py celery -A TSDRM flower -l info
-python manage.py celery -A TSDRM beat -l info
+python3 manage.py celery -A TSDRM worker -l info
+python3 manage.py celery -A TSDRM flower -l info
+python3 manage.py celery -A TSDRM beat -l info
+
+# 守护进程的方式启动 celery/celery-beat/celery-flower
+#python3 /TSDRM/manage.py celery multi start worker -A TSDRM -l info --logfile=./celery.log \
+#    & celery -A TSDRM beat -l info --logfile=./celery_beat.log \
+#    & celery -A TSDRM flower -l info --logfile=./celery_flower.log
+
+# 关闭celery
+python3 manage.py celery multi stop/stopwait worker -A TSDRM -l info --logfile=./celery.log
 
 # *********************   uwsgi运行项目 ******************************
 # 1.安装uwsgi
@@ -117,7 +143,14 @@ uwsgi --ini uwsgi.ini
 
 # ********************** nginx容器 *************************
 # 1.下载镜像/安装容器(将django项目里的static文件挂载至nginx容器中做静态文件代理)
-docker run -v $PWD/nginx/log:/var/log/nginx/ -v $PWD/nginx/nginx.conf:/etc/nginx/nginx.conf -v $PWD/django_data/TSDRM/static:/static --link django_tsdrm:django_server --name nginx_tsdrm -d -p 8888:80 nginx
+docker run -v $PWD/nginx/log:/var/log/nginx/ \
+    -v $PWD/nginx/nginx.conf:/etc/nginx/nginx.conf \
+    -v $PWD/django_data/TSDRM/static:/static \
+    --link django_tsdrm:django_server \
+    --name nginx_tsdrm -d \
+    -p 8888:80 \
+    registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_nginx:1.0
+
 # 2.进入容器
 docker exec -it nginx /bin/bash
 # 缺省的Nginx安装在/var/lib/nginx下，配置在/etc/nginx下面，包括nginx.conf主配置文件，conf.d和site-enabled是附加的配置文件。后面，我们将会该目录映射到宿主机目录，以便于修改和管理。
