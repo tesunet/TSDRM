@@ -22,7 +22,7 @@ docker run -p 3307:3306 --name mysql_tsdrm \
     -v $PWD/mysql/data:/var/lib/mysql \
     -e MYSQL_ROOT_PASSWORD=password \
     -d \
-    registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_db:1.0
+    registry.cn-hangzhou.aliyuncs.com/tp_pro/tp_db:1.1
 
 # 进入容器
 docker exec -it mysql_tsdrm /bin/bash  # 容器开启的状态下
@@ -79,7 +79,8 @@ docker exec -it django_tsdrm /bin/bash
 # 安装依赖
 pip3 install -r requirements.txt
 # 复制项目至容器
-# 修改settings.py >>> redis/mysql的host改为:db_server/redis_server
+# 修改settings.py
+>>> redis/mysql的host改为:db_server/redis_server
 docker cp TSDRM django_tsdrm:/
 
 # 运行项目
@@ -231,7 +232,7 @@ tsdrm
     docker pull username/tp_cache:1.0
 
     # 2.创建实例
-    docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/mysql/conf:/etc/mysql/conf.d -v $PWD/mysql/logs:/logs -v $PWD/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d username/tp_db:1.0
+    docker run -p 3307:3306 --name mysql_tsdrm -v $PWD/mysql/conf:/etc/mysql/conf.d -v $PWD/mysql/logs:/logs -v $PWD/mysql/data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=password -d username/tp_db:1.1
     docker run -p 6378:6379 --name redis_tsdrm -v $PWD/redis/conf/redis.conf:/etc/redis/redis.conf -v $PWD//redis/data:/data -d username/tp_cache:1.0 redis-server /etc/redis/redis.conf
     docker run -p 8080:80 --link mysql_tsdrm:db_server --link redis_tsdrm:redis_server --name django_tsdrm -itd username/tp_pro:1.0
 

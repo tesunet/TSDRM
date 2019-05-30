@@ -153,6 +153,11 @@ EMAIL_HOST_USER = 'huangzx@tesunet.com.cn'
 EMAIL_HOST_PASSWORD = 'China320701045'
 EMAIL_PORT = 25
 
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, "static")
+# ]
+
+
 # CASHES_DIR = BASE_DIR + os.sep + "faconstor"+ os.sep + "static"+ os.sep + "mem"
 # CACHES = {
 #     'default': {
