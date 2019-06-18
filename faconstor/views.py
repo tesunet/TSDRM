@@ -17,6 +17,7 @@ import pdfkit
 import sys
 import requests
 from operator import itemgetter
+import logging
 
 from django.utils.timezone import utc
 from django.utils.timezone import localtime
