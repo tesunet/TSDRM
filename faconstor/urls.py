@@ -104,4 +104,9 @@ urlpatterns = [
     # 邀请
     url(r'^invite/$', invite),
     url(r'^get_all_users/$', get_all_users),
+
+    # 通讯录
+    url(r'^contact/$', contact, {'funid': '67'}),
+    url(r'^get_contact_tree/$', get_contact_tree),
+    url(r'^get_contact_info/$', get_contact_info),
 ]

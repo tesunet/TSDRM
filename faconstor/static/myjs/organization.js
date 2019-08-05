@@ -1,5 +1,4 @@
 $(function () {
-
     $('#tree_2').jstree({
 
         'core': {

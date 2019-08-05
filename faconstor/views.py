@@ -248,6 +248,7 @@ def processindex(request, processrun_id):
         errors = []
         # processrun_id = request.GET.get("p_run_id", "")
         s_tag = request.GET.get("s", "")
+        # exclude
         c_process_run = ProcessRun.objects.filter(id=processrun_id).select_related("process")
         if c_process_run.exists():
             process_url = c_process_run[0].process.url
@@ -5294,3 +5295,115 @@ def get_all_users(request):
         for user in all_users:
             user_string += user.fullname + "&"
         return JsonResponse({"data": user_string})
+
+
+def get_contact_org_tree(parent, selectid):
+    nodes = []
+    children = parent.children.order_by("sort").exclude(state="9").all()
+    for child in children:
+        if child.type == "org":
+            node = {}
+            node["text"] = child.fullname
+            node["id"] = child.id
+            node["type"] = child.type
+
+            node["children"] = get_contact_org_tree(child, selectid)
+            try:
+                if int(selectid) == child.id:
+                    node["state"] = {"selected": True}
+            except:
+                pass
+            nodes.append(node)
+    return nodes
+
+
+def contact(request, funid):
+    if request.user.is_authenticated():
+        return render(request, 'contact.html',
+                      {'username': request.user.userinfo.fullname,
+                       "pagefuns": getpagefuns(funid, request=request)})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def get_contact_tree(request):
+    if request.user.is_authenticated():
+        selectid = ""
+        treedata = []
+        rootnodes = UserInfo.objects.order_by("sort").exclude(state="9").filter(pnode=None, type="org")
+        if len(rootnodes) > 0:
+            for rootnode in rootnodes:
+                root = {}
+                root["text"] = rootnode.fullname
+                root["id"] = rootnode.id
+                root["type"] = "org"
+
+                root["data"] = {"remark": rootnode.remark, "pname": "无"}
+                try:
+                    if int(selectid) == rootnode.id:
+                        root["state"] = {"opened": True, "selected": True}
+                    else:
+                        root["state"] = {"opened": True}
+                except:
+                    root["state"] = {"opened": True}
+                root["children"] = get_contact_org_tree(rootnode, selectid)
+                treedata.append(root)
+        return JsonResponse({"data": treedata})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def get_child_contact(cur_contact_id, contact_list):
+    child_contacts = UserInfo.objects.filter(pnode_id=cur_contact_id).exclude(state="9")
+
+    for cur_contact in child_contacts:
+        if cur_contact.type == "user":
+            try:
+                parent_contact_org = UserInfo.objects.get(id=cur_contact.id)
+            except:
+                pass
+            else:
+                if parent_contact_org.pnode:
+                    depart = parent_contact_org.pnode.fullname
+                else:
+                    depart = ""
+
+                contact_list.append({
+                    "user_name": cur_contact.fullname,
+                    "tel": cur_contact.phone,
+                    "email": cur_contact.user.email,
+                    "depart": depart,
+                })
+        else:
+            get_child_contact(cur_contact.id, contact_list)
+
+
+def get_contact_info(request):
+    if request.user.is_authenticated():
+        user_id = request.GET.get("user_id", "")
+
+        try:
+            user_id = int(user_id)
+        except:
+            JsonResponse({"data": []})
+
+        contact_list = []
+        # 查看当前节点下所有userinfo的type为user的信息
+        if user_id == 0:
+            # pnode不为空，state不为"9"，type为"user"
+            all_contacts = UserInfo.objects.exclude(state="9").filter(type="user")
+            for contact in all_contacts:
+                if contact.pnode_id != None:
+                    contact_list.append({
+                        "user_name": contact.fullname,
+                        "tel": contact.phone,
+                        "email": contact.user.email,
+                        "depart": "",
+                    })
+        else:
+            # 当前节点下所有用户信息
+            get_child_contact(user_id, contact_list)
+
+        return JsonResponse({"data": contact_list})
+    else:
+        return HttpResponseRedirect("/login")
