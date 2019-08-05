@@ -5394,12 +5394,22 @@ def get_contact_info(request):
             all_contacts = UserInfo.objects.exclude(state="9").filter(type="user")
             for contact in all_contacts:
                 if contact.pnode_id != None:
-                    contact_list.append({
-                        "user_name": contact.fullname,
-                        "tel": contact.phone,
-                        "email": contact.user.email,
-                        "depart": "",
-                    })
+                    try:
+                        parent_contact_org = UserInfo.objects.get(id=contact.id)
+                    except:
+                        pass
+                    else:
+                        if parent_contact_org.pnode:
+                            depart = parent_contact_org.pnode.fullname
+                        else:
+                            depart = ""
+
+                        contact_list.append({
+                            "user_name": contact.fullname,
+                            "tel": contact.phone,
+                            "email": contact.user.email,
+                            "depart": depart,
+                        })
         else:
             # 当前节点下所有用户信息
             get_child_contact(user_id, contact_list)
