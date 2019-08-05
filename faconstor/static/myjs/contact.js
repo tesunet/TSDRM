@@ -58,7 +58,7 @@ $(function () {
                     "icon": "fa fa-user icon-state-warning icon-lg"
                 }
             },
-            "plugins": ["dnd", "types", "role"]
+            "plugins": ["types", "role"]
         })
             .on('loaded.jstree', function (e, data) {
                 var inst = data.instance;
