@@ -82,7 +82,7 @@ class Script(models.Model):
     step = models.ForeignKey(Step, blank=True, null=True)
     code = models.CharField("脚本编号", blank=True, max_length=50)
     name = models.CharField("脚本名称", blank=True, max_length=500)
-    ip = models.CharField("主机IP", blank=True, null=True, max_length=50)
+    # ip = models.CharField("主机IP", blank=True, null=True, max_length=50)
     # port = models.CharField("端口号", blank=True, null=True, max_length=10)
     # type = models.CharField("连接类型", blank=True, null=True, max_length=20)
     # runtype = models.CharField("运行类型", blank=True, null=True, max_length=20)
