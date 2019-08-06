@@ -41,6 +41,7 @@ $(function () {
         }
     });
 
+
     function customContactTree() {
         $('#tree_contact').jstree({
             'core': {
