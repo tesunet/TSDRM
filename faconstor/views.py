@@ -1840,32 +1840,49 @@ def script(request, funid):
                                 if (len(allscript) > 0):
                                     errors.append(sheet.cell(i, 0).value + ":已存在。")
                                 else:
-                                    ncols = sheet.ncols
-                                    scriptsave = Script()
-                                    scriptsave.code = sheet.cell(i, 0).value
-                                    scriptsave.name = sheet.cell(i, 1).value
-                                    scriptsave.ip = sheet.cell(i, 2).value
-                                    # scriptsave.port = sheet.cell(i, 2).value
-                                    scriptsave.type = sheet.cell(i, 3).value
-                                    # scriptsave.runtype = sheet.cell(i, 4).value
-                                    scriptsave.username = sheet.cell(i, 4).value
-                                    scriptsave.password = sheet.cell(i, 5).value
-                                    scriptsave.filename = sheet.cell(i, 6).value
-                                    # scriptsave.paramtype = sheet.cell(i, 8).value
-                                    # scriptsave.param = sheet.cell(i, 9).value
-                                    scriptsave.scriptpath = sheet.cell(i, 7).value
-                                    # scriptsave.runpath = sheet.cell(i, 11).value
-                                    # scriptsave.maxtime = int(sheet.cell(i, 12).value)
-                                    scriptsave.succeedtext = int(sheet.cell(i, 8).value)
-                                    scriptsave.save()
+                                    try:
+                                        # 判断主机是否存在
+                                        check_host_manage = HostsManage.objects.filter(host_ip=sheet.cell(i, 2).value).exclude(state="9")
+                                        if check_host_manage.exists():
+                                            errors.append("当前主机({0})已存在，已剔除。".format(sheet.cell(i, 2).value))
+                                        else:
+                                            cur_host_manage = HostsManage()
+                                            cur_host_manage.host_ip = sheet.cell(i, 2).value
+                                            cur_host_manage.type = sheet.cell(i, 3).value
+                                            cur_host_manage.username = sheet.cell(i, 4).value
+                                            cur_host_manage.password = sheet.cell(i, 5).value  
+                                            host_os = ""
+                                            if sheet.cell(i, 3).value == "SSH":
+                                                host_os = "Linux"
+                                            if sheet.cell(i, 3).value == "BAT":
+                                                host_os = "Windows"
+                                            cur_host_manage.os = host_os
+                                            cur_host_manage.save()
+                                            host_id = cur_host_manage.id
+                                            scriptsave = Script()
+                                            scriptsave.code = sheet.cell(i, 0).value
+                                            scriptsave.name = sheet.cell(i, 1).value
+                                            scriptsave.hosts_manage_id = host_id
+                                            scriptsave.filename = sheet.cell(i, 6).value
+                                            scriptsave.scriptpath = sheet.cell(i, 7).value
+                                            scriptsave.succeedtext = sheet.cell(i, 8).value
+                                            scriptsave.save()
+                                    except Exception as e:
+                                        print(e)
+                                        errors.append("服务器网络异常，脚本上传失败。")
+                                        break
                             except:
                                 errors.append(sheet.cell(i, 0).value + ":数据存在问题，已剔除。")
                     os.remove(myfilepath)
                 else:
                     errors.append("只能上传xls和xlsx文件，请选择正确的文件类型。")
+
+        # 主机选项
+        all_hosts_manage = HostsManage.objects.exclude(state="9")
+
         return render(request, 'script.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                       "errors": errors})
+                       "errors": errors, "all_hosts_manage": all_hosts_manage})
     else:
         return HttpResponseRedirect("/login")
 
@@ -1873,16 +1890,32 @@ def script(request, funid):
 def scriptdata(request):
     if request.user.is_authenticated() and request.session['isadmin']:
         result = []
-        allscript = Script.objects.exclude(state="9").filter(step_id=None).values()
+        allscript = Script.objects.exclude(state="9").filter(step_id=None)
         if (len(allscript) > 0):
             for script in allscript:
-                result.append(
-                    {"id": script["id"], "code": script["code"], "name": script["name"], "ip": script["ip"],
-                     "port": script["port"], "type": script["type"], "runtype": script["runtype"],
-                     "username": script["username"], "password": script["password"], "filename": script["filename"],
-                     "paramtype": script["paramtype"], "param": script["param"], "scriptpath": script["scriptpath"],
-                     "runpath": script["runpath"], "maxtime": script["maxtime"], "time": script["time"],
-                     "success_text": script["succeedtext"], "log_address": script["log_address"]})
+                # type,usernmae,password,host_ip
+                cur_host = script.hosts_manage
+                if cur_host:
+                    host_id = cur_host.id
+                    host_type = cur_host.type
+                    username = cur_host.username
+                    password = cur_host.password
+                    ip = cur_host.host_ip
+
+                    result.append({
+                        "id": script.id, 
+                        "code": script.code, 
+                        "name": script.name, 
+                        "ip": ip, 
+                        "host_id": host_id,
+                        "type": host_type, 
+                        "username": username, 
+                        "password": password, 
+                        "filename": script.filename,
+                        "scriptpath": script.scriptpath, 
+                        "success_text": script.succeedtext, 
+                        "log_address": script.log_address
+                    })
         return HttpResponse(json.dumps({"data": result}))
 
 
@@ -1921,19 +1954,9 @@ def scriptsave(request):
             id = request.POST.get('id', '')
             code = request.POST.get('code', '')
             name = request.POST.get('name', '')
-            ip = request.POST.get('ip', '')
-            # port = request.POST.get('port', '')
-            type = request.POST.get('type', '')
-            # runtype = request.POST.get('runtype', '')
-            username = request.POST.get('username', '')
-            password = request.POST.get('password', '')
+            host_id = request.POST.get('ip', '')
             filename = request.POST.get('filename', '')
-            # paramtype = request.POST.get('paramtype', '')
-            # param = request.POST.get('param', '')
             scriptpath = request.POST.get('scriptpath', '')
-            # runpath = request.POST.get('runpath', '')
-            # maxtime = request.POST.get('maxtime', '')
-            # time = request.POST.get('time', '')
             success_text = request.POST.get('success_text', '')
             log_address = request.POST.get('log_address', '')
             try:
@@ -1946,113 +1969,58 @@ def scriptsave(request):
                 if name.strip() == '':
                     result["res"] = '脚本名称不能为空。'
                 else:
-                    if ip.strip() == '':
-                        result["res"] = '主机IP不能为空。'
+                    try:
+                        host_id = int(host_id)
+                    except:
+                        result["res"] = '请选择主机。'
                     else:
-                        # if port.strip() == '':
-                        #     result["res"] = '端口号不能为空。'
-                        # else:
-                        if type.strip() == '':
-                            result["res"] = '连接类型不能为空。'
+                        if filename.strip() == '':
+                            result["res"] = '脚本文件名不能为空。'
                         else:
-                            if username.strip() == '':
-                                result["res"] = '用户名不能为空。'
+                            if scriptpath.strip() == '':
+                                result["res"] = '脚本文件路径不能为空。'
                             else:
-                                if password.strip() == '':
-                                    result["res"] = '密码不能为空。'
-                                else:
-                                    if filename.strip() == '':
-                                        result["res"] = '脚本文件名不能为空。'
+                                if id == 0:
+                                    allscript = Script.objects.filter(code=code).exclude(
+                                        state="9").filter(step_id=None)
+                                    if (len(allscript) > 0):
+                                        result["res"] = '脚本编码:' + code + '已存在。'
                                     else:
-                                        if scriptpath.strip() == '':
-                                            result["res"] = '脚本文件路径不能为空。'
-                                        else:
-                                            # if runpath.strip() == '':
-                                            #     result["res"] = '执行路径不能为空。'
-                                            # else:
-                                            #     if maxtime.strip() == '':
-                                            #         result["res"] = '超时时间不能为空。'
-                                            #     else:
-                                            #         if time.strip() == '':
-                                            #             result["res"] = '预计耗时不能为空。'
-                                            #         else:
-                                            # if success_text == '':
-                                            #     result["res"] = 'SUCCESSTEXT不能为空。'
-                                            # else:
-                                            if id == 0:
-                                                allscript = Script.objects.filter(code=code).exclude(
-                                                    state="9").filter(step_id=None)
-                                                if (len(allscript) > 0):
-                                                    result["res"] = '脚本编码:' + code + '已存在。'
-                                                else:
-                                                    scriptsave = Script()
-                                                    scriptsave.code = code
-                                                    scriptsave.name = name
-                                                    scriptsave.ip = ip
-                                                    # scriptsave.port = port
-                                                    scriptsave.type = type
-                                                    # scriptsave.runtype = runtype
-                                                    scriptsave.username = username
-                                                    scriptsave.password = password
-                                                    scriptsave.filename = filename
-                                                    # scriptsave.paramtype = paramtype
-                                                    # scriptsave.param = param
-                                                    scriptsave.scriptpath = scriptpath
-                                                    scriptsave.succeedtext = success_text
-                                                    scriptsave.log_address = log_address
-                                                    # scriptsave.runpath = runpath
-                                                    # try:
-                                                    #     scriptsave.maxtime = int(maxtime)
-                                                    # except:
-                                                    #     pass
-                                                    # try:
-                                                    #     scriptsave.time = int(time)
-                                                    # except:
-                                                    #     pass
-                                                    scriptsave.save()
-                                                    result["res"] = "保存成功。"
-                                                    result["data"] = scriptsave.id
-                                            else:
-                                                allscript = Script.objects.filter(code=code).exclude(
-                                                    id=id).exclude(state="9").filter(step_id=None)
-                                                if (len(allscript) > 0):
-                                                    result["res"] = '脚本编码:' + code + '已存在。'
-                                                else:
-                                                    try:
-                                                        scriptsave = Script.objects.get(id=id)
-                                                        scriptsave.code = code
-                                                        scriptsave.name = name
-                                                        scriptsave.ip = ip
-                                                        # scriptsave.port = port
-                                                        scriptsave.type = type
-                                                        # scriptsave.runtype = runtype
-                                                        scriptsave.username = username
-                                                        scriptsave.password = password
-                                                        scriptsave.filename = filename
-                                                        # scriptsave.paramtype = paramtype
-                                                        # scriptsave.param = param
-                                                        scriptsave.scriptpath = scriptpath
-                                                        scriptsave.succeedtext = success_text
-                                                        scriptsave.log_address = log_address
-                                                        # scriptsave.runpath = runpath
-                                                        # try:
-                                                        #     scriptsave.maxtime = int(maxtime)
-                                                        # except:
-                                                        #     pass
-                                                        # try:
-                                                        #     scriptsave.time = int(time)
-                                                        # except:
-                                                        #     pass
-                                                        scriptsave.save()
-                                                        result["res"] = "保存成功。"
-                                                        result["data"] = scriptsave.id
-                                                    except:
-                                                        result["res"] = "修改失败。"
+                                        scriptsave = Script()
+                                        scriptsave.code = code
+                                        scriptsave.name = name
+                                        scriptsave.hosts_manage_id = host_id
+                                        scriptsave.filename = filename
+                                        scriptsave.scriptpath = scriptpath
+                                        scriptsave.succeedtext = success_text
+                                        scriptsave.log_address = log_address
+                                        scriptsave.save()
+                                        result["res"] = "保存成功。"
+                                        result["data"] = scriptsave.id
+                                else:
+                                    allscript = Script.objects.filter(code=code).exclude(
+                                        id=id).exclude(state="9").filter(step_id=None)
+                                    if (len(allscript) > 0):
+                                        result["res"] = '脚本编码:' + code + '已存在。'
+                                    else:
+                                        try:
+                                            scriptsave = Script.objects.get(id=id)
+                                            scriptsave.code = code
+                                            scriptsave.name = name
+                                            scriptsave.hosts_manage_id = host_id
+                                            scriptsave.filename = filename
+                                            scriptsave.scriptpath = scriptpath
+                                            scriptsave.succeedtext = success_text
+                                            scriptsave.log_address = log_address
+                                            scriptsave.save()
+                                            result["res"] = "保存成功。"
+                                            result["data"] = scriptsave.id
+                                        except:
+                                            result["res"] = "修改失败。"
             return HttpResponse(json.dumps(result))
 
 
 def scriptexport(request):
-    # do something...
     if request.user.is_authenticated():
         myfilepath = os.path.join(os.path.dirname(__file__), "upload\\temp\\scriptexport.xls")
         try:
@@ -2065,37 +2033,31 @@ def scriptexport(request):
         sheet.write(0, 0, '脚本编号')
         sheet.write(0, 1, '脚本名称')
         sheet.write(0, 2, '主机IP')
-        # sheet.write(0, 2, '端口号')
         sheet.write(0, 3, '连接类型')
-        # sheet.write(0, 4, '运行类型')
         sheet.write(0, 4, '用户名')
         sheet.write(0, 5, '密码')
         sheet.write(0, 6, '脚本文件名')
-        # sheet.write(0, 8, '参数类型')
-        # sheet.write(0, 9, '脚本参数')
         sheet.write(0, 7, '脚本文件路径')
-        # sheet.write(0, 11, '执行路径')
-        # sheet.write(0, 12, '超时时间')
-        # sheet.write(0, 13, '预计耗时')
         sheet.write(0, 8, 'SUCCESSTEXT')
 
         if len(allscript) > 0:
             for i in range(len(allscript)):
+                print(allscript[i].hosts_manage)
+                # host_id, host_ip, type, username, password
+                cur_host_manage = allscript[i].hosts_manage
+                host_ip = cur_host_manage.host_ip
+                host_type = cur_host_manage.type
+                username = cur_host_manage.username
+                password = cur_host_manage.password
+
                 sheet.write(i + 1, 0, allscript[i].code)
                 sheet.write(i + 1, 1, allscript[i].name)
-                sheet.write(i + 1, 2, allscript[i].ip)
-                # sheet.write(i + 1, 2, allscript[i].port)
-                sheet.write(i + 1, 3, allscript[i].type)
-                # sheet.write(i + 1, 4, allscript[i].runtype)
-                sheet.write(i + 1, 4, allscript[i].username)
-                sheet.write(i + 1, 5, allscript[i].password)
+                sheet.write(i + 1, 2, host_ip)
+                sheet.write(i + 1, 3, host_type)
+                sheet.write(i + 1, 4, username)
+                sheet.write(i + 1, 5, password)
                 sheet.write(i + 1, 6, allscript[i].filename)
-                # sheet.write(i + 1, 8, allscript[i].paramtype)
-                # sheet.write(i + 1, 9, allscript[i].param)
                 sheet.write(i + 1, 7, allscript[i].scriptpath)
-                # sheet.write(i + 1, 11, allscript[i].runpath)
-                # sheet.write(i + 1, 12, allscript[i].maxtime)
-                # sheet.write(i + 1, 13, allscript[i].time)
                 sheet.write(i + 1, 8, allscript[i].succeedtext)
 
         filename.save(myfilepath)
@@ -3738,10 +3700,14 @@ def get_script_log(request):
         if current_script_run:
             current_script_run = current_script_run[0]
             log_address = current_script_run.script.log_address
-            remote_ip = current_script_run.script.ip
-            remote_user = current_script_run.script.username
-            remote_password = current_script_run.script.password
-            script_type = current_script_run.script.type
+
+            # HostsManage
+            cur_host_manage = current_script_run.script.hosts_manage
+            remote_ip = cur_host_manage.host_ip
+            remote_user = cur_host_manage.username
+            remote_password = cur_host_manage.password
+            script_type =cur_host_manage.type
+
             if script_type == "SSH":
                 remote_platform = "Linux"
                 remote_cmd = "cat {0}".format(log_address)
@@ -5415,5 +5381,143 @@ def get_contact_info(request):
             get_child_contact(user_id, contact_list)
 
         return JsonResponse({"data": contact_list})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def hosts_manage(request, funid):
+    if request.user.is_authenticated():
+        return render(request, 'hosts_manage.html',
+                      {'username': request.user.userinfo.fullname,
+                       "pagefuns": getpagefuns(funid, request=request)})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def host_save(request):
+    if request.user.is_authenticated():
+        host_id = request.POST.get("host_id", "")
+        host_ip = request.POST.get("host_ip", "")
+        host_os = request.POST.get("os", "")
+        connect_type = request.POST.get("type", "")
+        username = request.POST.get("username", "")
+        password = request.POST.get("password", "")
+        ret= 0
+        info=""
+        try:
+            host_id = int(host_id)
+        except:
+            ret= 0
+            info="网络错误。"
+        else:
+            if host_ip.strip():
+                if host_os.strip():
+                    if connect_type.strip():
+                        if username.strip():
+                            if password.strip():
+                                # 新增
+                                if host_id == 0:
+                                    # 判断主机是否已经存在
+                                    check_host_manage = HostsManage.objects.filter(host_ip=host_ip)
+                                    if check_host_manage.exists():
+                                        ret = 0
+                                        info = "主机已经存在，请勿重复添加。"
+                                    else:
+                                        try:
+                                            cur_host_manage = HostsManage()
+                                            cur_host_manage.host_ip = host_ip
+                                            cur_host_manage.os = host_os
+                                            cur_host_manage.type = connect_type
+                                            cur_host_manage.username = username
+                                            cur_host_manage.password = password
+                                            cur_host_manage.save()
+                                        except:
+                                            ret = 0
+                                            info = "服务器异常。"
+                                        else:
+                                            ret = 1
+                                            info = "新增主机成功。"
+                                else:
+                                    # 修改
+                                    try:
+                                        cur_host_manage = HostsManage.objects.get(id=host_id)
+                                        cur_host_manage.host_ip = host_ip
+                                        cur_host_manage.os = host_os
+                                        cur_host_manage.type = connect_type
+                                        cur_host_manage.username = username
+                                        cur_host_manage.password = password
+                                        cur_host_manage.save()
+
+                                        ret = 1
+                                        info = "主机信息修改成功。"
+                                    except:
+                                        ret = 0
+                                        info = "服务器异常。"
+                            else:
+                                ret = 0
+                                info = "密码未填写。"
+                        else:
+                            ret = 0
+                            info = "用户名未填写。"
+                    else:
+                        ret = 0
+                        info = "连接类型未选择。"
+                else:
+                    ret = 0
+                    info = "系统未填写。"
+            else:
+                ret = 0
+                info = "主机IP未填写。"
+            return JsonResponse({
+                    "ret": ret,
+                    "info": info
+                })
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def hosts_manage_data(request):
+    if request.user.is_authenticated():
+        all_hosts_manage = HostsManage.objects.exclude(state="9")
+        all_hm_list = []
+        for host_manage in all_hosts_manage:
+            all_hm_list.append({
+                    "host_id": host_manage.id,
+                    "host_ip": host_manage.host_ip,
+                    "os": host_manage.os,
+                    "type": host_manage.type,
+                    "username": host_manage.username,
+                    "password": host_manage.password
+                })
+        return JsonResponse({"data": all_hm_list})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def hosts_manage_del(request):
+    if request.user.is_authenticated():
+        host_id = request.POST.get("host_id", "")
+
+        try:
+            cur_host_manage = HostsManage.objects.get(id=int(host_id))
+        except:
+            return JsonResponse({
+                "ret": 0,
+                "info": "当前网络异常"
+            })
+        else:
+            try:
+                cur_host_manage.state = "9"
+                cur_host_manage.save()
+            except:
+                return JsonResponse({
+                    "ret": 0,
+                    "info": "服务器网络异常。"
+                })
+            else:
+                return JsonResponse({
+                    "ret": 1,
+                    "info": "删除成功。"
+                })
     else:
         return HttpResponseRedirect("/login")

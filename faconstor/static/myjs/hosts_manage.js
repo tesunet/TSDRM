@@ -1,39 +1,27 @@
 $(document).ready(function() {
-    $('#sample_1').dataTable({
+    $('#hosts_dt').dataTable({
         "bAutoWidth": true,
         "bSort": false,
         "bProcessing": true,
-        "ajax": "../scriptdata/",
+        "ajax": "../hosts_manage_data/",
         "columns": [
-            { "data": "id" },
-            { "data": "code" },
-            { "data": "name" },
-            { "data": "ip" },
+            { "data": "host_id" },
+            { "data": "host_ip" },
+            { "data": "os" },
             { "data": "type" },
-            { "data": "filename" },
             { "data": "username" },
             { "data": "password" },
-            { "data": "scriptpath" },
-            { "data": "success_text" },
-            { "data": "log_address" },
-            { "data": "host_id" },
             { "data": null }
         ],
 
         "columnDefs": [{
+            "targets": -2,
+            "visible": false,
+        }, {
             "targets": -1,
             "data": null,
             "width": "100px",
             "defaultContent": "<button  id='edit' title='编辑' data-toggle='modal'  data-target='#static'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>"
-        }, {
-            "targets": [-2],
-            "visible": false
-        }, {
-            "targets": [-6],
-            "visible": false
-        }, {
-            "targets": [-9],
-            "visible": false
         }],
         "oLanguage": {
             "sLengthMenu": "每页显示 _MENU_ 条记录",
@@ -53,22 +41,21 @@ $(document).ready(function() {
         }
     });
     // 行按钮
-    $('#sample_1 tbody').on('click', 'button#delrow', function() {
+    $('#hosts_dt tbody').on('click', 'button#delrow', function() {
         if (confirm("确定要删除该条数据？")) {
-            var table = $('#sample_1').DataTable();
+            var table = $('#hosts_dt').DataTable();
             var data = table.row($(this).parents('tr')).data();
             $.ajax({
                 type: "POST",
-                url: "../scriptdel/",
+                url: "../hosts_manage_del/",
                 data: {
-                    id: data.id
+                    host_id: data.host_id,
                 },
                 success: function(data) {
-                    if (data == 1) {
+                    if (data.ret == 1) {
                         table.ajax.reload();
-                        alert("删除成功！");
-                    } else
-                        alert("删除失败，请于管理员联系。");
+                    }
+                    alert(data.info);
                 },
                 error: function(e) {
                     alert("删除失败，请于管理员联系。");
@@ -77,62 +64,54 @@ $(document).ready(function() {
 
         }
     });
-    $('#sample_1 tbody').on('click', 'button#edit', function() {
-        var table = $('#sample_1').DataTable();
+    $('#hosts_dt tbody').on('click', 'button#edit', function() {
+        var table = $('#hosts_dt').DataTable();
         var data = table.row($(this).parents('tr')).data();
-        $("#id").val(data.id);
-        $("#code").val(data.code);
-        $("#name").val(data.name);
-        $("#ip").val(data.host_id);
-        $("#filename").val(data.filename);
-        $("#scriptpath").val(data.scriptpath);
-        $("#success_text").val(data.success_text);
-        $("#log_address").val(data.log_address);
+
+        $("#host_id").val(data.host_id);
+        $("#host_ip").val(data.host_ip);
+        $("#os").val(data.os);
+        $("#type").val(data.type);
+        $("#username").val(data.username);
+        $("#password").val(data.password);
     });
 
     $("#new").click(function() {
-        $("#id").val("0");
-        $("#code").val("");
-        $("#name").val("");
-        $("#ip").val("");
-        $("#filename").val("");
-        $("#scriptpath").val("");
-        $("#success_text").val("");
-        $("#log_address").val("");
+        $("#host_id").val("0");
+        $("#host_ip").val("");
+        $("#os").val("");
+        $("#type").val("");
+        $("#username").val("");
+        $("#password").val("");
     });
 
     $('#save').click(function() {
-        var table = $('#sample_1').DataTable();
+        var table = $('#hosts_dt').DataTable();
 
         $.ajax({
             type: "POST",
             dataType: 'json',
-            url: "../scriptsave/",
+            url: "../host_save/",
             data: {
-                id: $("#id").val(),
-                code: $("#code").val(),
-                name: $("#name").val(),
-                ip: $("#ip").val(),
-                filename: $("#filename").val(),
-                scriptpath: $("#scriptpath").val(),
-                success_text: $("#success_text").val(),
-                log_address: $("#log_address").val(),
+                host_id: $("#host_id").val(),
+                host_ip: $("#host_ip").val(),
+                os: $("#os").val(),
+                type: $("#type").val(),
+                username: $("#username").val(),
+                password: $("#password").val(),
             },
             success: function(data) {
-                var myres = data["res"];
-                var mydata = data["data"];
-                if (myres == "保存成功。") {
-                    $("#id").val(data["data"]);
+                if (data.ret == 1) {
                     $('#static').modal('hide');
                     table.ajax.reload();
                 }
-                alert(myres);
+                alert(data.info);
             },
             error: function(e) {
                 alert("页面出现错误，请于管理员联系。");
             }
         });
-    });
+    })
 
     $('#error').click(function() {
         $(this).hide()

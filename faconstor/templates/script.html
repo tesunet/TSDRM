@@ -38,21 +38,14 @@
             <th> 脚本编号</th>
             <th> 脚本名称</th>
             <th> 主机IP</th>
-            {#                    <th> 端口号</th>#}
             <th> 连接类型</th>
-            {#                    <th> 运行类型</th>#}
             <th> 脚本文件名</th>
-            {#                    <th> 预计耗时</th>#}
             <th> 用户名</th>
             <th> 密码</th>
-            {#                    <th> 参数类型</th>#}
-            {#                    <th> 脚本参数</th>#}
             <th> 脚本文件路径</th>
             <th> SUCCESSTEXT</th>
             <th> 日志地址</th>
-
-            {#                    <th> 执行路径</th>#}
-            {#                    <th> 超时时间</th>#}
+            <th> 主机id</th>
             <th style="width:50px;"> 操作</th>
         </tr>
         </thead>
@@ -96,74 +89,13 @@
                             </div>
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>主机IP</label>
-                                <div class="col-md-2">
-                                    <input id="ip" type="text" name="ip" class="form-control" placeholder=""
-                                           style="width:180px">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                                <label class="col-md-4 control-label"><span
-                                        style="color:red; ">*</span>连接类型</label>
-                                <div class="col-md-4">
-                                    <select class="form-control" id="type" name="type">
-                                        <option value="SSH">SSH</option>
-                                        <option value="BAT">BAT</option>
+                                        style="color:red; ">*</span>选择主机</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="ip" name="ip">
+                                        {% for host in all_hosts_manage %}
+                                        <option value="{{host.id}}">{{host.host_ip}}</option>
+                                        {% endfor %}
                                     </select>
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                                <!--
-                                <label class="col-md-4 control-label"><span
-                                        style="color:red; ">*</span>端口号</label>
-                                <div class="col-md-4">
-                                    <input id="port" type="number" name="port" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                                -->
-                            </div>
-                            <!--
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>连接类型</label>
-                                <div class="col-md-2">
-                                    <select class="form-control" id="type" name="type" style="width:180px">
-                                        <option value="SSH">SSH</option>
-                                        <option value="BAT">BAT</option>
-                                    </select>
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-
-                                <label class="col-md-4 control-label"><span
-                                        style="color:red; ">*</span>运行类型</label>
-                                <div class="col-md-4">
-                                    <select class="form-control" id="runtype" name="runtype">
-                                        <option value="串行">串行</option>
-                                        <option value="并行">并行</option>
-                                    </select>
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-
-                            </div>
-                            -->
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>用户名</label>
-                                <div class="col-md-2">
-                                    <input id="username" type="text" name="username" class="form-control"
-                                           placeholder="" style="width:180px">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                                <label class="col-md-4 control-label"><span
-                                        style="color:red; ">*</span>密码</label>
-                                <div class="col-md-4">
-                                    <input id="password" type="password" name="password" class="form-control"
-                                           placeholder="">
                                     <div class="form-control-focus"></div>
 
                                 </div>
@@ -178,28 +110,6 @@
 
                                 </div>
                             </div>
-
-                            <!--
-                            <div class="form-group">
-                                <label class="col-md-2 control-label">参数类型</label>
-                                <div class="col-md-2">
-                                    <select class="form-control" id="paramtype" name="paramtype"  style="width:180px">
-                                        <option value="无">无</option>
-                                        <option value="固定">固定值</option>
-                                        <option value="脚本返回值">脚本返回值</option>
-                                        <option value="步骤返回值">步骤返回值</option>
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                                <label class="col-md-4 control-label">脚本参数</label>
-                                <div class="col-md-4">
-                                    <input id="param" type="text" name="param" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                                                    -->
 
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
@@ -231,46 +141,6 @@
 
                                 </div>
                             </div>
-                            <!--
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>执行路径</label>
-                                <div class="col-md-10">
-                                    <input id="runpath" type="text" name="runpath" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>生产命令行</label>
-                                <div class="col-md-10">
-                                    <input readonly id="command" type="text" name="command" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>超时时间</label>
-                                <div class="col-md-2">
-                                    <input id="maxtime" type="number" name="maxtime" class="form-control"
-                                           placeholder=""  style="width:180px">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                                <label class="col-md-4 control-label"><span
-                                        style="color:red; ">*</span>预计耗时</label>
-                                <div class="col-md-4">
-                                    <input id="time" type="number" name="time" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                                                    -->
                         </div>
                         <div class="form-actions ">
                             <div class="modal-footer">

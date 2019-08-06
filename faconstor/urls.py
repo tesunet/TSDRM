@@ -37,6 +37,12 @@ urlpatterns = [
     url(r'^fundel/$', fundel),
     url(r'^funmove/$', funmove),
 
+    # 主机管理
+    url(r'^hosts_manage/$', hosts_manage, {'funid': '68'}),
+    url(r'^host_save/$', host_save),
+    url(r'^hosts_manage_data/$', hosts_manage_data),
+    url(r'^hosts_manage_del/$', hosts_manage_del),
+
     # 预案管理
     url(r'^script/$', script, {'funid': '32'}),
     url(r'^scriptdata/$', scriptdata),

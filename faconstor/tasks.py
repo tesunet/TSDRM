@@ -118,10 +118,14 @@ def exec_script(steprunid, username, fullname):
         script.state = "RUN"
         script.save()
         cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
-        ip = script.script.ip
-        username = script.script.username
-        password = script.script.password
-        script_type = script.script.type
+
+        # HostsManage
+        cur_host_manage = script.script.hosts_manage
+        ip = cur_host_manage.host_ip
+        username = cur_host_manage.username
+        password = cur_host_manage.password
+        script_type =cur_host_manage.type
+
         system_tag = ""
         if script_type == "SSH":
             system_tag = "Linux"
@@ -229,10 +233,14 @@ def runstep(steprun, if_repeat=False):
                 script.save()
 
                 cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
-                ip = script.script.ip
-                username = script.script.username
-                password = script.script.password
-                script_type = script.script.type
+
+                # HostsManage
+                cur_host_manage = script.script.hosts_manage
+                ip = cur_host_manage.host_ip
+                username = cur_host_manage.username
+                password = cur_host_manage.password
+                script_type =cur_host_manage.type
+
                 system_tag = ""
                 if script_type == "SSH":
                     system_tag = "Linux"
