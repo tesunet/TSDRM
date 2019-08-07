@@ -5416,7 +5416,7 @@ def host_save(request):
                         info = "连接类型未选择。"
                 else:
                     ret = 0
-                    info = "系统未填写。"
+                    info = "系统未选择。"
             else:
                 ret = 0
                 info = "主机IP未填写。"
