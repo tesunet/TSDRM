@@ -213,8 +213,12 @@ function customTree() {
                         $("#scriptid").val("0");
                         $("#scriptcode").val("");
                         $("#script_name").val("");
-                        $("#scriptfilename").val("");
-                        $("#scriptscriptpath").val("");
+
+                        $("#script_text").val("");
+
+                        // $("#scriptfilename").val("");
+                        // $("#scriptscriptpath").val("");
+
                         $("#success_text").val("");
                         $("#log_address").val("");
                         $("#host_id").val("");
@@ -242,8 +246,11 @@ function customTree() {
                                         $("#scriptcode").val(data.code);
                                         $("#script_name").val(data.name);
                                         $("#host_id").val(data.host_id);
-                                        $("#scriptfilename").val(data.filename);
-                                        $("#scriptscriptpath").val(data.scriptpath);
+
+                                        // $("#scriptfilename").val(data.filename);
+                                        // $("#scriptscriptpath").val(data.scriptpath);
+                                        $("#script_text").val(data.script_text);
+
                                         $("#success_text").val(data.success_text);
                                         $("#log_address").val(data.log_address);
                                     },
@@ -377,10 +384,10 @@ function customTree() {
                     {"data": "name"},
                     {"data": "ip"},
                     {"data": "type"},
-                    {"data": "filename"},
+                    // {"data": "filename"},
                     {"data": "username"},
                     {"data": "password"},
-                    {"data": "scriptpath"},
+                    // {"data": "scriptpath"},
                     {"data": "host_id"},
                     {"data": null}
                 ],
@@ -390,19 +397,16 @@ function customTree() {
                     "data": null,
                     "defaultContent": "<button  id='select' title='选择'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-check'></i></button>"
                 }, {
-                    "targets": [-2],
+                    "targets": -2,
                     "visible": false
                 }, {
-                    "targets": [-3],
+                    "targets": -3,
                     "visible": false
                 }, {
-                    "targets": [-4],
+                    "targets": -4,
                     "visible": false
                 }, {
-                    "targets": [-5],
-                    "visible": false
-                }, {
-                    "targets": [0],
+                    "targets": 0,
                     "visible": false
                 }],
                 "oLanguage": {
@@ -438,8 +442,9 @@ $('#sample_1 tbody').on('click', 'button#select', function () {
     var data = table.row($(this).parents('tr')).data();
     $("#scriptcode").val(data.code);
     $("#script_name").val(data.name);
-    $("#scriptfilename").val(data.filename);
-    $("#scriptscriptpath").val(data.scriptpath);
+    // $("#scriptfilename").val(data.filename);
+    // $("#scriptscriptpath").val(data.scriptpath);
+    $("#script_text").val(data.script_text);
     $("#success_text").val(data.success_text);
     $("#log_address").val(data.log_address);
     $("#host_id").val(data.host_id);
@@ -465,8 +470,10 @@ $('#scriptsave').click(function () {
             id: $("#scriptid").val(),
             code: $("#scriptcode").val(),
             name: $("#script_name").val(),
-            filename: $("#scriptfilename").val(),
-            scriptpath: $("#scriptscriptpath").val(),
+            // filename: $("#scriptfilename").val(),
+            // scriptpath: $("#scriptscriptpath").val(),
+
+            script_text: $("#script_text").val(),
             success_text: $("#success_text").val(),
             log_address: $("#log_address").val(),
             host_id: $("#host_id").val(),

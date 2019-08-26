@@ -10,10 +10,10 @@ $(document).ready(function() {
             { "data": "name" },
             { "data": "ip" },
             { "data": "type" },
-            { "data": "filename" },
+            // { "data": "filename" },
             { "data": "username" },
             { "data": "password" },
-            { "data": "scriptpath" },
+            // { "data": "scriptpath" },
             { "data": "success_text" },
             { "data": "log_address" },
             { "data": "host_id" },
@@ -88,6 +88,9 @@ $(document).ready(function() {
         $("#scriptpath").val(data.scriptpath);
         $("#success_text").val(data.success_text);
         $("#log_address").val(data.log_address);
+
+        // add
+        $("#script_text").val(data.script_text);
     });
 
     $("#new").click(function() {
@@ -99,6 +102,7 @@ $(document).ready(function() {
         $("#scriptpath").val("");
         $("#success_text").val("");
         $("#log_address").val("");
+        $("#script_text").val("");
     });
 
     $('#save').click(function() {
@@ -113,8 +117,9 @@ $(document).ready(function() {
                 code: $("#code").val(),
                 name: $("#name").val(),
                 ip: $("#ip").val(),
-                filename: $("#filename").val(),
-                scriptpath: $("#scriptpath").val(),
+                script_text: $("#script_text").val(),
+                // filename: $("#filename").val(),
+                // scriptpath: $("#scriptpath").val(),
                 success_text: $("#success_text").val(),
                 log_address: $("#log_address").val(),
             },

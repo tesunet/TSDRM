@@ -9,6 +9,9 @@ from .models import *
 import datetime
 from django.db.models import Q
 import time
+import paramiko
+import os
+from TSDRM import settings
 
 
 def is_connection_usable():
@@ -117,14 +120,16 @@ def exec_script(steprunid, username, fullname):
         script.result = ""
         script.state = "RUN"
         script.save()
-        cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
+        # 执行脚本内容
+        # cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
+        cmd = r"{0}".format(script.script.script_text)
 
         # HostsManage
         cur_host_manage = script.script.hosts_manage
         ip = cur_host_manage.host_ip
         username = cur_host_manage.username
         password = cur_host_manage.password
-        script_type =cur_host_manage.type
+        script_type = cur_host_manage.type
 
         system_tag = ""
         if script_type == "SSH":
@@ -232,21 +237,100 @@ def runstep(steprun, if_repeat=False):
                 script.state = "RUN"
                 script.save()
 
-                cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
+                # cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
 
                 # HostsManage
                 cur_host_manage = script.script.hosts_manage
                 ip = cur_host_manage.host_ip
                 username = cur_host_manage.username
                 password = cur_host_manage.password
-                script_type =cur_host_manage.type
+                script_type = cur_host_manage.type
 
                 system_tag = ""
                 if script_type == "SSH":
                     system_tag = "Linux"
                 if script_type == "BAT":
                     system_tag = "Windows"
-                rm_obj = remote.ServerByPara(cmd, ip, username, password, system_tag)  # 服务器系统从视图中传入
+
+                linux_temp_script_file = "/tmp/tmp_script.sh"
+                windows_temp_script_file = "C:/tmp_script{0}.bat".format(script.id)
+
+                if system_tag == "Linux":
+                    # 写入文件
+                    script_path = os.path.join(os.path.join(os.path.join(settings.BASE_DIR, "faconstor"), "upload"),
+                                               "script")
+
+                    local_file = script_path + os.sep + "{0}_local_script.sh".format(processrun.process.name)
+
+                    with open(local_file, "w") as f:
+                        f.write(script.script.script_text)
+
+
+                    # 上传Linux服务器
+                    ssh = paramiko.Transport((ip, 22))
+                    ssh.connect(username=username, password=password)
+                    sftp = paramiko.SFTPClient.from_transport(ssh)
+
+                    remote_file = "/tmp/tmp_script.sh"
+                    try:
+                        sftp.put(local_file, remote_file)
+                    except Exception as e:
+                        script.runlog = "上传linux脚本文件失败。"  # 写入错误类型
+                        script.state = "ERROR"
+                        script.save()
+                        steprun.state = "ERROR"
+                        steprun.save()
+
+                        script_name = script.script.name if script.script.name else ""
+                        myprocesstask = ProcessTask()
+                        myprocesstask.processrun = steprun.processrun
+                        myprocesstask.starttime = datetime.datetime.now()
+                        myprocesstask.senduser = steprun.processrun.creatuser
+                        myprocesstask.receiveauth = steprun.step.group
+                        myprocesstask.type = "ERROR"
+                        myprocesstask.state = "0"
+                        myprocesstask.content = "脚本" + script_name + "内容写入失败，请处理。"
+                        myprocesstask.steprun_id = steprun.id
+                        myprocesstask.save()
+                        return 0
+                    ssh.close()
+
+                    # 添加可执行权限
+                    wt_cmd = r"""chmod 755 {0}""".format(linux_temp_script_file)
+                    # 写死路径/tmp
+                    script_wt = remote.ServerByPara(wt_cmd, ip, username, password, system_tag)
+                    script_wt_result = script_wt.run("")
+
+                    # 执行脚本
+                    exe_cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
+                else:
+                    # 上传文件
+                    wt_cmd = """echo {0}> {1}""".format(script.script.script_text, windows_temp_script_file)
+                    wt_obj = remote.ServerByPara(wt_cmd, ip, username, password, system_tag)
+                    wt_result = wt_obj.run("")
+                    if wt_result["exec_tag"] == 1:
+                        script.runlog = "上传windows脚本文件失败。"  # 写入错误类型
+                        script.state = "ERROR"
+                        script.save()
+                        steprun.state = "ERROR"
+                        steprun.save()
+
+                        script_name = script.script.name if script.script.name else ""
+                        myprocesstask = ProcessTask()
+                        myprocesstask.processrun = steprun.processrun
+                        myprocesstask.starttime = datetime.datetime.now()
+                        myprocesstask.senduser = steprun.processrun.creatuser
+                        myprocesstask.receiveauth = steprun.step.group
+                        myprocesstask.type = "ERROR"
+                        myprocesstask.state = "0"
+                        myprocesstask.content = "脚本" + script_name + "内容写入失败，请处理。"
+                        myprocesstask.steprun_id = steprun.id
+                        myprocesstask.save()
+                        return 0
+
+                    exe_cmd = windows_temp_script_file
+                # 执行文件
+                rm_obj = remote.ServerByPara(exe_cmd, ip, username, password, system_tag)  # 服务器系统从视图中传入
                 result = rm_obj.run(script.script.succeedtext)
 
                 script.endtime = datetime.datetime.now()
@@ -290,6 +374,22 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.state = "1"
                 myprocesstask.content = "脚本" + script_name + "完成。"
                 myprocesstask.save()
+
+                # 删除Linux下脚本
+                if system_tag == "Linux":
+                    del_cmd = 'if [ ! -f "{0}" ]; then'.format(linux_temp_script_file) + '\n' + \
+                              '   echo "文件不存在"' + '\n' + \
+                              'else' + '\n' + \
+                              '   rm -f {0}'.format(linux_temp_script_file) + '\n' + \
+                              'fi'
+                    del_obj = remote.ServerByPara(del_cmd, ip, username, password, system_tag)
+                    del_result = del_obj.run("")
+                else:
+                    if result["exec_tag"] == 0:
+                        # 删除windows的bat脚本
+                        del_cmd = 'if exist {0} del "{0}"'.format(windows_temp_script_file)
+                        del_obj = remote.ServerByPara(del_cmd, ip, username, password, system_tag)
+                        del_result = del_obj.run("")
 
             if steprun.step.approval == "1" or steprun.verifyitemsrun_set.all():
                 steprun.state = "CONFIRM"

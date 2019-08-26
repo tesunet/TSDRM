@@ -1910,9 +1910,12 @@ def scriptdata(request):
                         "host_id": host_id,
                         "type": host_type, 
                         "username": username, 
-                        "password": password, 
-                        "filename": script.filename,
-                        "scriptpath": script.scriptpath, 
+                        "password": password,
+                        "script_text": script.script_text,
+
+                        # "filename": script.filename,
+                        # "scriptpath": script.scriptpath,
+
                         "success_text": script.succeedtext, 
                         "log_address": script.log_address
                     })
@@ -1955,8 +1958,14 @@ def scriptsave(request):
             code = request.POST.get('code', '')
             name = request.POST.get('name', '')
             host_id = request.POST.get('ip', '')
-            filename = request.POST.get('filename', '')
-            scriptpath = request.POST.get('scriptpath', '')
+
+
+            # filename = request.POST.get('filename', '')
+            # scriptpath = request.POST.get('scriptpath', '')
+
+            # script_text
+            script_text = request.POST.get('script_text', '')
+
             success_text = request.POST.get('success_text', '')
             log_address = request.POST.get('log_address', '')
             try:
@@ -1974,49 +1983,48 @@ def scriptsave(request):
                     except:
                         result["res"] = '请选择主机。'
                     else:
-                        if filename.strip() == '':
-                            result["res"] = '脚本文件名不能为空。'
+                        if script_text.strip() == '':
+                            result["res"] = '脚本内容不能为空。'
                         else:
-                            if scriptpath.strip() == '':
-                                result["res"] = '脚本文件路径不能为空。'
+                            if id == 0:
+                                allscript = Script.objects.filter(code=code).exclude(
+                                    state="9").filter(step_id=None)
+                                if (len(allscript) > 0):
+                                    result["res"] = '脚本编码:' + code + '已存在。'
+                                else:
+                                    scriptsave = Script()
+                                    scriptsave.code = code
+                                    scriptsave.name = name
+                                    scriptsave.hosts_manage_id = host_id
+                                    scriptsave.script_text = script_text
+                                    # scriptsave.filename = filename
+                                    # scriptsave.scriptpath = scriptpath
+                                    scriptsave.succeedtext = success_text
+                                    scriptsave.log_address = log_address
+                                    scriptsave.save()
+                                    result["res"] = "保存成功。"
+                                    result["data"] = scriptsave.id
                             else:
-                                if id == 0:
-                                    allscript = Script.objects.filter(code=code).exclude(
-                                        state="9").filter(step_id=None)
-                                    if (len(allscript) > 0):
-                                        result["res"] = '脚本编码:' + code + '已存在。'
-                                    else:
-                                        scriptsave = Script()
+                                allscript = Script.objects.filter(code=code).exclude(
+                                    id=id).exclude(state="9").filter(step_id=None)
+                                if (len(allscript) > 0):
+                                    result["res"] = '脚本编码:' + code + '已存在。'
+                                else:
+                                    try:
+                                        scriptsave = Script.objects.get(id=id)
                                         scriptsave.code = code
                                         scriptsave.name = name
                                         scriptsave.hosts_manage_id = host_id
-                                        scriptsave.filename = filename
-                                        scriptsave.scriptpath = scriptpath
+                                        scriptsave.script_text = script_text
+                                        # scriptsave.filename = filename
+                                        # scriptsave.scriptpath = scriptpath
                                         scriptsave.succeedtext = success_text
                                         scriptsave.log_address = log_address
                                         scriptsave.save()
                                         result["res"] = "保存成功。"
                                         result["data"] = scriptsave.id
-                                else:
-                                    allscript = Script.objects.filter(code=code).exclude(
-                                        id=id).exclude(state="9").filter(step_id=None)
-                                    if (len(allscript) > 0):
-                                        result["res"] = '脚本编码:' + code + '已存在。'
-                                    else:
-                                        try:
-                                            scriptsave = Script.objects.get(id=id)
-                                            scriptsave.code = code
-                                            scriptsave.name = name
-                                            scriptsave.hosts_manage_id = host_id
-                                            scriptsave.filename = filename
-                                            scriptsave.scriptpath = scriptpath
-                                            scriptsave.succeedtext = success_text
-                                            scriptsave.log_address = log_address
-                                            scriptsave.save()
-                                            result["res"] = "保存成功。"
-                                            result["data"] = scriptsave.id
-                                        except:
-                                            result["res"] = "修改失败。"
+                                    except:
+                                        result["res"] = "修改失败。"
             return HttpResponse(json.dumps(result))
 
 
@@ -2081,8 +2089,11 @@ def processscriptsave(request):
             id = request.POST.get('id', '')
             code = request.POST.get('code', '')
             name = request.POST.get('name', '')
-            filename = request.POST.get('filename', '')
-            scriptpath = request.POST.get('scriptpath', '')
+            script_text = request.POST.get('script_text', '')
+
+            # filename = request.POST.get('filename', '')
+            # scriptpath = request.POST.get('scriptpath', '')
+
             success_text = request.POST.get('success_text', '')
             log_address = request.POST.get('log_address', '')
             host_id = request.POST.get('host_id', '')
@@ -2100,64 +2111,63 @@ def processscriptsave(request):
                     if name.strip() == '':
                         result["res"] = '脚本名称不能为空。'
                     else:
-                        if filename.strip() == '':
-                            result["res"] = '脚本文件名不能为空。'
+                        if script_text.strip() == '':
+                            result["res"] = '脚本内容不能为空。'
                         else:
-                            if scriptpath.strip() == '':
-                                result["res"] = '脚本文件路径不能为空。'
+
+                            try:
+                                cur_host_manage = HostsManage.objects.get(id=host_id)
+                            except:
+                                result["res"] = '网络连接异常。'
                             else:
-                                try:
-                                    cur_host_manage = HostsManage.objects.get(id=host_id)
-                                except:
-                                    result["res"] = '网络连接异常。'
-                                else:
-                                    if id == 0:
-                                        allscript = Script.objects.filter(code=code).exclude(
-                                            state="9").filter(step_id=pid)
-                                        if (len(allscript) > 0):
-                                            result["res"] = '脚本编码:' + code + '已存在。'
-                                        else:
-                                            steplist = Step.objects.filter(process_id=processid)
-                                            if len(steplist) > 0:
-                                                scriptsave = Script()
-                                                scriptsave.code = code
-                                                scriptsave.name = name
-
-                                                scriptsave.hosts_manage_id = cur_host_manage.id
-
-                                                scriptsave.filename = filename
-                                                scriptsave.scriptpath = scriptpath
-                                                scriptsave.succeedtext = success_text
-                                                scriptsave.log_address = log_address
-
-                                                scriptsave.step_id = pid
-                                                scriptsave.save()
-                                                result["res"] = "新增成功。"
-                                                result["data"] = scriptsave.id
+                                if id == 0:
+                                    allscript = Script.objects.filter(code=code).exclude(
+                                        state="9").filter(step_id=pid)
+                                    if (len(allscript) > 0):
+                                        result["res"] = '脚本编码:' + code + '已存在。'
                                     else:
-                                        # 修改
-                                        allscript = Script.objects.filter(code=code).exclude(
-                                            id=id).exclude(state="9").filter(step_id=pid)
-                                        if (len(allscript) > 0):
-                                            result["res"] = '脚本编码:' + code + '已存在。'
-                                        else:
-                                            try:
-                                                scriptsave = Script.objects.get(id=id)
-                                                scriptsave.code = code
-                                                scriptsave.name = name
+                                        steplist = Step.objects.filter(process_id=processid)
+                                        if len(steplist) > 0:
+                                            scriptsave = Script()
+                                            scriptsave.code = code
+                                            scriptsave.name = name
 
-                                                scriptsave.hosts_manage_id = cur_host_manage.id
+                                            scriptsave.hosts_manage_id = cur_host_manage.id
+                                            scriptsave.script_text = script_text
 
-                                                scriptsave.filename = filename
-                                                scriptsave.scriptpath = scriptpath
-                                                scriptsave.succeedtext = success_text
-                                                scriptsave.log_address = log_address
+                                            # scriptsave.filename = filename
+                                            # scriptsave.scriptpath = scriptpath
+                                            scriptsave.succeedtext = success_text
+                                            scriptsave.log_address = log_address
 
-                                                scriptsave.save()
-                                                result["res"] = "修改成功。"
-                                                result["data"] = scriptsave.id
-                                            except:
-                                                result["res"] = "修改失败。"
+                                            scriptsave.step_id = pid
+                                            scriptsave.save()
+                                            result["res"] = "新增成功。"
+                                            result["data"] = scriptsave.id
+                                else:
+                                    # 修改
+                                    allscript = Script.objects.filter(code=code).exclude(
+                                        id=id).exclude(state="9").filter(step_id=pid)
+                                    if (len(allscript) > 0):
+                                        result["res"] = '脚本编码:' + code + '已存在。'
+                                    else:
+                                        try:
+                                            scriptsave = Script.objects.get(id=id)
+                                            scriptsave.code = code
+                                            scriptsave.name = name
+
+                                            scriptsave.hosts_manage_id = cur_host_manage.id
+                                            scriptsave.script_text = script_text
+                                            # scriptsave.filename = filename
+                                            # scriptsave.scriptpath = scriptpath
+                                            scriptsave.succeedtext = success_text
+                                            scriptsave.log_address = log_address
+
+                                            scriptsave.save()
+                                            result["res"] = "修改成功。"
+                                            result["data"] = scriptsave.id
+                                        except:
+                                            result["res"] = "修改失败。"
             return HttpResponse(json.dumps(result))
 
 
@@ -2249,9 +2259,11 @@ def get_script_data(request):
                     "id": cur_script.id, 
                     "code": cur_script.code, 
                     "name": cur_script.name,
-                    "host_id": cur_host_manage.id, 
-                    "filename": cur_script.filename,
-                    "scriptpath": cur_script.scriptpath, 
+                    "host_id": cur_host_manage.id,
+                    "script_text": cur_script.script_text,
+                    # "filename": cur_script.filename,
+                    # "scriptpath": cur_script.scriptpath,
+
                     "success_text":cur_script.succeedtext,
                     "log_address": cur_script.log_address
                 }
