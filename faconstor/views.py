@@ -1831,48 +1831,53 @@ def script(request, funid):
                     data = xlrd.open_workbook(myfilepath)
                     sheet = data.sheets()[0]
                     rows = sheet.nrows
-                    errors.append("导入成功。")
+
+                    succeed_tag = True
                     for i in range(rows):
                         if i > 0:
-                            try:
-                                allscript = Script.objects.filter(code=sheet.cell(i, 0).value).exclude(
-                                    state="9").filter(step_id=None)
-                                if (len(allscript) > 0):
-                                    errors.append(sheet.cell(i, 0).value + ":已存在。")
-                                else:
-                                    try:
-                                        # 判断主机是否存在
-                                        check_host_manage = HostsManage.objects.filter(host_ip=sheet.cell(i, 2).value).exclude(state="9")
-                                        if check_host_manage.exists():
-                                            errors.append("当前主机({0})已存在，已剔除。".format(sheet.cell(i, 2).value))
-                                        else:
-                                            cur_host_manage = HostsManage()
-                                            cur_host_manage.host_ip = sheet.cell(i, 2).value
-                                            cur_host_manage.type = sheet.cell(i, 3).value
-                                            cur_host_manage.username = sheet.cell(i, 4).value
-                                            cur_host_manage.password = sheet.cell(i, 5).value  
-                                            host_os = ""
-                                            if sheet.cell(i, 3).value == "SSH":
-                                                host_os = "Linux"
-                                            if sheet.cell(i, 3).value == "BAT":
-                                                host_os = "Windows"
-                                            cur_host_manage.os = host_os
-                                            cur_host_manage.save()
-                                            host_id = cur_host_manage.id
-                                            scriptsave = Script()
-                                            scriptsave.code = sheet.cell(i, 0).value
-                                            scriptsave.name = sheet.cell(i, 1).value
-                                            scriptsave.hosts_manage_id = host_id
-                                            scriptsave.filename = sheet.cell(i, 6).value
-                                            scriptsave.scriptpath = sheet.cell(i, 7).value
-                                            scriptsave.succeedtext = sheet.cell(i, 8).value
-                                            scriptsave.save()
-                                    except Exception as e:
-                                        print(e)
-                                        errors.append("服务器网络异常，脚本上传失败。")
-                                        break
-                            except:
-                                errors.append(sheet.cell(i, 0).value + ":数据存在问题，已剔除。")
+                            allscript = Script.objects.filter(code=sheet.cell(i, 0).value).exclude(
+                                state="9").filter(step_id=None)
+                            if (len(allscript) > 0):
+                                errors.append(sheet.cell(i, 0).value + ":已存在。")
+                                succeed_tag = False
+                            else:
+                                try:
+                                    # add hosts
+                                    check_host_manage = HostsManage.objects.filter(host_ip=sheet.cell(i, 2).value).exclude(state="9")
+                                    if check_host_manage.exists():
+                                        cur_host = check_host_manage[0]
+                                    else:
+                                        # add host
+                                        cur_host_manage = HostsManage()
+                                        cur_host_manage.host_ip = sheet.cell(i, 2).value
+                                        cur_host_manage.type = sheet.cell(i, 3).value
+                                        cur_host_manage.username = sheet.cell(i, 4).value
+                                        cur_host_manage.password = sheet.cell(i, 5).value
+                                        host_os = ""
+                                        if sheet.cell(i, 3).value == "SSH":
+                                            host_os = "Linux"
+                                        if sheet.cell(i, 3).value == "BAT":
+                                            host_os = "Windows"
+                                        cur_host_manage.os = host_os
+                                        cur_host_manage.save()
+                                        cur_host = cur_host_manage
+
+                                    scriptsave = Script()
+                                    scriptsave.code = sheet.cell(i, 0).value
+                                    scriptsave.name = sheet.cell(i, 1).value
+                                    scriptsave.hosts_manage = cur_host
+                                    scriptsave.succeedtext = sheet.cell(i, 6).value
+                                    scriptsave.script_text = sheet.cell(i, 7).value
+                                    scriptsave.save()
+                                except Exception as e:
+                                    succeed_tag = False
+                                    print(e)
+                                    errors.append("脚本上传失败，请检查文件内容。")
+                                    break
+
+                    if succeed_tag:
+                        errors = ["导入成功。"]
+
                     os.remove(myfilepath)
                 else:
                     errors.append("只能上传xls和xlsx文件，请选择正确的文件类型。")
@@ -2044,9 +2049,8 @@ def scriptexport(request):
         sheet.write(0, 3, '连接类型')
         sheet.write(0, 4, '用户名')
         sheet.write(0, 5, '密码')
-        sheet.write(0, 6, '脚本文件名')
-        sheet.write(0, 7, '脚本文件路径')
-        sheet.write(0, 8, 'SUCCESSTEXT')
+        sheet.write(0, 6, 'SUCCESSTEXT')
+        sheet.write(0, 7, '脚本内容')
 
         if len(allscript) > 0:
             for i in range(len(allscript)):
@@ -2064,9 +2068,8 @@ def scriptexport(request):
                 sheet.write(i + 1, 3, host_type)
                 sheet.write(i + 1, 4, username)
                 sheet.write(i + 1, 5, password)
-                sheet.write(i + 1, 6, allscript[i].filename)
-                sheet.write(i + 1, 7, allscript[i].scriptpath)
-                sheet.write(i + 1, 8, allscript[i].succeedtext)
+                sheet.write(i + 1, 6, allscript[i].succeedtext)
+                sheet.write(i + 1, 7, allscript[i].script_text)
 
         filename.save(myfilepath)
 
