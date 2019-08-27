@@ -237,8 +237,6 @@ def runstep(steprun, if_repeat=False):
                 script.state = "RUN"
                 script.save()
 
-                # cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
-
                 # HostsManage
                 cur_host_manage = script.script.hosts_manage
                 ip = cur_host_manage.host_ip
@@ -253,8 +251,8 @@ def runstep(steprun, if_repeat=False):
                     system_tag = "Windows"
 
                 linux_temp_script_file = "/tmp/tmp_script.sh"
-                windows_temp_script_file = "C:/tmp_script{0}.bat".format(script.id)
-
+                # windows_temp_script_file = "C:/tmp_script{0}.bat".format(script.id)
+                windows_temp_script_file = "C:/tmp_script.bat"
                 if system_tag == "Linux":
                     # 写入文件
                     script_path = os.path.join(os.path.join(os.path.join(settings.BASE_DIR, "faconstor"), "upload"),
@@ -264,7 +262,6 @@ def runstep(steprun, if_repeat=False):
 
                     with open(local_file, "w") as f:
                         f.write(script.script.script_text)
-
 
                     # 上传Linux服务器
                     ssh = paramiko.Transport((ip, 22))
@@ -304,10 +301,11 @@ def runstep(steprun, if_repeat=False):
                     # 执行脚本
                     exe_cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
                 else:
-                    # 上传文件
-                    wt_cmd = """echo {0}> {1}""".format(script.script.script_text, windows_temp_script_file)
+                    # 上传文件(dos格式>>shell)
+                    wt_cmd = r"""echo {0}>{1}&&if exist {1} echo 'file_existed'""".format(script.script.script_text, windows_temp_script_file)
                     wt_obj = remote.ServerByPara(wt_cmd, ip, username, password, system_tag)
-                    wt_result = wt_obj.run("")
+                    wt_result = wt_obj.run("file_existed")
+
                     if wt_result["exec_tag"] == 1:
                         script.runlog = "上传windows脚本文件失败。"  # 写入错误类型
                         script.state = "ERROR"
@@ -329,8 +327,9 @@ def runstep(steprun, if_repeat=False):
                         return 0
 
                     exe_cmd = windows_temp_script_file
+
                 # 执行文件
-                rm_obj = remote.ServerByPara(exe_cmd, ip, username, password, system_tag)  # 服务器系统从视图中传入
+                rm_obj = remote.ServerByPara(exe_cmd, ip, username, password, system_tag)
                 result = rm_obj.run(script.script.succeedtext)
 
                 script.endtime = datetime.datetime.now()
