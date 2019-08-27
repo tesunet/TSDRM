@@ -232,6 +232,10 @@ def runstep(steprun, if_repeat=False):
                             return 2
             scriptruns = steprun.scriptrun_set.exclude(Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
             for script in scriptruns:
+                # 目的：不在服务器存放脚本；
+                #   Linux：通过ssh上传文件至服务器端；执行脚本；删除脚本；
+                #   Windows：通过>/>> 逐行重定向字符串至服务端文件；执行脚本；删除脚本；
+
                 script.starttime = datetime.datetime.now()
                 script.result = ""
                 script.state = "RUN"
@@ -298,33 +302,39 @@ def runstep(steprun, if_repeat=False):
                     script_wt = remote.ServerByPara(wt_cmd, ip, username, password, system_tag)
                     script_wt_result = script_wt.run("")
 
-                    # 执行脚本
+                    # 执行脚本(上传文件(dos格式>>shell))
                     exe_cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
                 else:
-                    # 上传文件(dos格式>>shell)
-                    wt_cmd = r"""echo {0}>{1}&&if exist {1} echo 'file_existed'""".format(script.script.script_text, windows_temp_script_file)
-                    wt_obj = remote.ServerByPara(wt_cmd, ip, username, password, system_tag)
-                    wt_result = wt_obj.run("file_existed")
+                    para_list = script.script.script_text.split("\n")
+                    for num, content in enumerate(para_list):
+                        tmp_cmd = ""
+                        if num == 0:
+                            tmp_cmd = r"""echo {0}>{1}""".format(content, windows_temp_script_file)
+                        else:
+                            tmp_cmd = r"""echo {0}>>{1}""".format(content, windows_temp_script_file)
 
-                    if wt_result["exec_tag"] == 1:
-                        script.runlog = "上传windows脚本文件失败。"  # 写入错误类型
-                        script.state = "ERROR"
-                        script.save()
-                        steprun.state = "ERROR"
-                        steprun.save()
+                        tmp_obj = remote.ServerByPara(tmp_cmd, ip, username, password, system_tag)
+                        tmp_result = tmp_obj.run("")
 
-                        script_name = script.script.name if script.script.name else ""
-                        myprocesstask = ProcessTask()
-                        myprocesstask.processrun = steprun.processrun
-                        myprocesstask.starttime = datetime.datetime.now()
-                        myprocesstask.senduser = steprun.processrun.creatuser
-                        myprocesstask.receiveauth = steprun.step.group
-                        myprocesstask.type = "ERROR"
-                        myprocesstask.state = "0"
-                        myprocesstask.content = "脚本" + script_name + "内容写入失败，请处理。"
-                        myprocesstask.steprun_id = steprun.id
-                        myprocesstask.save()
-                        return 0
+                        if tmp_result["exec_tag"] == 1:
+                            script.runlog = "上传windows脚本文件失败。"  # 写入错误类型
+                            script.state = "ERROR"
+                            script.save()
+                            steprun.state = "ERROR"
+                            steprun.save()
+
+                            script_name = script.script.name if script.script.name else ""
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun = steprun.processrun
+                            myprocesstask.starttime = datetime.datetime.now()
+                            myprocesstask.senduser = steprun.processrun.creatuser
+                            myprocesstask.receiveauth = steprun.step.group
+                            myprocesstask.type = "ERROR"
+                            myprocesstask.state = "0"
+                            myprocesstask.content = "脚本" + script_name + "内容写入失败，请处理。"
+                            myprocesstask.steprun_id = steprun.id
+                            myprocesstask.save()
+                            return 0
 
                     exe_cmd = windows_temp_script_file
 
