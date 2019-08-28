@@ -3039,7 +3039,7 @@ def falconstorrun(request):
                     myprocessrun.creatuser = request.user.username
                     myprocessrun.run_reason = run_reason
                     myprocessrun.state = "RUN"
-                    myprocessrun.DataSet_id = 89
+                    # myprocessrun.DataSet_id = 89
                     myprocessrun.save()
                     mystep = process[0].step_set.exclude(state="9")
                     if (len(mystep) <= 0):
