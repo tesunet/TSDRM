@@ -70,6 +70,7 @@ class Step(models.Model):
 
 class HostsManage(models.Model):
     host_ip = models.CharField("主机IP", blank=True, null=True, max_length=50)
+    host_name = models.CharField("主机名称", blank=True, null=True, max_length=256)
     os = models.CharField("系统", blank=True, null=True, max_length=50)
     type = models.CharField("连接类型", blank=True, null=True, max_length=20)
     username = models.CharField("用户名", blank=True, null=True, max_length=50)

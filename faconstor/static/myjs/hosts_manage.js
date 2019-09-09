@@ -7,6 +7,7 @@ $(document).ready(function() {
         "columns": [
             { "data": "host_id" },
             { "data": "host_ip" },
+            { "data": "host_name" },
             { "data": "os" },
             { "data": "type" },
             { "data": "username" },
@@ -70,6 +71,7 @@ $(document).ready(function() {
 
         $("#host_id").val(data.host_id);
         $("#host_ip").val(data.host_ip);
+        $("#host_name").val(data.host_name);
         $("#os").val(data.os);
         $("#type").val(data.type);
         $("#username").val(data.username);
@@ -79,6 +81,7 @@ $(document).ready(function() {
     $("#new").click(function() {
         $("#host_id").val("0");
         $("#host_ip").val("");
+        $("#host_name").val("");
         $("#os").val("");
         $("#type").val("");
         $("#username").val("");
@@ -95,6 +98,7 @@ $(document).ready(function() {
             data: {
                 host_id: $("#host_id").val(),
                 host_ip: $("#host_ip").val(),
+                host_name: $("#host_name").val(),
                 os: $("#os").val(),
                 type: $("#type").val(),
                 username: $("#username").val(),
