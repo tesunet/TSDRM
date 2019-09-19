@@ -2105,7 +2105,8 @@ def processscriptsave(request):
                 pid = int(pid)
                 processid = int(processid)
                 host_id = int(host_id)
-            except:
+            except Exception as e:
+                print(e)
                 result["res"] = '网络连接异常。'
             else:
                 if code.strip() == '':
@@ -2516,7 +2517,17 @@ def custom_step_tree(request):
                 group_name = ""
                 if rootnode.group:
                     group_id = rootnode.group
-                    group_name = Group.objects.filter(id=group_id)[0].name
+                    try:
+                        group_id = int(group_id)
+                    except ValueError as e:
+                        print(e)
+                    else:
+                        try:
+                            cur_group = Group.objects.get(id=group_id)
+                        except Group.DoesNotExist as e:
+                            print(e)
+                        else:
+                            group_name = cur_group.name
                 root["data"] = {"time": rootnode.time, "approval": rootnode.approval, "skip": rootnode.skip,
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title,
