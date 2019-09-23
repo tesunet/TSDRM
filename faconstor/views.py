@@ -47,6 +47,8 @@ funlist = []
 info = {"webaddr": "cv-server", "port": "81", "username": "admin", "passwd": "Admin@2017", "token": "",
         "lastlogin": 0}
 
+walkthroughinfo = {}
+
 
 def file_iterator(file_name, chunk_size=512):
     with open(file_name, "rb") as f:
@@ -264,11 +266,32 @@ def processindex(request, processrun_id):
         return HttpResponseRedirect("/login")
 
 
+def walkthroughindex(request, walkthrough_id):
+    if request.user.is_authenticated():
+        errors = []
+        # processrun_id = request.GET.get("p_run_id", "")
+        s_tag = request.GET.get("s", "")
+        # exclude
+        global walkthroughinfo
+        walkthroughinfo = {}
+        walkthrough = Walkthrough.objects.filter(id=walkthrough_id)
+        if walkthrough.exists():
+            walkthrough_name = walkthrough[0].name
+        else:
+            raise Http404()
+        return render(request, 'walkthroughindex.html',
+                      {'username': request.user.userinfo.fullname, "errors": errors, "walkthrough_id": walkthrough_id,
+                       "walkthrough_name": walkthrough_name,
+                       "s_tag": s_tag})
+    else:
+        return HttpResponseRedirect("/login")
+
+
 def get_process_index_data(request):
     if request.user.is_authenticated():
-        print('************')
+
         processrun_id = request.POST.get("p_run_id", "")
-        print(processrun_id)
+
 
         current_processruns = ProcessRun.objects.filter(id=int(processrun_id)).select_related("process")
 
@@ -452,6 +475,322 @@ def get_process_index_data(request):
             c_step_run_data = {}
         # print("c_step_run_data", c_step_run_data)
         return JsonResponse(c_step_run_data)
+
+
+def get_walkthrough_index_data(request):
+    if request.user.is_authenticated():
+        walkthrough_id=request.POST.get("walkthrough_id", "")
+        walkthroughs = Walkthrough.objects.filter(id=walkthrough_id)
+        if walkthroughs:
+            walkthrough=walkthroughs[0]
+            walkthrough_name = walkthrough.name
+            walkthrough_state = walkthrough.state
+            walkthrough_starttime =  walkthrough.starttime
+            walkthrough_endtime = walkthrough.endtime
+            processrunes = walkthrough.processrun_set.exclude(state="9").exclude(state='REJECT')
+            cur_processruns = []
+            processrunid=[]
+            showtasks=[]
+            for processrun in processrunes:
+                processrunid.append(processrun.id)
+                processrun_id = processrun.id
+                current_processruns = ProcessRun.objects.filter(id=int(processrun_id)).select_related("process")
+
+                if current_processruns:
+                    current_processrun = current_processruns[0]
+
+                    # 当前流程状态
+                    c_process_run_state = current_processrun.state
+                    name = current_processrun.process.name
+                    starttime = current_processrun.starttime
+                    endtime = current_processrun.endtime
+                    walkthroughstate = current_processrun.walkthroughstate
+                    rtoendtime = ""
+                    state = current_processrun.state
+                    percent = 0
+
+                    process_id = current_processrun.process_id
+                    # 正确顺序的父级Step
+                    all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).exclude(rto_count_in='0').order_by(
+                        "sort")
+                    correct_step_id_list = []
+                    if all_pnode_steps:
+                        for pnode_step in all_pnode_steps:
+                            pnode_step_id = pnode_step.id
+                            correct_step_id_list.append(pnode_step_id)
+                        # 正确顺序的父级StepRun
+                        correct_step_run_list = []
+                        for step_id in correct_step_id_list:
+                            current_step_run = StepRun.objects.filter(step_id=step_id).filter(
+                                processrun_id=processrun_id).select_related("step")
+                            if current_step_run.exists():
+                                current_step_run = current_step_run[0]
+                                correct_step_run_list.append(current_step_run)
+                        # 构造当前流程步骤info
+                        steps = []
+                        rtostate = "RUN"
+
+                        if correct_step_run_list:
+                            c_step_index = 0
+                            # 流程运行中的rtostate
+                            if c_process_run_state != "DONE":
+                                if c_process_run_state == "ERROR":
+                                    rtostate = "RUN"
+                                else:
+                                    c_state = False
+                                    for num, c_step_run in enumerate(correct_step_run_list):
+                                        c_rto_count_in = c_step_run.step.rto_count_in
+                                        if c_rto_count_in == "0" and c_step_run.state in ["CONFIRM", "DONE"]:
+                                            c_state = True
+                                            rtostate = "DONE"
+                                            c_step_index = num
+                                            break
+
+                                    if c_state:
+                                        # 表示需要计入rto的步骤已经完成
+                                        if c_step_index > 0 and rtostate == "DONE":
+                                            pre_step_index = c_step_index - 1
+                                            rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+                            # 流程结束后的rtostate
+                            else:
+                                for num, c_step_run in enumerate(correct_step_run_list):
+                                    c_rto_count_in = c_step_run.step.rto_count_in
+                                    if c_rto_count_in == "0" and c_step_run.state == "DONE":
+                                        rtostate = "DONE"
+                                        c_step_index = num
+                                        break
+
+                                if c_step_index > 0 and rtostate == "DONE":
+                                    pre_step_index = c_step_index - 1
+                                    rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+
+                            if_has_run = False
+                            if_has_index = 0
+                            for num, c_step_run in enumerate(correct_step_run_list):
+                                num += 1
+                                if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
+                                    if_has_run = True
+                                    break
+                                elif c_step_run.state == "DONE":
+                                    if_has_index = num
+
+                            for num, c_step_run in enumerate(correct_step_run_list):
+                                num += 1
+                                # 流程结束后的当前步骤
+                                if c_process_run_state == "DONE":
+                                    if num == len(correct_step_run_list):
+                                        c_step_run_type = "cur"
+                                    else:
+                                        c_step_run_type = ""
+                                # 流程运行中的当前步骤
+                                else:
+                                    if c_step_run.state not in ["DONE", "STOP", "EDIT"]:
+                                        c_step_run_type = "cur"
+                                    else:
+                                        # 这里还要加一个没有RUN的判断
+                                        c_step_run_type = ""
+
+                                if not if_has_run and num == if_has_index:
+                                    c_step_run_type = "cur"
+
+                                c_step_id = c_step_run.step.id
+                                c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id).filter(step__state__in=["9"])
+
+                                # 未完成
+                                all_steps = c_step_run.step.children.exclude(state="9")
+                                all_done_step_list = []
+                                for step in all_steps:
+                                    step_id = step.id
+                                    done_step_run = StepRun.objects.filter(step_id=step_id).filter(
+                                        processrun_id=processrun_id).filter(state="DONE")
+                                    if done_step_run.exists():
+                                        all_done_step_list.append(done_step_run[0])
+
+                                if all_done_step_list:
+                                    inner_step_run_percent = "%2d" % (len(all_done_step_list) / len(all_steps) * 100)
+                                else:
+                                    inner_step_run_percent = 0
+
+                                if c_step_run.state in ["DONE", "STOP"]:
+                                    inner_step_run_percent = 100
+
+                                start_time = c_step_run.starttime
+                                end_time = c_step_run.endtime
+
+                                delta_time = 0
+                                if c_step_run.step.children.all().exclude(
+                                        state="9").count() == 0 and c_step_run.verifyitemsrun_set.all().count() == 0 and c_step_run.scriptrun_set.all().exists():
+                                    # 用于判断 没有子步骤，不需要确认，有脚本的步骤
+                                    now_time = datetime.datetime.now()
+                                    if not end_time and start_time:
+                                        delta_time = (now_time - start_time)
+                                        if delta_time:
+                                            delta_time = "%.f" % delta_time.total_seconds()
+                                        else:
+                                            delta_time = 0
+                                    c_tag = "yes"
+                                else:
+                                    c_tag = "no"
+                                c_step_run_dict = {
+                                    "name": c_step_run.step.name,
+                                    "state": c_step_run.state if c_step_run.state else "",
+                                    "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else None,
+                                    "endtime": endtime.strftime('%Y-%m-%d %H:%M:%S') if endtime else None,
+                                    "percent": inner_step_run_percent,
+                                    "type": c_step_run_type,
+                                    "delta_time": delta_time,
+                                    "c_tag": c_tag,
+                                }
+                                steps.append(c_step_run_dict)
+
+                        done_step_run = current_processrun.steprun_set.filter(state="DONE")
+                        if done_step_run.exists():
+                            done_num = len(done_step_run)
+                        else:
+                            done_num = 0
+
+                        # 构造展示步骤
+                        process_rate = "%02d" % (done_num / len(current_processrun.steprun_set.all()) * 100)
+
+                        if current_processrun.state == "SIGN":
+                            rtostate = "DONE"
+                            rtoendtime = current_processrun.starttime.strftime('%Y-%m-%d %H:%M:%S')
+                        cur_processruns.append({
+                            "processrun_id":processrun_id,
+                            "processrun": process_id,
+                            "processurl": current_processrun.process.url,
+                            "name": name,
+                            "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else "",
+                            "rtoendtime": rtoendtime,
+                            "endtime": endtime.strftime('%Y-%m-%d %H:%M:%S') if endtime else "",
+                            "state": state,
+                            "rtostate": rtostate,
+                            "percent": process_rate,
+                            "walkthroughstate": walkthroughstate,
+                            "steps": steps
+                        })
+
+            current_time = datetime.datetime.now()
+            tasks=ProcessTask.objects.filter(type='info').filter(Q(processrun_id__in= processrunid)|Q(walkthrough_id= walkthroughs[0].id)).exclude(state='9')
+            for task in tasks:
+                taskname = ""
+                if task.processrun is not None:
+                    taskname = task.processrun.process.name
+                if task.walkthrough is not None:
+                    taskname = task.walkthrough.name
+
+                showtasks.append({
+                    "taskid": task.id,
+                    "taskname":taskname,
+                    "taskcontent": task.content,
+                    "tasktime": task.starttime.strftime('%Y-%m-%d %H:%M:%S') if task.starttime else "",
+                })
+            c_walkthrough_run_data = {
+                        "current_time": current_time.strftime('%Y-%m-%d %H:%M:%S'),
+                        "walkthrough_name": walkthrough_name,
+                        "walkthrough_state": walkthrough_state,
+                        "walkthrough_starttime": walkthrough_starttime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough_starttime else "",
+                        "walkthrough_endtime": walkthrough_endtime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough_endtime else "",
+                        "processruns": cur_processruns,
+                        "showtasks":showtasks,
+                    }
+            global walkthroughinfo
+            oldwalkthroughinfo = walkthroughinfo
+            walkthroughinfo = c_walkthrough_run_data
+            c_walkthrough_run_data["oldwalkthroughinfo"]=oldwalkthroughinfo
+        else:
+            c_walkthrough_run_data = {}
+        return JsonResponse(c_walkthrough_run_data)
+
+
+def walkthrough_run_invited(request):
+    if request.user.is_authenticated() and request.session['isadmin']:
+        result = {}
+
+        walkthrough_id = request.POST.get('walkthrough_id', '')
+
+        current_walkthrough_run = Walkthrough.objects.filter(id=walkthrough_id)
+
+        if current_walkthrough_run:
+            current_walkthrough_run = current_walkthrough_run[0]
+
+            if current_walkthrough_run.state == "RUN":
+                result["res"] = '请勿重复启动该演练。'
+            else:
+                current_process_run = current_walkthrough_run.processrun_set.filter(state="PLAN")
+                if current_process_run:
+                    current_process_run = current_process_run[0]
+                    current_process_run.starttime = datetime.datetime.now()
+                    current_process_run.state = "RUN"
+                    current_process_run.walkthroughstate = "RUN"
+                    current_process_run.DataSet_id = 89
+                    current_process_run.save()
+
+                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(type="falconstor")
+
+                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                        "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                        # 将当前流程改成SIGN
+                        c_process_run_id = current_process_run.id
+                        c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                        if c_process_run:
+                            c_process_run = c_process_run[0]
+                            c_process_run.state = "SIGN"
+                            c_process_run.walkthroughstate = "RUN"
+                            c_process_run.save()
+                        for group in allgroup:
+                            try:
+                                signgroup = Group.objects.get(id=int(group["group"]))
+                                groupname = signgroup.name
+                                myprocesstask = ProcessTask()
+                                myprocesstask.processrun = current_process_run
+                                myprocesstask.starttime = datetime.datetime.now()
+                                myprocesstask.senduser = request.user.username
+                                myprocesstask.receiveauth = group["group"]
+                                myprocesstask.type = "SIGN"
+                                myprocesstask.state = "0"
+                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                myprocesstask.save()
+                            except:
+                                pass
+
+                    else:
+                        prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
+                        if len(prosssigns) <= 0:
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun = current_process_run
+                            myprocesstask.starttime = datetime.datetime.now()
+                            myprocesstask.type = "INFO"
+                            myprocesstask.logtype = "START"
+                            myprocesstask.state = "1"
+                            myprocesstask.senduser = request.user.username
+                            myprocesstask.content = "流程已启动。"
+                            myprocesstask.save()
+
+                            exec_process.delay(current_process_run.id)
+                    mywalkthroughtask = ProcessTask()
+                    mywalkthroughtask.walkthrough = current_walkthrough_run
+                    mywalkthroughtask.starttime = datetime.datetime.now()
+                    mywalkthroughtask.senduser = request.user.username
+                    mywalkthroughtask.type = "INFO"
+                    mywalkthroughtask.logtype = "START"
+                    mywalkthroughtask.state = "1"
+                    mywalkthroughtask.content = "演练已启动。"
+                    mywalkthroughtask.save()
+
+                    current_walkthrough_run.starttime = datetime.datetime.now()
+                    current_walkthrough_run.state = "RUN"
+                    current_walkthrough_run.endtime = None
+                    current_walkthrough_run.save()
+                    result["res"] = "启动成功。"
+                else:
+                    result["res"] = '演练启动异常，该演练未选择任何演练系统。'
+        else:
+            result["res"] = '演练启动异常，请联系客服。'
+
+        return HttpResponse(json.dumps(result))
 
 
 def get_server_time_very_second(request):
@@ -648,7 +987,7 @@ def index(request, funid):
             average_rto = "00时00分00秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-        current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(
+        current_processruns = ProcessRun.objects.exclude(state__in=["PLAN","DONE", "STOP", "REJECT"]).exclude(
             state="9").select_related("process")
         curren_processrun_info_list = []
         state_dict = {
@@ -816,16 +1155,16 @@ def get_daily_processrun(request):
                     "invite": "0"
                 }
                 process_success_rate_list.append(process_run_dict)
-        all_process_run_invited = ProcessRun.objects.filter(state="PLAN").select_related("process")
-        if all_process_run_invited:
-            for process_run_invited in all_process_run_invited:
+        all_walkthrough_invited = Walkthrough.objects.filter(state="PLAN")
+        if all_walkthrough_invited:
+            for walkthrough_invited in all_walkthrough_invited:
                 invitations_dict = {
-                    "process_name": process_run_invited.process.name,
-                    "start_time": process_run_invited.starttime,
-                    "end_time": process_run_invited.endtime,
-                    "process_color": process_run_invited.process.color,
-                    "process_run_id": process_run_invited.id,
-                    "url": "/falconstorswitch/{0}".format(process_run_invited.process_id),
+                    "process_name": walkthrough_invited.name,
+                    "start_time": walkthrough_invited.starttime,
+                    "end_time": walkthrough_invited.endtime,
+                    "process_color": "red",
+                    "process_run_id": walkthrough_invited.id,
+                    "url": "/walkthrough/",
                     "invite": "1",
                 }
                 process_success_rate_list.append(invitations_dict)
@@ -1871,7 +2210,7 @@ def script(request, funid):
                                     scriptsave.save()
                                 except Exception as e:
                                     succeed_tag = False
-                                    print(e)
+
                                     errors.append("脚本上传失败，请检查文件内容。")
                                     break
 
@@ -2054,7 +2393,7 @@ def scriptexport(request):
 
         if len(allscript) > 0:
             for i in range(len(allscript)):
-                print(allscript[i].hosts_manage)
+
                 # host_id, host_ip, type, username, password
                 cur_host_manage = allscript[i].hosts_manage
                 host_ip = cur_host_manage.host_ip
@@ -2105,8 +2444,7 @@ def processscriptsave(request):
                 pid = int(pid)
                 processid = int(processid)
                 host_id = int(host_id)
-            except Exception as e:
-                print(e)
+            except:
                 result["res"] = '网络连接异常。'
             else:
                 if code.strip() == '':
@@ -2514,20 +2852,14 @@ def custom_step_tree(request):
                     verify_items_string += id_name_plus
                 root["text"] = rootnode.name
                 root["id"] = rootnode.id
-                group_name = ""
+                group_name = rootnode.group
                 if rootnode.group:
                     group_id = rootnode.group
                     try:
-                        group_id = int(group_id)
-                    except ValueError as e:
-                        print(e)
-                    else:
-                        try:
-                            cur_group = Group.objects.get(id=group_id)
-                        except Group.DoesNotExist as e:
-                            print(e)
-                        else:
-                            group_name = cur_group.name
+                        cur_group = Group.objects.get(id=group_id)
+                        group_name = cur_group.name
+                    except:
+                        pass
                 root["data"] = {"time": rootnode.time, "approval": rootnode.approval, "skip": rootnode.skip,
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title,
@@ -3205,6 +3537,293 @@ def falconstor_run_invited(request):
         return HttpResponse(json.dumps(result))
 
 
+def walkthrough(request, funid):
+    if request.user.is_authenticated():
+        processes = Process.objects.exclude(state="9").order_by("sort").filter(type="falconstor")
+        processlist = []
+        for process in processes:
+            processlist.append({"id": process.id, "code": process.code, "name": process.name})
+
+
+
+        return render(request, 'walkthrough.html',
+                      {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
+                       "processlist":processlist})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def walkthroughdata(request):
+    if request.user.is_authenticated():
+        result = []
+        state_dict = {
+            "DONE": "已完成",
+            "EDIT": "未执行",
+            "RUN": "执行中",
+            "ERROR": "执行失败",
+            "IGNORE": "忽略",
+            "STOP": "终止",
+            "PLAN": "计划",
+            "REJECT": "取消",
+            "SIGN": "签到",
+            "": "",
+        }
+        walkthroughs = Walkthrough.objects.exclude(state='9').exclude(state='REJECT')
+        for walkthrough in walkthroughs:
+            create_users = walkthrough.creatuser if walkthrough.creatuser else ""
+            create_user_objs = User.objects.filter(username=create_users)
+            create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
+            processes = ""
+            processrunes = walkthrough.processrun_set.exclude(state="9").exclude(state='REJECT')
+            for processrun in processrunes:
+                processes+=str(processrun.process.id)+"^"
+
+            result.append({
+                "starttime": walkthrough.starttime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.starttime else "",
+                "endtime": walkthrough.endtime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.endtime else "",
+                "createtime": walkthrough.createtime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.createtime else "",
+                "createuser": create_user_fullname,
+                "state": state_dict["{0}".format(walkthrough.state)] if walkthrough.state else "",
+                "walkthrough_id": walkthrough.id if walkthrough.id else "",
+                "purpose": walkthrough.purpose if walkthrough.purpose else "",
+                "walkthrough_name": walkthrough.name if walkthrough.name else "",
+                "processes":processes,
+            })
+
+        return JsonResponse({"data": result})
+
+
+def walkthroughsave(request):
+    if request.user.is_authenticated():
+        result = {}
+        id = request.POST.get("id", "")
+        name = request.POST.get("name", "")
+        start_time = request.POST.get("start_time", "")
+        purpose = request.POST.get("purpose", "")
+        end_time = request.POST.get("end_time", "")
+        processes = request.POST.get('processes', '')
+        processes = processes.split("*!-!*")
+        processes.remove("")
+        try:
+            id = int(id)
+        except:
+            raise Http404()
+        # 准备流程PLAN
+        if name:
+            if processes:
+                if start_time:
+                    if end_time:
+                        if id == 0:
+                            walkthrough= Walkthrough.objects.filter(state__in=["PLAN","RUN", "ERROR"])
+                            if (len(walkthrough) > 0):
+                                result["res"] = '演练计划创建失败，已经存在演练计划，务必先完成该计划。'
+                            else:
+                                walkthrough = Walkthrough()
+                                walkthrough.name = name
+                                walkthrough.createtime = datetime.datetime.now()
+                                walkthrough.creatuser = request.user.username
+                                walkthrough.state = "PLAN"
+                                walkthrough.purpose=purpose
+                                walkthrough.starttime = start_time
+                                walkthrough.endtime = end_time
+                                walkthrough.save()
+
+                                for process_id in processes:
+                                    process = Process.objects.filter(id=int(process_id)).exclude(state="9").filter(
+                                        type="falconstor")
+                                    myprocessrun = ProcessRun()
+                                    myprocessrun.walkthrough = walkthrough
+                                    myprocessrun.process = process[0]
+                                    myprocessrun.state = "PLAN"
+                                    myprocessrun.starttime = start_time
+                                    myprocessrun.save()
+                                    current_process_run_id = myprocessrun.id
+
+                                    mystep = process[0].step_set.exclude(state="9")
+                                    for step in mystep:
+                                        mysteprun = StepRun()
+                                        mysteprun.step = step
+                                        mysteprun.processrun = myprocessrun
+                                        mysteprun.state = "EDIT"
+                                        mysteprun.save()
+
+                                        myscript = step.script_set.exclude(state="9")
+                                        for script in myscript:
+                                            myscriptrun = ScriptRun()
+                                            myscriptrun.script = script
+                                            myscriptrun.steprun = mysteprun
+                                            myscriptrun.state = "EDIT"
+                                            myscriptrun.save()
+
+                                        myverifyitems = step.verifyitems_set.exclude(state="9")
+                                        for verifyitems in myverifyitems:
+                                            myverifyitemsrun = VerifyItemsRun()
+                                            myverifyitemsrun.verify_items = verifyitems
+                                            myverifyitemsrun.steprun = mysteprun
+                                            myverifyitemsrun.save()
+
+                                    # 生成邀请任务信息
+                                    myprocesstask = ProcessTask()
+                                    myprocesstask.processrun_id = current_process_run_id
+                                    myprocesstask.starttime = datetime.datetime.now()
+                                    myprocesstask.senduser = request.user.username
+                                    myprocesstask.type = "INFO"
+                                    myprocesstask.logtype = "PLAN"
+                                    myprocesstask.state = "1"
+                                    myprocesstask.content = "创建流程计划。"
+                                    myprocesstask.save()
+
+                                mywalkthroughtask = ProcessTask()
+                                mywalkthroughtask.walkthrough = walkthrough
+                                mywalkthroughtask.starttime = datetime.datetime.now()
+                                mywalkthroughtask.senduser = request.user.username
+                                mywalkthroughtask.type = "INFO"
+                                mywalkthroughtask.logtype = "PLAN"
+                                mywalkthroughtask.state = "1"
+                                mywalkthroughtask.content = "创建演练计划。"
+                                mywalkthroughtask.save()
+
+                                result["data"] = walkthrough.id
+                                result["res"] = "演练计划保存成功，待开启流程。"
+                        else:
+                            walkthrough = Walkthrough.objects.get(id=id)
+                            walkthrough.name = name
+                            walkthrough.createtime = datetime.datetime.now()
+                            walkthrough.creatuser = request.user.username
+                            walkthrough.state = "PLAN"
+                            walkthrough.purpose = purpose
+                            walkthrough.starttime = start_time
+                            walkthrough.endtime = end_time
+                            walkthrough.save()
+
+                            processruns = ProcessRun.objects.filter(walkthrough=walkthrough).exclude(state__in=["9", "REJECT"])
+                            for processrun in processruns:
+                                id=str(processrun.id)
+                                if id not in processes:
+                                    processrun.state='9'
+                                    processrun.save()
+
+                            for process_id in processes:
+                                process = Process.objects.filter(id=int(process_id)).exclude(state="9").filter(
+                                    type="falconstor")
+                                curprocessrun =ProcessRun.objects.filter(walkthrough=walkthrough,process=process[0]).exclude(state__in=["9", "REJECT"])
+                                if len(curprocessrun)==0:
+                                    myprocessrun = ProcessRun()
+                                    myprocessrun.walkthrough = walkthrough
+                                    myprocessrun.process = process[0]
+                                    myprocessrun.state = "PLAN"
+                                    myprocessrun.starttime = start_time
+                                    myprocessrun.save()
+                                    current_process_run_id = myprocessrun.id
+
+                                    mystep = process[0].step_set.exclude(state="9")
+                                    for step in mystep:
+                                        mysteprun = StepRun()
+                                        mysteprun.step = step
+                                        mysteprun.processrun = myprocessrun
+                                        mysteprun.state = "EDIT"
+                                        mysteprun.save()
+
+                                        myscript = step.script_set.exclude(state="9")
+                                        for script in myscript:
+                                            myscriptrun = ScriptRun()
+                                            myscriptrun.script = script
+                                            myscriptrun.steprun = mysteprun
+                                            myscriptrun.state = "EDIT"
+                                            myscriptrun.save()
+
+                                        myverifyitems = step.verifyitems_set.exclude(state="9")
+                                        for verifyitems in myverifyitems:
+                                            myverifyitemsrun = VerifyItemsRun()
+                                            myverifyitemsrun.verify_items = verifyitems
+                                            myverifyitemsrun.steprun = mysteprun
+                                            myverifyitemsrun.save()
+
+                                    # 生成邀请任务信息
+                                    myprocesstask = ProcessTask()
+                                    myprocesstask.processrun_id = current_process_run_id
+                                    myprocesstask.starttime = datetime.datetime.now()
+                                    myprocesstask.senduser = request.user.username
+                                    myprocesstask.type = "INFO"
+                                    myprocesstask.logtype = "PLAN"
+                                    myprocesstask.state = "1"
+                                    myprocesstask.content = "创建流程计划。"
+                                    myprocesstask.save()
+
+                            mywalkthroughtask = ProcessTask()
+                            mywalkthroughtask.walkthrough = walkthrough
+                            mywalkthroughtask.starttime = datetime.datetime.now()
+                            mywalkthroughtask.senduser = request.user.username
+                            mywalkthroughtask.type = "INFO"
+                            mywalkthroughtask.logtype = "PLAN"
+                            mywalkthroughtask.state = "1"
+                            mywalkthroughtask.content = "创建演练计划。"
+                            mywalkthroughtask.save()
+
+                            result["data"] = walkthrough.id
+                            result["res"] = "演练计划保存成功，待开启流程。"
+                    else:
+                        result["res"] = "演练结束时间必须填写！"
+                else:
+                    result["res"] = "演练开始时间必须填写！"
+            else:
+                result["res"] = "必须选择演练系统填写！"
+        else:
+            result["res"] = "演练清楚必须填写！"
+
+
+        return JsonResponse(result)
+
+def reject_walkthrough(request):
+    if request.user.is_authenticated():
+        id = request.POST.get("id", "")
+        walkthrough = Walkthrough.objects.filter(id=id)
+        if walkthrough:
+            walkthrough = walkthrough[0]
+            walkthrough.state = "REJECT"
+            walkthrough.save()
+            processrunes = walkthrough.processrun_set.exclude(state="9").exclude(state='REJECT')
+            for processrun in processrunes:
+                processrun.state = "REJECT"
+                processrun.save()
+
+
+                # 生成取消任务信息
+                myprocesstask = ProcessTask()
+                myprocesstask.processrun_id = processrun.id
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.senduser = request.user.username
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "REJECT"
+                myprocesstask.state = "1"
+                myprocesstask.content = "取消演练计划。"
+                myprocesstask.save()
+
+            result = "取消演练计划成功！"
+        else:
+            result = "演练计划不存在，取消失败！"
+        return JsonResponse({"res": result})
+
+def walkthroughdel(request):
+    if request.user.is_authenticated():
+        id = request.POST.get("id", "")
+
+        try:
+            id = int(id)
+        except:
+            raise Http404()
+
+        walkthrough = Walkthrough.objects.filter(id=id)
+        if walkthrough:
+            walkthrough = walkthrough[0]
+            walkthrough.state = "9"
+            walkthrough.save()
+            return HttpResponse(1)
+        else:
+            return HttpResponse(0)
+
+
+
 def falconstor(request, offset, funid):
     if request.user.is_authenticated():
         id = 0
@@ -3639,7 +4258,7 @@ def revoke_current_task(request):
         if abnormal == "1":
             stop_url = "http://127.0.0.1:5555/api/task/revoke/{0}?terminate=true".format(task_id)
             response = requests.post(stop_url)
-            print(response.text)
+
             task_content = "异步任务被自主关闭。"
 
             # 终止任务
@@ -3979,6 +4598,55 @@ def stop_current_process(request):
 def verify_items(request):
     if request.user.is_authenticated():
         step_id = request.POST.get("step_id", "")
+        current_step_run = StepRun.objects.filter(id=step_id).exclude(state="9").select_related("processrun",
+                                                                                                "step").all()
+        if current_step_run:
+            current_step_run = current_step_run[0]
+            # CONFIRM修改成DONE
+            current_step_run.state = "CONTINUE"
+            current_step_run.endtime = datetime.datetime.now()
+            current_step_run.save()
+
+            all_current__tasks = current_step_run.processrun.processtask_set.exclude(state="1")
+            for task in all_current__tasks:
+                task.endtime = datetime.datetime.now()
+                task.state = "1"
+                task.save()
+
+
+            #写入继续任务
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun = current_step_run.processrun_id
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = current_step_run.processrun.creatuser
+            myprocesstask.receiveauth = current_step_run.step.group
+            myprocesstask.type = "RUN"
+            myprocesstask.state = "0"
+            task_content = "流程" + current_step_run.step.process.name + "待继续，请处理。"
+            myprocesstask.content = task_content
+            myprocesstask.save()
+
+            # # 运行流程
+            # current_process_run_id = current_step_run.processrun_id
+            # exec_process.delay(current_process_run_id, if_repeat=True)
+
+            return JsonResponse({"data": "0"})
+        else:
+            return JsonResponse({"data": "1"})
+
+
+def processcontinue(request):
+    if request.user.is_authenticated():
+        step_id=""
+        if 'step_id' in request.POST:
+            step_id = request.POST.get("step_id", "")
+        else:
+            processrun_id = request.POST.get("processrun_id", "")
+            stepruns= StepRun.objects.filter(processrun_id=int(processrun_id),state='CONTINUE').exclude(state='9')
+            if len(stepruns)>0:
+                step_id = stepruns[0].id
+            else:
+                return JsonResponse({"data": "1"})
         current_step_run = StepRun.objects.filter(id=step_id).exclude(state="9").select_related("processrun",
                                                                                                 "step").all()
         if current_step_run:
@@ -4994,7 +5662,7 @@ def save_invitation(request):
                             myprocesstask.type = "INFO"
                             myprocesstask.logtype = "PLAN"
                             myprocesstask.state = "1"
-                            myprocesstask.content = "创建演练计划。"
+                            myprocesstask.content = "创建流程计划。"
                             myprocesstask.save()
 
                             result["data"] = current_process_run_id

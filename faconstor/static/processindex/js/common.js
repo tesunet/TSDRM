@@ -186,7 +186,7 @@ var util = {
 
     },
     makeR: function (rightData) {
-        for (var n = 0; n < 4; n++) {
+        for (var n = 0; n < 5; n++) {
             var rbox1 = $('.rbox-' + (n + 1));
             rbox1.find('.con-text').html('<div class="text"></div>');
             for (var c = 0; c < allState.length; c++) {
@@ -197,7 +197,7 @@ var util = {
         if (rightData.length > 0) {
             var rindex = 1;
             for (var i = 0; i < rightData.length; i++) {
-                if (rindex > 4) {
+                if (rindex > 5) {
                     break;
                 }
                 var rbox = $('.rbox-' + (i + 1));
@@ -210,7 +210,7 @@ var util = {
         }
     },
     makeL: function (leftData) {
-        for (var n = 0; n < 4; n++) {
+        for (var n = 0; n < 5; n++) {
             var lbox1 = $('.lbox-' + (n + 1));
             lbox1.find('.con-text').html('<div class="text"></div>');
             for (var c = 0; c < allState.length; c++) {
@@ -222,7 +222,7 @@ var util = {
             leftData = leftData.reverse();
             var index = 1;
             for (var i = 0; i < leftData.length; i++) {
-                if (index > 4) {
+                if (index > 5) {
                     break;
                 }
                 var lbox = $('.lbox-' + (i + 1));

@@ -92,14 +92,27 @@ class Script(models.Model):
     script_text = models.TextField("脚本内容", blank=True, default="")
 
 
+class Walkthrough(models.Model):
+    name = models.CharField("演练名称", blank=True, max_length=200)
+    createtime = models.DateTimeField("创建时间", blank=True, null=True)
+    starttime = models.DateTimeField("开始时间", blank=True, null=True)
+    endtime = models.DateTimeField("结束时间", blank=True, null=True)
+    creatuser = models.CharField("发起人", blank=True, max_length=50)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
+    purpose = models.CharField("演练目的", blank=True, null=True, max_length=2500)
+    note = models.CharField("记录", blank=True, null=True, max_length=5000)
+
+
 class ProcessRun(models.Model):
     process = models.ForeignKey(Process)
+    walkthrough = models.ForeignKey(Walkthrough, blank=True, null=True)
     starttime = models.DateTimeField("开始时间", blank=True, null=True)
     endtime = models.DateTimeField("结束时间", blank=True, null=True)
     creatuser = models.CharField("发起人", blank=True, max_length=50)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     run_reason = models.CharField("启动原因", blank=True, null=True, max_length=2500)
     note = models.CharField("记录", blank=True, null=True, max_length=5000)
+    walkthroughstate = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
 class StepRun(models.Model):
@@ -129,6 +142,7 @@ class ScriptRun(models.Model):
 
 
 class ProcessTask(models.Model):
+    walkthrough = models.ForeignKey(Walkthrough, blank=True, null=True)
     processrun = models.ForeignKey(ProcessRun, blank=True, null=True)
     steprun = models.ForeignKey(StepRun, blank=True, null=True)
     starttime = models.DateTimeField("发送时间", blank=True, null=True)
@@ -159,7 +173,7 @@ class VerifyItemsRun(models.Model):
 
 
 class Invitation(models.Model):
-    process_run = models.OneToOneField(ProcessRun, blank=True, null=True)
+    walkthrough = models.OneToOneField(Walkthrough, blank=True, null=True)
     start_time = models.DateTimeField("开始时间", blank=True, null=True)
     end_time = models.DateTimeField("结束时间", blank=True, null=True)
     purpose = models.CharField("演练目的", max_length=5000, blank=True, null=True)

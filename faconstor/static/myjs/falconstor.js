@@ -325,7 +325,7 @@ if (App.isAngularJsApp() === false) {
                         if (data["step"][i]["state"] == "DONE")
                             tabdone = "done";
                         var tabrun = "";
-                        if (data["step"][i]["state"] == "RUN" || data["step"][i]["state"] == "CONFIRM" || data["step"][i]["state"] == "ERROR" || ((i == data["step"].length - 1) && data["step"][i]["state"] == "DONE"))
+                        if (data["step"][i]["state"] == "RUN" || data["step"][i]["state"] == "CONFIRM" || data["step"][i]["state"] == "CONTINUE"||data["step"][i]["state"] == "ERROR" || ((i == data["step"].length - 1) && data["step"][i]["state"] == "DONE"))
                             tabrun = "active";
                         /*
                         innerUl += "<li style='text-align:center;' id='li_" + (i + 1).toString() + "' class='" + tabdone + " " + tabrun + "'><i style='display: none;' class='fa fa-check'></i>" + data["step"][i]["name"] + " </span></a></li>";
@@ -378,6 +378,14 @@ if (App.isAngularJsApp() === false) {
                             style = "";
                             stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\" hidden>\n" + "<input name='step_id' id='step_id' value='" + step1_run_id + "' hidden>" +
                                 "                                                <button id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
+                                "                                            </div>"
+                        }
+                        if (step1_state == "CONTINUE") {
+                            step1_state = "待继续";
+                            expand = "collapse";
+                            style = "";
+                            stepbtn = "<div class=\"form-actions noborder\" style=\"text-align:center\" hidden>\n" + "<input name='step_id' id='step_id' value='" + step1_run_id + "' hidden>" +
+                                "                                                <button id=\"continuebtn\" type=\"button\" class=\"btn green\"> 继续 </button>\n" +
                                 "                                            </div>"
                         }
 
@@ -444,7 +452,7 @@ if (App.isAngularJsApp() === false) {
                             var steprun = "";
                             var hidediv = "hidden";
                             var style = "display:none;";
-                            if (data["step"][i]["children"][j]["state"] == "RUN" || data["step"][i]["children"][j]["state"] == "CONFIRM" || data["step"][i]["children"][j]["state"] == "ERROR" || ((j == data["step"][i]["children"].length - 1) && data["step"][i]["children"][j]["state"] == "DONE")) {
+                            if (data["step"][i]["children"][j]["state"] == "RUN" || data["step"][i]["children"][j]["state"] == "CONFIRM"|| data["step"][i]["children"][j]["state"] == "CONTINUE" || data["step"][i]["children"][j]["state"] == "ERROR" || ((j == data["step"][i]["children"].length - 1) && data["step"][i]["children"][j]["state"] == "DONE")) {
                                 hidediv = "";
                                 steprun = "active";
                                 style = ""
@@ -476,6 +484,12 @@ if (App.isAngularJsApp() === false) {
                                 step2_state = "待确认";
                                 step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\" hidden>\n" + "<input name='step_id' id='step_id' value='" + step2_run_id + "' hidden>" +
                                     "                                                <button id=\"confirmbtn\" type=\"button\" class=\"btn green\"> 确认 </button>\n" +
+                                    "                                            </div>"
+                            }
+                            if (step2_state == "CONTINUE") {
+                                step2_state = "待继续";
+                                step2btn = "<div class=\"form-actions noborder\" style=\"text-align:center\" hidden>\n" + "<input name='step_id' id='step_id' value='" + step2_run_id + "' hidden>" +
+                                    "                                                <button hidden id=\"continuebtn\" type=\"button\" class=\"btn green\"> 继续 </button>\n" +
                                     "                                            </div>"
                             }
 
@@ -549,6 +563,8 @@ if (App.isAngularJsApp() === false) {
 
                     // 展示确认按钮
                     $("#confirmbtn").parent().show();
+                    // 展示继续按钮
+                    $("#continuebtn").parent().show();
 
                     try {
                         var processbar = "0";
@@ -637,7 +653,7 @@ if (App.isAngularJsApp() === false) {
                                     },
                                     success: function (data) {
                                         if (data.data == "0") {
-                                            alert("该步骤已确认，继续流程！");
+                                            alert("该步骤已确认，请继续流程！");
                                             getstep();
                                             window.clearInterval(t2);
                                             t2 = window.setInterval(timefun, 1000);
@@ -657,7 +673,7 @@ if (App.isAngularJsApp() === false) {
                                 },
                                 success: function (data) {
                                     if (data.data == "0") {
-                                        alert("该步骤已确认，继续流程！");
+                                        alert("该步骤已确认，请继续流程！");
                                         getstep();
                                         window.clearInterval(t2);
                                         t2 = window.setInterval(timefun, 1000);
@@ -670,6 +686,29 @@ if (App.isAngularJsApp() === false) {
                         }
 
                     });
+
+                    // 继续
+                    $("#continuebtn").click(function () {
+                        var step_id = $(this).prev().val();
+                        $.ajax({
+                                url: "/processcontinue/",
+                                type: "post",
+                                data: {
+                                    "step_id": step_id,
+                                },
+                                success: function (data) {
+                                    if (data.data == "0") {
+                                        alert("流程已继续运行！");
+                                        getstep();
+                                        window.clearInterval(t2);
+                                        t2 = window.setInterval(timefun, 1000);
+                                        getTaskInfo();
+                                    } else {
+                                        alert("步骤确认异常，请联系客服！")
+                                    }
+                                }
+                            });
+                       });
 
                     // 展示结果
                     $("#show_result").click(function () {
@@ -689,6 +728,7 @@ if (App.isAngularJsApp() === false) {
         // 重试
         $('#exec').click(function () {
             $("#confirmbtn").parent().empty();
+            $("#continuebtn").parent().empty()
             $.ajax({
                 type: "POST",
                 dataType: 'json',
@@ -718,6 +758,7 @@ if (App.isAngularJsApp() === false) {
         // 跳过脚本
         $("#ignore").click(function () {
             $("#confirmbtn").parent().empty();
+            $("#continuebtn").parent().empty();
             var scriptid = $("#script_button").val();
             $.ajax({
                 url: "../../ignore_current_script/",
@@ -757,6 +798,7 @@ if (App.isAngularJsApp() === false) {
         // 终止流程
         $("#stopbtn").click(function () {
             $("#confirmbtn").parent().empty();
+            $("#continuebtn").parent().empty();
             if ($("#process_note").val() == "")
                 alert("请在说明项目输入停止原因！");
             else {

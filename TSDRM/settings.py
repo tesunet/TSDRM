@@ -105,7 +105,8 @@ DATABASES = {
         'USER': 'root',
         'PASSWORD': 'password',
         # 'HOST': '223.247.155.54',
-        'HOST': '192.168.1.66',
+        #'HOST': '192.168.1.66',
+        'HOST': '127.0.0.1',
         'PORT': '3306',
     }
 }
@@ -150,7 +151,7 @@ STATIC_ROOT = os.path.join(SITE_ROOT, 'static')
 
 EMAIL_HOST = 'smtp.exmail.qq.com'
 EMAIL_HOST_USER = 'huangzx@tesunet.com.cn'
-EMAIL_HOST_PASSWORD = 'China320701045'
+EMAIL_HOST_PASSWORD = 'password'
 EMAIL_PORT = 25
 
 # STATICFILES_DIRS = [

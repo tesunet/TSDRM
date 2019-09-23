@@ -438,6 +438,68 @@ def runstep(steprun, if_repeat=False):
 
         nextstep = steprun.step.next.exclude(state="9")
         if len(nextstep) > 0:
+            # 演练中，后续步骤不计入RTO时，自动开启下一流程
+            if processrun.walkthrough is not None and nextstep[0].rto_count_in=="0":
+                processrun.walkthroughstate = "DONE"
+                processrun.save()
+
+                current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
+                if current_process_run:
+                    current_process_run = current_process_run[0]
+                    current_process_run.starttime = datetime.datetime.now()
+                    current_process_run.state = "RUN"
+                    current_process_run.walkthroughstate = "RUN"
+                    current_process_run.DataSet_id = 89
+                    current_process_run.save()
+
+                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(type="falconstor")
+
+                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                        "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                        # 将当前流程改成SIGN
+                        c_process_run_id = current_process_run.id
+                        c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                        if c_process_run:
+                            c_process_run = c_process_run[0]
+                            c_process_run.state = "SIGN"
+                            c_process_run.save()
+                        for group in allgroup:
+                            try:
+                                signgroup = Group.objects.get(id=int(group["group"]))
+                                groupname = signgroup.name
+                                myprocesstask = ProcessTask()
+                                myprocesstask.processrun = current_process_run
+                                myprocesstask.starttime = datetime.datetime.now()
+                                myprocesstask.senduser = 'admin'
+                                myprocesstask.receiveauth = group["group"]
+                                myprocesstask.type = "SIGN"
+                                myprocesstask.state = "0"
+                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                myprocesstask.save()
+                            except:
+                                pass
+
+                    else:
+                        prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
+                        if len(prosssigns) <= 0:
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun = current_process_run
+                            myprocesstask.starttime = datetime.datetime.now()
+                            myprocesstask.type = "INFO"
+                            myprocesstask.logtype = "START"
+                            myprocesstask.state = "1"
+                            myprocesstask.senduser = 'admin'
+                            myprocesstask.content = "流程已启动。"
+                            myprocesstask.save()
+
+                            exec_process.delay(current_process_run.id)
+                else:
+                    walkthrough = processrun.walkthrough
+                    walkthrough.state = "DONE"
+                    walkthrough.save()
+
             nextsteprun = nextstep[0].steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
             if len(nextsteprun) > 0:
                 # starttime存在，一级步骤不需要再次写入starttime
@@ -471,6 +533,69 @@ def exec_process(processrunid, if_repeat=False):
     processrun = processrun[0]
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
     if len(steprunlist) > 0:
+        # 演练中，第一步不计入RTO时，自动开启下一流程
+        if processrun.walkthrough is not None and steprunlist[0].step.rto_count_in=="0":
+            processrun.walkthroughstate = "DONE"
+            processrun.save()
+
+            current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
+            if current_process_run:
+                current_process_run = current_process_run[0]
+                current_process_run.starttime = datetime.datetime.now()
+                current_process_run.state = "RUN"
+                current_process_run.walkthroughstate = "RUN"
+                current_process_run.DataSet_id = 89
+                current_process_run.save()
+
+                process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
+                    type="falconstor")
+
+                allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                    "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+                if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                    # 将当前流程改成SIGN
+                    c_process_run_id = current_process_run.id
+                    c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                    if c_process_run:
+                        c_process_run = c_process_run[0]
+                        c_process_run.state = "SIGN"
+                        c_process_run.save()
+                    for group in allgroup:
+                        try:
+                            signgroup = Group.objects.get(id=int(group["group"]))
+                            groupname = signgroup.name
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun = current_process_run
+                            myprocesstask.starttime = datetime.datetime.now()
+                            myprocesstask.senduser = 'admin'
+                            myprocesstask.receiveauth = group["group"]
+                            myprocesstask.type = "SIGN"
+                            myprocesstask.state = "0"
+                            myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                            myprocesstask.save()
+                        except:
+                            pass
+
+                else:
+                    prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
+                    if len(prosssigns) <= 0:
+                        myprocesstask = ProcessTask()
+                        myprocesstask.processrun = current_process_run
+                        myprocesstask.starttime = datetime.datetime.now()
+                        myprocesstask.type = "INFO"
+                        myprocesstask.logtype = "START"
+                        myprocesstask.state = "1"
+                        myprocesstask.senduser = 'admin'
+                        myprocesstask.content = "流程已启动。"
+                        myprocesstask.save()
+
+                        exec_process.delay(current_process_run.id)
+            else:
+                walkthrough = processrun.walkthrough
+                walkthrough.state = "DONE"
+                walkthrough.save()
+
         end_step_tag = runstep(steprunlist[0], if_repeat)
     else:
         myprocesstask = ProcessTask()
@@ -486,7 +611,11 @@ def exec_process(processrunid, if_repeat=False):
         processrun.state = "ERROR"
         processrun.save()
     if end_step_tag == 1:
+        processrun = ProcessRun.objects.filter(id=processrunid)
+        processrun = processrun[0]
+        curwalkthroughstate = processrun.walkthroughstate
         processrun.state = "DONE"
+        processrun.walkthroughstate = "DONE"
         processrun.endtime = datetime.datetime.now()
         processrun.save()
         myprocesstask = ProcessTask()
@@ -499,7 +628,68 @@ def exec_process(processrunid, if_repeat=False):
         myprocesstask.content = "流程结束。"
         myprocesstask.save()
 
-    #
+        # 演练中，当前力流程结束时，启动下一流程
+        if processrun.walkthrough is not None:
+            if curwalkthroughstate!="DONE":
+                current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
+                if current_process_run:
+                    current_process_run = current_process_run[0]
+                    current_process_run.starttime = datetime.datetime.now()
+                    current_process_run.state = "RUN"
+                    current_process_run.walkthroughstate = "RUN"
+                    current_process_run.DataSet_id = 89
+                    current_process_run.save()
+
+                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
+                        type="falconstor")
+
+                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                        "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                        # 将当前流程改成SIGN
+                        c_process_run_id = current_process_run.id
+                        c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                        if c_process_run:
+                            c_process_run = c_process_run[0]
+                            c_process_run.state = "SIGN"
+                            c_process_run.save()
+                        for group in allgroup:
+                            try:
+                                signgroup = Group.objects.get(id=int(group["group"]))
+                                groupname = signgroup.name
+                                myprocesstask = ProcessTask()
+                                myprocesstask.processrun = current_process_run
+                                myprocesstask.starttime = datetime.datetime.now()
+                                myprocesstask.senduser = 'admin'
+                                myprocesstask.receiveauth = group["group"]
+                                myprocesstask.type = "SIGN"
+                                myprocesstask.state = "0"
+                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                myprocesstask.save()
+                            except:
+                                pass
+
+                    else:
+                        prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
+                        if len(prosssigns) <= 0:
+                            myprocesstask = ProcessTask()
+                            myprocesstask.processrun = current_process_run
+                            myprocesstask.starttime = datetime.datetime.now()
+                            myprocesstask.type = "INFO"
+                            myprocesstask.logtype = "START"
+                            myprocesstask.state = "1"
+                            myprocesstask.senduser = 'admin'
+                            myprocesstask.content = "流程已启动。"
+                            myprocesstask.save()
+
+                            exec_process.delay(current_process_run.id)
+                else:
+                    walkthrough = processrun.walkthrough
+                    walkthrough.state="DONE"
+                    walkthrough.save()
+
+        #
     #     processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
     #     if len(processtasks) > 0:
     #         processtasks[0].state = "1"

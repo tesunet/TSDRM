@@ -77,6 +77,16 @@ urlpatterns = [
     url(r'^fill_with_invitation/$', fill_with_invitation),
     url(r'^save_modify_invitation/$', save_modify_invitation),
 
+    url(r'^walkthrough/$', walkthrough, {"funid": "69"}),
+    url(r'^walkthroughdata/$', walkthroughdata),
+    url(r'^walkthroughsave/$', walkthroughsave),
+    url(r'^reject_walkthrough/$', reject_walkthrough),
+    url(r'^walkthroughdel/$', walkthroughdel),
+    url(r'^walkthroughindex/(\d+)/$', walkthroughindex),
+    url(r'^get_walkthrough_index_data/$', get_walkthrough_index_data),
+    url(r'^walkthrough_run_invited/$', walkthrough_run_invited),
+
+
     url(r'^getrunsetps/$', getrunsetps),
     url(r'^falconstorcontinue/$', falconstorcontinue),
     url(r'^processsignsave/$', processsignsave),
@@ -84,6 +94,7 @@ urlpatterns = [
     url(r'^ignore_current_script/$', ignore_current_script),
     url(r'^stop_current_process/$', stop_current_process),
     url(r'^verify_items/$', verify_items),
+    url(r'^processcontinue/$', processcontinue),
     url(r'^show_result/$', show_result),
     url(r'^reject_invited/$', reject_invited),
     url(r'^reload_task_nums/$', reload_task_nums),

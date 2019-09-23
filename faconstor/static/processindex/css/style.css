@@ -443,16 +443,16 @@ input {
     position: relative;
 }
 
-.box-left .lbox-1, .box-left .lbox-2, .box-left .lbox-3, .box-left .lbox-4,
-.box-right .rbox-1, .box-right .rbox-2, .box-right .rbox-3, .box-right .rbox-4 {
+.box-left .lbox-1, .box-left .lbox-2, .box-left .lbox-3, .box-left .lbox-4, .box-left .lbox-5,
+.box-right .rbox-1, .box-right .rbox-2, .box-right .rbox-3, .box-right .rbox-4, .box-right .rbox-5 {
     border-radius: 50%;
     text-align: center;
     box-shadow: -20px 20px 20px #0c203a;
 }
 
 /*左边*/
-.step-left1, .step-left2, .step-left3, .step-left4,
-.step-right1, .step-right2, .step-right3, .step-right4 {
+.step-left1, .step-left2, .step-left3, .step-left4, .step-left5,
+.step-right1, .step-right2, .step-right3, .step-right4, .step-right5 {
     height: 100%;
 }
 
@@ -475,8 +475,13 @@ input {
 }
 
 .step-left4, .step-right4 {
-    width: 85px;
+    width: 45px;
     z-index: 30
+    /*background: #eee;*/
+}
+.step-left5, .step-right5 {
+    width: 40px;
+    z-index: 10
     /*background: #eee;*/
 }
 
@@ -584,7 +589,7 @@ input {
     height: 75px;
     position: absolute;
     border: 3px green solid;
-    left: 45px;
+    left: 5px;
     bottom: 270px;
 }
 
@@ -618,6 +623,50 @@ input {
 
 .box-left .lbox-4 em {
     font-size: 9px;
+    transform: scale(0.7);
+    display: block;
+}
+
+/*lbox5*/
+.box-left .lbox-5 {
+    width: 60px;
+    height: 60px;
+    position: absolute;
+    border: 3px green solid;
+    left: 30px;
+    bottom: 360px;
+}
+
+.box-left .lbox-5 .con-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 28px green solid;
+    width: 0px;
+    height: 0px;
+    left: 2px;
+    top: 2px;
+    z-index: -90;
+}
+
+.box-left .lbox-5 span, .box-right .rbox-5 span {
+    display: none;
+}
+
+.box-left .lbox-5 p {
+    /*padding-top: 20px;
+    white-space: nowrap;*/
+    overflow: hidden;
+    font-size: 8px;
+    transform: scale(0.8);
+    width: 60px;
+}
+
+.box-left .lbox-5 .con-text {
+    line-height: 1em;
+}
+
+.box-left .lbox-5 em {
+    font-size: 8px;
     transform: scale(0.7);
     display: block;
 }
@@ -729,7 +778,7 @@ input {
     height: 75px;
     position: absolute;
     border: 3px green solid;
-    right: 45px;
+    right: 5px;
     bottom: 270px;
 }
 
@@ -748,6 +797,35 @@ input {
     line-height: 60px;
     white-space: nowrap;
     overflow: hidden;
+    width: 65px;
+    margin: 0 auto;
+}
+
+.box-right .rbox-5 {
+    width: 60px;
+    height: 60px;
+    position: absolute;
+    border: 3px green solid;
+    right: 30px;
+    bottom:360px;
+}
+
+.box-right .rbox-5 .con-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 28px green solid;
+    width: 0px;
+    height: 0px;
+    left: 2px;
+    top: 2px;
+    z-index: -90;
+}
+
+.box-right .rbox-5 p {
+    line-height: 30px;
+    white-space: nowrap;
+    overflow: hidden;
+    font-size: 8px;
     width: 65px;
     margin: 0 auto;
 }
