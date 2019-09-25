@@ -3787,7 +3787,6 @@ def reject_walkthrough(request):
                 processrun.state = "REJECT"
                 processrun.save()
 
-
                 # 生成取消任务信息
                 myprocesstask = ProcessTask()
                 myprocesstask.processrun_id = processrun.id
