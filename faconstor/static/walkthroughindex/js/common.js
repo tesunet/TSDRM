@@ -1,5 +1,6 @@
 ﻿﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
 var walkthrough_state=""
+    refresh= true,
     interval = 0,
     tmInterval = 0,
     headerTitle = '',
@@ -13,23 +14,25 @@ var util = {
         }, 3 * 1000); //3秒/次请求
     },
     request: function () {
-        $.ajax({
-            url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
-            //url: '/static/processindex/data.json', //这里面是请求的接口地址
-            type: 'POST',
-            data: {
-                walkthrough_id: $("#walkthrough_id").val(),
-                csrfmiddlewaretoken: csrfToken
-            },
-            timeout: 2000,
-            dataType: 'json',
-            success: function (data) {
-                util.makeHtml(data);
-            },
-            // error: function(xhr) {
-            //     alert('网络错误')
-            // }
-        });
+        if(refresh) {
+            $.ajax({
+                url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
+                //url: '/static/processindex/data.json', //这里面是请求的接口地址
+                type: 'POST',
+                data: {
+                    walkthrough_id: $("#walkthrough_id").val(),
+                    csrfmiddlewaretoken: csrfToken
+                },
+                timeout: 2000,
+                dataType: 'json',
+                success: function (data) {
+                    util.makeHtml(data);
+                },
+                // error: function(xhr) {
+                //     alert('网络错误')
+                // }
+            });
+        }
     },
     makeHtml: function (walkthroughindexdata) {
         walkthrough_state = walkthroughindexdata.walkthrough_state;
@@ -191,14 +194,14 @@ var util = {
                         });
                     }, 1 * 1000);
 
-                    // //停止
-                    // if ($.inArray(state, ['DONE', 'STOP']) >= 0) {
-                    //     clearInterval(interval);
-                    //     clearInterval(tmInterval);
-                    //     end = true;
-                    // } else {
-                    //     end = false;
-                    // }
+                    //停止
+                    if ($.inArray(state, ['DONE', 'STOP']) >= 0) {
+                        clearInterval(interval);
+                        clearInterval(tmInterval);
+                        end = true;
+                    } else {
+                        end = false;
+                    }
                     // 步骤出错，仍旧记时
                 } else {
                     end = false;
@@ -233,7 +236,7 @@ var util = {
                         if (data.data == "0") {
                             alert("启动系统关闭程序！");
                         } else {
-                            alert("系统状态异常，无法关闭！")
+                            alert("业务人员未完成数据验证，请勿关闭该系统！")
                         }
                     }
                 });
@@ -259,12 +262,12 @@ var util = {
                 }
                 if(isshow) {
                         console.append("<span class=\"prompt\">➜</span> ");
-                        console.append("<span class=\"path\">~</span>" + showtasks[i].taskname + ":" + showtasks[i].taskcontent);
+                        console.append("<span class=\"path\">~</span>" + showtasks[i].taskcontent);
                         console.append("<br>");
                         console.append("<br>");
                     }
                     else{
-                        showtext = "➜" + "~" + showtasks[i].taskname + ":" + showtasks[i].taskcontent + "^"
+                        showtext = "➜" + "~" + showtasks[i].taskcontent + "^"
                 }
             }
             if(showtext.length>0) {
@@ -272,6 +275,7 @@ var util = {
                 var myindex = 0;
                 //$text.html()和$(this).html('')有区别
                 var timer = setInterval(function () {
+                        refresh = false;
                         var current = str.substr(myindex, 1);
                         myindex++;
                         if(current=="➜")
@@ -288,6 +292,7 @@ var util = {
                         }
                         if (myindex >= str.length) {
                             clearInterval(timer);
+                            refresh =true;
                         }
                     },
                     100);
@@ -298,7 +303,7 @@ var util = {
        else {
             for (var i = 0; i < showtasks.length; i++) {
                 console.append("<span class=\"prompt\">➜</span> ");
-                console.append("<span class=\"path\">~</span>" + showtasks[i].taskname + ":" + showtasks[i].taskcontent);
+                console.append("<span class=\"path\">~</span>" +  showtasks[i].taskcontent);
                 console.append("<br>");
                 console.append("<br>");
             }
