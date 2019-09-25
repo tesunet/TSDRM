@@ -199,7 +199,7 @@
                                 <div class="col-md-10">
                                     <select class="form-control" id="host_id" name="host_id">
                                         {% for host in all_hosts_manage %}
-                                            <option value="{{ host.id }}">{{ host.host_ip }}</option>
+                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>
