@@ -1,0 +1,199 @@
+﻿﻿<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ process_name }}</title>
+    <link rel="stylesheet" href="/static/walkthroughindex/css/style.css">
+    <script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+</head>
+<body>
+    <div class="logo">
+        <img style="height: 40px" src="/static/processindex/images/logo.png">
+    </div>
+    <div class="wrapper">
+        <input type="text" id="walkthrough_id" name="walkthrough_id" value="{{ walkthrough_id }}" hidden>
+        <input type="text" id="walkthrough_name" name="walkthrough_name" value="{{ walkthrough_name }}" hidden>
+
+        {% csrf_token %}
+        <div class="head-content" style="z-index: 100">
+            <div class="header-title">
+                <h1></h1>
+                <div class="header-timeout" hidden>
+                    <ul>
+                        <li><span>RTO</span></li>
+                        <li><em>  </em></li>
+                        <li><em>  </em></li>
+                        <li><span>0</span></li>
+                        <li><span>0</span></li>
+                        <li><em>:</em></li>
+                        <li><span>0</span></li>
+                        <li><span>0</span></li>
+                        <li><em>:</em></li>
+                        <li><span>0</span></li>
+                        <li><span>0</span></li>
+                    </ul>
+                </div>
+
+        </div>
+
+
+
+        </div>
+        <div class="start_hand" hidden>
+            <div class="hand"></div>
+            <div class="shine" hidden></div>
+        </div>
+
+        <div class="end_pic" hidden>
+            <div class="endtext">演 练 成 功</div>
+            <div class="end">
+            </div>
+        </div>
+
+        <div class="walkthrough_run" >
+            <div class="progress_list" >
+
+
+            </div>
+            <div class="progress_run" >
+                <h2></h2>
+                <div class="step-box" >
+
+                    <div class="box-left">
+                        <div class="step-item step-left3">
+                            <div class="lbox-3" style="display: none">
+                                <div class="con-circle"></div>
+                                <div class="con-text"></div>
+                            </div>
+                        </div>
+                        <div class="step-item step-left2">
+                            <div class="lbox-2" style="display: none">
+                                <div class="con-circle"></div>
+                                <div class="con-text"></div>
+                            </div>
+                        </div>
+
+                        <div class="step-item step-left1">
+                            <div class="lbox-1" style="display: none">
+                                <div class="con-circle"></div>
+                                <div class="con-text"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="box-center">
+
+                        <div class="step-current">
+                            <div class="step-item">
+                                <div class="cur-item-wb">
+                                    <div class="circle progress-circle" id="current-circles"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="box-right">
+                        <div class="step-item step-right1">
+                            <div class="rbox-1" style="display: none;">
+                                <div class="con-circle"></div>
+                                <div class="con-text"></div>
+                            </div>
+                        </div>
+                        <div class="step-item step-right2">
+                            <div class="rbox-2" style="display: none;">
+                                <div class="con-circle"></div>
+                                <div class="con-text"></div>
+                            </div>
+                        </div>
+                        <div class="step-item step-right3">
+                            <div class="rbox-3" style="display: none;">
+                                <div class="con-circle"></div>
+                                <div class="con-text"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="box-progress" >
+                    <div class="box-progress-container">
+                        <div class='progress active'>
+                            <div class='progress-par bar' style='width:1%;text-align: center;'><span></span><i>0%</i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="progress_logs" >
+                <div class="container">
+                    <div class="window">
+                        <div class="console"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <audio src='/static/walkthroughindex/sound/2019.mp3' style='display:none' id='audio'></audio>
+    </div>
+    <script src="/static/walkthroughindex/js/common.js"></script>
+    <script src="/static/walkthroughindex/js/circles.min.js"></script>
+
+    <script>
+
+        util.run();
+    </script>
+    <script>
+        $(".start_hand").click(function () {
+            document.getElementById('audio').play();
+            var walkthrough_id = $("#walkthrough_id").val()
+            $(".shine").show()
+            // 需邀请流程启动
+            setTimeout(function () {
+                $.ajax({
+                    type: "POST",
+                    dataType: 'json',
+                    url: "../../walkthrough_run_invited/",
+                    data:
+                        {
+                            walkthrough_id: walkthrough_id,
+                            csrfmiddlewaretoken: csrfToken
+                        },
+                    success: function (data) {
+                        if (data["res"] === "启动成功。") {
+                            sleep(5000);
+                            window.location.reload();
+                        } else if (data["res"] === "请勿重复启动该流程。") {
+                            //.. 不作为
+                        } else {
+                            $(".shine").hide()
+                            alert(data["res"]);
+                        }
+                    },
+                    error: function (e) {
+                        alert("流程启动失败，请于管理员联系。");
+                        $(".shine").hide()
+                    }
+                });
+            }, 4 * 1000);
+        })
+    </script>
+{#    <script>#}
+{#        var index=0;#}
+{#        var word;#}
+{#        function type(){#}
+{#        var console = $(".console");#}
+{#            console.append("<span class=\"prompt\">➜</span> <br>");#}
+{#        }#}
+{#        $(document).ready(function() {#}
+{#            var console = $(".console");#}
+{#            var path = "~";#}
+{#            console.append("<span class=\"prompt\">➜</span> ");#}
+{#            console.append("<span class=\"path\">" + path + "</span> 今天天气不错");#}
+{#            window.onload=function() {#}
+{#                word = "asdasdqweq";#}
+{#                setInterval(type, 200);#}
+{#            }#}
+{#        });#}
+{#    </script>#}
+</body>
+</html>
