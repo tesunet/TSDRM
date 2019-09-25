@@ -652,14 +652,8 @@
         });
     }
 
-    //var loadTasksTag = $("#load_tasks_tag").val();
-    // if (loadTasksTag == 1) {
-    var my_t = window.setInterval(getTaskInfo, 6000);
-    //}
-    //else {
-    //    window.clearInterval(my_t)
-    //}
-
+    window.clearInterval(my_t);
+    var my_t = window.setInterval(getTaskInfo, 5000);
 
     // 任务信息写入模态框
     $("ul#locate_task").on("click", " li", function () {

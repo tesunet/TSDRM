@@ -3818,6 +3818,14 @@ def walkthroughdel(request):
             walkthrough = walkthrough[0]
             walkthrough.state = "9"
             walkthrough.save()
+
+            ################
+            # 删除关联流程 #
+            ################
+            all_process_run = walkthrough.processrun_set.exclude(state="9")
+            if all_process_run.exists():
+                all_process_run.update(state="9")
+
             return HttpResponse(1)
         else:
             return HttpResponse(0)
@@ -4602,7 +4610,15 @@ def verify_items(request):
                                                                                                 "step").all()
         if current_step_run:
             current_step_run = current_step_run[0]
-            # CONFIRM修改成DONE
+
+            ###########################################
+            # VerifyItemsRun中has_verified修改成已确认 #
+            ###########################################
+            all_verify_item_run = current_step_run.verifyitemsrun_set.exclude(state="9")
+            if all_verify_item_run.exists():
+                all_verify_item_run.update(has_verified="1")
+
+            # CONFIRM修改成CONTINUE
             current_step_run.state = "CONTINUE"
             current_step_run.endtime = datetime.datetime.now()
             current_step_run.save()
@@ -4616,7 +4632,7 @@ def verify_items(request):
 
             #写入继续任务
             myprocesstask = ProcessTask()
-            myprocesstask.processrun = current_step_run.processrun_id
+            myprocesstask.processrun_id = current_step_run.processrun_id
             myprocesstask.starttime = datetime.datetime.now()
             myprocesstask.senduser = current_step_run.processrun.creatuser
             myprocesstask.receiveauth = current_step_run.step.group
