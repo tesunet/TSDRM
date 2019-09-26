@@ -1,18 +1,18 @@
-$(document).ready(function() {
+$(document).ready(function () {
     $('#hosts_dt').dataTable({
         "bAutoWidth": true,
         "bSort": false,
         "bProcessing": true,
         "ajax": "../hosts_manage_data/",
         "columns": [
-            { "data": "host_id" },
-            { "data": "host_ip" },
-            { "data": "host_name" },
-            { "data": "os" },
-            { "data": "type" },
-            { "data": "username" },
-            { "data": "password" },
-            { "data": null }
+            {"data": "host_id"},
+            {"data": "host_ip"},
+            {"data": "host_name"},
+            {"data": "os"},
+            {"data": "type"},
+            {"data": "username"},
+            {"data": "password"},
+            {"data": null}
         ],
 
         "columnDefs": [{
@@ -42,7 +42,7 @@ $(document).ready(function() {
         }
     });
     // 行按钮
-    $('#hosts_dt tbody').on('click', 'button#delrow', function() {
+    $('#hosts_dt tbody').on('click', 'button#delrow', function () {
         if (confirm("确定要删除该条数据？")) {
             var table = $('#hosts_dt').DataTable();
             var data = table.row($(this).parents('tr')).data();
@@ -52,20 +52,20 @@ $(document).ready(function() {
                 data: {
                     host_id: data.host_id,
                 },
-                success: function(data) {
+                success: function (data) {
                     if (data.ret == 1) {
                         table.ajax.reload();
                     }
                     alert(data.info);
                 },
-                error: function(e) {
+                error: function (e) {
                     alert("删除失败，请于管理员联系。");
                 }
             });
 
         }
     });
-    $('#hosts_dt tbody').on('click', 'button#edit', function() {
+    $('#hosts_dt tbody').on('click', 'button#edit', function () {
         var table = $('#hosts_dt').DataTable();
         var data = table.row($(this).parents('tr')).data();
 
@@ -78,7 +78,7 @@ $(document).ready(function() {
         $("#password").val(data.password);
     });
 
-    $("#new").click(function() {
+    $("#new").click(function () {
         $("#host_id").val("0");
         $("#host_ip").val("");
         $("#host_name").val("");
@@ -88,7 +88,7 @@ $(document).ready(function() {
         $("#password").val("");
     });
 
-    $('#save').click(function() {
+    $('#save').click(function () {
         var table = $('#hosts_dt').DataTable();
 
         $.ajax({
@@ -104,20 +104,39 @@ $(document).ready(function() {
                 username: $("#username").val(),
                 password: $("#password").val(),
             },
-            success: function(data) {
+            success: function (data) {
                 if (data.ret == 1) {
                     $('#static').modal('hide');
                     table.ajax.reload();
                 }
                 alert(data.info);
             },
-            error: function(e) {
+            error: function (e) {
                 alert("页面出现错误，请于管理员联系。");
             }
         });
-    })
+    });
 
-    $('#error').click(function() {
+    $("#os").change(function () {
+        if ($(this).val() == 'Linux') {
+            $("#type").val("SSH");
+        } else if ($(this).val() == 'Windows') {
+            $("#type").val("BAT");
+        } else {
+            $("#type").val("");
+        }
+    });
+    $("#type").change(function () {
+        if ($(this).val() == 'SSH') {
+            $("#os").val("Linux");
+        } else if ($(this).val() == 'BAT') {
+            $("#os").val("Windows");
+        } else {
+            $("#os").val("");
+        }
+    });
+
+    $('#error').click(function () {
         $(this).hide()
     })
 });
