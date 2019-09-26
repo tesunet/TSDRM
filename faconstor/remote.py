@@ -9,6 +9,7 @@ import json
 from paramiko import py3compat
 import socket
 import requests
+import eventlet
 
 
 class ServerByPara(object):
@@ -79,33 +80,43 @@ class ServerByPara(object):
         }
 
     def exec_win_cmd(self, succeedtext):
+
         data_init = ""
         log = ""
 
-        try:
-            s = winrm.Session(self.host, auth=(self.user, self.pwd))
-            ret = s.run_cmd(self.cmd)
-        except requests.exceptions.ConnectionError as e:
-            print("连接服务器失败")
-            return {
-                "exec_tag": 1,
-                "data": "连接服务器失败：{0}".format(e),
-                "log": "连接服务器失败",
-            }
+        time_limit = 6 * 60
 
-        if ret.std_err.decode():
-            exec_tag = 1
-            for data in ret.std_err.decode().split("\r\n"):
-                data_init += data
-            log = ""
-        else:
-            exec_tag = 0
-            for data in ret.std_out.decode().split("\r\n"):
-                data_init += data
-            if succeedtext is not None:
-                if succeedtext not in data_init:
+        try:
+            with eventlet.Timeout(time_limit, True):
+                try:
+                    s = winrm.Session(self.host, auth=(self.user, self.pwd))
+                    ret = s.run_cmd(self.cmd)
+                except requests.exceptions.ConnectionError as e:
+                    print("连接服务器失败")
+                    return {
+                        "exec_tag": 1,
+                        "data": "连接服务器失败：{0}".format(e),
+                        "log": "连接服务器失败",
+                    }
+
+                if ret.std_err.decode():
                     exec_tag = 1
-                    log = "未匹配"
+                    for data in ret.std_err.decode().split("\r\n"):
+                        data_init += data
+                    log = ""
+                else:
+                    exec_tag = 0
+                    for data in ret.std_out.decode().split("\r\n"):
+                        data_init += data
+                    if succeedtext is not None:
+                        if succeedtext not in data_init:
+                            exec_tag = 1
+                            log = "未匹配"
+        except eventlet.timeout.Timeout as e:
+            exec_tag = 1
+            log = "执行脚本超时"
+            data_init = "执行脚本超时：{0}".format(e)
+
         return {
             "exec_tag": exec_tag,
             "data": data_init,
