@@ -638,6 +638,19 @@ if (App.isAngularJsApp() === false) {
 
                     // 确认
                     $("#confirmbtn").click(function () {
+                        /*
+                            多个确认项处理：
+                                verify_run_id
+
+                         */
+                        var verify_array = [];
+                        var verify_els =$("#confirmbtn").parent().prev().find('div[id^="verifyitems_"]').find('input');
+                        verify_els.each(function (index, element) {
+                            if (element.checked == true){
+                                verify_array.push(element.id);
+                            }
+                        });
+
                         var step_id = $(this).prev().val();
                         var notChecked = "";
                         $(this).parent().siblings().find("input[type='checkbox']:not(:checked)").each(function (index, element) {
@@ -649,6 +662,7 @@ if (App.isAngularJsApp() === false) {
                                     url: "/verify_items/",
                                     type: "post",
                                     data: {
+                                        "verify_array":  JSON.stringify(verify_array),
                                         "step_id": step_id,
                                     },
                                     success: function (data) {
@@ -669,6 +683,7 @@ if (App.isAngularJsApp() === false) {
                                 url: "/verify_items/",
                                 type: "post",
                                 data: {
+                                    "verify_array":  JSON.stringify(verify_array),
                                     "step_id": step_id,
                                 },
                                 success: function (data) {

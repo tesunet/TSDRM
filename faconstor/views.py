@@ -4604,7 +4604,12 @@ def stop_current_process(request):
 
 def verify_items(request):
     if request.user.is_authenticated():
+        verify_array = request.POST.get("verify_array", "")
         step_id = request.POST.get("step_id", "")
+        try:
+            verify_array = eval(verify_array)
+        except:
+            verify_array = []
         current_step_run = StepRun.objects.filter(id=step_id).exclude(state="9").select_related("processrun",
                                                                                                 "step").all()
         if current_step_run:
@@ -4613,7 +4618,7 @@ def verify_items(request):
             ###########################################
             # VerifyItemsRun中has_verified修改成已确认 #
             ###########################################
-            all_verify_item_run = current_step_run.verifyitemsrun_set.exclude(state="9")
+            all_verify_item_run = current_step_run.verifyitemsrun_set.exclude(state="9").filter(id__in=verify_array)
             if all_verify_item_run.exists():
                 all_verify_item_run.update(has_verified="1")
 
