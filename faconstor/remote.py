@@ -9,7 +9,7 @@ import json
 from paramiko import py3compat
 import socket
 import requests
-from paramiko.buffered_pipe import BufferedPipe, PipeTimeout
+
 
 class ServerByPara(object):
     def __init__(self, cmd, host, user, password, system_choice):
@@ -33,7 +33,7 @@ class ServerByPara(object):
                 "log": "连接服务器失败",
             }
         try:
-            stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=10)
+            stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=6*60)
             if stderr.readlines():
                 exec_tag = 1
                 for data in stderr.readlines():
