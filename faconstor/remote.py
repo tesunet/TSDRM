@@ -7,6 +7,9 @@ import paramiko
 import winrm
 import json
 from paramiko import py3compat
+import socket
+import requests
+from paramiko.buffered_pipe import BufferedPipe, PipeTimeout
 
 class ServerByPara(object):
     def __init__(self, cmd, host, user, password, system_choice):
@@ -21,53 +24,53 @@ class ServerByPara(object):
         data_init = ''
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            self.client.connect(hostname=self.host, username=self.user, password=self.pwd)
-        except:
+            self.client.connect(hostname=self.host, username=self.user, password=self.pwd, timeout=5)
+        except TimeoutError as e:
             print("连接服务器失败")
             return {
                 "exec_tag": 1,
-                "data": "连接服务器失败",
+                "data": "连接服务器失败：{0}".format(e),
                 "log": "连接服务器失败",
             }
         try:
-            stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True)
-        except:
+            stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=10)
+            if stderr.readlines():
+                exec_tag = 1
+                for data in stderr.readlines():
+                    data_init += data
+                log = ""
+            else:
+                exec_tag = 0
+                log = ""
+
+                try:
+                    for data in stdout.readlines():
+                        data_init += data
+
+                    if "command not found" in data_init:  # 命令不存在
+                        exec_tag = 1
+                        log = "命令不存在"
+                    elif "syntax error" in data_init:  # 语法错误
+                        exec_tag = 1
+                        log = "语法错误"
+                    elif "No such file or directory" in data_init:  # 脚本不存在
+                        exec_tag = 1
+                        log = "脚本不存在"
+                    elif succeedtext is not None:
+                        if succeedtext not in data_init:
+                            exec_tag = 1
+                            log = "未匹配"
+                except:
+                    exec_tag = 0  # 不抛错
+                    log = "编码错误"
+                    data_init = "编码错误"
+        except socket.timeout as e:
             print("脚本执行超时")
             return {
                 "exec_tag": 1,
                 "data": "脚本执行超时",
                 "log": "脚本执行超时",
             }
-        if stderr.readlines():
-            exec_tag = 1
-            for data in stderr.readlines():
-                data_init += data
-            log = ""
-        else:
-            exec_tag = 0
-            log = ""
-
-            try:
-                for data in stdout.readlines():
-                    data_init += data
-
-                if "command not found" in data_init:  # 命令不存在
-                    exec_tag = 1
-                    log = "命令不存在"
-                elif "syntax error" in data_init:  # 语法错误
-                    exec_tag = 1
-                    log = "语法错误"
-                elif "No such file or directory" in data_init:  # 脚本不存在
-                    exec_tag = 1
-                    log = "脚本不存在"
-                elif succeedtext is not None:
-                    if succeedtext not in data_init:
-                        exec_tag = 1
-                        log = "未匹配"
-            except:
-                exec_tag = 0  # 不抛错
-                log = "编码错误"
-                data_init = "编码错误"
 
         return {
             "exec_tag": exec_tag,
@@ -82,11 +85,11 @@ class ServerByPara(object):
         try:
             s = winrm.Session(self.host, auth=(self.user, self.pwd))
             ret = s.run_cmd(self.cmd)
-        except:
+        except requests.exceptions.ConnectionError as e:
             print("连接服务器失败")
             return {
                 "exec_tag": 1,
-                "data": "连接服务器失败",
+                "data": "连接服务器失败：{0}".format(e),
                 "log": "连接服务器失败",
             }
 
@@ -123,4 +126,4 @@ class ServerByPara(object):
 # server_obj = ServerByPara(r"/root/Desktop/test06.sh hello", "47.95.195.90", "root","!zxcvbn123", "Linux")
 #     server_obj = ServerByPara(r"cat /root/Desktop/script_log.txt", "47.95.195.90", "root","!zxcvbn123", "Linux")
 #
-    # server_obj.run("")
+# server_obj.run("")
