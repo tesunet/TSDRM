@@ -5,11 +5,69 @@ windows下可以接收到错误信息并作出判断；
 """
 import paramiko
 import winrm
-import json
-from paramiko import py3compat
 import socket
 import requests
-import eventlet
+import datetime
+from winrm.exceptions import WinRMTransportError, WinRMOperationTimeoutError
+from requests.exceptions import ConnectionError
+
+
+###############################################################
+# 为实现 WINDOWS下执行脚本时长超时设置，对wimrm中相关类进行重写。#
+###############################################################
+# 重写Protocol类
+class Protocol(winrm.protocol.Protocol):
+    def get_command_output(self, shell_id, command_id):
+        """
+        Get the Output of the given shell and command
+        @param string shell_id: The shell id on the remote machine.
+         See #open_shell
+        @param string command_id: The command id on the remote machine.
+         See #run_command
+        #@return [Hash] Returns a Hash with a key :exitcode and :data.
+         Data is an Array of Hashes where the cooresponding key
+        #   is either :stdout or :stderr.  The reason it is in an Array so so
+         we can get the output in the order it ocurrs on
+        #   the console.
+        """
+        stdout_buffer, stderr_buffer = [], []
+        command_done = False
+
+        ############################################################################
+        # 限时6*60s                                                                #
+        #   程序反复查看相应，如果相应成功，且在超时时限内则命令成功，否则报超时异常。 #
+        #   获取响应的时长较长。                                                    #
+        ############################################################################
+        return_code = -1
+        limited_seconds = 6 * 60
+        start_time = datetime.datetime.now()
+        while not command_done:
+            print('get the response from windows...')
+            try:
+                stdout, stderr, return_code, command_done = \
+                    self._raw_get_command_output(shell_id, command_id)
+                stdout_buffer.append(stdout)
+                stderr_buffer.append(stderr)
+            except WinRMOperationTimeoutError as e:
+                # this is an expected error when waiting for a long-running process, just silently retry
+                pass
+
+            end_time = datetime.datetime.now()
+            delta_time = end_time - start_time
+            total_seconds = delta_time.total_seconds()
+            if total_seconds > limited_seconds:
+                raise WinRMOperationTimeoutError()
+        return b''.join(stdout_buffer), b''.join(stderr_buffer), return_code
+
+
+# 重写Session类
+class Session(winrm.Session):
+    # TODO implement context manager methods
+    def __init__(self, target, auth, **kwargs):
+        username, password = auth
+        self.url = self._build_url(target, kwargs.get('transport', 'plaintext'))
+        self.protocol = Protocol(self.url,
+                                 username=username, password=password, **kwargs)
 
 
 class ServerByPara(object):
@@ -30,11 +88,11 @@ class ServerByPara(object):
             print("连接服务器失败")
             return {
                 "exec_tag": 1,
-                "data": "连接服务器失败：{0}".format(e),
+                "data": "连接服务器失败 {0}".format(e),
                 "log": "连接服务器失败",
             }
         try:
-            stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=6*60)
+            stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=6 * 60)
             if stderr.readlines():
                 exec_tag = 1
                 for data in stderr.readlines():
@@ -80,48 +138,54 @@ class ServerByPara(object):
         }
 
     def exec_win_cmd(self, succeedtext):
-
         data_init = ""
         log = ""
 
-        time_limit = 6 * 60
-
         try:
-            with eventlet.Timeout(time_limit, True):
-                try:
-                    s = winrm.Session(self.host, auth=(self.user, self.pwd))
-                    ret = s.run_cmd(self.cmd)
-                except requests.exceptions.ConnectionError as e:
-                    print("连接服务器失败")
-                    return {
-                        "exec_tag": 1,
-                        "data": "连接服务器失败：{0}".format(e),
-                        "log": "连接服务器失败",
-                    }
+            s = Session(self.host, auth=(self.user, self.pwd))
+            ret = s.run_cmd(self.cmd)
+        except (ConnectionError, WinRMOperationTimeoutError, WinRMTransportError) as e:
+            if type(e) == WinRMOperationTimeoutError:
+                print("脚本执行超时")
+                exec_tag = 1
+                data = "脚本执行超时 {0}".format(e)
+                log = "脚本执行超时"
+            elif type(e) in [ConnectionError, WinRMTransportError]:
+                print("连接windows失败")
+                exec_tag = 1
+                data = "连接windows失败 {0}".format(e)
+                log = "连接windows失败"
+            else:
+                print("执行windows脚本发生异常错误")
+                exec_tag = 1
+                data = "执行windows脚本发生异常错误 {0}".format(e)
+                log = "执行windows脚本发生异常错误"
 
-                if ret.std_err.decode():
-                    exec_tag = 1
-                    for data in ret.std_err.decode().split("\r\n"):
-                        data_init += data
-                    log = ""
-                else:
-                    exec_tag = 0
-                    for data in ret.std_out.decode().split("\r\n"):
-                        data_init += data
-                    if succeedtext is not None:
-                        if succeedtext not in data_init:
-                            exec_tag = 1
-                            log = "未匹配"
-        except eventlet.timeout.Timeout as e:
-            exec_tag = 1
-            log = "执行脚本超时"
-            data_init = "执行脚本超时：{0}".format(e)
+            return {
+                "exec_tag": exec_tag,
+                "data": data,
+                "log": log,
+            }
+        else:
+            if ret.std_err.decode():
+                exec_tag = 1
+                for data in ret.std_err.decode().split("\r\n"):
+                    data_init += data
+                log = ""
+            else:
+                exec_tag = 0
+                for data in ret.std_out.decode().split("\r\n"):
+                    data_init += data
+                if succeedtext is not None:
+                    if succeedtext not in data_init:
+                        exec_tag = 1
+                        log = "未匹配"
 
-        return {
-            "exec_tag": exec_tag,
-            "data": data_init,
-            "log": log,
-        }
+            return {
+                "exec_tag": exec_tag,
+                "data": data_init,
+                "log": log,
+            }
 
     def run(self, succeedtext):
         if self.system_choice == "Linux":

@@ -371,7 +371,7 @@ def runstep(steprun, if_repeat=False):
                             myprocesstask.receiveauth = steprun.step.group
                             myprocesstask.type = "ERROR"
                             myprocesstask.state = "0"
-                            myprocesstask.content = "脚本" + script_name + "内容写入失败，请处理。"
+                            myprocesstask.content = "脚本" + script_name + "上传windows脚本文件失败，请处理。"
                             myprocesstask.steprun_id = steprun.id
                             myprocesstask.save()
                             return 0
