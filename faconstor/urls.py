@@ -1,8 +1,10 @@
 from django.conf.urls import url
 from faconstor.views import *
-
+from django.views.generic.base import RedirectView
 
 urlpatterns = [
+    url(r'^favicon.ico$', RedirectView.as_view(url=r'static/new/images/favicon.ico')),
+
     url(r'^$', index, {'funid': '2'}),
     url(r'^test/$', test),
     url(r'^processindex/(\d+)/$', processindex),
@@ -85,7 +87,6 @@ urlpatterns = [
     url(r'^walkthroughindex/(\d+)/$', walkthroughindex),
     url(r'^get_walkthrough_index_data/$', get_walkthrough_index_data),
     url(r'^walkthrough_run_invited/$', walkthrough_run_invited),
-
 
     url(r'^getrunsetps/$', getrunsetps),
     url(r'^falconstorcontinue/$', falconstorcontinue),
