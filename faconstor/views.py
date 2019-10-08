@@ -1000,6 +1000,7 @@ def index(request, funid):
             "PLAN": "计划",
             "REJECT": "取消",
             "SIGN": "签到",
+            "CONTINUE": "继续",
             "": "",
         }
 
@@ -4627,6 +4628,11 @@ def verify_items(request):
             current_step_run.endtime = datetime.datetime.now()
             current_step_run.save()
 
+            processrun=current_step_run.processrun
+            processrun.state='CONTINUE'
+            processrun.save()
+
+
             all_current__tasks = current_step_run.processrun.processtask_set.exclude(state="1")
             for task in all_current__tasks:
                 task.endtime = datetime.datetime.now()
@@ -4675,6 +4681,10 @@ def processcontinue(request):
             current_step_run.state = "DONE"
             current_step_run.endtime = datetime.datetime.now()
             current_step_run.save()
+
+            processrun=current_step_run.processrun
+            processrun.state='RUN'
+            processrun.save()
 
             all_current__tasks = current_step_run.processrun.processtask_set.exclude(state="1")
             for task in all_current__tasks:
