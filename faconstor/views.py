@@ -2439,6 +2439,8 @@ def processscriptsave(request):
             success_text = request.POST.get('success_text', '')
             log_address = request.POST.get('log_address', '')
             host_id = request.POST.get('host_id', '')
+
+            script_sort = request.POST.get('script_sort', '')
             try:
                 id = int(id)
                 pid = int(pid)
@@ -2456,60 +2458,91 @@ def processscriptsave(request):
                         if script_text.strip() == '':
                             result["res"] = '脚本内容不能为空。'
                         else:
-
                             try:
-                                cur_host_manage = HostsManage.objects.get(id=host_id)
-                            except:
-                                result["res"] = '网络连接异常。'
+                                script_sort = int(script_sort)
+                            except ValueError as e:
+                                result["res"] = '脚本排序不能为空。'
                             else:
-                                if id == 0:
-                                    allscript = Script.objects.filter(code=code).exclude(
-                                        state="9").filter(step_id=pid)
-                                    if (len(allscript) > 0):
-                                        result["res"] = '脚本编码:' + code + '已存在。'
-                                    else:
-                                        steplist = Step.objects.filter(process_id=processid)
-                                        if len(steplist) > 0:
-                                            scriptsave = Script()
-                                            scriptsave.code = code
-                                            scriptsave.name = name
-
-                                            scriptsave.hosts_manage_id = cur_host_manage.id
-                                            scriptsave.script_text = script_text
-
-                                            # scriptsave.filename = filename
-                                            # scriptsave.scriptpath = scriptpath
-                                            scriptsave.succeedtext = success_text
-                                            scriptsave.log_address = log_address
-
-                                            scriptsave.step_id = pid
-                                            scriptsave.save()
-                                            result["res"] = "新增成功。"
-                                            result["data"] = scriptsave.id
+                                try:
+                                    cur_host_manage = HostsManage.objects.get(id=host_id)
+                                except:
+                                    result["res"] = '网络连接异常。'
                                 else:
-                                    # 修改
-                                    allscript = Script.objects.filter(code=code).exclude(
-                                        id=id).exclude(state="9").filter(step_id=pid)
-                                    if (len(allscript) > 0):
-                                        result["res"] = '脚本编码:' + code + '已存在。'
+                                    if id == 0:
+                                        allscript = Script.objects.filter(code=code).exclude(
+                                            state="9").filter(step_id=pid)
+                                        if (len(allscript) > 0):
+                                            result["res"] = '脚本编码:' + code + '已存在。'
+                                        else:
+                                            steplist = Step.objects.filter(process_id=processid)
+                                            if len(steplist) > 0:
+                                                scriptsave = Script()
+                                                scriptsave.code = code
+                                                scriptsave.name = name
+
+                                                scriptsave.hosts_manage_id = cur_host_manage.id
+                                                scriptsave.script_text = script_text
+
+                                                # scriptsave.filename = filename
+                                                # scriptsave.scriptpath = scriptpath
+                                                scriptsave.succeedtext = success_text
+                                                scriptsave.log_address = log_address
+                                                scriptsave.sort = script_sort
+
+                                                scriptsave.step_id = pid
+                                                scriptsave.save()
+                                                result["res"] = "新增成功。"
+
+                                                ############################################################
+                                                # result["data"] = [{"script_id": 1, "script_name": "2"}]  #
+                                                # 当前脚本所在步骤的所有脚本按排序构造数组                   #
+                                                ############################################################
+                                                script_info_list = []
+                                                cur_step = scriptsave.step
+                                                all_scripts = cur_step.script_set.exclude(state="9").order_by("sort")
+                                                for script in all_scripts:
+                                                    script_info_list.append({
+                                                        "script_id": script.id,
+                                                        "script_name": script.name
+                                                    })
+                                                result["data"] = script_info_list
                                     else:
-                                        try:
-                                            scriptsave = Script.objects.get(id=id)
-                                            scriptsave.code = code
-                                            scriptsave.name = name
+                                        # 修改
+                                        allscript = Script.objects.filter(code=code).exclude(
+                                            id=id).exclude(state="9").filter(step_id=pid)
+                                        if (len(allscript) > 0):
+                                            result["res"] = '脚本编码:' + code + '已存在。'
+                                        else:
+                                            try:
+                                                scriptsave = Script.objects.get(id=id)
+                                                scriptsave.code = code
+                                                scriptsave.name = name
 
-                                            scriptsave.hosts_manage_id = cur_host_manage.id
-                                            scriptsave.script_text = script_text
-                                            # scriptsave.filename = filename
-                                            # scriptsave.scriptpath = scriptpath
-                                            scriptsave.succeedtext = success_text
-                                            scriptsave.log_address = log_address
+                                                scriptsave.hosts_manage_id = cur_host_manage.id
+                                                scriptsave.script_text = script_text
+                                                # scriptsave.filename = filename
+                                                # scriptsave.scriptpath = scriptpath
+                                                scriptsave.succeedtext = success_text
+                                                scriptsave.log_address = log_address
+                                                scriptsave.sort = script_sort
 
-                                            scriptsave.save()
-                                            result["res"] = "修改成功。"
-                                            result["data"] = scriptsave.id
-                                        except:
-                                            result["res"] = "修改失败。"
+                                                scriptsave.save()
+                                                result["res"] = "修改成功。"
+                                                ############################################################
+                                                # result["data"] = [{"script_id": 1, "script_name": "2"}]  #
+                                                # 当前脚本所在步骤的所有脚本按排序构造数组                   #
+                                                ############################################################
+                                                script_info_list = []
+                                                cur_step = scriptsave.step
+                                                all_scripts = cur_step.script_set.exclude(state="9").order_by("sort")
+                                                for script in all_scripts:
+                                                    script_info_list.append({
+                                                        "script_id": script.id,
+                                                        "script_name": script.name
+                                                    })
+                                                result["data"] = script_info_list
+                                            except:
+                                                result["res"] = "修改失败。"
             return HttpResponse(json.dumps(result))
 
 
@@ -2596,7 +2629,6 @@ def get_script_data(request):
                 cur_script = allscript[0]
                 
                 cur_host_manage = cur_script.hosts_manage
-
                 script_data = {
                     "id": cur_script.id, 
                     "code": cur_script.code, 
@@ -2607,7 +2639,8 @@ def get_script_data(request):
                     # "scriptpath": cur_script.scriptpath,
 
                     "success_text":cur_script.succeedtext,
-                    "log_address": cur_script.log_address
+                    "log_address": cur_script.log_address,
+                    "script_sort": cur_script.sort
                 }
             return HttpResponse(json.dumps(script_data))
 
@@ -2742,7 +2775,7 @@ def get_step_tree(parent, selectid):
         node["id"] = child.id
         node["children"] = get_step_tree(child, selectid)
 
-        scripts = child.script_set.exclude(state="9")
+        scripts = child.script_set.exclude(state="9").order_by("sort")
         script_string = ""
         for script in scripts:
             id_code_plus = str(script.id) + "+" + str(script.name) + "&"
@@ -2839,7 +2872,7 @@ def custom_step_tree(request):
         if len(rootnodes) > 0:
             for rootnode in rootnodes:
                 root = {}
-                scripts = rootnode.script_set.exclude(state="9")
+                scripts = rootnode.script_set.exclude(state="9").order_by("sort")
                 script_string = ""
                 for script in scripts:
                     id_code_plus = str(script.id) + "+" + str(script.name) + "&"
@@ -3190,7 +3223,7 @@ def process_del(request):
 
 def falconstorswitch(request, process_id):
     if request.user.is_authenticated():
-        all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None)
+        all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by("sort")
         wrapper_step_list = []
         num_to_char_choices = {
             "1": "一",
@@ -3220,7 +3253,7 @@ def falconstorswitch(request, process_id):
             wrapper_step_dict["wrapper_step_group_name"] = wrapper_step_group_name
 
             wrapper_script_list = []
-            all_wrapper_scripts = wrapper_step.script_set.exclude(state="9")
+            all_wrapper_scripts = wrapper_step.script_set.exclude(state="9").order_by("sort")
             for wrapper_script in all_wrapper_scripts:
                 wrapper_script_dict = {
                     "wrapper_script_name": wrapper_script.name
@@ -3239,7 +3272,7 @@ def falconstorswitch(request, process_id):
 
             pnode_id = wrapper_step.id
             inner_step_list = []
-            all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id)
+            all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id).order_by("sort")
             for inner_step in all_inner_steps:
                 inner_step_dict = {}
                 inner_step_dict["inner_step_name"] = inner_step.name
@@ -3257,7 +3290,7 @@ def falconstorswitch(request, process_id):
                 inner_step_dict["inner_step_group_name"] = inner_step_group_name
 
                 inner_script_list = []
-                all_inner_scripts = inner_step.script_set.exclude(state="9")
+                all_inner_scripts = inner_step.script_set.exclude(state="9").order_by("sort")
                 for inner_script in all_inner_scripts:
                     inner_script_dict = {
                         "inner_script_name": inner_script.name
@@ -3382,9 +3415,8 @@ def falconstorrun(request):
                     myprocessrun.creatuser = request.user.username
                     myprocessrun.run_reason = run_reason
                     myprocessrun.state = "RUN"
-                    # myprocessrun.DataSet_id = 89
                     myprocessrun.save()
-                    mystep = process[0].step_set.exclude(state="9")
+                    mystep = process[0].step_set.exclude(state="9").order_by("sort")
                     if (len(mystep) <= 0):
                         result["res"] = '流程启动失败，没有找到可用步骤。'
                     else:
@@ -3395,7 +3427,7 @@ def falconstorrun(request):
                             mysteprun.state = "EDIT"
                             mysteprun.save()
 
-                            myscript = step.script_set.exclude(state="9")
+                            myscript = step.script_set.exclude(state="9").order_by("sort")
                             for script in myscript:
                                 myscriptrun = ScriptRun()
                                 myscriptrun.script = script
@@ -3857,7 +3889,7 @@ def falconstor(request, offset, funid):
 
 def getchildrensteps(processrun, curstep):
     childresult = []
-    steplist = Step.objects.exclude(state="9").filter(pnode=curstep)
+    steplist = Step.objects.exclude(state="9").filter(pnode=curstep).order_by("sort")
     for step in steplist:
         runid = 0
         starttime = ""
@@ -3915,7 +3947,7 @@ def getchildrensteps(processrun, curstep):
             except:
                 pass
         scripts = []
-        scriptlist = Script.objects.exclude(state="9").filter(step=step)
+        scriptlist = Script.objects.exclude(state="9").filter(step=step).order_by("sort")
         for script in scriptlist:
             runscriptid = 0
             scriptstarttime = ""
@@ -4032,7 +4064,7 @@ def getrunsetps(request):
                 processresult["process_note"] = process_note
                 processresult["process_rto"] = process_rto
 
-                steplist = Step.objects.exclude(state="9").filter(process=processruns[0].process, pnode=None)
+                steplist = Step.objects.exclude(state="9").filter(process=processruns[0].process, pnode=None).order_by("sort")
                 for step in steplist:
                     runid = 0
                     starttime = ""
@@ -4095,7 +4127,7 @@ def getrunsetps(request):
                         except:
                             pass
                     scripts = []
-                    scriptlist = Script.objects.exclude(state="9").filter(step=step)
+                    scriptlist = Script.objects.exclude(state="9").filter(step=step).order_by("sort")
                     for script in scriptlist:
                         runscriptid = 0
                         scriptstarttime = ""
@@ -5098,7 +5130,7 @@ def custom_pdf_report(request):
                 "": "",
             }
 
-            current_scripts = Script.objects.exclude(state="9").filter(step_id=pstep.id)
+            current_scripts = Script.objects.exclude(state="9").filter(step_id=pstep.id).order_by("sort")
             script_list_wrapper = []
             if current_scripts:
                 for snum, current_script in enumerate(current_scripts):
@@ -5189,7 +5221,7 @@ def custom_pdf_report(request):
                             inner_second_el_dict["operator"] = ""
 
                         # 当前步骤下脚本
-                        current_scripts = Script.objects.exclude(state="9").filter(step_id=step.id)
+                        current_scripts = Script.objects.exclude(state="9").filter(step_id=step.id).order_by("sort")
 
                         script_list_inner = []
                         if current_scripts:

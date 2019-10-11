@@ -141,12 +141,12 @@ def exec_script(steprunid, username, fullname):
 
         script.endtime = datetime.datetime.now()
         script.result = result["exec_tag"]
-        script.explain = result['data'] if len(result['data']) <= 5000 else result['data'][-4999:]
+        script.explain = result['data']
 
         # 处理脚本执行失败问题
         if result["exec_tag"] == 1:
             script.runlog = result['log']
-            script.explain = result['data'] if len(result['data']) <= 5000 else result['data'][-4999:]
+            script.explain = result['data']
 
             end_step_tag = False
             script.state = "ERROR"
@@ -255,9 +255,24 @@ def runstep(steprun, if_repeat=False):
                 if script_type == "BAT":
                     system_tag = "Windows"
 
-                linux_temp_script_file = "/tmp/tmp_script.sh"
-                windows_temp_script_file = "C:/tmp_script.bat"
+                # linux_temp_script_file = "/tmp/tmp_script.sh"
+                # windows_temp_script_file = "C:/tmp_script.bat"
+
                 if system_tag == "Linux":
+                    ###########################
+                    # 创建linux下目录:         #
+                    #   mkdir path -p 覆盖路径 #
+                    ###########################
+                    linux_temp_script_path = "/tmp/drm/{processrunid}".format(**{"processrunid": processrun.id})
+                    mkdir_cmd = "mkdir {linux_temp_script_path} -p".format(
+                        **{"linux_temp_script_path": linux_temp_script_path})
+                    mkdir_obj = remote.ServerByPara(mkdir_cmd, ip, username, password, system_tag)
+                    mkdir_result = mkdir_obj.run("")
+
+                    linux_temp_script_name = "tmp_script_{scriptrun_id}.sh".format(**{"scriptrun_id": script.id})
+                    linux_temp_script_file = os.path.join(linux_temp_script_path, linux_temp_script_name)
+                    linux_temp_script_file = linux_temp_script_path + "/" + linux_temp_script_name
+
                     # 写入本地文件
                     script_path = os.path.join(os.path.join(os.path.join(settings.BASE_DIR, "faconstor"), "upload"),
                                                "script")
@@ -344,6 +359,20 @@ def runstep(steprun, if_repeat=False):
                     # 执行脚本(上传文件(dos格式>>shell))
                     exe_cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
                 else:
+                    ############################
+                    # 创建windows下目录:       #
+                    #   先判断文件是否存在，再  #
+                    #   mkdir/md path 创建文件 #
+                    ############################
+                    windows_temp_script_path = r"C:\drm\{processrunid}".format(**{"processrunid": processrun.id})
+                    mkdir_cmd = "if not exist {windows_temp_script_path} mkdir {windows_temp_script_path}".format(
+                        **{"windows_temp_script_path": windows_temp_script_path})
+                    mkdir_obj = remote.ServerByPara(mkdir_cmd, ip, username, password, system_tag)
+                    mkdir_result = mkdir_obj.run("")
+
+                    windows_temp_script_name = "tmp_script_{scriptrun_id}.bat".format(**{"scriptrun_id": script.id})
+                    windows_temp_script_file = windows_temp_script_path + r"\\" + windows_temp_script_name
+                    print(windows_temp_script_file)
                     para_list = script.script.script_text.split("\n")
                     for num, content in enumerate(para_list):
                         tmp_cmd = ""
@@ -384,7 +413,7 @@ def runstep(steprun, if_repeat=False):
 
                 script.endtime = datetime.datetime.now()
                 script.result = result['exec_tag']
-                script.explain = result['data'] if len(result['data']) <= 5000 else result['data'][-4999:]
+                script.explain = result['data']
 
                 # 处理脚本执行失败问题
                 if result["exec_tag"] == 1:
@@ -426,20 +455,20 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.save()
 
                 # 删除Linux下脚本
-                if system_tag == "Linux":
-                    del_cmd = 'if [ ! -f "{0}" ]; then'.format(linux_temp_script_file) + '\n' + \
-                              '   echo "文件不存在"' + '\n' + \
-                              'else' + '\n' + \
-                              '   rm -f {0}'.format(linux_temp_script_file) + '\n' + \
-                              'fi'
-                    del_obj = remote.ServerByPara(del_cmd, ip, username, password, system_tag)
-                    del_result = del_obj.run("")
-                else:
-                    if result["exec_tag"] == 0:
-                        # 删除windows的bat脚本
-                        del_cmd = 'if exist {0} del "{0}"'.format(windows_temp_script_file)
-                        del_obj = remote.ServerByPara(del_cmd, ip, username, password, system_tag)
-                        del_result = del_obj.run("")
+                # if system_tag == "Linux":
+                #     del_cmd = 'if [ ! -f "{0}" ]; then'.format(linux_temp_script_file) + '\n' + \
+                #               '   echo "文件不存在"' + '\n' + \
+                #               'else' + '\n' + \
+                #               '   rm -f {0}'.format(linux_temp_script_file) + '\n' + \
+                #               'fi'
+                #     del_obj = remote.ServerByPara(del_cmd, ip, username, password, system_tag)
+                #     del_result = del_obj.run("")
+                # else:
+                #     if result["exec_tag"] == 0:
+                #         # 删除windows的bat脚本
+                #         del_cmd = 'if exist {0} del "{0}"'.format(windows_temp_script_file)
+                #         del_obj = remote.ServerByPara(del_cmd, ip, username, password, system_tag)
+                #         del_result = del_obj.run("")
 
             if steprun.step.approval == "1" or steprun.verifyitemsrun_set.all():
                 steprun.state = "CONFIRM"
@@ -480,7 +509,7 @@ def runstep(steprun, if_repeat=False):
         nextstep = steprun.step.next.exclude(state="9")
         if len(nextstep) > 0:
             # 演练中，后续步骤不计入RTO时，自动开启下一流程
-            if processrun.walkthrough is not None and nextstep[0].rto_count_in=="0":
+            if processrun.walkthrough is not None and nextstep[0].rto_count_in == "0":
                 processrun.walkthroughstate = "DONE"
                 processrun.save()
 
@@ -493,7 +522,8 @@ def runstep(steprun, if_repeat=False):
                     current_process_run.DataSet_id = 89
                     current_process_run.save()
 
-                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(type="falconstor")
+                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
+                        type="falconstor")
 
                     allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                         "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
@@ -575,7 +605,7 @@ def exec_process(processrunid, if_repeat=False):
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
     if len(steprunlist) > 0:
         # 演练中，第一步不计入RTO时，自动开启下一流程
-        if processrun.walkthrough is not None and steprunlist[0].step.rto_count_in=="0":
+        if processrun.walkthrough is not None and steprunlist[0].step.rto_count_in == "0":
             processrun.walkthroughstate = "DONE"
             processrun.save()
 
@@ -585,7 +615,6 @@ def exec_process(processrunid, if_repeat=False):
                 current_process_run.starttime = datetime.datetime.now()
                 current_process_run.state = "RUN"
                 current_process_run.walkthroughstate = "RUN"
-                current_process_run.DataSet_id = 89
                 current_process_run.save()
 
                 process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
@@ -671,14 +700,13 @@ def exec_process(processrunid, if_repeat=False):
 
         # 演练中，当前力流程结束时，启动下一流程
         if processrun.walkthrough is not None:
-            if curwalkthroughstate!="DONE":
+            if curwalkthroughstate != "DONE":
                 current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
                 if current_process_run:
                     current_process_run = current_process_run[0]
                     current_process_run.starttime = datetime.datetime.now()
                     current_process_run.state = "RUN"
                     current_process_run.walkthroughstate = "RUN"
-                    current_process_run.DataSet_id = 89
                     current_process_run.save()
 
                     process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
@@ -727,7 +755,7 @@ def exec_process(processrunid, if_repeat=False):
                             exec_process.delay(current_process_run.id)
                 else:
                     walkthrough = processrun.walkthrough
-                    walkthrough.state="DONE"
+                    walkthrough.state = "DONE"
                     walkthrough.save()
 
         #

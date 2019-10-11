@@ -223,6 +223,8 @@ function customTree() {
                         $("#log_address").val("");
                         $("#host_id").val("");
 
+                        $("#script_sort").val("");
+
                         document.getElementById("edit").click();
                     }
                     if ($(e.target).text() == "修改") {
@@ -253,6 +255,8 @@ function customTree() {
 
                                         $("#success_text").val(data.success_text);
                                         $("#log_address").val(data.log_address);
+
+                                        $("#script_sort").val(data.script_sort);
                                     },
                                     error: function (e) {
                                         alert("数据读取失败，请于客服联系。");
@@ -477,22 +481,36 @@ $('#scriptsave').click(function () {
             success_text: $("#success_text").val(),
             log_address: $("#log_address").val(),
             host_id: $("#host_id").val(),
+
+            script_sort: $("#script_sort").val()
         },
         success: function (data) {
             var myres = data["res"];
             var mydata = data["data"];
             alert(myres);
             if (myres == "新增成功。") {
-                $("#scriptid").val(data["data"]);
-                $("#se_1").append("<option value='" + mydata + "'>" + $("#script_name").val() + "</option>");
+                /*
+                    加载所有脚本，重新排序
+                 */
+                $("#se_1").empty();
+                for (var i = 0; i < mydata.length; i++) {
+                    $("#se_1").append("<option value='" + mydata[i].script_id + "'>" + mydata[i].script_name + "</option>");
+                }
+
                 $('#static01').modal('hide');
                 // 重新构造树，停留当前修改脚本的步骤位置
                 $('#tree_2').jstree("destroy");
                 customTree();
             }
             if (myres == "修改成功。") {
-                var script_id = $("#scriptid").val();
-                $("#se_1").find('option[value="script_id"]'.replace("script_id", script_id)).text($("#script_name").val());
+                /*
+                    加载所有脚本，重新排序
+                 */
+                $("#se_1").empty();
+                for (var i = 0; i < mydata.length; i++) {
+                    $("#se_1").append("<option value='" + mydata[i].script_id + "'>" + mydata[i].script_name + "</option>");
+                }
+
                 $('#static01').modal('hide');
                 $('#tree_2').jstree("destroy");
                 customTree();

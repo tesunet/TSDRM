@@ -17,7 +17,7 @@ class Fun(models.Model):
 class Group(models.Model):
     name = models.CharField("组名", blank=True, null=True, max_length=50)
     fun = models.ManyToManyField(Fun)
-    remark = models.CharField("说明", blank=True, null=True, max_length=5000)
+    remark = models.TextField("说明", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     sort = models.IntegerField("排序", blank=True, null=True)
 
@@ -32,7 +32,7 @@ class UserInfo(models.Model):
     type = models.CharField("类型", blank=True, null=True, max_length=20)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     sort = models.IntegerField("排序", blank=True, null=True)
-    remark = models.CharField("说明", blank=True, null=True, max_length=5000)
+    remark = models.TextField("说明", blank=True, null=True)
     company = models.CharField("公司", blank=True, null=True, max_length=100)
     tell = models.CharField("电话", blank=True, null=True, max_length=50)
     forgetpassword = models.CharField("修改密码地址", blank=True, null=True, max_length=50)
@@ -41,7 +41,7 @@ class UserInfo(models.Model):
 class Process(models.Model):
     code = models.CharField("预案编号", blank=True, max_length=50)
     name = models.CharField("预案名称", blank=True, max_length=50)
-    remark = models.CharField("预案描述", blank=True, null=True, max_length=5000)
+    remark = models.TextField("预案描述", blank=True, null=True)
     sign = models.CharField("是否签到", blank=True, null=True, max_length=20)
     rto = models.IntegerField("RTO", blank=True, null=True)
     rpo = models.IntegerField("RPO", blank=True, null=True)
@@ -99,8 +99,8 @@ class Walkthrough(models.Model):
     endtime = models.DateTimeField("结束时间", blank=True, null=True)
     creatuser = models.CharField("发起人", blank=True, max_length=50)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
-    purpose = models.CharField("演练目的", blank=True, null=True, max_length=2500)
-    note = models.CharField("记录", blank=True, null=True, max_length=5000)
+    purpose = models.TextField("演练目的", blank=True, null=True)
+    note = models.TextField("记录", blank=True, null=True)
 
 
 class ProcessRun(models.Model):
@@ -110,8 +110,8 @@ class ProcessRun(models.Model):
     endtime = models.DateTimeField("结束时间", blank=True, null=True)
     creatuser = models.CharField("发起人", blank=True, max_length=50)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
-    run_reason = models.CharField("启动原因", blank=True, null=True, max_length=2500)
-    note = models.CharField("记录", blank=True, null=True, max_length=5000)
+    run_reason = models.TextField("启动原因", blank=True, null=True)
+    note = models.TextField("记录", blank=True, null=True)
     walkthroughstate = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
@@ -121,11 +121,11 @@ class StepRun(models.Model):
     starttime = models.DateTimeField("开始时间", blank=True, null=True)
     endtime = models.DateTimeField("结束时间", blank=True, null=True)
     operator = models.CharField("操作人", blank=True, null=True, max_length=50)
-    parameter = models.CharField("运行参数", blank=True, null=True, max_length=5000)
-    result = models.CharField("运行结果", blank=True, null=True, max_length=5000)
-    explain = models.CharField("运行说明", blank=True, null=True, max_length=5000)
+    parameter = models.CharField("运行参数", blank=True, null=True, max_length=640)
+    result = models.TextField("运行结果", blank=True, null=True)
+    explain = models.TextField("运行说明", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
-    note = models.CharField("记录", blank=True, null=True, max_length=5000)
+    note = models.TextField("记录", blank=True, null=True)
 
 
 class ScriptRun(models.Model):
@@ -134,11 +134,11 @@ class ScriptRun(models.Model):
     starttime = models.DateTimeField("开始时间", blank=True, null=True)
     endtime = models.DateTimeField("结束时间", blank=True, null=True)
     operator = models.CharField("操作人", blank=True, null=True, max_length=50)
-    result = models.CharField("运行结果", blank=True, null=True, max_length=5000)
-    explain = models.CharField("运行说明", blank=True, null=True, max_length=5000)
-    runlog = models.CharField("运行日志", blank=True, null=True, max_length=5000)
+    result = models.TextField("运行结果", blank=True, null=True)
+    explain = models.TextField("运行说明", blank=True, null=True)
+    runlog = models.TextField("运行日志", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
-    note = models.CharField("记录", blank=True, null=True, max_length=5000)
+    note = models.TextField("记录", blank=True, null=True)
 
 
 class ProcessTask(models.Model):
@@ -152,10 +152,10 @@ class ProcessTask(models.Model):
     operator = models.CharField("操作人", blank=True, null=True, max_length=50)
     endtime = models.DateTimeField("处理时间", blank=True, null=True)
     type = models.CharField("任务类型", blank=True, null=True, max_length=20)
-    content = models.CharField("任务内容", blank=True, null=True, max_length=5000)
+    content = models.TextField("任务内容", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
-    result = models.CharField("处理结果", blank=True, null=True, max_length=5000)
-    explain = models.CharField("处理说明", blank=True, null=True, max_length=5000)
+    result = models.TextField("处理结果", blank=True, null=True)
+    explain = models.TextField("处理说明", blank=True, null=True)
     logtype = models.CharField("日志类型", blank=True, null=True, max_length=20)
 
 
@@ -176,7 +176,7 @@ class Invitation(models.Model):
     walkthrough = models.OneToOneField(Walkthrough, blank=True, null=True)
     start_time = models.DateTimeField("开始时间", blank=True, null=True)
     end_time = models.DateTimeField("结束时间", blank=True, null=True)
-    purpose = models.CharField("演练目的", max_length=5000, blank=True, null=True)
+    purpose = models.TextField("演练目的", blank=True, null=True)
     current_time = models.DateTimeField("邀请时间", blank=True, null=True)
 
 
