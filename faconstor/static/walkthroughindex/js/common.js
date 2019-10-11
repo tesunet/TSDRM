@@ -98,8 +98,11 @@ var util = {
                 else
                     $(".end").append("<div class=\"endprocess3\"><h3>" + data.name + "</h3></div>");
             }
+            else if(data.state=="CONTINUE"){
+                $(".end").append("<div class=\"endprocess\"><h3>" + data.name +  "<input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div></h3></div>");
+            }
             else{
-                $(".end").append("<input value='" + data.processrun_id + "'  hidden/><div class=\"endprocess\"><h3>" + data.name +  "</h3></div>");
+                $(".end").append("<div class=\"endprocess\"><h3>" + data.name +  "</h3></div>");
             }
 
 
@@ -223,7 +226,7 @@ var util = {
                 util.makeTimer(walkthroughindexdata.walkthrough_starttime, walkthroughindexdata.walkthrough_endtime);
             }
         }
-        $(".endprocess").click(function () {
+        $(".endprocessimg").click(function () {
             var processrun_id = $(this).prev().val();
             $.ajax({
                     url: "/processcontinue/",
@@ -235,8 +238,11 @@ var util = {
                     success: function (data) {
                         if (data.data == "0") {
                             alert("启动系统关闭程序！");
+                            $("#modalbody").html("启动系统关闭程序");
                         } else {
-                            alert("业务人员未完成数据验证，请勿关闭该系统！")
+                            $("#static_shutdowm").modal('show');
+                            $("#modalbody").html("业务人员未完成数据验证，请勿关闭该系统！");
+
                         }
                     }
                 });
