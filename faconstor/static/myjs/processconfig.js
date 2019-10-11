@@ -56,7 +56,7 @@ function customTree() {
                                 $("#group option:selected").removeProp("selected");
                                 $("#rto_count_in option:selected").removeProp("selected");
                                 $("#name").val("");
-
+                                $("#force_exec").val(2);
                                 var groupInfoList = obj.data.allgroups.split("&");
                                 for (var i = 0; i < groupInfoList.length - 1; i++) {
                                     var singlegroupInfoList = groupInfoList[i].split("+");
@@ -159,6 +159,7 @@ function customTree() {
                     $("#skip option:selected").removeProp("selected");
                     $("#rto_count_in option:selected").removeProp("selected");
                     $("#remark").val(data.node.data.remark);
+                    $("#force_exec").val(data.node.data.force_exec);
 
                     var groupInfoList = data.node.data.allgroups.split("&");
                     for (var i = 0; i < groupInfoList.length - 1; i++) {
@@ -576,7 +577,8 @@ $('#save').click(function () {
             rto_count_in: $("#rto_count_in").val(),
             new: $("#new").val(),
             process_id: $("#process option:selected").val(),
-            remark: $("#remark").val()
+            remark: $("#remark").val(),
+            force_exec: $("#force_exec").val()
         },
         success: function (data) {
             // $("#name_" + $("#id").val()).text($("#name").val());

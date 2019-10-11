@@ -91,6 +91,18 @@
 
                                     </div>
                                 </div>
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label">流程关闭时强制执行</label>
+                                    <div class="col-md-9">
+                                        <select class="form-control" id="force_exec" name="force_exec">
+                                            <option value="1">是</option>
+                                            <option value="2">否</option>
+                                        </select>
+                                        <div class="form-control-focus"></div>
+
+                                    </div>
+                                </div>
+
                                 <div class="form-group ">
                                     <label class="col-md-3 control-label">备注</label>
                                     <div class="col-md-9">
@@ -211,7 +223,8 @@
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; ">*</span>脚本内容</label>
                                 <div class="col-md-10">
-                                    <textarea name="script_text" id="script_text" class="form-control" rows="8"></textarea>
+                                    <textarea name="script_text" id="script_text" class="form-control"
+                                              rows="8"></textarea>
                                     <div class="form-control-focus"></div>
 
                                 </div>
@@ -302,10 +315,10 @@
                             <th> 脚本名称</th>
                             <th> 主机IP</th>
                             <th> 连接类型</th>
-{#                            <th> 脚本文件名</th>#}
+                            {#                            <th> 脚本文件名</th>#}
                             <th> 用户名</th>
                             <th> 密码</th>
-{#                            <th> 脚本文件路径</th>#}
+                            {#                            <th> 脚本文件路径</th>#}
                             <th> 主机id</th>
                             <th> 操作</th>
                         </tr>

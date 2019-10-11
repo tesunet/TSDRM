@@ -66,6 +66,11 @@ class Step(models.Model):
     sort = models.IntegerField("排序", blank=True, null=True)
     rto_count_in = models.CharField("是否算入RTO", blank=True, null=True, max_length=10, default="1")
     remark = models.CharField("备注", blank=True, null=True, max_length=500, help_text="告知业务人员灾备环境地址等信息")
+    force_exec_choices = (
+        (1, "是"),
+        (2, "否")
+    )
+    force_exec = models.IntegerField("流程关闭时强制执行", choices=force_exec_choices, null=True, default=2)
 
 
 class HostsManage(models.Model):

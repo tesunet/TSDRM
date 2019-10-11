@@ -2675,13 +2675,21 @@ def setpsave(request):
         group = request.POST.get('group', '')
         rto_count_in = request.POST.get('rto_count_in', '')
         remark = request.POST.get('remark', '')
+        force_exec = request.POST.get('force_exec', '')
 
         process_id = request.POST.get('process_id', '')
+
+        data = ""
+
         try:
             id = int(id)
+            force_exec = int(force_exec)
         except:
-            raise Http404()
-        data = ""
+            return JsonResponse({
+                "result": "网络异常。",
+                "data": data
+            })
+
         # 新增步骤
         if id == 0:
             # process_name下右键新增
@@ -2714,6 +2722,7 @@ def setpsave(request):
             step.pnode_id = pid
             step.sort = my_sort
             step.remark = remark
+            step.force_exec = force_exec
             step.save()
             # last_id
             current_steps = Step.objects.filter(pnode_id=pid).exclude(state="9").order_by("sort").filter(
@@ -2742,6 +2751,7 @@ def setpsave(request):
                 step[0].group = group
                 step[0].rto_count_in = rto_count_in
                 step[0].remark = remark
+                step[0].force_exec = force_exec
                 step[0].save()
                 result = "保存成功。"
             else:
@@ -2806,7 +2816,7 @@ def get_step_tree(parent, selectid):
         node["data"] = {"time": child.time, "approval": child.approval, "skip": child.skip, "group_name": group_name,
                         "group": child.group, "scripts": script_string, "allgroups": group_string,
                         "rto_count_in": child.rto_count_in, "remark": child.remark,
-                        "verifyitems": verify_items_string}
+                        "verifyitems": verify_items_string, "force_exec": child.force_exec}
         try:
             if int(selectid) == child.id:
                 node["state"] = {"selected": True}
@@ -2898,7 +2908,7 @@ def custom_step_tree(request):
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title,
                                 "rto_count_in": rootnode.rto_count_in, "remark": rootnode.remark,
-                                "verifyitems": verify_items_string}
+                                "verifyitems": verify_items_string, "force_exec": rootnode.force_exec}
                 root["children"] = get_step_tree(rootnode, selectid)
                 root["state"] = {"opened": True}
                 treedata.append(root)
