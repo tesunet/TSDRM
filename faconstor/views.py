@@ -292,7 +292,6 @@ def get_process_index_data(request):
 
         processrun_id = request.POST.get("p_run_id", "")
 
-
         current_processruns = ProcessRun.objects.filter(id=int(processrun_id)).select_related("process")
 
         if current_processruns:
@@ -479,18 +478,18 @@ def get_process_index_data(request):
 
 def get_walkthrough_index_data(request):
     if request.user.is_authenticated():
-        walkthrough_id=request.POST.get("walkthrough_id", "")
+        walkthrough_id = request.POST.get("walkthrough_id", "")
         walkthroughs = Walkthrough.objects.filter(id=walkthrough_id)
         if walkthroughs:
-            walkthrough=walkthroughs[0]
+            walkthrough = walkthroughs[0]
             walkthrough_name = walkthrough.name
             walkthrough_state = walkthrough.state
-            walkthrough_starttime =  walkthrough.starttime
+            walkthrough_starttime = walkthrough.starttime
             walkthrough_endtime = walkthrough.endtime
             processrunes = walkthrough.processrun_set.exclude(state="9").exclude(state='REJECT')
             cur_processruns = []
-            processrunid=[]
-            showtasks=[]
+            processrunid = []
+            showtasks = []
             for processrun in processrunes:
                 processrunid.append(processrun.id)
                 processrun_id = processrun.id
@@ -511,7 +510,9 @@ def get_walkthrough_index_data(request):
 
                     process_id = current_processrun.process_id
                     # 正确顺序的父级Step
-                    all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).exclude(rto_count_in='0').order_by(
+                    all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id,
+                                                                             pnode_id=None).exclude(
+                        rto_count_in='0').order_by(
                         "sort")
                     correct_step_id_list = []
                     if all_pnode_steps:
@@ -550,7 +551,8 @@ def get_walkthrough_index_data(request):
                                         # 表示需要计入rto的步骤已经完成
                                         if c_step_index > 0 and rtostate == "DONE":
                                             pre_step_index = c_step_index - 1
-                                            rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+                                            rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime(
+                                                '%Y-%m-%d %H:%M:%S')
                             # 流程结束后的rtostate
                             else:
                                 for num, c_step_run in enumerate(correct_step_run_list):
@@ -562,7 +564,8 @@ def get_walkthrough_index_data(request):
 
                                 if c_step_index > 0 and rtostate == "DONE":
                                     pre_step_index = c_step_index - 1
-                                    rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime('%Y-%m-%d %H:%M:%S')
+                                    rtoendtime = correct_step_run_list[pre_step_index].endtime.strftime(
+                                        '%Y-%m-%d %H:%M:%S')
 
                             if_has_run = False
                             if_has_index = 0
@@ -594,7 +597,8 @@ def get_walkthrough_index_data(request):
                                     c_step_run_type = "cur"
 
                                 c_step_id = c_step_run.step.id
-                                c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id).filter(step__state__in=["9"])
+                                c_inner_step_runs = StepRun.objects.filter(step__pnode_id=c_step_id).filter(
+                                    step__state__in=["9"])
 
                                 # 未完成
                                 all_steps = c_step_run.step.children.exclude(state="9")
@@ -656,7 +660,7 @@ def get_walkthrough_index_data(request):
                             rtostate = "DONE"
                             rtoendtime = current_processrun.starttime.strftime('%Y-%m-%d %H:%M:%S')
                         cur_processruns.append({
-                            "processrun_id":processrun_id,
+                            "processrun_id": processrun_id,
                             "processrun": process_id,
                             "processurl": current_processrun.process.url,
                             "name": name,
@@ -671,7 +675,8 @@ def get_walkthrough_index_data(request):
                         })
 
             current_time = datetime.datetime.now()
-            tasks=ProcessTask.objects.filter(type='info').filter(Q(processrun_id__in= processrunid)|Q(walkthrough_id= walkthroughs[0].id)).exclude(state='9')
+            tasks = ProcessTask.objects.filter(type='info').filter(
+                Q(processrun_id__in=processrunid) | Q(walkthrough_id=walkthroughs[0].id)).exclude(state='9')
             for task in tasks:
                 taskname = ""
                 if task.processrun is not None:
@@ -681,23 +686,24 @@ def get_walkthrough_index_data(request):
 
                 showtasks.append({
                     "taskid": task.id,
-                    "taskname":taskname,
+                    "taskname": taskname,
                     "taskcontent": task.content,
                     "tasktime": task.starttime.strftime('%Y-%m-%d %H:%M:%S') if task.starttime else "",
                 })
             c_walkthrough_run_data = {
-                        "current_time": current_time.strftime('%Y-%m-%d %H:%M:%S'),
-                        "walkthrough_name": walkthrough_name,
-                        "walkthrough_state": walkthrough_state,
-                        "walkthrough_starttime": walkthrough_starttime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough_starttime else "",
-                        "walkthrough_endtime": walkthrough_endtime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough_endtime else "",
-                        "processruns": cur_processruns,
-                        "showtasks":showtasks,
-                    }
+                "current_time": current_time.strftime('%Y-%m-%d %H:%M:%S'),
+                "walkthrough_name": walkthrough_name,
+                "walkthrough_state": walkthrough_state,
+                "walkthrough_starttime": walkthrough_starttime.strftime(
+                    '%Y-%m-%d %H:%M:%S') if walkthrough_starttime else "",
+                "walkthrough_endtime": walkthrough_endtime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough_endtime else "",
+                "processruns": cur_processruns,
+                "showtasks": showtasks,
+            }
             global walkthroughinfo
             oldwalkthroughinfo = walkthroughinfo
             walkthroughinfo = c_walkthrough_run_data
-            c_walkthrough_run_data["oldwalkthroughinfo"]=oldwalkthroughinfo
+            c_walkthrough_run_data["oldwalkthroughinfo"] = oldwalkthroughinfo
         else:
             c_walkthrough_run_data = {}
         return JsonResponse(c_walkthrough_run_data)
@@ -726,7 +732,8 @@ def walkthrough_run_invited(request):
                     current_process_run.DataSet_id = 89
                     current_process_run.save()
 
-                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(type="falconstor")
+                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
+                        type="falconstor")
 
                     allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                         "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
@@ -987,7 +994,7 @@ def index(request, funid):
             average_rto = "00时00分00秒"
 
         # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-        current_processruns = ProcessRun.objects.exclude(state__in=["PLAN","DONE", "STOP", "REJECT"]).exclude(
+        current_processruns = ProcessRun.objects.exclude(state__in=["PLAN", "DONE", "STOP", "REJECT"]).exclude(
             state="9").select_related("process")
         curren_processrun_info_list = []
         state_dict = {
@@ -2183,7 +2190,8 @@ def script(request, funid):
                             else:
                                 try:
                                     # add hosts
-                                    check_host_manage = HostsManage.objects.filter(host_ip=sheet.cell(i, 2).value).exclude(state="9")
+                                    check_host_manage = HostsManage.objects.filter(
+                                        host_ip=sheet.cell(i, 2).value).exclude(state="9")
                                     if check_host_manage.exists():
                                         cur_host = check_host_manage[0]
                                     else:
@@ -2248,20 +2256,20 @@ def scriptdata(request):
                     ip = cur_host.host_ip
 
                     result.append({
-                        "id": script.id, 
-                        "code": script.code, 
-                        "name": script.name, 
-                        "ip": ip, 
+                        "id": script.id,
+                        "code": script.code,
+                        "name": script.name,
+                        "ip": ip,
                         "host_id": host_id,
-                        "type": host_type, 
-                        "username": username, 
+                        "type": host_type,
+                        "username": username,
                         "password": password,
                         "script_text": script.script_text,
 
                         # "filename": script.filename,
                         # "scriptpath": script.scriptpath,
 
-                        "success_text": script.succeedtext, 
+                        "success_text": script.succeedtext,
                         "log_address": script.log_address
                     })
         return HttpResponse(json.dumps({"data": result}))
@@ -2303,7 +2311,6 @@ def scriptsave(request):
             code = request.POST.get('code', '')
             name = request.POST.get('name', '')
             host_id = request.POST.get('ip', '')
-
 
             # filename = request.POST.get('filename', '')
             # scriptpath = request.POST.get('scriptpath', '')
@@ -2394,7 +2401,6 @@ def scriptexport(request):
 
         if len(allscript) > 0:
             for i in range(len(allscript)):
-
                 # host_id, host_ip, type, username, password
                 cur_host_manage = allscript[i].hosts_manage
                 host_ip = cur_host_manage.host_ip
@@ -2626,20 +2632,19 @@ def get_script_data(request):
             allscript = Script.objects.exclude(state="9").filter(id=script_id)
             script_data = ""
             if (len(allscript) > 0):
-
                 cur_script = allscript[0]
-                
+
                 cur_host_manage = cur_script.hosts_manage
                 script_data = {
-                    "id": cur_script.id, 
-                    "code": cur_script.code, 
+                    "id": cur_script.id,
+                    "code": cur_script.code,
                     "name": cur_script.name,
                     "host_id": cur_host_manage.id,
                     "script_text": cur_script.script_text,
                     # "filename": cur_script.filename,
                     # "scriptpath": cur_script.scriptpath,
 
-                    "success_text":cur_script.succeedtext,
+                    "success_text": cur_script.succeedtext,
                     "log_address": cur_script.log_address,
                     "script_sort": cur_script.sort
                 }
@@ -3234,7 +3239,8 @@ def process_del(request):
 
 def falconstorswitch(request, process_id):
     if request.user.is_authenticated():
-        all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by("sort")
+        all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by(
+            "sort")
         wrapper_step_list = []
         num_to_char_choices = {
             "1": "一",
@@ -3283,7 +3289,8 @@ def falconstorswitch(request, process_id):
 
             pnode_id = wrapper_step.id
             inner_step_list = []
-            all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id).order_by("sort")
+            all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id).order_by(
+                "sort")
             for inner_step in all_inner_steps:
                 inner_step_dict = {}
                 inner_step_dict["inner_step_name"] = inner_step.name
@@ -3587,11 +3594,9 @@ def walkthrough(request, funid):
         for process in processes:
             processlist.append({"id": process.id, "code": process.code, "name": process.name})
 
-
-
         return render(request, 'walkthrough.html',
                       {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                       "processlist":processlist})
+                       "processlist": processlist})
     else:
         return HttpResponseRedirect("/login")
 
@@ -3619,7 +3624,7 @@ def walkthroughdata(request):
             processes = ""
             processrunes = walkthrough.processrun_set.exclude(state="9").exclude(state='REJECT')
             for processrun in processrunes:
-                processes+=str(processrun.process.id)+"^"
+                processes += str(processrun.process.id) + "^"
 
             result.append({
                 "starttime": walkthrough.starttime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.starttime else "",
@@ -3630,7 +3635,7 @@ def walkthroughdata(request):
                 "walkthrough_id": walkthrough.id if walkthrough.id else "",
                 "purpose": walkthrough.purpose if walkthrough.purpose else "",
                 "walkthrough_name": walkthrough.name if walkthrough.name else "",
-                "processes":processes,
+                "processes": processes,
             })
 
         return JsonResponse({"data": result})
@@ -3657,7 +3662,7 @@ def walkthroughsave(request):
                 if start_time:
                     if end_time:
                         if id == 0:
-                            walkthrough= Walkthrough.objects.filter(state__in=["PLAN","RUN", "ERROR"])
+                            walkthrough = Walkthrough.objects.filter(state__in=["PLAN", "RUN", "ERROR"])
                             if (len(walkthrough) > 0):
                                 result["res"] = '演练计划创建失败，已经存在演练计划，务必先完成该计划。'
                             else:
@@ -3666,7 +3671,7 @@ def walkthroughsave(request):
                                 walkthrough.createtime = datetime.datetime.now()
                                 walkthrough.creatuser = request.user.username
                                 walkthrough.state = "PLAN"
-                                walkthrough.purpose=purpose
+                                walkthrough.purpose = purpose
                                 walkthrough.starttime = start_time
                                 walkthrough.endtime = end_time
                                 walkthrough.save()
@@ -3739,18 +3744,21 @@ def walkthroughsave(request):
                             walkthrough.endtime = end_time
                             walkthrough.save()
 
-                            processruns = ProcessRun.objects.filter(walkthrough=walkthrough).exclude(state__in=["9", "REJECT"])
+                            processruns = ProcessRun.objects.filter(walkthrough=walkthrough).exclude(
+                                state__in=["9", "REJECT"])
                             for processrun in processruns:
-                                id=str(processrun.id)
+                                id = str(processrun.id)
                                 if id not in processes:
-                                    processrun.state='9'
+                                    processrun.state = '9'
                                     processrun.save()
 
                             for process_id in processes:
                                 process = Process.objects.filter(id=int(process_id)).exclude(state="9").filter(
                                     type="falconstor")
-                                curprocessrun =ProcessRun.objects.filter(walkthrough=walkthrough,process=process[0]).exclude(state__in=["9", "REJECT"])
-                                if len(curprocessrun)==0:
+                                curprocessrun = ProcessRun.objects.filter(walkthrough=walkthrough,
+                                                                          process=process[0]).exclude(
+                                    state__in=["9", "REJECT"])
+                                if len(curprocessrun) == 0:
                                     myprocessrun = ProcessRun()
                                     myprocessrun.walkthrough = walkthrough
                                     myprocessrun.process = process[0]
@@ -3814,8 +3822,8 @@ def walkthroughsave(request):
         else:
             result["res"] = "演练清楚必须填写！"
 
-
         return JsonResponse(result)
+
 
 def reject_walkthrough(request):
     if request.user.is_authenticated():
@@ -3846,6 +3854,7 @@ def reject_walkthrough(request):
             result = "演练计划不存在，取消失败！"
         return JsonResponse({"res": result})
 
+
 def walkthroughdel(request):
     if request.user.is_authenticated():
         id = request.POST.get("id", "")
@@ -3871,7 +3880,6 @@ def walkthroughdel(request):
             return HttpResponse(1)
         else:
             return HttpResponse(0)
-
 
 
 def falconstor(request, offset, funid):
@@ -4075,7 +4083,8 @@ def getrunsetps(request):
                 processresult["process_note"] = process_note
                 processresult["process_rto"] = process_rto
 
-                steplist = Step.objects.exclude(state="9").filter(process=processruns[0].process, pnode=None).order_by("sort")
+                steplist = Step.objects.exclude(state="9").filter(process=processruns[0].process, pnode=None).order_by(
+                    "sort")
                 for step in steplist:
                     runid = 0
                     starttime = ""
@@ -4242,8 +4251,6 @@ def get_celery_tasks_info(request):
                 if value["state"] == "STARTED":
                     received_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(value["received"])) if value[
                         "received"] else ""
-                    # succeeded = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(value["succeeded"])) if value[
-                    #     "succeeded"] else ""
 
                     result.append({
                         "uuid": value["uuid"],
@@ -4294,6 +4301,11 @@ def revoke_current_task(request):
         task_url = "http://127.0.0.1:5555/api/tasks"
 
         try:
+            process_run_id = int(process_run_id)
+        except:
+            return JsonResponse({"data": "流程不存在。"})
+
+        try:
             task_json_info = requests.get(task_url).text
         except:
             return JsonResponse({"data": "终端未启动flower异步任务监控！"})
@@ -4302,7 +4314,12 @@ def revoke_current_task(request):
         task_id = ""
 
         for key, value in task_dict_info.items():
-            if value["state"] == "STARTED":
+            try:
+                task_process_id = int(value["args"][1:-1])
+            except:
+                task_process_id = ""
+            # 终止指定流程的异步任务
+            if value["state"] == "STARTED" and task_process_id == process_run_id:
                 task_id = key
 
         if abnormal == "1":
@@ -4353,7 +4370,7 @@ def get_script_log(request):
             remote_ip = cur_host_manage.host_ip
             remote_user = cur_host_manage.username
             remote_password = cur_host_manage.password
-            script_type =cur_host_manage.type
+            script_type = cur_host_manage.type
 
             if script_type == "SSH":
                 remote_platform = "Linux"
@@ -4597,10 +4614,10 @@ def stop_current_process(request):
         process_run_id = request.POST.get('process_run_id', '')
         process_note = request.POST.get('process_note', '')
 
-        if process_run_id:
+        try:
             process_run_id = int(process_run_id)
-        else:
-            raise Http404()
+        except ValueError as e:
+            return JsonResponse({"data": "当前选择终止的流程不存在。"})
 
         current_process_run = ProcessRun.objects.exclude(state="9").filter(id=process_run_id)
         if current_process_run:
@@ -4640,9 +4657,64 @@ def stop_current_process(request):
             myprocesstask.state = "1"
             myprocesstask.content = "流程被终止。"
             myprocesstask.save()
-            return JsonResponse({"data": "流程已经被终止"})
+
+            ######################
+            # 执行强制执行的脚本  #
+            ######################
+            force_exec_script.delay(process_run_id)
+
+            return JsonResponse({"data": "流程已经被终止，将强制执行部分脚本。"})
         else:
             return JsonResponse({"data": "终止流程异常，请联系客服"})
+
+
+def get_force_script_info(request):
+    if request.user.is_authenticated():
+        ####################################################################
+        # 获取所有包含强制执行步骤的脚本信息                                 #
+        #   {"finish": 1, "script_name_list": [], "script_status_list": []}#
+        ####################################################################
+        process_run_id = request.POST.get("process", "")
+
+        try:
+            process_run_id = int(process_run_id)
+        except ValueError as e:
+            print("网络异常, {0}".format(e))
+            return JsonResponse({
+                "ret": 0,
+                "data": "网络异常, {0}".format(e)
+            })
+
+        try:
+            cur_process_run = ProcessRun.objects.get(id=process_run_id)
+        except ProcessRun.DoesNotExist as e:
+            print("当前流程不存在, {0}".format(e))
+            return JsonResponse({
+                "ret": 0,
+                "data": "当前流程不存在, {0}".format(e)
+            })
+        else:
+            finish = 1
+            script_name_list = []
+            script_status_list = []
+            all_step_runs = cur_process_run.steprun_set.exclude(step__state="9").filter(step__force_exec=1)
+            for step_run in all_step_runs:
+                cur_step_scripts = step_run.scriptrun_set.all()
+                for cur_script in cur_step_scripts:
+                    script_name_list.append(cur_script.script.name)
+                    script_status_list.append(cur_script.state)
+                    if cur_script.state not in ["ERROR", "DONE"]:
+                        finish = 0
+            return JsonResponse({
+                "ret": 1,
+                "data": {
+                    "finish": finish,
+                    "script_name_list": script_name_list,
+                    "script_status_list": script_status_list
+                }
+            })
+    else:
+        return HttpResponseRedirect("/login")
 
 
 def verify_items(request):
@@ -4670,10 +4742,9 @@ def verify_items(request):
             current_step_run.endtime = datetime.datetime.now()
             current_step_run.save()
 
-            processrun=current_step_run.processrun
-            processrun.state='CONTINUE'
+            processrun = current_step_run.processrun
+            processrun.state = 'CONTINUE'
             processrun.save()
-
 
             all_current__tasks = current_step_run.processrun.processtask_set.exclude(state="1")
             for task in all_current__tasks:
@@ -4681,8 +4752,7 @@ def verify_items(request):
                 task.state = "1"
                 task.save()
 
-
-            #写入继续任务
+            # 写入继续任务
             myprocesstask = ProcessTask()
             myprocesstask.processrun_id = current_step_run.processrun_id
             myprocesstask.starttime = datetime.datetime.now()
@@ -4705,13 +4775,13 @@ def verify_items(request):
 
 def processcontinue(request):
     if request.user.is_authenticated():
-        step_id=""
+        step_id = ""
         if 'step_id' in request.POST:
             step_id = request.POST.get("step_id", "")
         else:
             processrun_id = request.POST.get("processrun_id", "")
-            stepruns= StepRun.objects.filter(processrun_id=int(processrun_id),state='CONTINUE').exclude(state='9')
-            if len(stepruns)>0:
+            stepruns = StepRun.objects.filter(processrun_id=int(processrun_id), state='CONTINUE').exclude(state='9')
+            if len(stepruns) > 0:
                 step_id = stepruns[0].id
             else:
                 return JsonResponse({"data": "1"})
@@ -4724,8 +4794,8 @@ def processcontinue(request):
             current_step_run.endtime = datetime.datetime.now()
             current_step_run.save()
 
-            processrun=current_step_run.processrun
-            processrun.state='RUN'
+            processrun = current_step_run.processrun
+            processrun.state = 'RUN'
             processrun.save()
 
             all_current__tasks = current_step_run.processrun.processtask_set.exclude(state="1")
@@ -6121,13 +6191,13 @@ def host_save(request):
         connect_type = request.POST.get("type", "")
         username = request.POST.get("username", "")
         password = request.POST.get("password", "")
-        ret= 0
-        info=""
+        ret = 0
+        info = ""
         try:
             host_id = int(host_id)
         except:
-            ret= 0
-            info="网络错误。"
+            ret = 0
+            info = "网络错误。"
         else:
             if host_ip.strip():
                 if host_name.strip():
@@ -6194,9 +6264,9 @@ def host_save(request):
                 ret = 0
                 info = "主机IP未填写。"
             return JsonResponse({
-                    "ret": ret,
-                    "info": info
-                })
+                "ret": ret,
+                "info": info
+            })
     else:
         return HttpResponseRedirect("/login")
 
@@ -6207,14 +6277,14 @@ def hosts_manage_data(request):
         all_hm_list = []
         for host_manage in all_hosts_manage:
             all_hm_list.append({
-                    "host_id": host_manage.id,
-                    "host_ip": host_manage.host_ip,
-                    "host_name": host_manage.host_name,
-                    "os": host_manage.os,
-                    "type": host_manage.type,
-                    "username": host_manage.username,
-                    "password": host_manage.password
-                })
+                "host_id": host_manage.id,
+                "host_ip": host_manage.host_ip,
+                "host_name": host_manage.host_name,
+                "os": host_manage.os,
+                "type": host_manage.type,
+                "username": host_manage.username,
+                "password": host_manage.password
+            })
         return JsonResponse({"data": all_hm_list})
     else:
         return HttpResponseRedirect("/login")

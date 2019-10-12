@@ -187,6 +187,224 @@ def exec_script(steprunid, username, fullname):
                     myprocesstask.save()
 
 
+@shared_task
+def force_exec_script(processrunid):
+    try:
+        processrunid = int(processrunid)
+    except ValueError as e:
+        print("网络异常导致流程ID未传入, ", e)
+    else:
+        try:
+            processrun = ProcessRun.objects.get(id=processrunid)
+        except ProcessRun.DoesNotExist as e:
+            print("流程不存在, ", e)
+        else:
+            all_step_runs = processrun.steprun_set.exclude(step__state="9").filter(step__force_exec=1)
+            for steprun in all_step_runs:
+                cur_step_scripts = steprun.scriptrun_set.all()
+                for script in cur_step_scripts:
+                    script.starttime = datetime.datetime.now()
+                    script.result = ""
+                    script.state = "RUN"
+                    script.save()
+
+                    # HostsManage
+                    cur_host_manage = script.script.hosts_manage
+                    ip = cur_host_manage.host_ip
+                    username = cur_host_manage.username
+                    password = cur_host_manage.password
+                    system_tag = cur_host_manage.os
+
+                    if system_tag == "Linux":
+                        ###########################
+                        # 创建linux下目录:         #
+                        #   mkdir path -p 覆盖路径 #
+                        ###########################
+                        linux_temp_script_path = "/tmp/drm/{processrunid}".format(**{"processrunid": processrun.id})
+                        mkdir_cmd = "mkdir {linux_temp_script_path} -p".format(
+                            **{"linux_temp_script_path": linux_temp_script_path})
+                        mkdir_obj = remote.ServerByPara(mkdir_cmd, ip, username, password, system_tag)
+                        mkdir_result = mkdir_obj.run("")
+
+                        linux_temp_script_name = "tmp_script_{scriptrun_id}.sh".format(**{"scriptrun_id": script.id})
+                        linux_temp_script_file = linux_temp_script_path + "/" + linux_temp_script_name
+
+                        # 写入本地文件
+                        script_path = os.path.join(os.path.join(os.path.join(settings.BASE_DIR, "faconstor"), "upload"),
+                                                   "script")
+
+                        local_file = script_path + os.sep + "{0}_local_script.sh".format(processrun.process.name)
+
+                        try:
+                            with open(local_file, "w") as f:
+                                f.write(script.script.script_text)
+                        except FileNotFoundError as e:
+                            script.runlog = "Linux脚本写入本地失败。"  # 写入错误类型
+                            script.explain = "Linux脚本写入本地失败：{0}。".format(e)
+                            script.state = "ERROR"
+                            script.save()
+                            steprun.state = "ERROR"
+                            steprun.save()
+
+                            # script_name = script.script.name if script.script.name else ""
+                            # myprocesstask = ProcessTask()
+                            # myprocesstask.processrun = steprun.processrun
+                            # myprocesstask.starttime = datetime.datetime.now()
+                            # myprocesstask.senduser = steprun.processrun.creatuser
+                            # myprocesstask.receiveauth = steprun.step.group
+                            # myprocesstask.type = "ERROR"
+                            # myprocesstask.state = "0"
+                            # myprocesstask.content = "Linux脚本" + script_name + "内容写入失败，请处理。"
+                            # myprocesstask.steprun_id = steprun.id
+                            # myprocesstask.save()
+                        else:
+                            # 上传Linux服务器
+                            try:
+                                ssh = paramiko.Transport((ip, 22))
+                                ssh.connect(username=username, password=password)
+                                sftp = paramiko.SFTPClient.from_transport(ssh)
+                            except paramiko.ssh_exception.SSHException as e:
+                                script.runlog = "连接服务器失败。"  # 写入错误类型
+                                script.explain = "连接服务器失败：{0}。".format(e)  # 写入错误类型
+                                script.state = "ERROR"
+                                script.save()
+                                steprun.state = "ERROR"
+                                steprun.save()
+
+                                # script_name = script.script.name if script.script.name else ""
+                                # myprocesstask = ProcessTask()
+                                # myprocesstask.processrun = steprun.processrun
+                                # myprocesstask.starttime = datetime.datetime.now()
+                                # myprocesstask.senduser = steprun.processrun.creatuser
+                                # myprocesstask.receiveauth = steprun.step.group
+                                # myprocesstask.type = "ERROR"
+                                # myprocesstask.state = "0"
+                                # myprocesstask.content = "上传" + script_name + "脚本时，连接服务器失败。"
+                                # myprocesstask.steprun_id = steprun.id
+                                # myprocesstask.save()
+                            else:
+                                try:
+                                    sftp.put(local_file, linux_temp_script_file)
+                                except FileNotFoundError as e:
+                                    script.runlog = "上传linux脚本文件失败。"  # 写入错误类型
+                                    script.explain = "上传linux脚本文件失败：{0}。".format(e)  # 写入错误类型
+                                    script.state = "ERROR"
+                                    script.save()
+                                    steprun.state = "ERROR"
+                                    steprun.save()
+                                    #
+                                    # script_name = script.script.name if script.script.name else ""
+                                    # myprocesstask = ProcessTask()
+                                    # myprocesstask.processrun = steprun.processrun
+                                    # myprocesstask.starttime = datetime.datetime.now()
+                                    # myprocesstask.senduser = steprun.processrun.creatuser
+                                    # myprocesstask.receiveauth = steprun.step.group
+                                    # myprocesstask.type = "ERROR"
+                                    # myprocesstask.state = "0"
+                                    # myprocesstask.content = "脚本" + script_name + "上传失败：{0}。".format(e)
+                                    # myprocesstask.steprun_id = steprun.id
+                                    # myprocesstask.save()
+                                else:
+                                    sftp.chmod(linux_temp_script_file, 755)
+
+                                ssh.close()
+
+                            # 执行脚本(上传文件(dos格式>>shell))
+                            exe_cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
+                    else:
+                        ############################
+                        # 创建windows下目录:       #
+                        #   先判断文件是否存在，再  #
+                        #   mkdir/md path 创建文件 #
+                        ############################
+                        windows_temp_script_path = r"C:\drm\{processrunid}".format(**{"processrunid": processrun.id})
+                        mkdir_cmd = "if not exist {windows_temp_script_path} mkdir {windows_temp_script_path}".format(
+                            **{"windows_temp_script_path": windows_temp_script_path})
+                        mkdir_obj = remote.ServerByPara(mkdir_cmd, ip, username, password, system_tag)
+                        mkdir_result = mkdir_obj.run("")
+
+                        windows_temp_script_name = "tmp_script_{scriptrun_id}.bat".format(**{"scriptrun_id": script.id})
+                        windows_temp_script_file = windows_temp_script_path + r"\\" + windows_temp_script_name
+                        para_list = script.script.script_text.split("\n")
+                        for num, content in enumerate(para_list):
+                            tmp_cmd = ""
+                            if num == 0:
+                                tmp_cmd = r"""echo {0}>{1}""".format(content, windows_temp_script_file)
+                            else:
+                                tmp_cmd = r"""echo {0}>>{1}""".format(content, windows_temp_script_file)
+
+                            tmp_obj = remote.ServerByPara(tmp_cmd, ip, username, password, system_tag)
+                            tmp_result = tmp_obj.run("")
+
+                            if tmp_result["exec_tag"] == 1:
+                                script.runlog = "上传windows脚本文件失败。"  # 写入错误类型
+                                script.explain = "上传windows脚本文件失败：{0}。".format(tmp_result["data"])
+                                script.state = "ERROR"
+                                script.save()
+                                steprun.state = "ERROR"
+                                steprun.save()
+                                #
+                                # script_name = script.script.name if script.script.name else ""
+                                # myprocesstask = ProcessTask()
+                                # myprocesstask.processrun = steprun.processrun
+                                # myprocesstask.starttime = datetime.datetime.now()
+                                # myprocesstask.senduser = steprun.processrun.creatuser
+                                # myprocesstask.receiveauth = steprun.step.group
+                                # myprocesstask.type = "ERROR"
+                                # myprocesstask.state = "0"
+                                # myprocesstask.content = "脚本" + script_name + "上传windows脚本文件失败，请处理。"
+                                # myprocesstask.steprun_id = steprun.id
+                                # myprocesstask.save()
+
+                        exe_cmd = windows_temp_script_file
+
+                    # 执行文件
+                    rm_obj = remote.ServerByPara(exe_cmd, ip, username, password, system_tag)
+                    result = rm_obj.run(script.script.succeedtext)
+
+                    script.endtime = datetime.datetime.now()
+                    script.result = result['exec_tag']
+                    script.explain = result['data']
+
+                    # 处理脚本执行失败问题
+                    if result["exec_tag"] == 1:
+                        script.runlog = result['log']  # 写入错误类型
+                        script.explain = result['data']
+                        print("当前脚本执行失败,结束任务!")
+                        script.state = "ERROR"
+                        script.save()
+                        steprun.state = "ERROR"
+                        steprun.save()
+
+                        # script_name = script.script.name if script.script.name else ""
+                        # myprocesstask = ProcessTask()
+                        # myprocesstask.processrun = steprun.processrun
+                        # myprocesstask.starttime = datetime.datetime.now()
+                        # myprocesstask.senduser = steprun.processrun.creatuser
+                        # myprocesstask.receiveauth = steprun.step.group
+                        # myprocesstask.type = "ERROR"
+                        # myprocesstask.state = "0"
+                        # myprocesstask.content = "脚本" + script_name + "执行错误，请处理。"
+                        # myprocesstask.steprun_id = steprun.id
+                        # myprocesstask.save()
+                    else:
+                        script.endtime = datetime.datetime.now()
+                        script.state = "DONE"
+                        script.save()
+
+                    # script_name = script.script.name if script.script.name else ""
+                    #
+                    # myprocesstask = ProcessTask()
+                    # myprocesstask.processrun = steprun.processrun
+                    # myprocesstask.starttime = datetime.datetime.now()
+                    # myprocesstask.senduser = steprun.processrun.creatuser
+                    # myprocesstask.type = "INFO"
+                    # myprocesstask.logtype = "SCRIPT"
+                    # myprocesstask.state = "1"
+                    # myprocesstask.content = "脚本" + script_name + "完成。"
+                    # myprocesstask.save()
+
+
 def runstep(steprun, if_repeat=False):
     """
     执行当前步骤下的所有脚本
@@ -270,7 +488,6 @@ def runstep(steprun, if_repeat=False):
                     mkdir_result = mkdir_obj.run("")
 
                     linux_temp_script_name = "tmp_script_{scriptrun_id}.sh".format(**{"scriptrun_id": script.id})
-                    linux_temp_script_file = os.path.join(linux_temp_script_path, linux_temp_script_name)
                     linux_temp_script_file = linux_temp_script_path + "/" + linux_temp_script_name
 
                     # 写入本地文件
@@ -372,7 +589,6 @@ def runstep(steprun, if_repeat=False):
 
                     windows_temp_script_name = "tmp_script_{scriptrun_id}.bat".format(**{"scriptrun_id": script.id})
                     windows_temp_script_file = windows_temp_script_path + r"\\" + windows_temp_script_name
-                    print(windows_temp_script_file)
                     para_list = script.script.script_text.split("\n")
                     for num, content in enumerate(para_list):
                         tmp_cmd = ""

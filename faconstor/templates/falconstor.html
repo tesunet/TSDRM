@@ -106,7 +106,8 @@
                                                 </div>
                                                 <div class="col-md-5" style="width: 700px;">
                                                     <div class="form-group">
-                                                        <div class="pre-scrollable" style="max-height: 380px;overflow-x:hidden;">
+                                                        <div class="pre-scrollable"
+                                                             style="max-height: 380px;overflow-x:hidden;">
                                                             <ul class="feeds" id="current_process_task_info">
 
                                                             </ul>
@@ -127,6 +128,7 @@
                                 </div>
                                 <div class="form-actions noborder" style="text-align:center">
                                     <button id="stopbtn" type="button" class="btn red"> 停止</button>
+                                    <button id="show_force_script" type="button" class="btn btn-primary"> 显示强制执行脚本</button>
                                     <button id="show_result" type="button" class="btn btn-primary" hidden> 显示结果</button>
                                 </div>
                             </div>
@@ -394,7 +396,7 @@
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
                     <h1 class="modal-title" id="myModalLabel" align="center">异步任务情况</h1>
-                    撤销当前任务：
+                    撤销当前流程异步任务：
                     <button id="revoke_current_task"><i class="fa fa-stop" style="color: red"></i></button>
                 </div>
                 <div class="modal-body">
@@ -413,15 +415,55 @@
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="tasks_fresh" name="stasks_fresh" class="btn btn-primary">刷新
+                    <button type="button" id="tasks_fresh" class="btn btn-primary">刷新
                     </button>
                     <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
                 </div>
             </div>
         </div>
     </div>
+    <div id="static_force_script" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">强制执行脚本</h4>
+                    <input hidden id="verify_id" type="text" name="verify_id">
+                </div>
+                <div class="panel-body">
+                    <div class="bs-example form-horizontal activate-form">
+                        <div class="form-body">
+                            <div class="form-group">
+                                <label class="col-md-2 control-label">脚本</label>
+                                <div class="col-md-1"></div>
 
+                                <div class="col-md-9 row">
+                                    <div class="col-md-10 row" id="script_name_div">
+{#                                        <label class="control-label col-md-12" style="text-align: left;">清理历史日志</label>#}
+{#                                        <label class="control-label col-md-12" style="text-align: left;">清理控制文件</label>#}
+{#                                        <label class="control-label col-md-12" style="text-align: left;">关闭数据库</label>#}
+                                    </div>
+                                    <div class="col-md-2 row" id="script_status_div">
+{#                                        <div class="control-label col-md-12"><i class="fa fa-check" style="color:#26C281;"></i></div>#}
+{#                                        <div class="control-label col-md-12"><i class="fa fa-times" style="color:#c51b26;"></i></div>#}
+{#                                        <div class="control-label col-md-12"><i class="fa fa-circle-o"></i></div>#}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions ">
+                            <div class="modal-footer">
+                                <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
+                </div>
+
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}

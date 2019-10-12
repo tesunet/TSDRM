@@ -108,6 +108,8 @@ urlpatterns = [
     url(r'^save_task_remark/$', save_task_remark),
     url(r'^get_server_time_very_second/$', get_server_time_very_second),
 
+    url(r'^get_force_script_info/$', get_force_script_info),
+
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
     url(r'^falconstorsearch/$', falconstorsearch, {'funid': '64'}),
