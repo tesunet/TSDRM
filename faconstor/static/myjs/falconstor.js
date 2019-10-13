@@ -855,12 +855,12 @@ if (App.isAngularJsApp() === false) {
                             $("#script_status_div").append('<div class="control-label col-md-12"><i class="' + script_icon + '" style="' + script_color + '"></i></div>')
                         }
                         if (data.data.finish == 1) {
-                            // 关闭模态框，reload流程
+                            // 强制执行脚本完成,关闭定时器
                             $('#static_force_script').modal("hide");
                             alert("强制执行脚本完成。");
                             end = true;
                             // 跳转启动页面
-                            // ...
+                            window.location.href = data.data.switch_url;
                         }
                     } else {
                         alert(data.data);

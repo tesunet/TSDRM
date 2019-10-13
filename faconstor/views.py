@@ -4695,6 +4695,7 @@ def get_force_script_info(request):
             })
         else:
             finish = 1
+            cur_process_id = cur_process_run.process.id
             script_name_list = []
             script_status_list = []
             all_step_runs = cur_process_run.steprun_set.exclude(step__state="9").filter(step__force_exec=1)
@@ -4710,7 +4711,8 @@ def get_force_script_info(request):
                 "data": {
                     "finish": finish,
                     "script_name_list": script_name_list,
-                    "script_status_list": script_status_list
+                    "script_status_list": script_status_list,
+                    "switch_url": "/falconstorswitch/{0}".format(cur_process_id)
                 }
             })
     else:
