@@ -392,17 +392,17 @@ def force_exec_script(processrunid):
                         script.state = "DONE"
                         script.save()
 
-                    # script_name = script.script.name if script.script.name else ""
-                    #
-                    # myprocesstask = ProcessTask()
-                    # myprocesstask.processrun = steprun.processrun
-                    # myprocesstask.starttime = datetime.datetime.now()
-                    # myprocesstask.senduser = steprun.processrun.creatuser
-                    # myprocesstask.type = "INFO"
-                    # myprocesstask.logtype = "SCRIPT"
-                    # myprocesstask.state = "1"
-                    # myprocesstask.content = "脚本" + script_name + "完成。"
-                    # myprocesstask.save()
+                        script_name = script.script.name if script.script.name else ""
+
+                        myprocesstask = ProcessTask()
+                        myprocesstask.processrun = steprun.processrun
+                        myprocesstask.starttime = datetime.datetime.now()
+                        myprocesstask.senduser = steprun.processrun.creatuser
+                        myprocesstask.type = "INFO"
+                        myprocesstask.logtype = "SCRIPT"
+                        myprocesstask.state = "1"
+                        myprocesstask.content = "脚本" + script_name + "完成。"
+                        myprocesstask.save()
 
 
 def runstep(steprun, if_repeat=False):
