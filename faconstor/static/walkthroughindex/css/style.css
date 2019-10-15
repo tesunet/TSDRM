@@ -351,7 +351,7 @@ input {
 .progress .bar i {
     position: absolute;
     top:-8px;
-    left:370px;
+    left:820px;
     line-height: 2em;
     font-size: 30px;
 !important;
@@ -1049,6 +1049,15 @@ input {
 	background-color:rgba(0,0,0,0.5);
 }
 .modal-content {
+    position: relative;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #999;
+    border: 1px solid rgba(0, 0, 0, .2);
+    border-radius: 6px;
+    outline: none;
+    -webkit-box-shadow: 0 3px 9px rgba(0, 0, 0, .5);
+    box-shadow: 0 3px 9px rgba(0, 0, 0, .5);
 	display:flex;
 	flex-flow:column nowrap;
 	justify-content:space-between;
@@ -1073,12 +1082,35 @@ to {
 }
 }@keyframes zoom {
 	from {
-	transform:scale(0)
+	    transform:scale(0)
+    }
+    to {
+        transform:scale(1)
+    }
 }
-to {
-	transform:scale(1)
+ .modal {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1050;
+    display: none;
+    overflow: auto;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    outline: 0;
 }
-}.modal-header {
+ .modal.in .modal-dialog {
+    -webkit-transform: translate(0, 0);
+    -ms-transform: translate(0, 0);
+    transform: translate(0, 0);
+}
+ .modal-dialog {
+    width: 600px;
+    margin: 30px auto;
+}
+.modal-header {
     padding:8px !important;
 	box-sizing:border-box;
 	background-color:rgb( 23,65,91);
@@ -1092,7 +1124,24 @@ to {
 	font-weight:bold;
 	margin-right:20px;
 	transition:all 0.3s;
+     float: right;
+     font-size: 21px;
+     font-weight: bold;
+     line-height: 1;
+     color: #000;
+     text-shadow: 0 1px 0 #fff;
+    filter: alpha(opacity=20);
+    opacity: .2;
 }
+button.close {
+     -webkit-appearance: none;
+     padding: 0;
+     cursor: pointer;
+     background: transparent;
+     border: 0;
+}
+
+
 .close:hover,.close:focus {
 	color:#fffffc;
 	text-decoration:none;

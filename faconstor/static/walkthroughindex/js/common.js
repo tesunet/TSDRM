@@ -217,7 +217,7 @@ var util = {
                 if(olddata)
                 {
                     if(olddata.walkthroughstate != 'RUN'){
-                        $('.progress_run').css({ 'animation': 'bounceIn 1s ease-in-out' });
+                        $('.progress_run').css({ 'animation': 'bounceIn 3s ease-in-out' });
                     }
 
                 }
@@ -237,7 +237,7 @@ var util = {
                     },
                     success: function (data) {
                         if (data.data == "0") {
-                            alert("启动系统关闭程序！");
+                            $("#static_shutdowm").modal('show');
                             $("#modalbody").html("启动系统关闭程序");
                         } else {
                             $("#static_shutdowm").modal('show');
