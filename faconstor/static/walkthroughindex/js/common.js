@@ -267,13 +267,13 @@ var util = {
                     }
                 }
                 if(isshow) {
-                        console.append("<span class=\"prompt\">➜</span> ");
-                        console.append("<span class=\"path\">~</span>" + showtasks[i].taskcontent);
+                        console.append("<span class=\"prompt\">robot:</span> ");
+                        console.append(showtasks[i].taskcontent.replace("。",""));
                         console.append("<br>");
                         console.append("<br>");
                     }
                     else{
-                        showtext = "➜" + "~" + showtasks[i].taskcontent + "^"
+                        showtext = "robot:" + showtasks[i].taskcontent.replace("。","") + "^"
                 }
             }
             if(showtext.length>0) {
@@ -284,10 +284,8 @@ var util = {
                         refresh = false;
                         var current = str.substr(myindex, 1);
                         myindex++;
-                        if(current=="➜")
-                            console.append("<span class=\"prompt\">➜</span> ");
-                        else if(current=="~")
-                            console.append("<span class=\"path\">~</span>");
+                        if(current=="robot:")
+                            console.append("<span class=\"prompt\">robot:</span> ");
                         else if(current=="^"){
                             console.append("<br>");
                             console.append("<br>");
@@ -308,8 +306,8 @@ var util = {
         }
        else {
             for (var i = 0; i < showtasks.length; i++) {
-                console.append("<span class=\"prompt\">➜</span> ");
-                console.append("<span class=\"path\">~</span>" +  showtasks[i].taskcontent);
+                console.append("<span class=\"prompt\">robot:</span> ");
+                console.append(showtasks[i].taskcontent.replace("。",""));
                 console.append("<br>");
                 console.append("<br>");
             }
