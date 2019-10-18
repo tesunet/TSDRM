@@ -860,7 +860,7 @@ if (App.isAngularJsApp() === false) {
                             alert("强制执行脚本完成。");
                             end = true;
                             // 跳转启动页面
-                            window.location.href = data.data.switch_url;
+                            // window.location.href = data.data.switch_url;
                         }
                     } else {
                         alert(data.data);

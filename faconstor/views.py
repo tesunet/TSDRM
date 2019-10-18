@@ -3687,7 +3687,7 @@ def walkthroughsave(request):
                                     myprocessrun.save()
                                     current_process_run_id = myprocessrun.id
 
-                                    mystep = process[0].step_set.exclude(state="9")
+                                    mystep = process[0].step_set.exclude(state="9").order_by("sort")
                                     for step in mystep:
                                         mysteprun = StepRun()
                                         mysteprun.step = step
@@ -3695,7 +3695,7 @@ def walkthroughsave(request):
                                         mysteprun.state = "EDIT"
                                         mysteprun.save()
 
-                                        myscript = step.script_set.exclude(state="9")
+                                        myscript = step.script_set.exclude(state="9").order_by("sort")
                                         for script in myscript:
                                             myscriptrun = ScriptRun()
                                             myscriptrun.script = script
@@ -3767,7 +3767,7 @@ def walkthroughsave(request):
                                     myprocessrun.save()
                                     current_process_run_id = myprocessrun.id
 
-                                    mystep = process[0].step_set.exclude(state="9")
+                                    mystep = process[0].step_set.exclude(state="9").order_by("sort")
                                     for step in mystep:
                                         mysteprun = StepRun()
                                         mysteprun.step = step
@@ -3775,7 +3775,7 @@ def walkthroughsave(request):
                                         mysteprun.state = "EDIT"
                                         mysteprun.save()
 
-                                        myscript = step.script_set.exclude(state="9")
+                                        myscript = step.script_set.exclude(state="9").order_by("sort")
                                         for script in myscript:
                                             myscriptrun = ScriptRun()
                                             myscriptrun.script = script
