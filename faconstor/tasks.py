@@ -725,7 +725,7 @@ def runstep(steprun, if_repeat=False):
         nextstep = steprun.step.next.exclude(state="9")
         if len(nextstep) > 0:
             # 演练中，后续步骤不计入RTO时，自动开启下一流程
-            if processrun.walkthrough is not None and nextstep[0].rto_count_in == "0":
+            if processrun.walkthrough is not None and nextstep[0].rto_count_in == "0" and processrun.walkthroughstate != "DONE":
                 processrun.walkthroughstate = "DONE"
                 processrun.save()
 

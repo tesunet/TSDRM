@@ -5884,7 +5884,7 @@ def fill_with_invitation(request):
 
 def invite(request):
     if request.user.is_authenticated():
-        process_id = request.GET.get("process_id", "")
+        walkthrough_id = request.GET.get("walkthrough_id", "")
         start_date = request.GET.get("start_date", "")
         purpose = request.GET.get("purpose", "")
         end_date = request.GET.get("end_date", "")
@@ -5892,156 +5892,97 @@ def invite(request):
         nowtime = datetime.datetime.now()
         invite_time = nowtime.strftime("%Y-%m-%d")
 
-        current_processes = Process.objects.filter(id=process_id).filter(type="falconstor")
-        process_name = current_processes[0].name if current_processes else ""
-        allgroup = current_processes[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-            "group").distinct()
-        all_groups = ""
-        if allgroup:
-            for num, current_group in enumerate(allgroup):
-                if num == len(allgroup) - 1:
-                    group = Group.objects.get(id=int(current_group["group"]))
-                    all_groups += group.name
-                else:
-                    group = Group.objects.get(id=int(current_group["group"]))
-                    all_groups += group.name + "、"
-        all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None)
-        wrapper_step_list = []
-        num_to_char_choices = {
-            "1": "一",
-            "2": "二",
-            "3": "三",
-            "4": "四",
-            "5": "五",
-            "6": "六",
-            "7": "七",
-            "8": "八",
-            "9": "九",
-        }
-        for num, wrapper_step in enumerate(all_wrapper_steps):
-            wrapper_step_dict = {}
-            wrapper_step_dict["wrapper_step_name"] = num_to_char_choices[
-                                                         "{0}".format(str(num + 1))] + "." + wrapper_step.name
-            wrapper_step_group_id = wrapper_step.group
-            try:
-                wrapper_step_group_id = int(wrapper_step_group_id)
-            except:
-                wrapper_step_group_id = None
-            wrapper_step_group = Group.objects.filter(id=wrapper_step_group_id)
-            if wrapper_step_group:
-                wrapper_step_group_name = wrapper_step_group[0].name
-            else:
-                wrapper_step_group_name = ""
-            wrapper_step_dict["wrapper_step_group_name"] = wrapper_step_group_name
+        try:
+            walkthrough_id = int(walkthrough_id)
+        except ValueError as e:
+            raise Http404()
 
-            wrapper_script_list = []
-            all_wrapper_scripts = wrapper_step.script_set.exclude(state="9")
-            for wrapper_script in all_wrapper_scripts:
-                wrapper_script_dict = {
-                    "wrapper_script_name": wrapper_script.name
-                }
-                wrapper_script_list.append(wrapper_script_dict)
-                wrapper_step_dict["wrapper_script_list"] = wrapper_script_list
 
-            wrapper_verify_list = []
-            all_wrapper_verifys = wrapper_step.verifyitems_set.exclude(state="9")
-            for wrapper_verify in all_wrapper_verifys:
-                wrapper_verify_dict = {
-                    "wrapper_verify_name": wrapper_verify.name
-                }
-                wrapper_verify_list.append(wrapper_verify_dict)
-                wrapper_step_dict["wrapper_verify_list"] = wrapper_verify_list
-
-            pnode_id = wrapper_step.id
-            inner_step_list = []
-            all_inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=pnode_id)
-            for inner_step in all_inner_steps:
-                inner_step_dict = {}
-                inner_step_dict["inner_step_name"] = inner_step.name
-
-                inner_step_group_id = inner_step.group
-                try:
-                    inner_step_group_id = int(inner_step_group_id)
-                except:
-                    inner_step_group_id = None
-                inner_step_group = Group.objects.filter(id=inner_step_group_id)
-                if inner_step_group:
-                    inner_step_group_name = inner_step_group[0].name
-                else:
-                    inner_step_group_name = ""
-                inner_step_dict["inner_step_group_name"] = inner_step_group_name
-
-                inner_script_list = []
-                all_inner_scripts = inner_step.script_set.exclude(state="9")
-                for inner_script in all_inner_scripts:
-                    inner_script_dict = {
-                        "inner_script_name": inner_script.name
-                    }
-                    inner_script_list.append(inner_script_dict)
-
-                inner_step_dict["inner_script_list"] = inner_script_list
-
-                inner_verify_list = []
-                all_inner_verifys = inner_step.verifyitems_set.exclude(state="9")
-                for inner_verify in all_inner_verifys:
-                    inner_verify_dict = {
-                        "inner_verify_name": inner_verify.name
-                    }
-                    inner_verify_list.append(inner_verify_dict)
-
-                inner_step_dict["inner_verify_list"] = inner_verify_list
-
-                inner_step_list.append(inner_step_dict)
-
-            wrapper_step_dict["inner_step_list"] = inner_step_list
-
-            wrapper_step_list.append(wrapper_step_dict)
-        # return render(request, 'notice.html',
-        #                      {"wrapper_step_list": wrapper_step_list, "person_invited": person_invited,
-        #                       "invite_reason": invite_reason, "invite_time": invite_time})
-        t = TemplateResponse(request, 'notice.html',
-                             {"wrapper_step_list": wrapper_step_list, "process_date": process_date,
-                              "purpose": purpose, "invite_time": invite_time, "start_date": start_date,
-                              "end_date": end_date,
-                              "process_name": process_name, "all_groups": all_groups})
-        t.render()
-
-        current_path = os.getcwd()
-
-        if sys.platform.startswith("win"):
-            # 指定wkhtmltopdf运行程序路径
-            wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
-            config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+        try:
+            cur_walkthrough = Walkthrough.objects.get(id=walkthrough_id)
+        except Walkthrough.DoesNotExist as e:
+            raise Http404()
         else:
-            config = None
+            current_process_runs = cur_walkthrough.processrun_set.exclude(state="9")
+            process_name_list = []
+            pre_process_name = ""
+            all_group_list = []
 
-        options = {
-            'page-size': 'A3',
-            'margin-top': '0.75in',
-            'margin-right': '0.75in',
-            'margin-bottom': '0.75in',
-            'margin-left': '0.75in',
-            'encoding': "UTF-8",
-            'no-outline': None
-        }
-        css_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "new" + os.sep + "css"
-        css_01 = css_path + os.sep + "bootstrap.css"
-        # css_02 = css_path + os.sep + "font-awesome.min.css"
-        css_03 = css_path + os.sep + "icon.css"
-        # css_04 = css_path + os.sep + "font.css"
-        css_05 = css_path + os.sep + "app.css"
-        css_06 = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "assets" + os.sep + "global" + os.sep + "css" + os.sep + "components.css"
+            for process_run in current_process_runs:
+                if pre_process_name == process_run.process.name:
+                    continue
+                process_name_list.append(process_run.process.name)
+                pre_process_name = process_run.process.name
 
-        css = [r"{0}".format(mycss) for mycss in [css_01, css_03, css_05, css_06]]
+                allgroup = process_run.process.step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                    "group").distinct()
 
-        pdfkit.from_string(t.content.decode(encoding="utf-8"), r"invitation.pdf", configuration=config, options=options,
-                           css=css)
+                if allgroup:
+                    for num, current_group in enumerate(allgroup):
+                        try:
+                            group = Group.objects.get(id=int(current_group["group"]))
+                        except Group.DoesNotExist as e:
+                            pass
+                        else:
+                            if group.name not in all_group_list:
+                                all_group_list.append(group.name)
+            all_groups = ""
 
-        the_file_name = "invitation.pdf"
-        response = StreamingHttpResponse(file_iterator(the_file_name))
-        response['Content-Type'] = 'application/octet-stream; charset=unicode'
-        response['Content-Disposition'] = 'attachment;filename="{0}"'.format(the_file_name)
-        return response
+            for num, group in enumerate(all_group_list):
+                if num == len(all_group_list) - 1:
+                    all_groups += group
+                else:
+                    all_groups += group + "、"
+
+            whole_process_name = ""
+
+            for num, process_name in enumerate(process_name_list):
+                if num == len(process_name_list) - 1:
+                    whole_process_name += process_name
+                else:
+                    whole_process_name += process_name + "、"
+
+            t = TemplateResponse(request, 'notice.html',
+                                 {"process_date": process_date, "purpose": purpose, "invite_time": invite_time, "start_date": start_date,
+                                  "end_date": end_date, "whole_process_name": whole_process_name, "all_groups": all_groups})
+            t.render()
+
+            current_path = os.getcwd()
+
+            if sys.platform.startswith("win"):
+                # 指定wkhtmltopdf运行程序路径
+                wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
+                config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+            else:
+                config = None
+
+            options = {
+                'page-size': 'A3',
+                'margin-top': '0.75in',
+                'margin-right': '0.75in',
+                'margin-bottom': '0.75in',
+                'margin-left': '0.75in',
+                'encoding': "UTF-8",
+                'no-outline': None
+            }
+            css_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "new" + os.sep + "css"
+            css_01 = css_path + os.sep + "bootstrap.css"
+            # css_02 = css_path + os.sep + "font-awesome.min.css"
+            css_03 = css_path + os.sep + "icon.css"
+            # css_04 = css_path + os.sep + "font.css"
+            css_05 = css_path + os.sep + "app.css"
+            css_06 = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "assets" + os.sep + "global" + os.sep + "css" + os.sep + "components.css"
+
+            css = [r"{0}".format(mycss) for mycss in [css_01, css_03, css_05, css_06]]
+
+            pdfkit.from_string(t.content.decode(encoding="utf-8"), r"invitation.pdf", configuration=config, options=options,
+                               css=css)
+
+            the_file_name = "invitation.pdf"
+            response = StreamingHttpResponse(file_iterator(the_file_name))
+            response['Content-Type'] = 'application/octet-stream; charset=unicode'
+            response['Content-Disposition'] = 'attachment;filename="{0}"'.format(the_file_name)
+            return response
 
 
 def get_all_users(request):

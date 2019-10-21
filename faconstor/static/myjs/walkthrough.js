@@ -36,7 +36,8 @@ $(document).ready(function () {
                 "data": null,
                 "width": "60px",  // 指定列宽；
                 "render": function (data, type, full) {
-                    return "<td><button  id='edit' title='编辑' data-toggle='modal'  data-target='#static01'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button class='btn btn-xs btn-primary' type='button'><a href='/custom_pdf_report/?processrunid&processid'><i class='fa fa-arrow-circle-down' style='color: white'></i></a></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
+                    return "<td><button  id='edit' title='编辑' data-toggle='modal'  data-target='#static01'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>"
+                    // return "<td><button  id='edit' title='编辑' data-toggle='modal'  data-target='#static01'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button class='btn btn-xs btn-primary' type='button'><a href='/custom_pdf_report/?processrunid&processid'><i class='fa fa-arrow-circle-down' style='color: white'></i></a></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
                 }
             }],
 
@@ -254,7 +255,7 @@ $(document).ready(function () {
 
 
     $("#generate").click(function () {
-        var process_id = $("#process_id").val();
+        var walkthrough_id = $("#id").val();
         var start_date = $("#start_date").val();
         var end_date = $("#end_date").val();
         var purpose = $("#purpose").val();
@@ -263,7 +264,7 @@ $(document).ready(function () {
         } else if (end_date == "" || end_date == null) {
             alert("演练结束时间！");
         } else {
-            window.open('/invite/?process_id=' + process_id + '&start_date=' + start_date + '&end_date=' + end_date + '&purpose=' + purpose);
+            window.open('/invite/?walkthrough_id=' + walkthrough_id + '&start_date=' + start_date + '&end_date=' + end_date + '&purpose=' + purpose);
         }
     });
 
