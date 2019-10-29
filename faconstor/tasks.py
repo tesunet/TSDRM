@@ -728,7 +728,6 @@ def runstep(steprun, if_repeat=False):
             if processrun.walkthrough is not None and nextstep[0].rto_count_in == "0" and processrun.walkthroughstate != "DONE":
                 processrun.walkthroughstate = "DONE"
                 processrun.save()
-
                 current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
                 if current_process_run:
                     current_process_run = current_process_run[0]
