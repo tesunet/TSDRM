@@ -149,7 +149,7 @@ input {
 
 .header-timeout {
     color: #111111;
-    margin: 80px 0;
+    margin: 40px 0;
 }
 
 .header-timeout ul {
@@ -192,7 +192,7 @@ input {
 .walkthrough_run {
     float: left;
     clear: both;
-    margin: 380px 0 60px 0px;
+    margin: 340px 0 60px 0px;
     color: #2a4d6c;
     font-weight: 700;
 }
@@ -218,7 +218,7 @@ input {
 .processname1 {
     width: 304px;
     height: 70px;
-    margin: 20px 0 0 37px;
+    margin: 0px 0 0 37px;
     padding-top: 31px;
     padding-left: 90px;
     background: url(../images/circular.png) no-repeat;
@@ -232,7 +232,7 @@ input {
 .processname {
     width: 304px;
     height: 70px;
-    margin: 20px 0 0 37px;
+    margin: 0px 0 0 37px;
     padding-top: 31px;
     padding-left: 90px;
     background: url(../images/circular2.gif) no-repeat;
@@ -246,7 +246,7 @@ input {
 .processname2 {
     width: 304px;
     height: 70px;
-    margin: 20px 0 0 37px;
+    margin: 0px 0 0 37px;
     padding-top: 31px;
     padding-left: 90px;
     background: url(../images/circular3.png) no-repeat;
@@ -985,6 +985,10 @@ input {
 }
 .endprocessimg img{
     width: 120px;
+    margin-top: 10px;
+}
+.endingimg img{
+    width: 160px;
     margin-top: 10px;
 }
 /*输入框*/

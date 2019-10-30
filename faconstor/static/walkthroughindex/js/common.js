@@ -39,23 +39,29 @@ var util = {
         var sTag = $("#s_tag").val()
          util.makeCommand(walkthroughindexdata.showtasks,walkthroughindexdata.oldwalkthroughinfo.showtasks);
         // 判断是否为计划
-
+        var myAudio=document.getElementById('audio2');
         if (walkthrough_state === "PLAN") {
             $(".walkthrough_run").hide();
             $(".header-timeout").hide();
             $(".end_pic").hide();
             $(".start_hand").show();
+            myAudio.pause();
 
         } else if (walkthrough_state === "DONE" && sTag !== "true") {
             $(".walkthrough_run").hide();
             $(".header-timeout").hide();
             $(".start_hand").hide();
             $(".end_pic").show();
+            myAudio.pause();
         } else {
             $(".end_pic").hide();
             $(".start_hand").hide();
             $(".walkthrough_run").show();
             $(".header-timeout").show();
+            var myAudio=document.getElementById('audio2');
+            myAudio.loop = true;
+            myAudio.volume = 0.2;
+            myAudio.play();
         }
 
         if (headerTitle === '') {
@@ -66,6 +72,7 @@ var util = {
         $(".progress_list").html("");
         $(".end").html("");
         curstate="DONE"
+        $(".progress_list").append("<div style='height: 20px'></div>");
         for (var processnum = 0; processnum < walkthroughindexdata.processruns.length; processnum++) {
             data=walkthroughindexdata.processruns[processnum]
             olddata=null
@@ -77,6 +84,8 @@ var util = {
                     }
                 }
             }
+
+             var processrun_url = data.processurl + "/" + data.processrun_id;
 
             if(data.state!="DONE")
                 curstate=""
@@ -91,18 +100,34 @@ var util = {
             if(data.state=="DONE"){
                 if(olddata) {
                     if (olddata.state == "DONE")
-                        $(".end").append("<div class=\"endprocess3\"><h3>" + data.name + "</h3></div>");
+                        $(".end").append("<div class=\"endprocess3\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a></h3></div>");
                     else
-                        $(".end").append("<div class=\"endprocess2\"><h3>" + data.name + "</h3></div>");
+                        $(".end").append("<div class=\"endprocess2\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a></h3></div>");
                 }
                 else
-                    $(".end").append("<div class=\"endprocess3\"><h3>" + data.name + "</h3></div>");
+                    $(".end").append("<div class=\"endprocess3\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a></h3></div>");
             }
             else if(data.state=="CONTINUE"){
-                $(".end").append("<div class=\"endprocess\"><h3>" + data.name +  "<input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div></h3></div>");
+                $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div><div hidden class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
+            }
+            else if(data.state=="RUN"){
+                var curStep_ending = [];
+                var curState_ending = ""
+                for (var j = 0; j < data.steps.length; j++) {
+
+                    if (data.steps[j].type === 'cur') {
+                        curStep_ending = data.steps[j];
+                        curState_ending = curStep_ending.state.toLocaleLowerCase();
+                        break;
+                    }
+                }
+                if(curState_ending=="confirm")
+                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/></h3></div>");
+                else
+                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endingimg'><img   src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
             }
             else{
-                $(".end").append("<div class=\"endprocess\"><h3>" + data.name +  "</h3></div>");
+                $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</h3></div>");
             }
 
 
@@ -228,6 +253,8 @@ var util = {
         }
         $(".endprocessimg").click(function () {
             var processrun_id = $(this).prev().val();
+            var curdiv = $(this)
+            var nextdiv = $(this).next()
             $.ajax({
                     url: "/processcontinue/",
                     type: "post",
@@ -237,8 +264,8 @@ var util = {
                     },
                     success: function (data) {
                         if (data.data == "0") {
-                            $("#static_shutdowm").modal('show');
-                            $("#modalbody").html("启动系统关闭程序");
+                            curdiv.hide();
+                            nextdiv.show();
                         } else {
                             $("#static_shutdowm").modal('show');
                             $("#modalbody").html("业务人员未完成数据验证，请勿关闭该系统！");

@@ -3371,6 +3371,7 @@ def falconstorswitchdata(request):
             "PLAN": "计划",
             "REJECT": "取消",
             "SIGN": "签到",
+            "CONTINUE": "继续",
             "": "",
         }
 
@@ -3616,7 +3617,7 @@ def walkthroughdata(request):
             "SIGN": "签到",
             "": "",
         }
-        walkthroughs = Walkthrough.objects.exclude(state='9').exclude(state='REJECT')
+        walkthroughs = Walkthrough.objects.order_by('-id').exclude(state='9').exclude(state='REJECT')
         for walkthrough in walkthroughs:
             create_users = walkthrough.creatuser if walkthrough.creatuser else ""
             create_user_objs = User.objects.filter(username=create_users)
@@ -5404,7 +5405,7 @@ def falconstorsearch(request, funid):
         nowtime = datetime.datetime.now()
         endtime = nowtime.strftime("%Y-%m-%d")
         starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-        all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
+        all_processes = Process.objects.exclude(state="9").filter(type="falconstor").order_by('-id')
         processname_list = []
         for process in all_processes:
             processname_list.append(process.name)
@@ -5510,6 +5511,7 @@ def falconstorsearchdata(request):
             "PLAN": "计划",
             "REJECT": "取消",
             "SIGN": "签到",
+            "CONTINUE": "继续",
             "": "",
         }
         cursor.execute(exec_sql)
