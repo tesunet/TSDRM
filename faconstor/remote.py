@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 paramiko, pywinrm实现windows/linux脚本调用
 linux下脚本语法错误,或者命令不存在等没有通过stderr变量接收到，只能添加判断条件；
@@ -8,7 +9,7 @@ import winrm
 import socket
 import requests
 import datetime
-from winrm.exceptions import WinRMTransportError, WinRMOperationTimeoutError
+from winrm.exceptions import WinRMTransportError, WinRMOperationTimeoutError, WinRMError
 from requests.exceptions import ConnectionError
 
 
@@ -79,12 +80,12 @@ class ServerByPara(object):
         self.pwd = password
         self.system_choice = system_choice
 
-    def exec_linux_cmd(self, succeedtext):
+    def exec_linux_cmd(self, succeedtext, port=22):
         data_init = ''
         self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         try:
-            self.client.connect(hostname=self.host, username=self.user, password=self.pwd, timeout=5)
-        except socket.timeout as e:
+            self.client.connect(hostname=self.host, username=self.user, password=self.pwd, timeout=5, port=port)
+        except (socket.timeout, paramiko.ssh_exception.SSHException) as e:
             print("连接服务器失败")
             return {
                 "exec_tag": 1,
@@ -93,17 +94,20 @@ class ServerByPara(object):
             }
         try:
             stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=6 * 60)
-            if stderr.readlines():
+            if stderr.read():
                 exec_tag = 1
-                for data in stderr.readlines():
-                    data_init += data
+                data_init = str(stderr.read(), encoding='utf-8')
+                # for data in stderr.readlines():
+                #     data_init += data
                 log = ""
             else:
                 exec_tag = 0
                 log = ""
 
                 try:
-                    data_init = str(stdout.read(), encoding='gbk')
+                    data_init = str(stdout.read(), encoding='utf-8')
+                    if data_init:
+                        data_init = "".join(data_init.split("\r\n"))
 
                     if "command not found" in data_init:  # 命令不存在
                         exec_tag = 1
@@ -144,7 +148,7 @@ class ServerByPara(object):
         try:
             s = Session(self.host, auth=(self.user, self.pwd))
             ret = s.run_cmd(self.cmd)
-        except (ConnectionError, WinRMOperationTimeoutError, WinRMTransportError) as e:
+        except (ConnectionError, WinRMOperationTimeoutError, WinRMTransportError, WinRMError) as e:
             if type(e) == WinRMOperationTimeoutError:
                 print("脚本执行超时")
                 exec_tag = 1
@@ -167,15 +171,18 @@ class ServerByPara(object):
                 "log": log,
             }
         else:
-            if ret.std_err.decode():
+            if ret.std_err:
+                data_init = str(ret.std_err, encoding='gbk')
                 exec_tag = 1
-                for data in ret.std_err.decode().split("\r\n"):
-                    data_init += data
+                # for data in ret.std_err.decode().split("\r\n"):
+                #     data_init += data
                 log = ""
             else:
                 exec_tag = 0
                 try:
                     data_init = str(ret.std_out, encoding='gbk')
+                    if data_init:
+                        data_init = "".join(data_init.split("\r\n"))
                     # for data in ret.std_out.decode().split("\r\n"):
                     #     data_init += data
                 except Exception as e:
@@ -198,15 +205,25 @@ class ServerByPara(object):
     def run(self, succeedtext):
         if self.system_choice == "Linux":
             result = self.exec_linux_cmd(succeedtext)
+        elif self.system_choice == "AIX":
+            result = self.exec_linux_cmd(succeedtext, port=22)
         else:
             result = self.exec_win_cmd(succeedtext)
         print(result)
         return result
 
-# if __name__ == '__main__':
-# server_obj = ServerByPara(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
-#     server_obj = ServerByPara(r"C:\Users\Administrator\Desktop\test_python.bat", "192.168.100.151", "administrator","tesunet@2017", "Windows")
-# server_obj = ServerByPara(r"/root/Desktop/test06.sh hello", "47.95.195.90", "root","!zxcvbn123", "Linux")
-#     server_obj = ServerByPara(r"cat /root/Desktop/script_log.txt", "47.95.195.90", "root","!zxcvbn123", "Linux")
-#
-# server_obj.run("")
+if __name__ == '__main__':
+    # server_obj = ServerByPara(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    # server_obj = ServerByPara(r"C:\Users\Administrator\Desktop\test_python.bat", "192.168.100.151", "administrator","tesunet@2017", "Windows")
+    # server_obj = ServerByPara(r"/root/Desktop/test06.sh hello", "47.95.195.90", "root","!zxcvbn123", "Linux")
+    linux_temp_script_file = r"/tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh"
+    cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
+    # print(cmd)  # sed -i 's/\r$//' /tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh
+    # server_obj = ServerByPara("echo '中文'",
+    #                           "192.168.100.154", "administrator", "tesunet@2017", "Windows")
+    server_obj = ServerByPara("echo '中文'",
+                              "192.168.184.66", "root", "password", "Linux")
+    # server_obj = ServerByPara(r"echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好'", "192.168.184.66", "root","password", "Linux")
+
+    server_obj.run("")
+    print(11111111111111)
