@@ -4320,20 +4320,27 @@ def revoke_current_task(request):
             except:
                 task_process_id = ""
             # 终止指定流程的异步任务
-            if value["state"] == "STARTED" and task_process_id == process_run_id:
+            if value["state"] in ["STARTED", "SUCCESS"] and task_process_id == process_run_id:
                 task_id = key
+                break
 
-        if abnormal == "1":
+        # abnormal 对异步任务进行的类型判断
+        #   1.手动终止异步任务
+        #   2.手动终止异步任务，但不修改流程状态
+        #   0.被动终止异步任务：celery-flower检测不到异步任务，但是流程还在跑
+
+
+        if abnormal in ["1", "2"]:
             stop_url = "http://127.0.0.1:5555/api/task/revoke/{0}?terminate=true".format(task_id)
             response = requests.post(stop_url)
-
             task_content = "异步任务被自主关闭。"
 
             # 终止任务
             if task_id:
-                # 修改当前步骤/脚本/流程的状态为ERROR
-                set_error_state(request, process_run_id, task_content)
-
+                # "1"修改状态  "2"表示强制终止流程时终止异步任务，不改变STOP状态为ERROR
+                if abnormal == "1":
+                    # 修改当前步骤/脚本/流程的状态为ERROR
+                    set_error_state(request, process_run_id, task_content)
                 return JsonResponse({"data": task_content})
 
             else:

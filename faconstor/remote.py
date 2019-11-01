@@ -103,8 +103,7 @@ class ServerByPara(object):
                 log = ""
 
                 try:
-                    for data in stdout.readlines():
-                        data_init += data
+                    data_init = str(stdout.read(), encoding='gbk')
 
                     if "command not found" in data_init:  # 命令不存在
                         exec_tag = 1
@@ -119,7 +118,8 @@ class ServerByPara(object):
                         if succeedtext not in data_init:
                             exec_tag = 1
                             log = "未匹配"
-                except:
+                except Exception as e:
+                    print(e)
                     exec_tag = 0  # 不抛错
                     log = "编码错误"
                     data_init = "编码错误"
@@ -174,12 +174,20 @@ class ServerByPara(object):
                 log = ""
             else:
                 exec_tag = 0
-                for data in ret.std_out.decode().split("\r\n"):
-                    data_init += data
-                if succeedtext is not None:
-                    if succeedtext not in data_init:
-                        exec_tag = 1
-                        log = "未匹配"
+                try:
+                    data_init = str(ret.std_out, encoding='gbk')
+                    # for data in ret.std_out.decode().split("\r\n"):
+                    #     data_init += data
+                except Exception as e:
+                    print(e)
+                    exec_tag = 0  # 不抛错
+                    log = "编码错误"
+                    data_init = "编码错误"
+                else:
+                    if succeedtext is not None:
+                        if succeedtext not in data_init:
+                            exec_tag = 1
+                            log = "未匹配"
 
             return {
                 "exec_tag": exec_tag,
