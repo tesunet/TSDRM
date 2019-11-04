@@ -88,7 +88,9 @@ urlpatterns = [
     url(r'^walkthroughindex/(\d+)/$', walkthroughindex),
     url(r'^get_walkthrough_index_data/$', get_walkthrough_index_data),
     url(r'^walkthrough_run_invited/$', walkthrough_run_invited),
-
+    # 演练报告
+    url(r'^walkthrough_pdf/$', walkthrough_pdf),
+    url(r'^get_walkthrough_info/$', get_walkthrough_info),
 
     url(r'^getrunsetps/$', getrunsetps),
     url(r'^falconstorcontinue/$', falconstorcontinue),

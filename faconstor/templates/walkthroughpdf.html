@@ -1,0 +1,159 @@
+<!-- {% load staticfiles %} -->
+<!DOCTYPE html>
+<html lang="en" class="app">
+<head>
+    <meta charset="utf-8" />
+    <title>
+        自动化灾备管理平台
+
+    </title>
+    <meta name="description"
+        content="app, web app, responsive, admin dashboard, admin, flat, flat ui, ui kit, off screen nav" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <style>
+        p {
+            font-size: 20px;
+        }
+    </style>
+     <!-- <link rel="stylesheet" href="/static/new/css/bootstrap.css" type="text/css" />
+    <link rel="stylesheet" href="/static/new/css/font.css" type="text/css" />
+    <link rel="stylesheet" href="/static/new/css/app.css" type="text/css" />
+    <link href="/static/assets/global/css/components.css" rel="stylesheet" id="style_components" type="text/css" />  -->
+</head>
+
+<body class="">
+    <input type="text" id="walkthrough_pdf" name="walkthrough_pdf" value="{{show_result_dict}}" hidden>
+    <section class="vbox">
+        <section>
+            <section class="hbox stretch">
+                <section id="content">
+                    <section class="vbox">
+                        <section class="scrollable wrapper">
+                            <!-- BEGIN CONTENT BODY -->
+                            <div class="page-content">
+                                <div class="row">
+                                    <div class="col-md-8 col-md-offset-2">
+                                        <div>
+                                            <div style="text-align: center">
+                                                <h1>太平资产灾备演练报告</h1>
+                                            </div>
+                                            <br>
+
+                                            <div style="margin: 45px;">
+                                                <p id="summary"></p>
+                                            </div>
+                                            <div>
+                                                <ul style="list-style: none;">
+                                                    <li><h3>1.参与系统</h3></li>
+                                                    <p id="current_process"></p>
+                                                    <br>
+                                                    <li>
+                                                        <h3>2.演练原因</h3>
+                                                    </li>
+                                                    <p id="note"></p>
+                                                    <br>
+                                                    <li><h3>2.项目组成员</h3>
+                                                        <table class="table table-hover table-bordered" id="group_data">
+                                                            <thead>
+                                                                <tr class="info">
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                用户组 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                成员 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                部门 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+
+                                                            </tbody>
+                                                        </table>
+                                                    </li>
+                                                    <br>
+                                                    <li><h3>3.流程明细</h3>
+                                                        <table class="table table-hover table-bordered"
+                                                            id="process_data">
+                                                            <thead>
+                                                                <tr class="info">
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                流程 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                环节名称 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                步骤名称 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                操作人员 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                开始时间 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                结束时间 </font>
+                                                                        </font>
+                                                                    </th>
+                                                                    <th>
+                                                                        <font style="vertical-align: inherit;">
+                                                                            <font style="vertical-align: inherit;">
+                                                                                RTO </font>
+                                                                        </font>
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+  
+                                                            </tbody>
+                                                        </table>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                            <!-- END CONTENT BODY -->
+                        </section>
+                    </section>
+                </section>
+            </section>
+        </section>
+    </section>
+    <script src="{{jQuery_path}}"></script>
+    <script src="{{walkthroughpdf_js_path}}"></script>
+</body>
+
+</html>

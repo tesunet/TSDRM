@@ -212,6 +212,7 @@ class ServerByPara(object):
         print(result)
         return result
 
+
 if __name__ == '__main__':
     # server_obj = ServerByPara(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     # server_obj = ServerByPara(r"C:\Users\Administrator\Desktop\test_python.bat", "192.168.100.151", "administrator","tesunet@2017", "Windows")
@@ -219,11 +220,10 @@ if __name__ == '__main__':
     linux_temp_script_file = r"/tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh"
     cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
     # print(cmd)  # sed -i 's/\r$//' /tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh
+    server_obj = ServerByPara(r"echo 中文>C:\Users\Administrator\Desktop\test.bat",
+                              "192.168.100.154", "administrator", "tesunet@2017", "Windows")
     # server_obj = ServerByPara("echo '中文'",
-    #                           "192.168.100.154", "administrator", "tesunet@2017", "Windows")
-    server_obj = ServerByPara("echo '中文'",
-                              "192.168.184.66", "root", "password", "Linux")
+    #                           "192.168.184.66", "root", "password", "Linux")
     # server_obj = ServerByPara(r"echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好'", "192.168.184.66", "root","password", "Linux")
 
     server_obj.run("")
-    print(11111111111111)

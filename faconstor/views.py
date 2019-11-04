@@ -800,6 +800,292 @@ def walkthrough_run_invited(request):
         return HttpResponse(json.dumps(result))
 
 
+def custom_walkthrough_info(walkthrough_id):
+    show_result_dict = {}
+
+    try:
+        cur_walkthrough = Walkthrough.objects.get(id=walkthrough_id)
+    except Walkthrough.DoesNotExist as e:
+        return {}
+    else:
+        # 演练时间
+        show_result_dict["walkthrough_starttime"] = "{:%Y-%m-%d}".format(
+            cur_walkthrough.starttime) if cur_walkthrough.starttime else ""
+
+        # 演练原因
+        show_result_dict["purpose"] = cur_walkthrough.purpose
+
+        # 用户组信息
+        all_groups = Group.objects.exclude(state="9")
+        total_list = []
+        if all_groups:
+            for group in all_groups:
+                all_group_dict = {}
+                current_group_users = group.userinfo_set.exclude(state="9", pnode=None).filter(type="user")
+                if current_group_users:
+                    all_group_dict["group"] = group.name
+
+                    current_users_and_departments = []
+                    for user in current_group_users:
+                        inner_dict = {}
+                        inner_dict["fullname"] = user.fullname
+                        inner_dict["depart_name"] = user.pnode.fullname if user.pnode else ""
+                        current_users_and_departments.append(inner_dict)
+                    all_group_dict["current_users_and_departments"] = current_users_and_departments
+                    total_list.append(all_group_dict)
+        show_result_dict["total_list"] = total_list
+
+        process_info_list = []
+
+        all_process_runs = cur_walkthrough.processrun_set.exclude(state="9")
+
+        all_process_name = ""
+        for current_processrun in all_process_runs:
+            process_info = {}
+
+            process_id = current_processrun.process.id
+            processrun_id = current_processrun.id
+            process_name = current_processrun.process.name if current_processrun else ""
+            # processrun_time = current_processrun.starttime.strftime("%Y-%m-%d")
+            all_process_name += process_name + ","
+            # 父级
+            step_info_list = []
+            pnode_steplist = Step.objects.exclude(state="9").filter(process_id=process_id).order_by("sort").filter(
+                pnode_id=None)
+
+            for num, pstep in enumerate(pnode_steplist):
+                second_el_dict = dict()
+                step_name = pstep.name
+                second_el_dict["step_name"] = step_name
+
+                pnode_steprun = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id).filter(
+                    step=pstep)
+                if pnode_steprun:
+                    pnode_steprun = pnode_steprun[0]
+                    if pnode_steprun.step.rto_count_in == "0":
+                        second_el_dict["start_time"] = ""
+                        second_el_dict["end_time"] = ""
+                        second_el_dict["rto"] = ""
+                    else:
+                        second_el_dict["start_time"] = pnode_steprun.starttime.strftime(
+                            "%Y-%m-%d %H:%M:%S") if pnode_steprun.starttime else ""
+                        second_el_dict["end_time"] = pnode_steprun.endtime.strftime(
+                            "%Y-%m-%d %H:%M:%S") if pnode_steprun.endtime else ""
+
+                        if pnode_steprun.endtime and pnode_steprun.starttime:
+                            end_time = pnode_steprun.endtime.strftime(
+                                "%Y-%m-%d %H:%M:%S")
+                            start_time = pnode_steprun.starttime.strftime(
+                                "%Y-%m-%d %H:%M:%S")
+                            delta_seconds = datetime.datetime.strptime(end_time,
+                                                                    '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
+                                start_time, '%Y-%m-%d %H:%M:%S')
+                            hour, minute, second = str(delta_seconds).split(":")
+                            delta_time = "{0}时{1}分{2}秒".format(hour, minute, second)
+                            second_el_dict["rto"] = delta_time
+                        else:
+                            second_el_dict["rto"] = ""
+
+                # 步骤负责人
+                try:
+                    users = User.objects.filter(username=pnode_steprun.operator)
+                    if users:
+                        operator = users[0].userinfo.fullname
+                        second_el_dict["operator"] = operator
+                    else:
+                        second_el_dict["operator"] = ""
+                except:
+                    second_el_dict["operator"] = ""
+
+                p_id = pstep.id
+                inner_steps = Step.objects.exclude(state="9").filter(process_id=process_id).order_by("sort").filter(
+                    pnode_id=p_id)
+
+                # 子级
+                inner_step_list = []
+                if inner_steps:
+                    for num, step in enumerate(inner_steps):
+                        inner_second_el_dict = dict()
+                        step_name = step.name
+                        inner_second_el_dict["step_name"] = step_name
+                        steprun_obj = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id).filter(
+                            step=step)
+                        if steprun_obj:
+                            steprun_obj = steprun_obj[0]
+                            if steprun_obj.step.rto_count_in == "0":
+                                inner_second_el_dict["start_time"] = ""
+                                inner_second_el_dict["end_time"] = ""
+                                inner_second_el_dict["rto"] = ""
+                            else:
+                                inner_second_el_dict["start_time"] = steprun_obj.starttime.strftime("%Y-%m-%d %H:%M:%S") if \
+                                    steprun_obj.starttime else ""
+                                inner_second_el_dict["end_time"] = steprun_obj.endtime.strftime("%Y-%m-%d %H:%M:%S") if \
+                                    steprun_obj.endtime else ""
+
+                                if steprun_obj.endtime and steprun_obj.starttime:
+                                    end_time = steprun_obj.endtime.strftime(
+                                        "%Y-%m-%d %H:%M:%S")
+                                    start_time = steprun_obj.starttime.strftime(
+                                        "%Y-%m-%d %H:%M:%S")
+                                    delta_seconds = datetime.datetime.strptime(end_time,
+                                                                            '%Y-%m-%d %H:%M:%S') - datetime.datetime.strptime(
+                                        start_time, '%Y-%m-%d %H:%M:%S')
+                                    hour, minute, second = str(
+                                        delta_seconds).split(":")
+                                    delta_time = "{0}时{1}分{2}秒".format(
+                                        hour, minute, second)
+
+                                    inner_second_el_dict["rto"] = delta_time
+                                else:
+                                    inner_second_el_dict["rto"] = ""
+
+                            # 步骤负责人
+                            users = User.objects.filter(username=steprun_obj.operator)
+                            if users:
+                                operator = users[0].userinfo.fullname
+                                inner_second_el_dict["operator"] = operator
+                            else:
+                                inner_second_el_dict["operator"] = ""
+
+                        inner_step_list.append(inner_second_el_dict)
+                second_el_dict['inner_step_list'] = inner_step_list
+                step_info_list.append(second_el_dict)
+
+            process_info["step_info_list"] = step_info_list
+
+            all_step_runs = current_processrun.steprun_set.exclude(state="9").exclude(step__rto_count_in="0").filter(
+                step__pnode=None)
+            step_rto = 0
+            if all_step_runs:
+                for step_run in all_step_runs:
+                    rto = 0
+                    end_time = step_run.endtime
+                    start_time = step_run.starttime
+                    if end_time and start_time:
+                        delta_time = (end_time - start_time)
+                        rto = delta_time.total_seconds()
+                    step_rto += rto
+            # 扣除子级步骤中可能的rto_count_in的时间
+            all_inner_step_runs = current_processrun.steprun_set.exclude(state="9").filter(
+                step__rto_count_in="0").exclude(
+                step__pnode=None)
+            inner_rto_not_count_in = 0
+            if all_inner_step_runs:
+                for inner_step_run in all_inner_step_runs:
+                    end_time = inner_step_run.endtime
+                    start_time = inner_step_run.starttime
+                    if end_time and start_time:
+                        delta_time = (end_time - start_time)
+                        rto = delta_time.total_seconds()
+                        inner_rto_not_count_in += rto
+                        step_rto -= inner_rto_not_count_in
+
+            m, s = divmod(step_rto, 60)
+            h, m = divmod(m, 60)
+            process_info["rto"] = "%d时%02d分%02d秒" % (h, m, s)
+
+            # process_name
+            process_info["process_name"] = process_name
+            # processrun_time
+            # show_result_dict["processrun_time"] = processrun_time
+
+            # 项目起始时间，结束时间，RTO
+            process_info["start_time"] = current_processrun.starttime.strftime(
+                "%Y-%m-%d %H:%M:%S") if current_processrun.starttime else ""
+            process_info["end_time"] = current_processrun.endtime.strftime(
+                "%Y-%m-%d %H:%M:%S") if current_processrun.endtime else ""
+
+            # process_length
+            process_length = 0
+            for step in step_info_list:
+                inner_step_length = len(step["inner_step_list"])
+                if inner_step_length:
+                    process_length += inner_step_length
+                else:
+                    process_length += 1
+
+            process_info["process_length"] = process_length
+            process_info["processrun_id"] = processrun_id
+            process_info_list.append(process_info)
+        # return render(request, "walkthroughpdf.html", {"show_result_dict": json.dumps(show_result_dict)})
+
+        show_result_dict["process_info_list"] = process_info_list
+
+        # 所有演练项目
+        if all_process_name.endswith(","):
+            all_process_name = all_process_name[:-1]
+        show_result_dict["all_process_name"] = all_process_name
+        return show_result_dict
+
+
+def walkthrough_pdf(request):
+    walkthrough_id = request.GET.get("walkthrough_id", "")
+    # processrun_id = 916
+    try:
+        walkthrough_id = int(walkthrough_id)
+    except ValueError as e:
+        print(e)
+        raise Http404()
+
+    show_result_dict = custom_walkthrough_info(walkthrough_id)
+    if not show_result_dict:
+        raise Http404()
+
+    current_path = os.getcwd()
+
+    jQuery_path = os.path.join(os.path.join(os.path.join(os.path.join(os.path.join(os.path.join(current_path, "faconstor"), "static"), "assets"), "global"), "plugins"), "jquery.min.js").replace("\\", "/")
+    walkthroughpdf_js_path = os.path.join(os.path.join(os.path.join(os.path.join(current_path, "faconstor"), "static"), "myjs"), "walkthroughpdf.js").replace("\\", "/")
+
+    # return render(request, 'walkthroughpdf.html', {"show_result_dict": json.dumps(show_result_dict)})
+    t = TemplateResponse(request, 'walkthroughpdf.html', {"show_result_dict": json.dumps(show_result_dict), "jQuery_path": jQuery_path, "walkthroughpdf_js_path": walkthroughpdf_js_path})
+    t.render()
+
+    if sys.platform.startswith("win"):
+        # 指定wkhtmltopdf运行程序路径
+        wkhtmltopdf_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "process" + os.sep + "wkhtmltopdf" + os.sep + "bin" + os.sep + "wkhtmltopdf.exe"
+        config = pdfkit.configuration(wkhtmltopdf=wkhtmltopdf_path)
+    else:
+        config = None
+    options = {
+        'page-size': 'A3',
+        'margin-top': '0.75in',
+        'margin-right': '0.75in',
+        'margin-bottom': '0.75in',
+        'margin-left': '0.75in',
+        'encoding': "UTF-8",
+        'no-outline': None
+    }
+    css_path = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "new" + os.sep + "css"
+    css_01 = css_path + os.sep + "bootstrap.css"
+    css_03 = css_path + os.sep + "icon.css"
+    css_05 = css_path + os.sep + "app.css"
+    css_06 = current_path + os.sep + "faconstor" + os.sep + "static" + os.sep + "assets" + os.sep + "global" + os.sep + "css" + os.sep + "components.css"
+
+    css = [r"{0}".format(mycss) for mycss in [css_01, css_03, css_05, css_06]]
+    pdfkit.from_string(t.content.decode(encoding="utf-8"), r"report.pdf", configuration=config, options=options,
+                    css=css)
+    the_file_name = "report.pdf"
+    response = StreamingHttpResponse(file_iterator(the_file_name))
+    response['Content-Type'] = 'application/octet-stream; charset=unicode'
+    response['Content-Disposition'] = 'attachment;filename="{0}"'.format(the_file_name)
+    return response
+
+
+def get_walkthrough_info(request):
+    if request.user.is_authenticated():
+        walkthrough_id = request.POST.get("walkthrough_id", "")
+        try:
+            walkthrough_id = int(walkthrough_id)
+        except ValueError as e:
+            print(e)
+            return JsonResponse({})
+        show_result_dict = custom_walkthrough_info(walkthrough_id)
+        return JsonResponse(show_result_dict)
+    else:
+        return HttpResponseRedirect("/login")
+
+
+
 def get_server_time_very_second(request):
     if request.user.is_authenticated():
         current_time = datetime.datetime.now()
@@ -3626,7 +3912,6 @@ def walkthroughdata(request):
             processrunes = walkthrough.processrun_set.exclude(state="9").exclude(state='REJECT')
             for processrun in processrunes:
                 processes += str(processrun.process.id) + "^"
-
             result.append({
                 "starttime": walkthrough.starttime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.starttime else "",
                 "endtime": walkthrough.endtime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.endtime else "",
@@ -3638,7 +3923,6 @@ def walkthroughdata(request):
                 "walkthrough_name": walkthrough.name if walkthrough.name else "",
                 "processes": processes,
             })
-
         return JsonResponse({"data": result})
 
 
