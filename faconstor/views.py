@@ -3910,8 +3910,11 @@ def walkthroughdata(request):
             create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
             processes = ""
             processrunes = walkthrough.processrun_set.exclude(state="9").exclude(state='REJECT')
+            process_name_list = []
             for processrun in processrunes:
                 processes += str(processrun.process.id) + "^"
+                process_name_list.append(processrun.process.name)
+
             result.append({
                 "starttime": walkthrough.starttime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.starttime else "",
                 "endtime": walkthrough.endtime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.endtime else "",
@@ -3922,6 +3925,7 @@ def walkthroughdata(request):
                 "purpose": walkthrough.purpose if walkthrough.purpose else "",
                 "walkthrough_name": walkthrough.name if walkthrough.name else "",
                 "processes": processes,
+                "process_name_list": process_name_list
             })
         return JsonResponse({"data": result})
 

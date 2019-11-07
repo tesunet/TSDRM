@@ -12,16 +12,16 @@ $(document).ready(function () {
                 })
             },
             "columns": [
-                {"data": "walkthrough_id"},
-                {"data": "walkthrough_name"},
-                {"data": "createuser"},
-                {"data": "createtime"},
-                {"data": "state"},
-                {"data": "purpose"},
-                {"data": "starttime"},
-                {"data": "endtime"},
-                {"data": "processes"},
-                {"data": null},
+                { "data": "walkthrough_id" },
+                { "data": "walkthrough_name" },
+                { "data": "createuser" },
+                { "data": "createtime" },
+                { "data": "state" },
+                { "data": "purpose" },
+                { "data": "starttime" },
+                { "data": "endtime" },
+                { "data": "processes" },
+                { "data": null },
             ],
             "columnDefs": [{
                 "targets": 1,
@@ -37,13 +37,12 @@ $(document).ready(function () {
                 "width": "100px",  // 指定列宽；
                 "render": function (data, type, full) {
                     var cat_button = ""
-                    if (full.state == "已完成" || full.state == "终止"){
-                        console.log(111111)
+                    if (full.state == "已完成" || full.state == "终止") {
                         cat_button = "<button class='btn btn-xs btn-primary' type='button' data-toggle='modal' data-target='#static02' title='查看' id='cat'><i class='fa fa-eye' style='color: white'></i></a></button>"
                     } else {
                         cat_button = "<button class='btn btn-xs btn-primary' type='button' data-toggle='modal' data-target='#static02' title='查看' id='cat' disabled><i class='fa fa-eye' style='color: white'></i></a></button>"
                     }
-                    return "<td><button  id='edit' title='编辑' data-toggle='modal'  data-target='#static01'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button>"+ cat_button +"<button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>"
+                    return "<td><button  id='edit' title='编辑' data-toggle='modal'  data-target='#static01'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button>" + cat_button + "<button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>"
                     // return "<td><button  id='edit' title='编辑' data-toggle='modal'  data-target='#static01'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button class='btn btn-xs btn-primary' type='button'><a href='/custom_pdf_report/?processrunid&processid'><i class='fa fa-arrow-circle-down' style='color: white'></i></a></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
                 }
             }],
@@ -74,9 +73,9 @@ $(document).ready(function () {
                     type: "POST",
                     url: "../../walkthroughdel/",
                     data:
-                        {
-                            id: data.walkthrough_id
-                        },
+                    {
+                        id: data.walkthrough_id
+                    },
                     success: function (data) {
                         if (data == 1) {
                             table.ajax.reload();
@@ -230,7 +229,7 @@ $(document).ready(function () {
     customProcessDataTable();
 
     $("#plan").click(function () {
-        $("#static01").modal({backdrop: "static"});
+        $("#static01").modal({ backdrop: "static" });
         $("#generate").hide();
         $("#run_invited").hide();
         $("#reject_invited").hide();
@@ -239,34 +238,43 @@ $(document).ready(function () {
         $("#start_date").val("");
         $("#end_date").val("");
         $("#purpose").val("");
-        $("#my_multi_select1 option").each(function() {
+        $("#my_multi_select1 option").each(function () {
             $(this).prop("selected", false);
         });
         $('#my_multi_select1').multiSelect('refresh');
     });
 
-        // 保存邀请函
+    // 保存邀请函
     $("#save").click(function () {
         var id = $("#id").val();
         var table = $('#sample_1').DataTable();
         var processes = ""
-        $("#my_multi_select1").find("option:selected").each(function() {
-            var txt = $(this).val();
-            processes = processes + txt + "*!-!*"
+
+        var selectArray = []
+        $("#ms-my_multi_select1").find(".ms-elem-selection.ms-selected").each(function () {
+            selectArray.push($(this).children('span').text())
         });
+        for (selectText of selectArray) {
+            $("select#my_multi_select1").find("option").each(function () {
+                if ($(this).text() == selectText) {
+                    processes = processes + $(this).val() + "*!-!*"
+                }
+            });
+        }
+
         $.ajax({
             type: "POST",
             dataType: 'json',
             url: "../walkthroughsave/",
             data:
-                {
-                    id: id,
-                    name: $("#name").val(),
-                    start_time: $("#start_date").val(),
-                    end_time: $("#end_date").val(),
-                    purpose: $("#purpose").val(),
-                    processes:processes,
-                },
+            {
+                id: id,
+                name: $("#name").val(),
+                start_time: $("#start_date").val(),
+                end_time: $("#end_date").val(),
+                purpose: $("#purpose").val(),
+                processes: processes,
+            },
             success: function (data) {
                 if (data["res"] == "演练计划保存成功，待开启流程。") {
                     $("#generate").show();
@@ -282,7 +290,7 @@ $(document).ready(function () {
         });
     });
 
-    $('#sample_1 tbody').on('click', 'button#edit', function() {
+    $('#sample_1 tbody').on('click', 'button#edit', function () {
         var table = $('#sample_1').DataTable();
         var data = table.row($(this).parents('tr')).data();
         $("#generate").show();
@@ -293,19 +301,31 @@ $(document).ready(function () {
         $("#start_date").val(data.starttime);
         $("#end_date").val(data.endtime);
         $("#purpose").val(data.purpose);
-        $("#my_multi_select1 option").each(function() {
+        $("#my_multi_select1 option").each(function () {
             $(this).prop("selected", false);
         });
         var processes = data.processes
         var myprocess = processes.split('^')
         for (i = 0; i < myprocess.length; i++) {
-            $("#my_multi_select1 option[value='" +myprocess[i] + "']").prop("selected", true);
-         }
+            $("#my_multi_select1 option[value='" + myprocess[i] + "']").prop("selected", true);
+        }
         $('#my_multi_select1').multiSelect('refresh');
 
+        // 右侧选中的排序
+        var sortedProcesses = data.process_name_list;
+        var j=0;
+        for (sortedProcess of sortedProcesses) {
+            $(".ms-selection").find(".ms-elem-selection.ms-selected").each(function () {
+                // var curNode = "";
+                if (sortedProcess.trim()==$(this).children("span").text().trim()){
+                    $(this).insertBefore($(this).parent().find("li:eq(" + j + ")"));
+                }
+            });
+            j++;
+        }
     });
 
-        // 取消计划流程
+    // 取消计划流程
     $("#reject_invited").click(function () {
         var id = $("#id").val();
         if (confirm("是否取消当前流程计划？")) {
@@ -314,9 +334,9 @@ $(document).ready(function () {
                 dataType: 'json',
                 url: "../reject_walkthrough/",
                 data:
-                    {
-                        id: id,
-                    },
+                {
+                    id: id,
+                },
                 success: function (data) {
                     alert(data["res"]);
                     if (data['res'] === "取消演练计划成功！") {
@@ -337,12 +357,12 @@ $(document).ready(function () {
             dataType: 'json',
             url: "../falconstorrun/",
             data:
-                {
-                    processid: process_id,
-                    run_person: $("#run_person").val(),
-                    run_time: $("#run_time").val(),
-                    run_reason: $("#run_reason").val(),
-                },
+            {
+                processid: process_id,
+                run_person: $("#run_person").val(),
+                run_time: $("#run_time").val(),
+                run_reason: $("#run_reason").val(),
+            },
             success: function (data) {
                 if (data["res"] == "新增成功。") {
                     window.location.href = data["data"];
@@ -365,13 +385,13 @@ $(document).ready(function () {
             dataType: 'json',
             url: "../falconstor_run_invited/",
             data:
-                {
-                    processid: process_id,
-                    plan_process_run_id: plan_process_run_id,
-                    run_person: $("#runperson").val(),
-                    run_time: $("#runtime").val(),
-                    run_reason: $("#runreason").val(),
-                },
+            {
+                processid: process_id,
+                plan_process_run_id: plan_process_run_id,
+                run_person: $("#runperson").val(),
+                run_time: $("#runtime").val(),
+                run_reason: $("#runreason").val(),
+            },
             success: function (data) {
                 if (data["res"] == "新增成功。") {
                     window.location.href = data["data"];
@@ -387,7 +407,7 @@ $(document).ready(function () {
 
 
     $("#run_invited").click(function () {
-        $("#static02").modal({backdrop: "static"});
+        $("#static02").modal({ backdrop: "static" });
         // 写入当前时间
         var myDate = new Date();
         $("#runtime").val(myDate.toLocaleString());
@@ -426,13 +446,13 @@ $(document).ready(function () {
             dataType: 'json',
             url: "../save_invitation/",
             data:
-                {
-                    process_id: process_id,
-                    plan_process_run_id: plan_process_run_id,
-                    start_time: $("#start_date").val(),
-                    end_time: $("#end_date").val(),
-                    purpose: $("#purpose").val(),
-                },
+            {
+                process_id: process_id,
+                plan_process_run_id: plan_process_run_id,
+                start_time: $("#start_date").val(),
+                end_time: $("#end_date").val(),
+                purpose: $("#purpose").val(),
+            },
             success: function (data) {
                 if (data["res"] == "流程计划成功，待开启流程。") {
                     $("#save_div").hide();
@@ -454,7 +474,7 @@ $(document).ready(function () {
 
     // 修改计划流程
     $("#modify_invited").click(function () {
-        $("#static03").modal({backdrop: "static"});
+        $("#static03").modal({ backdrop: "static" });
         $('#start_date_modify').datetimepicker({
             autoclose: true,
             format: 'yyyy-mm-dd hh:ii',
@@ -473,12 +493,12 @@ $(document).ready(function () {
             dataType: 'json',
             url: "../save_modify_invitation/",
             data:
-                {
-                    plan_process_run_id: plan_process_run_id,
-                    start_date_modify: $("#start_date_modify").val(),
-                    end_date_modify: $("#end_date_modify").val(),
-                    purpose_modify: $("#purpose_modify").val(),
-                },
+            {
+                plan_process_run_id: plan_process_run_id,
+                start_date_modify: $("#start_date_modify").val(),
+                end_date_modify: $("#end_date_modify").val(),
+                purpose_modify: $("#purpose_modify").val(),
+            },
             success: function (data) {
                 if (data["res"] == "修改流程计划成功，待开启流程。") {
                     $("#save_div").hide();
@@ -496,39 +516,40 @@ $(document).ready(function () {
     })
 
     $('#my_multi_select1').multiSelect({
-            selectableHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='未选择'>",
-            selectionHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='已选择'>",
-            afterInit: function(ms) {
-                var that = this,
-                    $selectableSearch = that.$selectableUl.prev(),
-                    $selectionSearch = that.$selectionUl.prev(),
-                    selectableSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selectable:not(.ms-selected)',
-                    selectionSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selection.ms-selected';
+        selectableHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='未选择'>",
+        selectionHeader: "<input type='text' class='search-input' autocomplete='off' placeholder='已选择'>",
+        afterInit: function (ms) {
+            var that = this,
+                $selectableSearch = that.$selectableUl.prev(),
+                $selectionSearch = that.$selectionUl.prev(),
+                selectableSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selectable:not(.ms-selected)',
+                selectionSearchString = '#' + that.$container.attr('id') + ' .ms-elem-selection.ms-selected';
 
-                that.qs1 = $selectableSearch.quicksearch(selectableSearchString)
-                    .on('keydown', function(e) {
-                        if (e.which === 40) {
-                            that.$selectableUl.focus();
-                            return false;
-                        }
-                    });
+            that.qs1 = $selectableSearch.quicksearch(selectableSearchString)
+                .on('keydown', function (e) {
+                    if (e.which === 40) {
+                        that.$selectableUl.focus();
+                        return false;
+                    }
+                });
 
-                that.qs2 = $selectionSearch.quicksearch(selectionSearchString)
-                    .on('keydown', function(e) {
-                        if (e.which == 40) {
-                            that.$selectionUl.focus();
-                            return false;
-                        }
-                    });
-            },
-            afterSelect: function() {
-                this.qs1.cache();
-                this.qs2.cache();
-            },
-            afterDeselect: function() {
-                this.qs1.cache();
-                this.qs2.cache();
-            }
-        });
+            that.qs2 = $selectionSearch.quicksearch(selectionSearchString)
+                .on('keydown', function (e) {
+                    if (e.which == 40) {
+                        that.$selectionUl.focus();
+                        return false;
+                    }
+                });
+        },
+        afterSelect: function () {
+            this.qs1.cache();
+            this.qs2.cache();
+        },
+        afterDeselect: function () {
+            this.qs1.cache();
+            this.qs2.cache();
+        },
+        keepOrder: true
+    });
 
 });
