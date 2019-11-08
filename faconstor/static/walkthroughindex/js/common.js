@@ -111,17 +111,7 @@ var util = {
                 $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div><div hidden class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
             }
             else if(data.state=="RUN"){
-                var curStep_ending = [];
-                var curState_ending = ""
-                for (var j = 0; j < data.steps.length; j++) {
-
-                    if (data.steps[j].type === 'cur') {
-                        curStep_ending = data.steps[j];
-                        curState_ending = curStep_ending.state.toLocaleLowerCase();
-                        break;
-                    }
-                }
-                if(curState_ending=="confirm")
+                if(data.isConfirm=="1")
                     $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/></h3></div>");
                 else
                     $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endingimg'><img   src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
