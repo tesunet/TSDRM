@@ -3093,7 +3093,7 @@ def get_step_tree(parent, selectid):
         node["data"] = {"time": child.time, "approval": child.approval, "skip": child.skip, "group_name": group_name,
                         "group": child.group, "scripts": script_string, "allgroups": group_string,
                         "rto_count_in": child.rto_count_in, "remark": child.remark,
-                        "verifyitems": verify_items_string, "force_exec": child.force_exec}
+                        "verifyitems": verify_items_string, "force_exec": child.force_exec if child.force_exec else 2}
         try:
             if int(selectid) == child.id:
                 node["state"] = {"selected": True}
@@ -3185,7 +3185,7 @@ def custom_step_tree(request):
                                 "allgroups": group_string, "group": rootnode.group, "group_name": group_name,
                                 "scripts": script_string, "errors": errors, "title": title,
                                 "rto_count_in": rootnode.rto_count_in, "remark": rootnode.remark,
-                                "verifyitems": verify_items_string, "force_exec": rootnode.force_exec}
+                                "verifyitems": verify_items_string, "force_exec": rootnode.force_exec if rootnode.force_exec else 2}
                 root["children"] = get_step_tree(rootnode, selectid)
                 root["state"] = {"opened": True}
                 treedata.append(root)
