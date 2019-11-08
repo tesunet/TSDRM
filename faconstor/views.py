@@ -2967,19 +2967,20 @@ def setpsave(request):
         rto_count_in = request.POST.get('rto_count_in', '')
         remark = request.POST.get('remark', '')
         force_exec = request.POST.get('force_exec', '')
-
         process_id = request.POST.get('process_id', '')
-
         data = ""
-
         try:
             id = int(id)
-            force_exec = int(force_exec)
         except:
             return JsonResponse({
                 "result": "网络异常。",
                 "data": data
             })
+
+        try:
+            force_exec = int(force_exec)
+        except:
+            force_exec = 2
 
         # 新增步骤
         if id == 0:
@@ -3047,21 +3048,6 @@ def setpsave(request):
                 result = "保存成功。"
             else:
                 result = "当前步骤不存在，请联系客服！"
-            # else:
-            #     step = Step()
-            #     step[0].name = name
-            #     try:
-            #         time = int(time)
-            #         step[0].time = time
-            #     except:
-            #         pass
-            #     step.skip = skip
-            #     step.approval = approval
-            #     step.group = group
-            #     step.rto_count_in = rto_count_in
-            #     step.remark = remark
-            #     step.save()
-            #     result = "保存成功。"
         return JsonResponse({
             "result": result,
             "data": data
