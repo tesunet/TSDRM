@@ -234,7 +234,7 @@ if (App.isAngularJsApp() === false) {
             });
         }
 
-
+        var getStepTimes = 0;
         function getstep() {
             console.log('loading...');
             $.ajax({
@@ -283,12 +283,22 @@ if (App.isAngularJsApp() === false) {
                         // window.clearInterval(t2);
 
                         $("#show_result").show();
-                        if (confirm("是否查看流程报告？")) {
-                            // 自动触发模态框
-                            $("#process_result").modal({backdrop: "static"});
 
-                            showResult();
+                        if (getStepTimes < 1) {
+                            if (confirm("是否查看流程报告？")) {
+                                // 自动触发模态框
+                                $("#process_result").modal({ backdrop: "static" });
+
+                                showResult();
+                            }
+                            getStepTimes += 1
                         }
+                        // if (confirm("是否查看流程报告？")) {
+                        //     // 自动触发模态框
+                        //     $("#process_result").modal({backdrop: "static"});
+
+                        //     showResult();
+                        // }
                     }
 
                     if (data["process_state"] == "RUN"){
