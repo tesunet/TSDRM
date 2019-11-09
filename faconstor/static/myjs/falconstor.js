@@ -734,25 +734,27 @@ if (App.isAngularJsApp() === false) {
 
                     // 继续
                     $("#continuebtn").click(function () {
-                        var step_id = $(this).prev().val();
-                        $.ajax({
-                            url: "/processcontinue/",
-                            type: "post",
-                            data: {
-                                "step_id": step_id,
-                            },
-                            success: function (data) {
-                                if (data.data == "0") {
-                                    alert("流程已继续运行！");
-                                    getstep();
-                                    global_end = false;
-                                    customOurInterval();
-                                    getTaskInfo();
-                                } else {
-                                    alert("步骤确认异常，请联系客服！")
-                                }
-                            }
-                        });
+                         if (confirm("此操作将启动环境关闭步骤，操作不可逆，请谨慎选择！！！")) {
+                             var step_id = $(this).prev().val();
+                             $.ajax({
+                                 url: "/processcontinue/",
+                                 type: "post",
+                                 data: {
+                                     "step_id": step_id,
+                                 },
+                                 success: function (data) {
+                                     if (data.data == "0") {
+                                         alert("流程已继续运行！");
+                                         getstep();
+                                         global_end = false;
+                                         customOurInterval();
+                                         getTaskInfo();
+                                     } else {
+                                         alert("步骤确认异常，请联系客服！")
+                                     }
+                                 }
+                             });
+                         }
                     });
 
                     // 展示结果

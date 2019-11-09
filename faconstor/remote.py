@@ -115,9 +115,6 @@ class ServerByPara(object):
                     elif "syntax error" in data_init:  # 语法错误
                         exec_tag = 1
                         log = "语法错误"
-                    elif "No such file or directory" in data_init:  # 脚本不存在
-                        exec_tag = 1
-                        log = "脚本不存在"
                     elif succeedtext is not None:
                         if succeedtext not in data_init:
                             exec_tag = 1

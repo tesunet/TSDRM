@@ -1,6 +1,7 @@
 ﻿﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
 var walkthrough_state=""
     refresh= true,
+    endingrefresh= 0,
     interval = 0,
     tmInterval = 0,
     headerTitle = '',
@@ -14,24 +15,29 @@ var util = {
         }, 3 * 1000); //3秒/次请求
     },
     request: function () {
-        if(refresh) {
-            $.ajax({
-                url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
-                //url: '/static/processindex/data.json', //这里面是请求的接口地址
-                type: 'POST',
-                data: {
-                    walkthrough_id: $("#walkthrough_id").val(),
-                    csrfmiddlewaretoken: csrfToken
-                },
-                timeout: 2000,
-                dataType: 'json',
-                success: function (data) {
-                    util.makeHtml(data);
-                },
-                // error: function(xhr) {
-                //     alert('网络错误')
-                // }
-            });
+        if (endingrefresh>0){
+            endingrefresh=endingrefresh-1
+        }
+        else {
+            if (refresh) {
+                $.ajax({
+                    url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
+                    //url: '/static/processindex/data.json', //这里面是请求的接口地址
+                    type: 'POST',
+                    data: {
+                        walkthrough_id: $("#walkthrough_id").val(),
+                        csrfmiddlewaretoken: csrfToken
+                    },
+                    //timeout: 2000,
+                    dataType: 'json',
+                    success: function (data) {
+                        util.makeHtml(data);
+                    },
+                    // error: function(xhr) {
+                    //     alert('网络错误')
+                    // }
+                });
+            }
         }
     },
     makeHtml: function (walkthroughindexdata) {
@@ -111,17 +117,7 @@ var util = {
                 $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div><div hidden class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
             }
             else if(data.state=="RUN"){
-                var curStep_ending = [];
-                var curState_ending = ""
-                for (var j = 0; j < data.steps.length; j++) {
-
-                    if (data.steps[j].type === 'cur') {
-                        curStep_ending = data.steps[j];
-                        curState_ending = curStep_ending.state.toLocaleLowerCase();
-                        break;
-                    }
-                }
-                if(curState_ending=="confirm")
+                if(data.isConfirm=="1")
                     $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/></h3></div>");
                 else
                     $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endingimg'><img   src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
@@ -252,6 +248,7 @@ var util = {
             }
         }
         $(".endprocessimg").click(function () {
+            endingrefresh= 2;
             var processrun_id = $(this).prev().val();
             var curdiv = $(this)
             var nextdiv = $(this).next()

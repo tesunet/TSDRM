@@ -655,6 +655,10 @@ def get_walkthrough_index_data(request):
 
                         # 构造展示步骤
                         process_rate = "%02d" % (done_num / len(current_processrun.steprun_set.all()) * 100)
+                        isConfirm= "0"
+                        confirmStepruns = StepRun.objects.exclude(state="9").filter(processrun_id=processrun_id,state='CONFIRM')
+                        if len(confirmStepruns)>0:
+                            isConfirm="1"
 
                         if current_processrun.state == "SIGN":
                             rtostate = "DONE"
@@ -671,6 +675,7 @@ def get_walkthrough_index_data(request):
                             "rtostate": rtostate,
                             "percent": process_rate,
                             "walkthroughstate": walkthroughstate,
+                            "isConfirm":isConfirm,
                             "steps": steps
                         })
 
