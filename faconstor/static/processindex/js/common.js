@@ -36,7 +36,7 @@ var util = {
                 p_run_id: $("#process_run_id").val(),
                 csrfmiddlewaretoken: csrfToken
             },
-            timeout: 2000,
+            //timeout: 2000,
             dataType: 'json',
             success: function (data) {
                 util.makeHtml(data);

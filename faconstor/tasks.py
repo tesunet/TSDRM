@@ -784,6 +784,7 @@ def runstep(steprun, if_repeat=False):
                 else:
                     walkthrough = processrun.walkthrough
                     walkthrough.state = "DONE"
+                    walkthrough.endtime = datetime.datetime.now()
                     walkthrough.save()
 
             nextsteprun = nextstep[0].steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
@@ -879,6 +880,7 @@ def exec_process(processrunid, if_repeat=False):
             else:
                 walkthrough = processrun.walkthrough
                 walkthrough.state = "DONE"
+                walkthrough.endtime = datetime.datetime.now()
                 walkthrough.save()
 
         end_step_tag = runstep(steprunlist[0], if_repeat)
@@ -971,6 +973,7 @@ def exec_process(processrunid, if_repeat=False):
                 else:
                     walkthrough = processrun.walkthrough
                     walkthrough.state = "DONE"
+                    walkthrough.endtime = datetime.datetime.now()
                     walkthrough.save()
 
         #

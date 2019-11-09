@@ -1,6 +1,7 @@
 ﻿﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
 var walkthrough_state=""
     refresh= true,
+    endingrefresh= 0,
     interval = 0,
     tmInterval = 0,
     headerTitle = '',
@@ -14,24 +15,29 @@ var util = {
         }, 3 * 1000); //3秒/次请求
     },
     request: function () {
-        if(refresh) {
-            $.ajax({
-                url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
-                //url: '/static/processindex/data.json', //这里面是请求的接口地址
-                type: 'POST',
-                data: {
-                    walkthrough_id: $("#walkthrough_id").val(),
-                    csrfmiddlewaretoken: csrfToken
-                },
-                timeout: 2000,
-                dataType: 'json',
-                success: function (data) {
-                    util.makeHtml(data);
-                },
-                // error: function(xhr) {
-                //     alert('网络错误')
-                // }
-            });
+        if (endingrefresh>0){
+            endingrefresh=endingrefresh-1
+        }
+        else {
+            if (refresh) {
+                $.ajax({
+                    url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
+                    //url: '/static/processindex/data.json', //这里面是请求的接口地址
+                    type: 'POST',
+                    data: {
+                        walkthrough_id: $("#walkthrough_id").val(),
+                        csrfmiddlewaretoken: csrfToken
+                    },
+                    //timeout: 2000,
+                    dataType: 'json',
+                    success: function (data) {
+                        util.makeHtml(data);
+                    },
+                    // error: function(xhr) {
+                    //     alert('网络错误')
+                    // }
+                });
+            }
         }
     },
     makeHtml: function (walkthroughindexdata) {
@@ -242,6 +248,7 @@ var util = {
             }
         }
         $(".endprocessimg").click(function () {
+            endingrefresh= 2;
             var processrun_id = $(this).prev().val();
             var curdiv = $(this)
             var nextdiv = $(this).next()
