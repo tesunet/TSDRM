@@ -1,7 +1,8 @@
 ﻿﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
-var walkthrough_state=""
+var walkthrough_state="",
     refresh= true,
-    endingrefresh= 0,
+    soundrefresh=true,
+    endingrefresh = [],
     interval = 0,
     tmInterval = 0,
     headerTitle = '',
@@ -15,10 +16,7 @@ var util = {
         }, 3 * 1000); //3秒/次请求
     },
     request: function () {
-        if (endingrefresh>0){
-            endingrefresh=endingrefresh-1
-        }
-        else {
+        if(soundrefresh) {
             if (refresh) {
                 $.ajax({
                     url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
@@ -32,6 +30,7 @@ var util = {
                     dataType: 'json',
                     success: function (data) {
                         util.makeHtml(data);
+                        util.playsound(data);
                     },
                     // error: function(xhr) {
                     //     alert('网络错误')
@@ -66,7 +65,7 @@ var util = {
             $(".header-timeout").show();
             var myAudio=document.getElementById('audio2');
             myAudio.loop = true;
-            myAudio.volume = 0.2;
+            myAudio.volume = 0.05;
             myAudio.play();
         }
 
@@ -114,7 +113,10 @@ var util = {
                     $(".end").append("<div class=\"endprocess3\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a></h3></div>");
             }
             else if(data.state=="CONTINUE"){
-                $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div><div hidden class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
+                if(endingrefresh.indexOf(data.processrun_id.toString()) > -1)
+                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
+                else
+                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div><div hidden class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
             }
             else if(data.state=="RUN"){
                 if(data.isConfirm=="1")
@@ -248,10 +250,11 @@ var util = {
             }
         }
         $(".endprocessimg").click(function () {
-            endingrefresh= 2;
             var processrun_id = $(this).prev().val();
             var curdiv = $(this)
             var nextdiv = $(this).next()
+            curdiv.hide();
+            nextdiv.show();
             $.ajax({
                     url: "/processcontinue/",
                     type: "post",
@@ -263,7 +266,10 @@ var util = {
                         if (data.data == "0") {
                             curdiv.hide();
                             nextdiv.show();
+                            endingrefresh.push(processrun_id);
                         } else {
+                            curdiv.show();
+                            nextdiv.hide();
                             $("#static_shutdowm").modal('show');
                             $("#modalbody").html("业务人员未完成数据验证，请勿关闭该系统！");
 
@@ -469,10 +475,97 @@ var util = {
         seconds = seconds < 10 ? '0' + seconds : '' + seconds;
         return {hours: hours, minutes: minutes, seconds: seconds};
     },
-    getNow: function () {
-        // var d = new Date();
-        // var now = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate() + " " + d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds();
-        // return now;
+    playsound: function (walkthroughindexdata) {
+        var sounds=[]
+        oldwalkthroughindexdata = walkthroughindexdata.oldwalkthroughinfo;
+        for (var processnum = 0; processnum < walkthroughindexdata.processruns.length; processnum++) {
+            //流程播报
+            curprocess=walkthroughindexdata.processruns[processnum];
+            curprocessstate = curprocess.walkthroughstate;
+            oldprocessstate="";
+            oldprocess=null;
+            if(oldwalkthroughindexdata) {
+                for (var oldprocessnum = 0; oldprocessnum < oldwalkthroughindexdata.processruns.length; oldprocessnum++) {
+                    if (curprocess.processrun_id == oldwalkthroughindexdata.processruns[oldprocessnum].processrun_id) {
+                        oldprocess = oldwalkthroughindexdata.processruns[oldprocessnum];
+                        break;
+                    }
+                }
+            }
+            if(oldprocess) {
+                oldprocessstate=oldprocess.walkthroughstate;
+            }
+            //流程开始
+            if(curprocessstate=="RUN" && (oldprocessstate=="PLAN" ||oldprocessstate=="" ||oldprocessstate ==null)){
+                sounds.push("processstart_" + curprocess.process_id);
+            }
+            //步骤播报
+            for (var i = 0; i < curprocess.steps.length; i++) {
+                curStep=curprocess.steps[i];
+                curStepstate = curStep.state;
+                oldStepstate="";
+                oldStep=null;
+                if(oldprocess) {
+                    for (var j = 0; j < oldprocess.steps.length; j++) {
+                        if (curStep.name == oldprocess.steps[j].name) {
+                            oldStep = oldprocess.steps[j];
+                            break;
+                        }
+                    }
+                }
+                if(oldStep) {
+                    oldStepstate = oldStep.state;
+                }
+                //步骤开始
+                if((oldStepstate=="EDIT"|| oldStepstate=="")&& oldStepstate!=curStepstate){
+                    if(curStep.name=="环境初始化")
+                        sounds.push("step_1");
+                    if(curStep.name=="数据库启动")
+                        sounds.push("step_2");
+                    if(curStep.name=="应用启动")
+                        sounds.push("step_3");
+                    if(curStep.name=="环境验证")
+                        sounds.push("step_4");
+                }
+            }
+            //流程结束
+            if(curprocessstate=="DONE" && curprocessstate!=oldprocessstate){
+                sounds.push("processend_" + curprocess.process_id);
+            }
+        }
+
+        //演练播报
+        curwalkthroughstate = walkthroughindexdata.walkthrough_state;
+        oldwalkthroughstate = "";
+        if(oldwalkthroughindexdata)
+            oldwalkthroughstate = oldwalkthroughindexdata.walkthrough_state;
+        if(curwalkthroughstate=="DONE" && curwalkthroughstate!=oldwalkthroughstate){
+            sounds.push("walkthroughend");
+        }
+        util.playmp3(sounds);
+    },
+    playmp3: function (soundslist) {
+        soundrefresh=false;
+
+        for (var i = 0; i < soundslist.length; i++) {
+            soundslist[i] = "/static/walkthroughindex/sound/"  + soundslist[i] + ".mp3";
+        }
+        var myAudio = new Audio();
+        myAudio.preload = true;
+        myAudio.controls = true;
+        myAudio.src = soundslist.shift();       //每次读数组最后一个元素
+        myAudio.addEventListener('ended', playEndedHandler, false);
+        myAudio.play();
+        document.getElementById("audio").appendChild(myAudio);
+        myAudio.loop = false;//禁止循环，否则无法触发ended事件
+        function playEndedHandler(){
+            myAudio.src = soundslist.shift();
+            myAudio.play();
+            console.log(soundslist.length);
+            !soundslist.length && myAudio.removeEventListener('ended',playEndedHandler,false);//只有一个元素时解除绑定
+        }
+
+        soundrefresh=true;
     }
 };
 window.util = util;

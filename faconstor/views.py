@@ -10,7 +10,6 @@ import xml.dom.minidom
 from xml.dom.minidom import parse, parseString
 import xlrd
 import xlwt
-import pymssql
 from lxml import etree
 import re
 import pdfkit
@@ -665,7 +664,7 @@ def get_walkthrough_index_data(request):
                             rtoendtime = current_processrun.starttime.strftime('%Y-%m-%d %H:%M:%S')
                         cur_processruns.append({
                             "processrun_id": processrun_id,
-                            "processrun": process_id,
+                            "process_id": process_id,
                             "processurl": current_processrun.process.url,
                             "name": name,
                             "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else "",
@@ -681,20 +680,23 @@ def get_walkthrough_index_data(request):
 
             current_time = datetime.datetime.now()
             tasks = ProcessTask.objects.filter(type='info').filter(
-                Q(processrun_id__in=processrunid) | Q(walkthrough_id=walkthroughs[0].id)).exclude(state='9')
+                Q(processrun_id__in=processrunid) | Q(walkthrough_id=walkthroughs[0].id)).exclude(state='9').exclude(content="创建演练计划。").exclude(content="修改演练计划。").exclude(content="创建流程计划。").exclude(content="修改流程计划。").exclude(content="演练启动。")
             for task in tasks:
                 taskname = ""
                 if task.processrun is not None:
-                    taskname = task.processrun.process.name
-                if task.walkthrough is not None:
-                    taskname = task.walkthrough.name
-
-                showtasks.append({
-                    "taskid": task.id,
-                    "taskname": taskname,
-                    "taskcontent": task.content,
-                    "tasktime": task.starttime.strftime('%Y-%m-%d %H:%M:%S') if task.starttime else "",
-                })
+                    taskname = task.processrun.process.name.replace("系统","")
+                taskcontent = taskname + task.content.replace("脚本","").replace("步骤","")
+                isintasks= False
+                for oldtask in showtasks:
+                    if taskcontent ==oldtask["taskcontent"]:
+                        isintasks = True
+                if not isintasks:
+                    showtasks.append({
+                        "taskid": task.id,
+                        "taskname": taskname,
+                        "taskcontent": taskcontent,
+                        "tasktime": task.starttime.strftime('%Y-%m-%d %H:%M:%S') if task.starttime else "",
+                    })
             c_walkthrough_run_data = {
                 "current_time": current_time.strftime('%Y-%m-%d %H:%M:%S'),
                 "walkthrough_name": walkthrough_name,
@@ -778,7 +780,7 @@ def walkthrough_run_invited(request):
                             myprocesstask.logtype = "START"
                             myprocesstask.state = "1"
                             myprocesstask.senduser = request.user.username
-                            myprocesstask.content = "流程已启动。"
+                            myprocesstask.content = "流程启动。"
                             myprocesstask.save()
 
                             exec_process.delay(current_process_run.id)
@@ -789,7 +791,7 @@ def walkthrough_run_invited(request):
                     mywalkthroughtask.type = "INFO"
                     mywalkthroughtask.logtype = "START"
                     mywalkthroughtask.state = "1"
-                    mywalkthroughtask.content = "演练已启动。"
+                    mywalkthroughtask.content = "演练启动。"
                     mywalkthroughtask.save()
 
                     current_walkthrough_run.starttime = datetime.datetime.now()
@@ -3779,7 +3781,7 @@ def falconstorrun(request):
                                 myprocesstask.logtype = "START"
                                 myprocesstask.state = "1"
                                 myprocesstask.senduser = request.user.username
-                                myprocesstask.content = "流程已启动。"
+                                myprocesstask.content = "流程启动。"
                                 myprocesstask.save()
 
                                 exec_process.delay(myprocessrun.id)
@@ -3853,7 +3855,7 @@ def falconstor_run_invited(request):
                         myprocesstask.logtype = "START"
                         myprocesstask.state = "1"
                         myprocesstask.senduser = request.user.username
-                        myprocesstask.content = "流程已启动。"
+                        myprocesstask.content = "流程启动。"
                         myprocesstask.save()
 
                         exec_process.delay(current_process_run.id)
@@ -4318,10 +4320,7 @@ def getrunsetps(request):
             process_note = ""
             process_rto = ""
             processrun = request.POST.get('process', '')
-            try:
-                processrun = int(processrun)
-            except:
-                raise Http404()
+            processrun = int(processrun)
             processruns = ProcessRun.objects.exclude(state="9").filter(id=processrun)
             if len(processruns) > 0:
                 process_name = processruns[0].process.name
@@ -4723,7 +4722,7 @@ def processsignsave(request):
                 myprocesstask.type = "INFO"
                 myprocesstask.logtype = "START"
                 myprocesstask.state = "1"
-                myprocesstask.content = "流程已启动。"
+                myprocesstask.content = "流程启动。"
                 myprocesstask.starttime = datetime.datetime.now()
                 myprocesstask.senduser = request.user.username
                 myprocesstask.save()
@@ -4949,6 +4948,62 @@ def stop_current_process(request):
             # 执行强制执行的脚本  #
             ######################
             force_exec_script.delay(process_run_id)
+            if current_process_run.walkthrough is not None:
+                if curwalkthroughstate != "DONE":
+                    next_process_run = current_process_run.walkthrough.processrun_set.filter(state="PLAN")
+                    if next_process_run:
+                        next_process_run = next_process_run[0]
+                        next_process_run.starttime = datetime.datetime.now()
+                        next_process_run.state = "RUN"
+                        next_process_run.walkthroughstate = "RUN"
+                        next_process_run.DataSet_id = 89
+                        next_process_run.save()
+
+                        process = Process.objects.filter(id=next_process_run.process_id).exclude(state="9").filter(
+                            type="falconstor")
+
+                        allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                            "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+                        if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                            # 将当前流程改成SIGN
+                            c_process_run_id = next_process_run.id
+                            c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                            if c_process_run:
+                                c_process_run = c_process_run[0]
+                                c_process_run.state = "SIGN"
+                                c_process_run.walkthroughstate = "RUN"
+                                c_process_run.save()
+                            for group in allgroup:
+                                try:
+                                    signgroup = Group.objects.get(id=int(group["group"]))
+                                    groupname = signgroup.name
+                                    myprocesstask = ProcessTask()
+                                    myprocesstask.processrun = next_process_run
+                                    myprocesstask.starttime = datetime.datetime.now()
+                                    myprocesstask.senduser = request.user.username
+                                    myprocesstask.receiveauth = group["group"]
+                                    myprocesstask.type = "SIGN"
+                                    myprocesstask.state = "0"
+                                    myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                    myprocesstask.save()
+                                except:
+                                    pass
+
+                        else:
+                            prosssigns = ProcessTask.objects.filter(processrun=next_process_run, state="0")
+                            if len(prosssigns) <= 0:
+                                myprocesstask = ProcessTask()
+                                myprocesstask.processrun = next_process_run
+                                myprocesstask.starttime = datetime.datetime.now()
+                                myprocesstask.type = "INFO"
+                                myprocesstask.logtype = "START"
+                                myprocesstask.state = "1"
+                                myprocesstask.senduser = request.user.username
+                                myprocesstask.content = "流程启动。"
+                                myprocesstask.save()
+
+                                exec_process.delay(next_process_run.id)
 
             return JsonResponse({"data": "流程已经被终止，将强制执行部分脚本。"})
         else:

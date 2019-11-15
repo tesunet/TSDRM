@@ -744,7 +744,6 @@ if (App.isAngularJsApp() === false) {
                                  },
                                  success: function (data) {
                                      if (data.data == "0") {
-                                         alert("流程已继续运行！");
                                          getstep();
                                          global_end = false;
                                          customOurInterval();

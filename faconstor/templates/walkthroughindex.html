@@ -157,12 +157,22 @@
     <script src="/static/walkthroughindex/js/circles.min.js"></script>
 
     <script>
+                    var myAudio=document.getElementById('audio2');
+            myAudio.loop = true;
+            myAudio.volume = 1.0;
+            myAudio.play();
 
         util.run();
     </script>
     <script>
         $(".start_hand").click(function () {
-            document.getElementById('audio').play();
+            var myDate = new Date();
+            var Year = myDate.getFullYear().toString();
+            var audio = document.getElementById("audio");
+            audio.src = "/static/walkthroughindex/sound/" + Year +".mp3";
+            audio.load();
+            audio.play();
+
             var walkthrough_id = $("#walkthrough_id").val()
             $(".shine").show()
             // 需邀请流程启动

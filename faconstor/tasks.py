@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from celery import shared_task
-import pymssql
 from faconstor.models import *
 from django.db import connection
 from xml.dom.minidom import parse, parseString
@@ -23,86 +22,7 @@ def is_connection_usable():
         return True
 
 
-def handle_func(jobid, steprunid):
-    if not is_connection_usable():
-        connection.close()
-    try:
-        conn = pymssql.connect(host='cv-server\COMMVAULT', user='sa_cloud', password='1qaz@WSX', database='CommServ')
-        cur = conn.cursor()
-    except:
-        print("链接失败!")
-    else:
-        try:
-            cur.execute(
-                """SELECT *  FROM [commserv].[dbo].[RunningBackups] where jobid={0}""".format(jobid))
-            backup_task_list = cur.fetchall()
 
-            cur.execute(
-                """SELECT *  FROM [commserv].[dbo].[RunningRestores] where jobid={0}""".format(jobid))
-            restore_task_list = cur.fetchall()
-        except:
-            print("任务不存在!")  # 1.修改当前步骤状态为DONE
-        else:
-            # 查询备份/恢复是否报错，将报错信息写入当前Step的operator字段中，并结束当前任务
-            if backup_task_list:
-                for backup_job in backup_task_list:
-                    print("备份进度：", backup_job[42])
-                    if backup_job[42] == 100:
-                        steprun = StepRun.objects.filter(id=steprunid)
-                        steprun = steprun[0]
-                        if backup_job["DelayReason"]:
-                            steprun.operator = backup_job["DelayReason"]
-                            steprun.state = "EDIT"
-                            steprun.save()
-                            cur.close()
-                            conn.close()
-                            return
-                        else:
-                            steprun.state = "DONE"
-                            steprun.save()
-                            cur.close()
-                            conn.close()
-                    else:
-                        cur.close()
-                        conn.close()
-                        time.sleep(30)
-                        handle_func(jobid, steprunid)
-            elif restore_task_list:
-                for restore_job in restore_task_list:
-                    print("恢复进度：", restore_job[35])
-                    if restore_job[35] == 100:
-                        steprun = StepRun.objects.filter(id=steprunid)
-                        steprun = steprun[0]
-                        if restore_job["DelayReason"]:
-                            steprun.operator = restore_job["DelayReason"]
-                            steprun.save()
-                            cur.close()
-                            conn.close()
-                            return
-                        else:
-                            steprun.state = "DONE"
-                            steprun.save()
-                            cur.close()
-                            conn.close()
-                    else:
-                        cur.close()
-                        conn.close()
-                        time.sleep(30)
-                        handle_func(jobid, steprunid)
-            else:
-                print("当前没有在执行的任务!")
-                steprun = StepRun.objects.filter(id=steprunid)
-                steprun = steprun[0]
-                steprun.state = "DONE"
-                steprun.save()
-
-
-@shared_task
-def handle_job(jobid, steprunid):
-    """
-    根据jobid查询任务状态，每半分钟查询一次，如果完成就在steprun中写入DONE
-    """
-    handle_func(jobid, steprunid)
 
 
 # @shared_task(bind=True, default_retry_delay=300, max_retries=5)  # 错误处理机制，因网络延迟等问题的重试；
@@ -777,7 +697,7 @@ def runstep(steprun, if_repeat=False):
                             myprocesstask.logtype = "START"
                             myprocesstask.state = "1"
                             myprocesstask.senduser = 'admin'
-                            myprocesstask.content = "流程已启动。"
+                            myprocesstask.content = "流程启动。"
                             myprocesstask.save()
 
                             exec_process.delay(current_process_run.id)
@@ -873,7 +793,7 @@ def exec_process(processrunid, if_repeat=False):
                         myprocesstask.logtype = "START"
                         myprocesstask.state = "1"
                         myprocesstask.senduser = 'admin'
-                        myprocesstask.content = "流程已启动。"
+                        myprocesstask.content = "流程启动。"
                         myprocesstask.save()
 
                         exec_process.delay(current_process_run.id)
@@ -966,7 +886,7 @@ def exec_process(processrunid, if_repeat=False):
                             myprocesstask.logtype = "START"
                             myprocesstask.state = "1"
                             myprocesstask.senduser = 'admin'
-                            myprocesstask.content = "流程已启动。"
+                            myprocesstask.content = "流程启动。"
                             myprocesstask.save()
 
                             exec_process.delay(current_process_run.id)
