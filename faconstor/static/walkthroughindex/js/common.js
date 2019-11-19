@@ -1,13 +1,26 @@
 ﻿﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
-var walkthrough_state="",
-    refresh= true,
-    soundrefresh=true,
+var walkthrough_state = "",
+    refresh = true,
+    soundrefresh = true,
     endingrefresh = [],
     interval = 0,
     tmInterval = 0,
     headerTitle = '',
     end = false;
 var allState = ['run', 'done', 'error', 'stop', 'confirm', 'edit'];
+
+// add...
+// var audioSecurePlay = function (audio) {
+//     let playPromise = audio.play();
+//     if (playPromise !== undefined) {
+//         playPromise.then(() => {
+//             audio.play();
+//         }).catch(() => {
+//
+//         })
+//     }
+// };
+
 var util = {
     run: function () {
         util.request();
@@ -16,7 +29,7 @@ var util = {
         }, 3 * 1000); //3秒/次请求
     },
     request: function () {
-        if(soundrefresh) {
+        if (soundrefresh) {
             if (refresh) {
                 $.ajax({
                     url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
@@ -29,6 +42,7 @@ var util = {
                     //timeout: 2000,
                     dataType: 'json',
                     success: function (data) {
+                        console.log("run...")
                         util.makeHtml(data);
                         util.playsound(data);
                     },
@@ -42,9 +56,9 @@ var util = {
     makeHtml: function (walkthroughindexdata) {
         walkthrough_state = walkthroughindexdata.walkthrough_state;
         var sTag = $("#s_tag").val()
-         util.makeCommand(walkthroughindexdata.showtasks,walkthroughindexdata.oldwalkthroughinfo.showtasks);
+        util.makeCommand(walkthroughindexdata.showtasks, walkthroughindexdata.oldwalkthroughinfo.showtasks);
         // 判断是否为计划
-        var myAudio=document.getElementById('audio2');
+        var myAudio = document.getElementById('audio2');
         if (walkthrough_state === "PLAN") {
             $(".walkthrough_run").hide();
             $(".header-timeout").hide();
@@ -63,9 +77,10 @@ var util = {
             $(".start_hand").hide();
             $(".walkthrough_run").show();
             $(".header-timeout").show();
-            var myAudio=document.getElementById('audio2');
+            var myAudio = document.getElementById('audio2');
             myAudio.loop = true;
             myAudio.volume = 0.05;
+            // audioSecurePlay(myAudio);
             myAudio.play();
         }
 
@@ -76,11 +91,11 @@ var util = {
         }
         $(".progress_list").html("");
         $(".end").html("");
-        curstate="DONE"
+        curstate = "DONE"
         $(".progress_list").append("<div style='height: 20px'></div>");
         for (var processnum = 0; processnum < walkthroughindexdata.processruns.length; processnum++) {
-            data=walkthroughindexdata.processruns[processnum]
-            olddata=null
+            data = walkthroughindexdata.processruns[processnum]
+            olddata = null
             if (walkthroughindexdata.oldwalkthroughinfo.processruns) {
                 for (var oldprocessnum = 0; oldprocessnum < walkthroughindexdata.oldwalkthroughinfo.processruns.length; oldprocessnum++) {
                     if (data.processrun_id == walkthroughindexdata.oldwalkthroughinfo.processruns[oldprocessnum].processrun_id) {
@@ -92,47 +107,43 @@ var util = {
 
             var processrun_url = data.processurl + "/" + data.processrun_id;
 
-            if(data.state!="DONE")
-                curstate=""
+            if (data.state != "DONE")
+                curstate = ""
 
-            if(data.walkthroughstate=="DONE")
+            if (data.walkthroughstate == "DONE")
                 $(".progress_list").append("<div class=\"processname1\"><h3>" + data.name + "</h3> </div>");
-            else if(data.walkthroughstate=="RUN")
+            else if (data.walkthroughstate == "RUN")
                 $(".progress_list").append("<div class=\"processname\"><h3>" + data.name + "</h3> </div>");
             else
                 $(".progress_list").append("<div class=\"processname2\"><h3>" + data.name + "</h3> </div>");
 
-            if(data.state=="DONE"){
-                if(olddata) {
+            if (data.state == "DONE") {
+                if (olddata) {
                     if (olddata.state == "DONE")
                         $(".end").append("<div class=\"endprocess3\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a></h3></div>");
                     else
                         $(".end").append("<div class=\"endprocess2\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a></h3></div>");
-                }
-                else
+                } else
                     $(".end").append("<div class=\"endprocess3\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a></h3></div>");
-            }
-            else if(data.state=="CONTINUE"){
-                if(endingrefresh.indexOf(data.processrun_id.toString()) > -1)
-                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
+            } else if (data.state == "CONTINUE") {
+                if (endingrefresh.indexOf(data.processrun_id.toString()) > -1)
+                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a><input value='" + data.processrun_id + "'  hidden/><div class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
                 else
-                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div><div hidden class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
-            }
-            else if(data.state=="RUN"){
-                if(data.isConfirm=="1")
-                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/></h3></div>");
+                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a><input value='" + data.processrun_id + "'  hidden/><div class='endprocessimg'><img   src=\"/static/walkthroughindex/images/shutdown.png\" ></div><div hidden class='endingimg'><img    src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
+            } else if (data.state == "RUN") {
+                if (data.isConfirm == "1")
+                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a><input value='" + data.processrun_id + "'  hidden/></h3></div>");
                 else
-                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</a><input value='" + data.processrun_id + "'  hidden/><div class='endingimg'><img   src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
-            }
-            else{
-                $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name +  "</h3></div>");
+                    $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</a><input value='" + data.processrun_id + "'  hidden/><div class='endingimg'><img   src=\"/static/walkthroughindex/images/loading_1.gif\" ></div></h3></div>");
+            } else {
+                $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</h3></div>");
             }
 
 
             if (data.walkthroughstate == 'RUN') {
-                var state=data.state
+                var state = data.state
                 headerTitle = data.name;
-                 var process_run_url = data.processurl + "/" + data.processrun_id;
+                var process_run_url = data.processurl + "/" + data.processrun_id;
                 $('.progress_run h2').html("<a href='" + process_run_url + "' target='_blank' style='color:#e8e8e8 '>" + headerTitle + "</a>");
 
                 var progressBar = $('.progress-par');
@@ -146,8 +157,8 @@ var util = {
 
                 // add...
                 // error 圆盘不变红
-                if (state=="ERROR"){
-                    state="RUN";
+                if (state == "ERROR") {
+                    state = "RUN";
                 }
                 progressBar.addClass(state.toLocaleLowerCase());
 
@@ -188,7 +199,7 @@ var util = {
 
                 // add...
                 // error 下进度条不变黄
-                if (curState=="error"){
+                if (curState == "error") {
                     curState = "run";
                 }
                 var curStepPercent = curStep.percent;
@@ -242,17 +253,24 @@ var util = {
                     }
                     // 步骤出错，仍旧记时
                 } else {
+
+                    // add...  前面流程STOP，后面的流程继续发起请求
+                    console.log("继续发起请求");
+                    clearInterval(interval);
+                    interval = setInterval(function () {
+                        util.request();
+                    }, 3 * 1000); //3秒/次请求
+
                     end = false;
                     $('.progress-par span').css({
                         'background': 'url("/static/processindex/images/loading.gif") no-repeat',
                         'background-size': '180px 140px'
                     });
                 }
-                $('.progress_run').css({ 'animation': '' });
-                if(olddata)
-                {
-                    if(olddata.walkthroughstate != 'RUN'){
-                        $('.progress_run').css({ 'animation': 'bounceIn 3s ease-in-out' });
+                $('.progress_run').css({'animation': ''});
+                if (olddata) {
+                    if (olddata.walkthroughstate != 'RUN') {
+                        $('.progress_run').css({'animation': 'bounceIn 3s ease-in-out'});
                     }
 
                 }
@@ -268,57 +286,56 @@ var util = {
             curdiv.hide();
             nextdiv.show();
             $.ajax({
-                    url: "/processcontinue/",
-                    type: "post",
-                    data: {
-                        "processrun_id": processrun_id,
-                        csrfmiddlewaretoken: csrfToken
-                    },
-                    success: function (data) {
-                        if (data.data == "0") {
-                            curdiv.hide();
-                            nextdiv.show();
-                            endingrefresh.push(processrun_id);
-                        } else {
-                            curdiv.show();
-                            nextdiv.hide();
-                            $("#static_shutdowm").modal('show');
-                            $("#modalbody").html("业务人员未完成数据验证，请勿关闭该系统！");
+                url: "/processcontinue/",
+                type: "post",
+                data: {
+                    "processrun_id": processrun_id,
+                    csrfmiddlewaretoken: csrfToken
+                },
+                success: function (data) {
+                    if (data.data == "0") {
+                        curdiv.hide();
+                        nextdiv.show();
+                        endingrefresh.push(processrun_id);
+                    } else {
+                        curdiv.show();
+                        nextdiv.hide();
+                        $("#static_shutdowm").modal('show');
+                        $("#modalbody").html("业务人员未完成数据验证，请勿关闭该系统！");
 
-                        }
                     }
-                });
-           });
+                }
+            });
+        });
 
 
         if (curstate === 'DONE') {
             clearInterval(interval);
         }
     },
-    makeCommand: function (showtasks,oldshowtasks) {
+    makeCommand: function (showtasks, oldshowtasks) {
         var console = $(".console");
         console.html("")
         if (oldshowtasks) {
             var showtext = ""
             for (var i = 0; i < showtasks.length; i++) {
-                var isshow=false;
-                for(var j = 0; j < oldshowtasks.length; j++) {
+                var isshow = false;
+                for (var j = 0; j < oldshowtasks.length; j++) {
                     if (showtasks[i].taskid == oldshowtasks[j].taskid) {
                         isshow = true
                         break
                     }
                 }
-                if(isshow) {
-                        console.append("<span class=\"prompt\">robot:</span> ");
-                        console.append(showtasks[i].taskcontent.replace("。",""));
-                        console.append("<br>");
-                        console.append("<br>");
-                    }
-                    else{
-                        showtext = "robot:" + showtasks[i].taskcontent.replace("。","") + "^"
+                if (isshow) {
+                    console.append("<span class=\"prompt\">robot:</span> ");
+                    console.append(showtasks[i].taskcontent.replace("。", ""));
+                    console.append("<br>");
+                    console.append("<br>");
+                } else {
+                    showtext = "robot:" + showtasks[i].taskcontent.replace("。", "") + "^"
                 }
             }
-            if(showtext.length>0) {
+            if (showtext.length > 0) {
                 var str = showtext
                 var myindex = 0;
                 //$text.html()和$(this).html('')有区别
@@ -326,30 +343,28 @@ var util = {
                         refresh = false;
                         var current = str.substr(myindex, 1);
                         myindex++;
-                        if(current=="robot:")
+                        if (current == "robot:")
                             console.append("<span class=\"prompt\">robot:</span> ");
-                        else if(current=="^"){
+                        else if (current == "^") {
                             console.append("<br>");
                             console.append("<br>");
                             console[0].scrollTop = console[0].scrollHeight;
-                        }
-                        else{
+                        } else {
                             console.append(current);
                         }
                         if (myindex >= str.length) {
                             clearInterval(timer);
-                            refresh =true;
+                            refresh = true;
                         }
                     },
                     100);
             }
 
             console[0].scrollTop = console[0].scrollHeight;
-        }
-       else {
+        } else {
             for (var i = 0; i < showtasks.length; i++) {
                 console.append("<span class=\"prompt\">robot:</span> ");
-                console.append(showtasks[i].taskcontent.replace("。",""));
+                console.append(showtasks[i].taskcontent.replace("。", ""));
                 console.append("<br>");
                 console.append("<br>");
             }
@@ -488,36 +503,41 @@ var util = {
         return {hours: hours, minutes: minutes, seconds: seconds};
     },
     playsound: function (walkthroughindexdata) {
-        var sounds=[]
+        var sounds = []
         oldwalkthroughindexdata = walkthroughindexdata.oldwalkthroughinfo;
         for (var processnum = 0; processnum < walkthroughindexdata.processruns.length; processnum++) {
             //流程播报
-            curprocess=walkthroughindexdata.processruns[processnum];
+            curprocess = walkthroughindexdata.processruns[processnum];
             curprocessstate = curprocess.walkthroughstate;
-            oldprocessstate="";
-            oldprocess=null;
-            if(oldwalkthroughindexdata) {
-                for (var oldprocessnum = 0; oldprocessnum < oldwalkthroughindexdata.processruns.length; oldprocessnum++) {
-                    if (curprocess.processrun_id == oldwalkthroughindexdata.processruns[oldprocessnum].processrun_id) {
-                        oldprocess = oldwalkthroughindexdata.processruns[oldprocessnum];
-                        break;
+            oldprocessstate = "";
+            oldprocess = null;
+            if (oldwalkthroughindexdata) {
+                try {
+                    for (var oldprocessnum = 0; oldprocessnum < oldwalkthroughindexdata.processruns.length; oldprocessnum++) {
+                        if (curprocess.processrun_id == oldwalkthroughindexdata.processruns[oldprocessnum].processrun_id) {
+                            oldprocess = oldwalkthroughindexdata.processruns[oldprocessnum];
+                            break;
+                        }
                     }
+                } catch {
+                    // ...
                 }
+
             }
-            if(oldprocess) {
-                oldprocessstate=oldprocess.walkthroughstate;
+            if (oldprocess) {
+                oldprocessstate = oldprocess.walkthroughstate;
             }
             //流程开始
-            if(curprocessstate=="RUN" && (oldprocessstate=="PLAN" ||oldprocessstate=="" ||oldprocessstate ==null)){
+            if (curprocessstate == "RUN" && (oldprocessstate == "PLAN" || oldprocessstate == "" || oldprocessstate == null)) {
                 sounds.push("processstart_" + curprocess.process_id);
             }
             //步骤播报
             for (var i = 0; i < curprocess.steps.length; i++) {
-                curStep=curprocess.steps[i];
+                curStep = curprocess.steps[i];
                 curStepstate = curStep.state;
-                oldStepstate="";
-                oldStep=null;
-                if(oldprocess) {
+                oldStepstate = "";
+                oldStep = null;
+                if (oldprocess) {
                     for (var j = 0; j < oldprocess.steps.length; j++) {
                         if (curStep.name == oldprocess.steps[j].name) {
                             oldStep = oldprocess.steps[j];
@@ -525,23 +545,23 @@ var util = {
                         }
                     }
                 }
-                if(oldStep) {
+                if (oldStep) {
                     oldStepstate = oldStep.state;
                 }
                 //步骤开始
-                if((oldStepstate=="EDIT"|| oldStepstate=="")&& oldStepstate!=curStepstate){
-                    if(curStep.name=="环境初始化")
+                if ((oldStepstate == "EDIT" || oldStepstate == "") && oldStepstate != curStepstate) {
+                    if (curStep.name == "环境初始化")
                         sounds.push("step_1");
-                    if(curStep.name=="数据库启动")
+                    if (curStep.name == "数据库启动")
                         sounds.push("step_2");
-                    if(curStep.name=="应用启动")
+                    if (curStep.name == "应用启动")
                         sounds.push("step_3");
-                    if(curStep.name=="环境验证")
+                    if (curStep.name == "环境验证")
                         sounds.push("step_4");
                 }
             }
             //流程结束
-            if(curprocessstate=="DONE" && curprocessstate!=oldprocessstate){
+            if (curprocessstate == "DONE" && curprocessstate != oldprocessstate) {
                 sounds.push("processend_" + curprocess.process_id);
             }
         }
@@ -549,35 +569,36 @@ var util = {
         //演练播报
         curwalkthroughstate = walkthroughindexdata.walkthrough_state;
         oldwalkthroughstate = "";
-        if(oldwalkthroughindexdata)
+        if (oldwalkthroughindexdata)
             oldwalkthroughstate = oldwalkthroughindexdata.walkthrough_state;
-        if(curwalkthroughstate=="DONE" && curwalkthroughstate!=oldwalkthroughstate){
+        if (curwalkthroughstate == "DONE" && curwalkthroughstate != oldwalkthroughstate) {
             sounds.push("walkthroughend");
         }
         util.playmp3(sounds);
     },
     playmp3: function (soundslist) {
-        soundrefresh=false;
+        soundrefresh = false;
 
         for (var i = 0; i < soundslist.length; i++) {
-            soundslist[i] = "/static/walkthroughindex/sound/"  + soundslist[i] + ".mp3";
+            soundslist[i] = "/static/walkthroughindex/sound/" + soundslist[i] + ".mp3";
         }
         var myAudio = new Audio();
         myAudio.preload = true;
         myAudio.controls = true;
         myAudio.src = soundslist.shift();       //每次读数组最后一个元素
         myAudio.addEventListener('ended', playEndedHandler, false);
+        // audioSecurePlay(myAudio);
         myAudio.play();
         document.getElementById("audio").appendChild(myAudio);
         myAudio.loop = false;//禁止循环，否则无法触发ended事件
-        function playEndedHandler(){
+        function playEndedHandler() {
             myAudio.src = soundslist.shift();
+            // audioSecurePlay(myAudio);
             myAudio.play();
-            console.log(soundslist.length);
-            !soundslist.length && myAudio.removeEventListener('ended',playEndedHandler,false);//只有一个元素时解除绑定
+            !soundslist.length && myAudio.removeEventListener('ended', playEndedHandler, false);//只有一个元素时解除绑定
         }
 
-        soundrefresh=true;
+        soundrefresh = true;
     }
 };
 window.util = util;
