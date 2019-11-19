@@ -4949,7 +4949,7 @@ def stop_current_process(request):
             ######################
             force_exec_script.delay(process_run_id)
             if current_process_run.walkthrough is not None:
-                if curwalkthroughstate != "DONE":
+                if current_process_run.walkthrough != "DONE":
                     next_process_run = current_process_run.walkthrough.processrun_set.filter(state="PLAN")
                     if next_process_run:
                         next_process_run = next_process_run[0]

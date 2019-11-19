@@ -35,12 +35,12 @@ class Protocol(winrm.protocol.Protocol):
         command_done = False
 
         ############################################################################
-        # 限时6*60s                                                                #
+        # 限时15*60s                                                                #
         #   程序反复查看相应，如果相应成功，且在超时时限内则命令成功，否则报超时异常。 #
         #   获取响应的时长较长。                                                    #
         ############################################################################
         return_code = -1
-        limited_seconds = 6 * 60
+        limited_seconds = 15 * 60
         start_time = datetime.datetime.now()
         while not command_done:
             print('get the response from windows...')
@@ -93,7 +93,7 @@ class ServerByPara(object):
                 "log": "连接服务器失败",
             }
         try:
-            stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=6 * 60)
+            stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=15 * 60)
             if stderr.read():
                 exec_tag = 1
                 data_init = str(stderr.read(), encoding='utf-8')
@@ -217,10 +217,10 @@ if __name__ == '__main__':
     linux_temp_script_file = r"/tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh"
     cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
     # print(cmd)  # sed -i 's/\r$//' /tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh
-    server_obj = ServerByPara(r"echo 中文>C:\Users\Administrator\Desktop\test.bat",
-                              "192.168.100.154", "administrator", "tesunet@2017", "Windows")
-    # server_obj = ServerByPara("echo '中文'",
-    #                           "192.168.184.66", "root", "password", "Linux")
+    # server_obj = ServerByPara(r"echo 中文>C:\Users\Administrator\Desktop\test.bat",
+    #                           "192.168.100.154", "administrator", "tesunet@2017", "Windows")
+    server_obj = ServerByPara("assss",
+                              "192.168.1.88", "root", "tesunet", "Linux")
     # server_obj = ServerByPara(r"echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好'", "192.168.184.66", "root","password", "Linux")
 
     server_obj.run("")

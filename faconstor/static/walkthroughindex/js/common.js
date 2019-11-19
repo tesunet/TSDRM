@@ -90,7 +90,7 @@ var util = {
                 }
             }
 
-             var processrun_url = data.processurl + "/" + data.processrun_id;
+            var processrun_url = data.processurl + "/" + data.processrun_id;
 
             if(data.state!="DONE")
                 curstate=""
@@ -142,6 +142,13 @@ var util = {
                 for (var cindex = 0; cindex < allState.length; cindex++) {
                     progressBar.removeClass(allState[cindex]);
                 }
+
+
+                // add...
+                // error 圆盘不变红
+                if (state=="ERROR"){
+                    state="RUN";
+                }
                 progressBar.addClass(state.toLocaleLowerCase());
 
                 $('.progress-left-time').text(data.starttime);
@@ -178,6 +185,12 @@ var util = {
                     edit: '#cccfd0'
                 };
                 var curState = curStep.state.toLocaleLowerCase();
+
+                // add...
+                // error 下进度条不变黄
+                if (curState=="error"){
+                    curState = "run";
+                }
                 var curStepPercent = curStep.percent;
 
                 // 启动应用服务步骤：当前时间减去当前步骤开始时间的秒数作为百分比，如未结束，差值大于99，停留在99%。
@@ -210,8 +223,7 @@ var util = {
 
                 util.makeR(rightData);
                 util.makeL(leftData);
-
-                var stateArr = ['DONE', 'STOP', 'ERROR'];
+                var stateArr = ['DONE', 'STOP'];  // 去掉error error状态，大象继续跑
                 if ($.inArray(state, stateArr) >= 0) {
                     setTimeout(function () {
                         $('.progress-par span').css({
