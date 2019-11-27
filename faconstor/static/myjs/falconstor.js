@@ -269,7 +269,6 @@ if (App.isAngularJsApp() === false) {
                             '"></i></div></div><div class="cont-col2"><div class="desc"> ' + data["current_process_task_info"][i].content +
                             '</div></div></div></div><div class="col2"><div class="date"> ' + data["current_process_task_info"][i].time + '</div></div></li>'
                         totalTaskLi += currentTaskLi
-                        console.log("*****************")
                     }
                     $("#current_process_task_info").append(totalTaskLi);
 
