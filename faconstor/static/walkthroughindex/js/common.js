@@ -234,7 +234,7 @@ var util = {
 
                 util.makeR(rightData);
                 util.makeL(leftData);
-                var stateArr = ['DONE';  // 去掉STOP ERROR状态，大象继续跑
+                var stateArr = ['DONE'];  // 去掉STOP ERROR状态，大象继续跑
                 if ($.inArray(state, stateArr) >= 0) {
                     setTimeout(function () {
                         $('.progress-par span').css({
