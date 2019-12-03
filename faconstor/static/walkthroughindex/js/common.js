@@ -68,7 +68,7 @@ var util = {
 
         } else if (walkthrough_state === "DONE" && sTag !== "true") {
             $(".walkthrough_run").hide();
-            $(".header-timeout").hide();
+            $(".header-timeout").show();
             $(".start_hand").hide();
             $(".end_pic").show();
             myAudio.pause();
@@ -110,8 +110,11 @@ var util = {
             if (data.state != "DONE")
                 curstate = ""
 
-            if (data.walkthroughstate == "DONE")
+            if (data.walkthroughstate == "DONE"){
                 $(".progress_list").append("<div class=\"processname1\"><h3>" + data.name + "</h3> </div>");
+                // 遍历所有流程的RTO
+                console.log(data.starttime);
+            }
             else if (data.walkthroughstate == "RUN")
                 $(".progress_list").append("<div class=\"processname\"><h3>" + data.name + "</h3> </div>");
             else
@@ -138,7 +141,6 @@ var util = {
             } else {
                 $(".end").append("<div class=\"endprocess\"><h3><a href='" + processrun_url + "' target='_blank' style='color:#fff'>" + data.name + "</h3></div>");
             }
-
 
             if (data.walkthroughstate == 'RUN') {
                 var state = data.state
@@ -274,10 +276,9 @@ var util = {
                     }
 
                 }
-
-                // 写入RTO
-                util.makeTimer(walkthroughindexdata.walkthrough_starttime, walkthroughindexdata.walkthrough_endtime);
             }
+            // 写入RTO
+            util.makeTimer(walkthroughindexdata.walkthrough_starttime, walkthroughindexdata.walkthrough_endtime);
         }
         $(".endprocessimg").click(function () {
             var processrun_id = $(this).prev().val();
@@ -464,6 +465,7 @@ var util = {
                     success: function (data) {
                         currentTime = data.current_time
                         timer = util.timeFn(starTime, currentTime);
+                        console.log(timer)
                         util.showTimer(timer);
                     },
                 });

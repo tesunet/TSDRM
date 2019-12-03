@@ -654,8 +654,10 @@
         });
     }
 
-    window.clearInterval(my_t);
-    var my_t = window.setInterval(getTaskInfo, 5000);
+
+    getTaskInfo();
+    // window.clearInterval(my_t);
+    // var my_t = window.setInterval(getTaskInfo, 5000);
 
     // 任务信息写入模态框
     $("ul#locate_task").on("click", " li", function () {

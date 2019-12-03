@@ -49,35 +49,35 @@ if (App.isAngularJsApp() === false) {
     jQuery(document).ready(function () {
         var global_end = false;
         var curHref = window.href;
-        function customOurInterval(argument) {
-            setTimeout(function () {
-                if (!global_end) {
-                    // 处理时对end标志进行修改，end=True表示停止（取消定时器）。
-                    if (curHref.indexOf("falconstor") != -1) {
-                        getstep();
-                    };
+        // function customOurInterval(argument) {
+        //     setTimeout(function () {
+        //         if (!global_end) {
+        //             // 处理时对end标志进行修改，end=True表示停止（取消定时器）。
+        //             if (curHref.indexOf("falconstor") != -1) {
+        //                 getstep();
+        //             };
 
-                    // 循环(arguments.callee获取当前执行函数的引用)
-                    setTimeout(arguments.callee, 3000);
-                } else {
-                    global_end = false;
-                }
-            }, 3000);
-        }
+        //             // 循环(arguments.callee获取当前执行函数的引用)
+        //             setTimeout(arguments.callee, 3000);
+        //         } else {
+        //             global_end = false;
+        //         }
+        //     }, 3000);
+        // }
         // 预先刷新流程
         getstep();
 
-        // 点击页面后1分钟刷新页面
-        $(document).on('click', function () {
-            global_end = true;
-            console.log("点击页面，不动")
-            setTimeout(function () {
-                global_end = false; 
-                customOurInterval();
-            }, 60000);
-        });
+        // // 点击页面后1分钟刷新页面
+        // $(document).on('click', function () {
+        //     global_end = true;
+        //     console.log("点击页面，不动")
+        //     setTimeout(function () {
+        //         global_end = false; 
+        //         customOurInterval();
+        //     }, 60000);
+        // });
 
-        customOurInterval();
+        // customOurInterval();
 
         function showResult() {
             var process_run_id = $("#process_run_id").val();
@@ -253,6 +253,7 @@ if (App.isAngularJsApp() === false) {
                     $("div#tab-content").empty();
                     $("#current_process_task_info").empty();
                     $("#stopbtn").show();
+                    $("#refresh").show();
                     $("#show_result").hide();
                     $("#process_run_id").val($("#process").val());
                     $("#process_name").html(data["process_name"] + "&nbsp&nbsp <button id='show_tasks' type='button' style='background-color: #1d89cf'><i class='fa fa-cogs'></i></button>");
@@ -278,6 +279,7 @@ if (App.isAngularJsApp() === false) {
 
                         $("#process_state").val("完成");
                         $("#stopbtn").hide();
+                        $("#refresh").hide();
 
                         // 完成的状态下关闭定时器
                         global_end = true;
@@ -324,6 +326,7 @@ if (App.isAngularJsApp() === false) {
                         $("#process_name").html(data["process_name"]);
 
                         $("#stopbtn").hide();
+                        $("#refresh").hide();
 
                         // 错误的状态下，关闭定时器
                         global_end = true;
@@ -700,7 +703,7 @@ if (App.isAngularJsApp() === false) {
                                             alert("该步骤已确认，请继续流程！");
                                             getstep();
                                             global_end = false;
-                                            customOurInterval();
+                                            // customOurInterval();
                                             getTaskInfo();
                                         } else {
                                             alert("步骤确认异常，请联系客服！")
@@ -722,7 +725,7 @@ if (App.isAngularJsApp() === false) {
                                         getstep();
                                         // 确认流程之后再次开启定时器
                                         global_end = false;
-                                        customOurInterval();
+                                        // customOurInterval();
                                         getTaskInfo();
                                     } else {
                                         alert("步骤确认异常，请联系客服！")
@@ -747,7 +750,7 @@ if (App.isAngularJsApp() === false) {
                                      if (data.data == "0") {
                                          getstep();
                                          global_end = false;
-                                         customOurInterval();
+                                        //  customOurInterval();
                                          getTaskInfo();
                                      } else {
                                          alert("步骤确认异常，请联系客服！")
@@ -789,9 +792,11 @@ if (App.isAngularJsApp() === false) {
                         $("#exec").hide();
                         $("#ignore").hide();
                         $('#static').modal('hide');
+                        getstep();
+
                         // 重启定时器
                         global_end = false;
-                        customOurInterval();
+                        // customOurInterval();
                     } else
                         alert(data["res"]);
                 },
@@ -813,9 +818,10 @@ if (App.isAngularJsApp() === false) {
                 success: function (data) {
                     alert(data.data);
                     $('#static').modal('hide');
+                    getstep();
                     // 重启定时器
                     global_end = false;
-                    customOurInterval();
+                    // customOurInterval();
                 }
             });
         });
@@ -985,6 +991,11 @@ if (App.isAngularJsApp() === false) {
             }
         });
 
+        // 刷新页面
+        $("#refresh").click(function () {
+            getstep();
+        });
+
         // 撤销当前任务
         $("#revoke_current_task").click(function () {
             if (confirm("即将撤销当前任务，注意，此操作不可逆！是否继续？")) {
@@ -999,15 +1010,15 @@ if (App.isAngularJsApp() === false) {
             customTasksTable();
         });
 
-        // 说明字段的聚焦于取消聚焦
-        $("#process_note").focus(function () {
-            global_end = true;
-        });
+        // // 说明字段的聚焦于取消聚焦
+        // $("#process_note").focus(function () {
+        //     global_end = true;
+        // });
 
-        $("#process_note").blur(function () {
-            global_end = false;
-            customOurInterval();
-        });
+        // $("#process_note").blur(function () {
+        //     global_end = false;
+        //     customOurInterval();
+        // });
 
     });
 }
