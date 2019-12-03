@@ -112,8 +112,6 @@ var util = {
 
             if (data.walkthroughstate == "DONE"){
                 $(".progress_list").append("<div class=\"processname1\"><h3>" + data.name + "</h3> </div>");
-                // 遍历所有流程的RTO
-                console.log(data.starttime);
             }
             else if (data.walkthroughstate == "RUN")
                 $(".progress_list").append("<div class=\"processname\"><h3>" + data.name + "</h3> </div>");
@@ -465,7 +463,6 @@ var util = {
                     success: function (data) {
                         currentTime = data.current_time
                         timer = util.timeFn(starTime, currentTime);
-                        console.log(timer)
                         util.showTimer(timer);
                     },
                 });
