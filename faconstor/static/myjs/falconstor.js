@@ -45,7 +45,6 @@ var FormWizard = function () {
     };
 
 }();
-
 if (App.isAngularJsApp() === false) {
     jQuery(document).ready(function () {
         var global_end = false;
@@ -65,6 +64,8 @@ if (App.isAngularJsApp() === false) {
                 }
             }, 3000);
         }
+        // 预先刷新流程
+        getstep();
 
         // 点击页面后1分钟刷新页面
         $(document).on('click', function () {
