@@ -939,7 +939,7 @@ input {
 .endtext {
     font-size: 90px;
     color: #e8e8e8 !important;
-
+    margin-top: 125px;
 }
 .endprocess {
     float: left;
