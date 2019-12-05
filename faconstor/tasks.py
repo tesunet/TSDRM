@@ -225,7 +225,7 @@ def force_exec_script(processrunid):
                                     # myprocesstask.steprun_id = steprun.id
                                     # myprocesstask.save()
                                 else:
-                                    sftp.chmod(linux_temp_script_file, 755)
+                                    sftp.chmod(linux_temp_script_file, int("755",8))
 
                                 ssh.close()
 
@@ -489,7 +489,7 @@ def runstep(steprun, if_repeat=False):
                             myprocesstask.save()
                             return 0
                         else:
-                            sftp.chmod(linux_temp_script_file, 755)
+                            sftp.chmod(linux_temp_script_file, int("755",8))
 
                         ssh.close()
 

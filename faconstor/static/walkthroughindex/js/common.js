@@ -532,37 +532,39 @@ var util = {
                 sounds.push("processstart_" + curprocess.process_id);
             }
             //步骤播报
-            for (var i = 0; i < curprocess.steps.length; i++) {
-                curStep = curprocess.steps[i];
-                curStepstate = curStep.state;
-                oldStepstate = "";
-                oldStep = null;
-                if (oldprocess) {
-                    for (var j = 0; j < oldprocess.steps.length; j++) {
-                        if (curStep.name == oldprocess.steps[j].name) {
-                            oldStep = oldprocess.steps[j];
-                            break;
+            if(walkthroughindexdata.walkthrough_state!='PLAN') {
+                for (var i = 0; i < curprocess.steps.length; i++) {
+                    curStep = curprocess.steps[i];
+                    curStepstate = curStep.state;
+                    oldStepstate = "";
+                    oldStep = null;
+                    if (oldprocess) {
+                        for (var j = 0; j < oldprocess.steps.length; j++) {
+                            if (curStep.name == oldprocess.steps[j].name) {
+                                oldStep = oldprocess.steps[j];
+                                break;
+                            }
                         }
                     }
+                    if (oldStep) {
+                        oldStepstate = oldStep.state;
+                    }
+                    //步骤开始
+                    if ((oldStepstate == "EDIT" || oldStepstate == "") && oldStepstate != curStepstate) {
+                        if (curStep.name == "环境初始化")
+                            sounds.push("step_1");
+                        if (curStep.name == "数据库启动")
+                            sounds.push("step_2");
+                        if (curStep.name == "应用启动")
+                            sounds.push("step_3");
+                        if (curStep.name == "环境验证")
+                            sounds.push("step_4");
+                    }
                 }
-                if (oldStep) {
-                    oldStepstate = oldStep.state;
+                //流程结束
+                if (curprocessstate == "DONE" && curprocessstate != oldprocessstate) {
+                    sounds.push("processend_" + curprocess.process_id);
                 }
-                //步骤开始
-                if ((oldStepstate == "EDIT" || oldStepstate == "") && oldStepstate != curStepstate) {
-                    if (curStep.name == "环境初始化")
-                        sounds.push("step_1");
-                    if (curStep.name == "数据库启动")
-                        sounds.push("step_2");
-                    if (curStep.name == "应用启动")
-                        sounds.push("step_3");
-                    if (curStep.name == "环境验证")
-                        sounds.push("step_4");
-                }
-            }
-            //流程结束
-            if (curprocessstate == "DONE" && curprocessstate != oldprocessstate) {
-                sounds.push("processend_" + curprocess.process_id);
             }
         }
 
