@@ -87,7 +87,7 @@ var util = {
         if (headerTitle === '') {
             var date = new Date;
             var year = date.getFullYear();
-            $('.header-title h1').html("<span >" + year + "太平资产自动化灾备演练" + "</span>");
+            $('.header-title h1').html("<span >" + year + "年太平资产自动化灾备演练" + "</span>");
         }
         $(".progress_list").html("");
         $(".end").html("");
