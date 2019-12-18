@@ -202,8 +202,12 @@ class ServerByPara(object):
     def run(self, succeedtext):
         if self.system_choice == "Linux":
             result = self.exec_linux_cmd(succeedtext)
+            if self.client:
+                self.client.close()
         elif self.system_choice == "AIX":
             result = self.exec_linux_cmd(succeedtext, port=22)
+            if self.client:
+                self.client.close()
         else:
             result = self.exec_win_cmd(succeedtext)
         print(result)
@@ -214,13 +218,13 @@ if __name__ == '__main__':
     # server_obj = ServerByPara(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     # server_obj = ServerByPara(r"C:\Users\Administrator\Desktop\test_python.bat", "192.168.100.151", "administrator","tesunet@2017", "Windows")
     # server_obj = ServerByPara(r"/root/Desktop/test06.sh hello", "47.95.195.90", "root","!zxcvbn123", "Linux")
-    linux_temp_script_file = r"/tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh"
-    cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
+    # linux_temp_script_file = r"/tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh"
+    # cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
     # print(cmd)  # sed -i 's/\r$//' /tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh
     # server_obj = ServerByPara(r"echo 中文>C:\Users\Administrator\Desktop\test.bat",
     #                           "192.168.100.154", "administrator", "tesunet@2017", "Windows")
-    server_obj = ServerByPara("assss",
-                              "192.168.1.88", "root", "tesunet", "Linux")
+    server_obj = ServerByPara("mkdir -p /tmp/drm/1",
+                              "192.168.184.101", "miaokela", "password", "Linux")
     # server_obj = ServerByPara(r"echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好'", "192.168.184.66", "root","password", "Linux")
 
     server_obj.run("")
