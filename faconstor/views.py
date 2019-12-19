@@ -1425,7 +1425,7 @@ def get_process_rto(request):
                     current_rto_list.append(current_rto)
                 process_dict = {
                     "process_name": process_name,
-                    "current_rto_list": current_rto_list if len(current_rto_list) <= 50 else current_rto_list[-50:],
+                    "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[-50:][::-1],
                     "color": process.color
                 }
                 process_rto_list.append(process_dict)
