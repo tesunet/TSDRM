@@ -1268,7 +1268,7 @@ def index(request, funid):
 
                 # 扣除子级步骤中可能的rto_count_in的时间
                 all_inner_step_runs = processrun.steprun_set.exclude(state="9").filter(step__rto_count_in="0").exclude(
-                    step__pnode=None)
+                    step__pnode=None).exclude(step__pnode__rto_count_in="0")
                 inner_rto_not_count_in = 0
                 if all_inner_step_runs:
                     for inner_step_run in all_inner_step_runs:
