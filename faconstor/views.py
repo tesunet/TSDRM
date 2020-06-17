@@ -40,6 +40,7 @@ from faconstor.tasks import *
 from faconstor.models import *
 from .remote import ServerByPara
 from TSDRM import settings
+from .api import SQLApi
 
 funlist = []
 
@@ -6690,3 +6691,177 @@ def serverconfigsave(request):
             cvvendor.save()
             result = "保存成功。"
         return HttpResponse(result)
+
+
+# 恢复资源
+def target(request, funid):
+    if request.user.is_authenticated():
+        #############################################
+        # clientid, clientname, agent, instance, os #
+        #############################################
+        dm = SQLApi.CustomFilter(settings.sql_credit)
+
+        oracle_data = dm.get_instance_from_oracle()
+
+        # 获取包含oracle模块所有客户端
+        installed_client = dm.get_all_install_clients()
+        dm.close()
+        oracle_data_list = []
+        pre_od_name = ""
+        for od in oracle_data:
+            if "Oracle" in od["agent"]:
+                if od["clientname"] == pre_od_name:
+                    continue
+                client_id = od["clientid"]
+                client_os = ""
+                for ic in installed_client:
+                    if client_id == ic["client_id"]:
+                        client_os = ic["os"]
+
+                oracle_data_list.append({
+                    "clientid": od["clientid"],
+                    "clientname": od["clientname"],
+                    "agent": od["agent"],
+                    "instance": od["instance"],
+                    "os": client_os
+                })
+                # 去重
+                pre_od_name = od["clientname"]
+        return render(request, 'target.html',
+                      {'username': request.user.userinfo.fullname,
+                       "oracle_data": json.dumps(oracle_data_list),
+                       "pagefuns": getpagefuns(funid, request=request)})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def target_data(request):
+    if request.user.is_authenticated():
+        all_target = Target.objects.exclude(state="9")
+        all_target_list = []
+        for target in all_target:
+            target_info = json.loads(target.info)
+            all_target_list.append({
+                "id": target.id,
+                "client_id": target.client_id,
+                "client_name": target.client_name,
+                "os": target.os,
+                "agent": target_info["agent"],
+                "instance": target_info["instance"]
+            })
+        return JsonResponse({"data": all_target_list})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def target_save(request):
+    if request.user.is_authenticated():
+        target_id = request.POST.get("target_id", "")
+        client_id = request.POST.get("client_id", "")
+        client_name = request.POST.get("client_name", "").strip()
+        agent = request.POST.get("agent", "").strip()
+        instance = request.POST.get("instance", "").strip()
+        os = request.POST.get("os", "").strip()
+        ret = 0
+        info = ""
+        try:
+            target_id = int(target_id)
+        except:
+            ret = 0
+            info = "网络异常"
+        else:
+            try:
+                client_id = int(client_id)
+            except:
+                ret = 0
+                info = "目标客户端未选择。"
+            else:
+                if target_id == 0:
+                    # 判断是否存在
+                    check_target = Target.objects.exclude(state="9").filter(client_id=client_id)
+                    if check_target.exists():
+                        ret = 0
+                        info = "该客户端已选为目标客户端，请勿重复添加。"
+                    else:
+                        try:
+                            cur_target = Target()
+                            cur_target.client_id = client_id
+                            cur_target.client_name = client_name
+                            cur_target.os = os
+                            cur_target.info = json.dumps({
+                                "agent": agent,
+                                "instance": instance
+                            })
+                            cur_target.save()
+                        except:
+                            ret = 0
+                            info = "数据保存失败。"
+                        else:
+                            ret = 1
+                            info = "新增成功。"
+                else:
+                    check_target = Target.objects.exclude(state="9").exclude(id=target_id).filter(
+                        client_id=client_id)
+                    if check_target.exists():
+                        ret = 0
+                        info = "该客户端已选为终端，请勿重复添加。"
+                    else:
+                        try:
+                            cur_target = Target.objects.get(id=target_id)
+                        except Target.DoesNotExist as e:
+                            ret = 0
+                            info = "终端不存在，请联系管理员。"
+                        else:
+                            try:
+                                cur_target.client_id = client_id
+                                cur_target.client_name = client_name
+                                cur_target.os = os
+                                cur_target.info = json.dumps({
+                                    "agent": agent,
+                                    "instance": instance
+                                })
+                                cur_target.save()
+                            except:
+                                ret = 0
+                                info = "数据修改失败。"
+                            else:
+                                ret = 1
+                                info = "修改成功"
+
+        return JsonResponse({
+            "ret": ret,
+            "info": info
+        })
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def target_del(request):
+    if request.user.is_authenticated():
+        target_id = request.POST.get("target_id", "")
+
+        try:
+            cur_target = Target.objects.get(id=int(target_id))
+        except:
+            return JsonResponse({
+                "ret": 0,
+                "info": "当前网络异常"
+            })
+        else:
+            try:
+                cur_target.state = "9"
+                cur_target.save()
+            except:
+                return JsonResponse({
+                    "ret": 0,
+                    "info": "服务器网络异常。"
+                })
+            else:
+                return JsonResponse({
+                    "ret": 1,
+                    "info": "删除成功。"
+                })
+    else:
+        return HttpResponseRedirect("/login")
+
+

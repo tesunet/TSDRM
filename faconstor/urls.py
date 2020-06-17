@@ -137,4 +137,10 @@ urlpatterns = [
     # 服务器信息配置
     url(r'^serverconfig/$', serverconfig, {'funid': '72'}),
     url(r'^serverconfigsave/$', serverconfigsave),
+
+    # 恢复资源
+    url(r'^target/$', target, {'funid': '73'}),
+    url(r'^target_data/$', target_data),
+    url(r'^target_save/$', target_save),
+    url(r'^target_del/$', target_del),
 ]

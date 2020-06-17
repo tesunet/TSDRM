@@ -12,15 +12,75 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 import djcelery
+import pymysql
+from lxml import etree
+
+# 项目数据库信息配置
+db_host = '127.0.0.1'
+db_name = "tesudrm"
+db_user = "root"
+db_password = "Passw0rD"
+db_port = '3306'
+db_engine = 'django.db.backends.mysql'
+
+# commvault账户
+connection = pymysql.connect(host=db_host,
+                             user=db_user,
+                             password=db_password,
+                             db=db_name,
+                             charset='utf8mb4',
+                             cursorclass=pymysql.cursors.DictCursor)
+
+webaddr = ""
+port = ""
+usernm = ""
+passwd = ""
+
+SQLServerHost = ""
+SQLServerUser = ""
+SQLServerPasswd = ""
+SQLServerDataBase = ""
+try:
+    with connection.cursor() as cursor:
+        sql = "SELECT t.content FROM {db_name}.faconstor_vendor t;".format(**{"db_name": db_name})
+        cursor.execute(sql)
+        result = cursor.fetchone()
+        if result:
+            doc = etree.XML(result["content"])
+            # Commvault账户信息
+            webaddr = doc.xpath('//webaddr/text()')[0]
+            port = doc.xpath('//port/text()')[0]
+            usernm = doc.xpath('//username/text()')[0]
+            passwd = doc.xpath('//passwd/text()')[0]
+
+            # SQL Server账户信息
+            SQLServerHost = doc.xpath('//SQLServerHost/text()')[0]
+            SQLServerUser = doc.xpath('//SQLServerUser/text()')[0]
+            SQLServerPasswd = doc.xpath('//SQLServerPasswd/text()')[0]
+            SQLServerDataBase = doc.xpath('//SQLServerDataBase/text()')[0]
+finally:
+    connection.close()
+
+CVApi_credit = {
+    "webaddr": webaddr,
+    "port": port,
+    "username": usernm,
+    "passwd": passwd,
+    "token": "",
+    "lastlogin": 0
+}
+
+# SQLApi
+sql_credit = {
+    "host": SQLServerHost,
+    "user": SQLServerUser,
+    "password": SQLServerPasswd,
+    "database": SQLServerDataBase,
+}
 
 djcelery.setup_loader()
-# BROKER_URL = 'django://'
-# CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
-
-# BROKER_URL = 'redis://:tesunet@127.0.0.1:6379/0'
-BROKER_URL = 'redis://:tesunet@223.247.155.54:6379/0'
-# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/1'
-# BROKER_URL = 'amqp://root:password@localhost:5672/myvhost'
+BROKER_URL = 'redis://:tesunet@127.0.0.1:6379/0'
+# BROKER_URL = 'redis://:tesunet@223.247.155.54:6379/0'
 
 CELERY_TIMEZONE = 'Asia/Shanghai'  # 时区
 CELERY_ACCEPT_CONTENT = ['json']
@@ -101,14 +161,12 @@ WSGI_APPLICATION = 'TSDRM.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'tesudrm',
-        'USER': 'root',
-        'PASSWORD': 'password',
-        # 'HOST': '223.247.155.54',
-        #'HOST': '192.168.100.154',
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'ENGINE': db_engine,
+        'NAME': db_name,
+        'USER': db_user,
+        'PASSWORD': db_password,
+        'HOST': db_host,
+        'PORT': db_port,
     }
 }
 
