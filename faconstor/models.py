@@ -200,7 +200,7 @@ class Vendor(models.Model):
     """
     Commvault/SQL Server账户表
     """
-    content = models.TextField("内容", blank=True, default='')
+    content = models.TextField("内容", blank=True, null=True)
 
 
 class Target(models.Model):
