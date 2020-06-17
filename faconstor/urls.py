@@ -149,4 +149,20 @@ urlpatterns = [
     url(r'^origin_data/$', origin_data),
     url(r'^origin_save/$', origin_save),
     url(r'^origin_del/$', origin_del),
+    
+    # 备份内容
+    url(r'^backup_content/$', backup_content, {'funid': '77'}),
+    url(r'^get_backup_content/$', get_backup_content),
+
+    # 计划策略
+    url(r'^schedule_policy/$', schedule_policy, {'funid': '78'}),
+    url(r'^get_schedule_policy/$', get_schedule_policy),
+
+    # 存储策略
+    url(r'^storage_policy/$', storage_policy, {'funid': '79'}),
+    url(r'^get_storage_policy/$', get_storage_policy),
+
+    # 备份状态
+    url(r'^backup_status/$', backup_status, {'funid': '76'}),
+    url(r'^get_backup_status/$', get_backup_status),
 ]

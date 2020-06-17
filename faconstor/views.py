@@ -17,6 +17,7 @@ import sys
 import requests
 from operator import itemgetter
 import logging
+from collections import OrderedDict
 
 from django.utils.timezone import utc
 from django.utils.timezone import localtime
@@ -35,6 +36,7 @@ from django.utils.encoding import escape_uri_path
 from django.core.mail import send_mail
 from django.forms.models import model_to_dict
 from django.template.response import TemplateResponse
+from django.contrib.auth.decorators import login_required
 
 from faconstor.tasks import *
 from faconstor.models import *
@@ -7075,4 +7077,176 @@ def origin_del(request):
                 })
     else:
         return HttpResponseRedirect("/login")
+
+
+@login_required
+def get_backup_status(request):
+    whole_list = []
+    try:
+        # 仅统计源客户端(客户端管理)
+        all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+        tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+
+        dm = SQLApi.CustomFilter(settings.sql_credit)
+        whole_list = dm.custom_concrete_job_list(tmp_client_manage)
+        dm.close()
+    except Exception as e:
+        return JsonResponse({
+            "ret": 0,
+            "data": "获取备份状态信息失败。",
+        })
+    return JsonResponse({
+        "ret": 1,
+        "data": whole_list,
+    })
+
+
+@login_required
+def backup_status(request, funid):
+    return render(request, "backup_status.html", {
+        'username': request.user.userinfo.fullname,
+        "pagefuns": getpagefuns(funid, request),
+    })
+
+
+@login_required
+def get_backup_content(request):
+    whole_list = []
+    try:
+        all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+        tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+
+        dm = SQLApi.CustomFilter(settings.sql_credit)
+        ret, row_dict = dm.custom_all_backup_content(tmp_client_manage)
+        dm.close()
+        for content in ret:
+            content_dict = OrderedDict()
+            content_dict["clientName"] = content["clientname"]
+            content_dict["appName"] = content["idataagent"]
+            content_dict["backupsetName"] = content["backupset"]
+            # content_dict["subclientName"] = content["subclient"]
+            content_dict["content"] = content["content"]
+            whole_list.append(content_dict)
+    except Exception as e:
+        print(e)
+        return JsonResponse({
+            "ret": 0,
+            "data": "获取存储策略信息失败。",
+        })
+    else:
+        return JsonResponse({
+            "ret": 1,
+            "data": {
+                "whole_list": whole_list,
+                "row_dict": row_dict,
+            },
+        })
+
+
+@login_required
+def backup_content(request, funid):
+    return render(request, "backup_content.html", {
+        'username': request.user.userinfo.fullname,
+        "pagefuns": getpagefuns(funid, request),
+    })
+
+
+@login_required
+def get_storage_policy(request):
+    whole_list = []
+    try:
+        all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+        tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+
+        dm = SQLApi.CustomFilter(settings.sql_credit)
+        ret, row_dict = dm.custom_all_storages(tmp_client_manage)
+        dm.close()
+        for storage in ret:
+            storage_dict = OrderedDict()
+            storage_dict["clientName"] = storage["clientname"]
+            storage_dict["appName"] = storage["idataagent"]
+            storage_dict["backupsetName"] = storage["backupset"]
+            # storage_dict["subclientName"] = storage["subclient"]
+            storage_dict["storagePolicy"] = storage["storagepolicy"]
+            whole_list.append(storage_dict)
+
+    except Exception as e:
+        print(e)
+        return JsonResponse({
+            "ret": 0,
+            "data": "获取存储策略信息失败。",
+        })
+    else:
+        return JsonResponse({
+            "ret": 1,
+            "data": {
+                "whole_list": whole_list,
+                "row_dict": row_dict,
+            },
+        })
+
+
+@login_required
+def storage_policy(request, funid):
+    return render(request, "storage_policy.html", {
+        'username': request.user.userinfo.fullname,
+        "pagefuns": getpagefuns(funid, request),
+    })
+
+
+@login_required
+def schedule_policy(request, funid):
+    return render(request, "schedule_policy.html", {
+        'username': request.user.userinfo.fullname,
+        "pagefuns": getpagefuns(funid, request),
+    })
+
+
+@login_required
+def get_schedule_policy(request):
+    whole_list = []
+    try:
+        all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+        tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+
+        dm = SQLApi.CustomFilter(settings.sql_credit)
+        ret, row_dict = dm.custom_all_schedules(tmp_client_manage)
+        dm.close()
+        for schedule in ret:
+            schedule_dict = OrderedDict()
+            schedule_dict["clientName"] = schedule["clientName"]
+            schedule_dict["appName"] = schedule["idaagent"]
+            schedule_dict["backupsetName"] = schedule["backupset"]
+            # schedule_dict["subclientName"] = schedule["subclient"]
+            schedule_dict["scheduePolicy"] = schedule["scheduePolicy"]
+            schedule_dict["schedbackuptype"] = schedule["schedbackuptype"]
+            schedule_dict["schedpattern"] = schedule["schedpattern"]
+            schedule_dict["schedbackupday"] = schedule["schedbackupday"]
+
+            schedule_dict["option"] = {
+                "schedpattern": schedule["schedpattern"],
+                "schednextbackuptime": schedule["schednextbackuptime"],
+                "scheduleName": schedule["scheduleName"],
+                "schedinterval": schedule["schedinterval"],
+                "schedbackupday": schedule["schedbackupday"],
+                "schedbackuptype": schedule["schedbackuptype"],
+            }
+
+            whole_list.append(schedule_dict)
+
+    except Exception as e:
+        print(e)
+        return JsonResponse({
+            "ret": 0,
+            "data": "获取计划策略信息失败。",
+        })
+    else:
+        return JsonResponse({
+            "ret": 1,
+            "data": {
+                "whole_list": whole_list,
+                "row_dict": row_dict,
+            },
+        })
+
 

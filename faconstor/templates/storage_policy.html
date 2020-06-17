@@ -1,0 +1,40 @@
+{% extends "base1.html" %}
+{% block content %}
+    <style>
+        #loading {
+            height: 300px;
+            width: 100%;
+            background-image: url(../static/new/images/loading.gif);
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    </style>
+    <div style="height:10px"></div>
+    <div class="portlet-body">
+        <div class="portlet light portlet-fit  calendar">
+            <div class="portlet-body">
+                <div class="table-scrollable">
+                    <table class="table table-hover">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th> 客户端</th>
+                            <th> 类型</th>
+                            <th> 备份集</th>
+{#                            <th> 子客户端</th>#}
+                            <th> 存储策略</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                    <div id="loading" hidden></div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block script %}
+
+{% endblock %}

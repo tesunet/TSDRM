@@ -15,10 +15,14 @@ import djcelery
 import pymysql
 from lxml import etree
 
+LOGIN_URL = '/login/'
+
 # 项目数据库信息配置
 db_host = '127.0.0.1'
+# db_host = '192.168.100.154'
 db_name = "tesudrm"
 db_user = "root"
+# db_password = "password"
 db_password = "Passw0rD"
 db_port = '3306'
 db_engine = 'django.db.backends.mysql'
