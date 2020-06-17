@@ -6865,3 +6865,214 @@ def target_del(request):
         return HttpResponseRedirect("/login")
 
 
+def origin(request, funid):
+    if request.user.is_authenticated():
+        #############################################
+        # clientid, clientname, agent, instance, os #
+        #############################################
+        dm = SQLApi.CustomFilter(settings.sql_credit)
+
+        oracle_data = dm.get_instance_from_oracle()
+
+        # 获取包含oracle模块所有客户端
+        installed_client = dm.get_all_install_clients()
+        dm.close()
+        oracle_data_list = []
+        pre_od_name = ""
+        for od in oracle_data:
+            if "Oracle" in od["agent"]:
+                if od["clientname"] == pre_od_name:
+                    continue
+                client_id = od["clientid"]
+                client_os = ""
+                for ic in installed_client:
+                    if client_id == ic["client_id"]:
+                        client_os = ic["os"]
+
+                oracle_data_list.append({
+                    "clientid": od["clientid"],
+                    "clientname": od["clientname"],
+                    "agent": od["agent"],
+                    "instance": od["instance"],
+                    "os": client_os
+                })
+                # 去重
+                pre_od_name = od["clientname"]
+
+        # 所有关联终端
+        all_target = Target.objects.exclude(state="9")
+        return render(request, 'origin.html',
+                      {'username': request.user.userinfo.fullname,
+                       "oracle_data": json.dumps(oracle_data_list),
+                       "all_target": all_target,
+                       "pagefuns": getpagefuns(funid, request=request)})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def origin_data(request):
+    if request.user.is_authenticated():
+        all_origin = Origin.objects.exclude(state="9").select_related("target")
+        all_origin_list = []
+        for origin in all_origin:
+            origin_info = json.loads(origin.info)
+            all_origin_list.append({
+                "id": origin.id,
+                "client_id": origin.client_id,
+                "client_name": origin.client_name,
+                "os": origin.os,
+                "agent": origin_info["agent"],
+                "instance": origin_info["instance"],
+                "target_client": origin.target.id,
+                "target_client_name": origin.target.client_name,
+                "copy_priority": origin.copy_priority,
+                "db_open": origin.db_open,
+                "data_path": origin.data_path,
+                "log_restore": origin.log_restore,
+            })
+
+        return JsonResponse({"data": all_origin_list})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def origin_save(request):
+    if request.user.is_authenticated():
+        origin_id = request.POST.get("origin_id", "")
+        client_id = request.POST.get("client_id", "")
+        client_name = request.POST.get("client_name", "").strip()
+        agent = request.POST.get("agent", "").strip()
+        instance = request.POST.get("instance", "").strip()
+        client_os = request.POST.get("os", "")
+        target_client = request.POST.get("target_client", "")
+
+        copy_priority = request.POST.get("copy_priority", "")
+        db_open = request.POST.get("db_open", "")
+        data_path = request.POST.get("data_path", "")
+        log_restore = request.POST.get("log_restore", "")
+
+        ret = 0
+        info = ""
+        try:
+            copy_priority = int(copy_priority)
+            db_open = int(db_open)
+            origin_id = int(origin_id)
+        except:
+            ret = 0
+            info = "网络异常"
+        else:
+            try:
+                client_id = int(client_id)
+            except:
+                ret = 0
+                info = "源端未选择。"
+            else:
+                try:
+                    target_client = int(target_client)
+                except:
+                    ret = 0
+                    info = "未关联终端"
+                else:
+                    try:
+                        to_target = Target.objects.get(id=target_client)
+                    except Target.DoesNotExist as e:
+                        ret = 0
+                        info = "该终端不存在。"
+                    else:
+                        target_id = to_target.id
+                        if origin_id == 0:
+                            try:
+                                cur_origin = Origin()
+                                cur_origin.client_id = client_id
+                                cur_origin.client_name = client_name
+                                cur_origin.os = client_os
+                                cur_origin.info = json.dumps({
+                                    "agent": agent,
+                                    "instance": instance
+                                })
+                                cur_origin.target_id = target_id
+                                cur_origin.copy_priority = copy_priority
+                                cur_origin.db_open = db_open
+                                cur_origin.data_path = data_path
+                                try:
+                                    log_restore = int(log_restore)
+                                except:
+                                    pass
+                                else:
+                                    cur_origin.log_restore = log_restore
+                                cur_origin.save()
+                            except Exception as e:
+                                print(e)
+                                ret = 0
+                                info = "数据保存失败。"
+                            else:
+                                ret = 1
+                                info = "新增成功。"
+                        else:
+                            try:
+                                cur_origin = Origin.objects.get(id=origin_id)
+                            except Origin.DoesNotExist as e:
+                                ret = 0
+                                info = "源端不存在，请联系管理员。"
+                            else:
+                                try:
+                                    cur_origin.client_id = client_id
+                                    cur_origin.client_name = client_name
+                                    cur_origin.os = client_os
+                                    cur_origin.info = json.dumps({
+                                        "agent": agent,
+                                        "instance": instance
+                                    })
+                                    cur_origin.copy_priority = copy_priority
+                                    cur_origin.db_open = db_open
+                                    cur_origin.data_path = data_path
+                                    cur_origin.target_id = target_id
+                                    try:
+                                        log_restore = int(log_restore)
+                                    except:
+                                        pass
+                                    else:
+                                        cur_origin.log_restore = log_restore
+                                    cur_origin.save()
+                                except:
+                                    ret = 0
+                                    info = "数据修改失败。"
+                                else:
+                                    ret = 1
+                                    info = "修改成功"
+
+        return JsonResponse({
+            "ret": ret,
+            "info": info
+        })
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def origin_del(request):
+    if request.user.is_authenticated():
+        origin_id = request.POST.get("origin_id", "")
+        try:
+            cur_origin = Origin.objects.get(id=int(origin_id))
+        except:
+            return JsonResponse({
+                "ret": 0,
+                "info": "当前网络异常"
+            })
+        else:
+            try:
+                cur_origin.state = "9"
+                cur_origin.save()
+            except:
+                return JsonResponse({
+                    "ret": 0,
+                    "info": "服务器网络异常。"
+                })
+            else:
+                return JsonResponse({
+                    "ret": 1,
+                    "info": "删除成功。"
+                })
+    else:
+        return HttpResponseRedirect("/login")
+

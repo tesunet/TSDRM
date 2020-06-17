@@ -188,3 +188,10 @@ $('#loginbtn').click(function(){
      else
         alert("请输入正确的邮箱地址。");
  })
+// 回车登录
+ $('body').keydown(function(event){
+	if (event.keyCode == "13"){
+		$('#loginbtn').click();
+		$('#loginbtn').addClass('active')
+	}
+});

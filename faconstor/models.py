@@ -213,3 +213,28 @@ class Target(models.Model):
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     os = models.CharField("系统", blank=True, null=True, max_length=50)
 
+
+class Origin(models.Model):
+    """
+    源客户端
+    """
+    target = models.ForeignKey(Target, blank=True, null=True, verbose_name="默认关联终端")
+    client_id = models.IntegerField("源端client_id", blank=True, null=True)
+    client_name = models.CharField("源端client_name", blank=True, null=True, max_length=128)
+    info = models.TextField("客户端相关信息", blank=True, null=True)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
+    os = models.CharField("系统", blank=True, null=True, max_length=50)
+    copy_priority = models.IntegerField("拷贝优先级：1：主拷贝；2：辅助拷贝", null=True, default=1, choices=(
+        (1, "主拷贝"),
+        (2, "辅助拷贝")
+    ))
+    data_path = models.CharField("数据文件重定向路径", null=True, default="", max_length=512)
+    db_open = models.IntegerField("是否恢复完成后打开数据库：1：默认打开数据库；2：不打开数据库", null=True, default=1, choices=(
+        (1, "是"),
+        (2, "否")
+    ))
+    log_restore = models.IntegerField("是否回滚日志", null=True, default=1, choices=(
+        (1, "是"),
+        (2, "否")
+    ))
+    

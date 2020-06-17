@@ -143,4 +143,10 @@ urlpatterns = [
     url(r'^target_data/$', target_data),
     url(r'^target_save/$', target_save),
     url(r'^target_del/$', target_del),
+    
+    # 客户端管理
+    url(r'^origin/$', origin, {'funid': '74'}),
+    url(r'^origin_data/$', origin_data),
+    url(r'^origin_save/$', origin_save),
+    url(r'^origin_del/$', origin_del),
 ]
