@@ -1,0 +1,122 @@
+{% extends "base1.html" %}
+
+{% block title %}服务器信息配置{% endblock %}
+
+{% block content %}
+
+    <div style="height:10px"></div>
+
+    <div class="panel-body">
+        <form class="bs-example form-horizontal activate-form" id="formactivate">{% csrf_token %}
+            <div class="form-body">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="col-md-2 control-label" for="form_control_1"
+                           style="vertical-align: inherit;font-weight:bold;">CommVault账户信息
+                    </label>
+                    <div class="col-md-10">
+                        <hr>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-2 control-label">服务器地址</label>
+                    <div class="col-md-10">
+                        <input hidden id="id" type="text" name="id" value="{{ id }}">
+                        <input id="webaddr" autocomplete="off" type="text" name="webaddr" class="form-control"
+                               placeholder="服务器地址" value="{{ webaddr }}">
+                        <div class="form-control-focus"></div>
+
+                    </div>
+                </div>
+                <div class="form-group ">
+                    <label class="col-md-2 control-label">端口号</label>
+                    <div class="col-md-10">
+                        <input id="port" autocomplete="off" type="text" name="port" class="form-control"
+                               placeholder="端口号" value="{{ port }}">
+                        <div class="form-control-focus"></div>
+
+                    </div>
+                </div>
+                <div class="form-group ">
+                    <label class="col-md-2 control-label">用户名</label>
+                    <div class="col-md-10">
+                        <input id="usernm" autocomplete="off" type="text" name="usernm" class="form-control"
+                               placeholder="用户名" value="{{ usernm }}">
+                        <div class="form-control-focus"></div>
+
+                    </div>
+                </div>
+                <div class="form-group ">
+                    <label class="col-md-2 control-label">密码</label>
+                    <div class="col-md-10">
+                        <input id="passwd" autocomplete="off" type="password" name="passwd" class="form-control"
+                               placeholder="密码" value="{{ passwd }}">
+                        <div class="form-control-focus"></div>
+
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="col-md-2 control-label" for="form_control_1"
+                           style="vertical-align: inherit;font-weight:bold;">SQLServer数据库信息
+                    </label>
+                    <div class="col-md-10">
+                        <hr>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-md-2 control-label">服务器地址</label>
+                    <div class="col-md-10">
+                        <input hidden id="id" type="text" name="id" value="{{ id }}">
+                        <input id="SQLServerHost" autocomplete="off" type="text" name="SQLServerHost" class="form-control"
+                               placeholder="服务器地址" value="{{ SQLServerHost }}">
+                        <div class="form-control-focus"></div>
+
+                    </div>
+                </div>
+                <div class="form-group ">
+                    <label class="col-md-2 control-label">用户名</label>
+                    <div class="col-md-10">
+                        <input id="SQLServerUser" autocomplete="off" type="text" name="SQLServerUser" class="form-control"
+                               placeholder="用户名" value="{{ SQLServerUser }}">
+                        <div class="form-control-focus"></div>
+
+                    </div>
+                </div>
+                <div class="form-group ">
+                    <label class="col-md-2 control-label">密码</label>
+                    <div class="col-md-10">
+                        <input id="SQLServerPasswd" autocomplete="off" type="password" name="SQLServerPasswd" class="form-control"
+                               placeholder="密码" value="{{ SQLServerPasswd }}">
+                        <div class="form-control-focus"></div>
+
+                    </div>
+                </div>
+                <div class="form-group ">
+                    <label class="col-md-2 control-label">数据库名称</label>
+                    <div class="col-md-10">
+                        <input id="SQLServerDataBase" autocomplete="off" type="text" name="SQLServerDataBase" class="form-control"
+                               placeholder="数据库名称" value="{{ SQLServerDataBase }}">
+                        <div class="form-control-focus"></div>
+
+                    </div>
+                </div>
+
+            </div>
+            <div class="form-actions noborder" style="text-align:center">
+                <button id="activatebtn" type="button" class="btn green"> 保存</button>
+            </div>
+        </form>
+    </div>
+
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        $.ajaxSetup({
+            data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
+        });
+
+    </script>
+
+
+{% endblock %}
