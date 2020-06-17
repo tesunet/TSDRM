@@ -133,4 +133,8 @@ urlpatterns = [
     url(r'^contact/$', contact, {'funid': '67'}),
     url(r'^get_contact_tree/$', get_contact_tree),
     url(r'^get_contact_info/$', get_contact_info),
+    
+    # 服务器信息配置
+    url(r'^serverconfig/$', serverconfig, {'funid': '72'}),
+    url(r'^serverconfigsave/$', serverconfigsave),
 ]

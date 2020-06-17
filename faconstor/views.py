@@ -6603,3 +6603,90 @@ def hosts_manage_del(request):
                 })
     else:
         return HttpResponseRedirect("/login")
+
+
+def serverconfig(request, funid):
+    if request.user.is_authenticated():
+        cvvendor = Vendor.objects.first()
+        id = 0
+        webaddr = ""
+        port = ""
+        usernm = ""
+        passwd = ""
+
+        SQLServerHost = ""
+        SQLServerUser = ""
+        SQLServerPasswd = ""
+        SQLServerDataBase = ""
+        if cvvendor:
+            doc = etree.XML(cvvendor.content)
+            id = cvvendor.id
+            
+            # Commvault账户信息
+            webaddr = doc.xpath('//webaddr/text()')[0]
+            port = doc.xpath('//port/text()')[0]
+            usernm = doc.xpath('//username/text()')[0]
+            passwd = doc.xpath('//passwd/text()')[0]
+
+            # SQL Server账户信息
+            SQLServerHost = doc.xpath('//SQLServerHost/text()')[0]
+            SQLServerUser = doc.xpath('//SQLServerUser/text()')[0]
+            SQLServerPasswd = doc.xpath('//SQLServerPasswd/text()')[0]
+            SQLServerDataBase = doc.xpath('//SQLServerDataBase/text()')[0]
+
+        return render(request, 'serverconfig.html',
+                      {'username': request.user.userinfo.fullname, "id": id,
+                       "webaddr": webaddr, "port": port, "usernm": usernm, "passwd": passwd,
+                       "SQLServerHost": SQLServerHost, "SQLServerUser": SQLServerUser,
+                       "SQLServerPasswd": SQLServerPasswd, "SQLServerDataBase": SQLServerDataBase,
+                       "pagefuns": getpagefuns(funid, request=request)})
+    else:
+        return HttpResponseRedirect("/login")
+
+
+def serverconfigsave(request):
+    if request.method == 'POST':
+        result = ""
+        id = request.POST.get('id', '')
+        webaddr = request.POST.get('webaddr', '')
+        port = request.POST.get('port', '')
+        usernm = request.POST.get('usernm', '')
+        passwd = request.POST.get('passwd', '')
+
+        SQLServerHost = request.POST.get('SQLServerHost', '')
+        SQLServerUser = request.POST.get('SQLServerUser', '')
+        SQLServerPasswd = request.POST.get('SQLServerPasswd', '')
+        SQLServerDataBase = request.POST.get('SQLServerDataBase', '')
+
+        cvvendor_content = """<?xml version="1.0" ?>
+            <vendor>
+                <webaddr>{webaddr}</webaddr>
+                <port>{port}</port>
+                <username>{username}</username>
+                <passwd>{passwd}</passwd>
+                <SQLServerHost>{SQLServerHost}</SQLServerHost>
+                <SQLServerUser>{SQLServerUser}</SQLServerUser>
+                <SQLServerPasswd>{SQLServerPasswd}</SQLServerPasswd>
+                <SQLServerDataBase>{SQLServerDataBase}</SQLServerDataBase>
+            </vendor>""".format(**{
+            "webaddr": webaddr,
+            "port": port,
+            "username": usernm,
+            "passwd": passwd,
+            "SQLServerHost": SQLServerHost,
+            "SQLServerUser": SQLServerUser,
+            "SQLServerPasswd": SQLServerPasswd,
+            "SQLServerDataBase": SQLServerDataBase
+        })
+
+        cvvendor = Vendor.objects.first()
+        if cvvendor:
+            cvvendor.content = cvvendor_content
+            cvvendor.save()
+            result = "保存成功。"
+        else:
+            cvvendor = Vendor()
+            cvvendor.content = cvvendor_content
+            cvvendor.save()
+            result = "保存成功。"
+        return HttpResponse(result)

@@ -194,3 +194,10 @@ class KnowledgeFileDownload(models.Model):
     remark = models.CharField("备注", blank=True, null=True, max_length=500)
     file_name = models.CharField("文件名称", blank=True, null=True, max_length=128)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
+
+
+class Vendor(models.Model):
+    """
+    Commvault/SQL Server账户表
+    """
+    content = models.TextField("内容", blank=True, default='')
