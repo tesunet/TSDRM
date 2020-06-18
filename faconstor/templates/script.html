@@ -18,13 +18,6 @@
                         新增
                         <i class="fa fa-plus"></i>
                     </button>
-{#                    <button id="import" type="button" data-toggle="modal" data-target="#static1"#}
-{#                            class="btn  green"> 导入#}
-{#                        <i class="fa fa-mail-reply"></i>#}
-{#                    </button>#}
-{#                    <a target="_blank" href="/scriptexport" class="btn sbold green"> 导出#}
-{#                        <i class="fa fa-mail-forward"></i>#}
-{#                    </a>#}
                 </div>
             </div>
         </div>
@@ -35,17 +28,9 @@
         <thead>
         <tr>
             <th style="width:40px;"> 序号</th>
-            <th> 脚本编号</th>
-            <th> 脚本名称</th>
-            <th> 主机IP</th>
-            <th> 连接类型</th>
-{#            <th> 脚本文件名</th>#}
-            <th> 用户名</th>
-            <th> 密码</th>
-{#            <th> 脚本文件路径</th>#}
-            <th> SUCCESSTEXT</th>
-            <th> 日志地址</th>
-            <th> 主机id</th>
+            <th> 接口编号</th>
+            <th> 接口名称</th>
+            <th> 接口类型</th>
             <th style="width:50px;"> 操作</th>
         </tr>
         </thead>
@@ -59,7 +44,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                    <h4 class="modal-title">脚本管理</h4>
+                    <h4 class="modal-title">接口管理</h4>
                     <input hidden id="id" type="text" name="id">
                 </div>
                 <div class="panel-body">
@@ -69,7 +54,7 @@
                         <div class="form-body">
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本编号</label>
+                                        style="color:red; ">*</span>接口编号</label>
                                 <div class="col-md-10">
                                     <input id="code" type="text" name="code" class="form-control "
                                            placeholder="">
@@ -79,7 +64,7 @@
                             </div>
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本名称</label>
+                                        style="color:red; ">*</span>接口名称</label>
                                 <div class="col-md-10">
                                     <input id="name" type="text" name="name" class="form-control "
                                            placeholder="">
@@ -88,6 +73,39 @@
                                 </div>
                             </div>
                             <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口类型</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="interface_type" name="interface_type">
+                                        <option value="commvault">commvault</option>
+                                        <option value="脚本">脚本</option>
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="origin_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="origin" name="origin">
+                                        {% for origin in all_origins %}
+                                        <option value="{{ origin.id }}">{{ origin.client_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="commv_interface_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>commvault接口</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="commv_interface" name="commv_interface">
+                                        {% for file in commv_file_list %}
+                                        <option value="{{ file }}">{{ file }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group"  id="host_id_div" hidden>
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; ">*</span>选择主机</label>
                                 <div class="col-md-10">
@@ -101,7 +119,7 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group" id="script_text_div" hidden>
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; ">*</span>脚本内容</label>
                                 <div class="col-md-10">
@@ -110,32 +128,8 @@
 
                                 </div>
                             </div>
-                            <!--
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本文件</label>
-                                <div class="col-md-10">
-                                    <input id="filename" type="text" name="filename" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
 
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本路径</label>
-                                <div class="col-md-10">
-                                    <input id="scriptpath" type="text" name="scriptpath" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            -->
-
-
-                            <div class="form-group">
+                            <div class="form-group" id="success_text_div"  hidden>
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>SUCCESSTEXT</label>
                                 <div class="col-md-10">
@@ -145,7 +139,7 @@
 
                                 </div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" id="log_address_div"  hidden>
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>日志地址</label>
                                 <div class="col-md-10">

@@ -95,6 +95,10 @@ class Script(models.Model):
     succeedtext = models.CharField("成功代码", blank=True, null=True, max_length=500)
     log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
     script_text = models.TextField("脚本内容", blank=True, default="")
+    # commvault接口
+    interface_type = models.CharField("日志地址", blank=True, null=True, max_length=32)
+    origin = models.ForeignKey("Origin", blank=True, null=True, verbose_name='源端客户端')
+    commv_interface = models.CharField("commvault接口脚本", blank=True, null=True, max_length=64)
 
 
 class Walkthrough(models.Model):

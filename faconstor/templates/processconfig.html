@@ -112,7 +112,7 @@
                                     </div>
                                 </div>
                                 <div class="form-group ">
-                                    <label class="col-md-3 control-label">脚本</label>
+                                    <label class="col-md-3 control-label">接口</label>
                                     <div class="col-md-9">
                                         <div id="context-menu2">
                                             <ul class="dropdown-menu" role="menu">
@@ -172,61 +172,34 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                    <h4 class="modal-title">脚本管理</h4>
+                    <h4 class="modal-title">接口管理</h4>
                     <input hidden id="scriptid" type="text" name="scriptid">
                 </div>
                 <div class="panel-body">
                     <div class="bs-example form-horizontal activate-form">
                         <div class="form-body">
                             <div class="form-group ">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本编号</label>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口编号</label>
                                 <div class="col-md-10">
                                     <div class="input-group">
                                         <div class="input-group-control">
-                                            <input id="scriptcode" type="text" name="scriptcode"
-                                                   class="form-control " placeholder="">
+                                            <input id="scriptcode" type="text" name="scriptcode" class="form-control "
+                                                   placeholder="">
                                             <div class="form-control-focus"></div>
                                         </div>
                                         <span class="input-group-btn btn-right">
-                                                    <button class="btn green-haze dropdown-toggle" tabindex="-1"
-                                                            data-toggle="modal" data-target="#static1">选择</button>
-                                                </span>
+                                            <button class="btn green-haze dropdown-toggle" tabindex="-1"
+                                                    data-toggle="modal" data-target="#static1">选择</button>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本名称</label>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口名称</label>
                                 <div class="col-md-10">
                                     <input id="script_name" type="text" name="script_name" class="form-control "
                                            placeholder="">
                                     <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>选择主机</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="host_id" name="host_id">
-                                        {% for host in all_hosts_manage %}
-                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-
-                            <div class="form-group ">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本内容</label>
-                                <div class="col-md-10">
-                                    <textarea name="script_text" id="script_text" class="form-control"
-                                              rows="8"></textarea>
-                                    <div class="form-control-focus"></div>
-
                                 </div>
                             </div>
                             <div class="form-group ">
@@ -238,52 +211,77 @@
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
-                            <!--
-                            <div class="form-group ">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本名</label>
-                                <div class="col-md-10">
-                                    <input id="scriptfilename" type="text" name="scriptfilename"
-                                           class="form-control" placeholder="">
-                                    <div class="form-control-focus"></div>
 
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口类型</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="interface_type" name="interface_type">
+                                        <option value="commvault">commvault</option>
+                                        <option value="脚本">脚本</option>
+                                    </select>
+                                    <div class="form-control-focus"></div>
                                 </div>
                             </div>
-
-                            <div class="form-group ">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>脚本路径</label>
+                            <div class="form-group" id="host_id_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择主机</label>
                                 <div class="col-md-10">
-                                    <input id="scriptscriptpath" type="text" name="scriptscriptpath"
-                                           class="form-control" placeholder="">
+                                    <select class="form-control" id="host_id" name="host_id" hidden>
+                                        {% for host in all_hosts_manage %}
+                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
+                                        {% endfor %}
+                                    </select>
                                     <div class="form-control-focus"></div>
-
                                 </div>
                             </div>
-                            -->
-
-                            <div class="form-group ">
+                            <div class="form-group" id="origin_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="origin" name="origin">
+                                        {% for origin in all_origins %}
+                                            <option value="{{ origin.id }}">{{ origin.client_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="commv_interface_div" hidden>
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>commvault接口</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="commv_interface" name="commv_interface">
+                                        {% for file in commv_file_list %}
+                                            <option value="{{ file }}">{{ file }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="script_text_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>脚本内容</label>
+                                <div class="col-md-10">
+                                    <textarea name="script_text" id="script_text" class="form-control"
+                                              rows="8"></textarea>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="success_text_div" hidden>
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>SUCCESSTEXT</label>
                                 <div class="col-md-10">
-                                    <input id="success_text" type="text" name="success_text"
-                                           class="form-control" placeholder="">
+                                    <input id="success_text" type="text" name="success_text" class="form-control"
+                                           placeholder="">
                                     <div class="form-control-focus"></div>
-
                                 </div>
                             </div>
-                            <div class="form-group ">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; "></span>日志地址</label>
+                            <div class="form-group" id="log_address_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>日志地址</label>
                                 <div class="col-md-10">
-                                    <input id="log_address" type="text" name="log_address"
-                                           class="form-control" placeholder="">
+                                    <input id="log_address" type="text" name="log_address" class="form-control"
+                                           placeholder="">
                                     <div class="form-control-focus"></div>
-
                                 </div>
                             </div>
                         </div>
-
                         <div class="form-actions ">
                             <div class="modal-footer">
                                 <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
@@ -293,14 +291,12 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
-
             </div>
         </div>
     </div>
     <div id="static1" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog  modal-lg">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
@@ -310,17 +306,11 @@
                            id="sample_1">
                         <thead>
                         <tr>
-                            <th> 序号</th>
-                            <th> 脚本编号</th>
-                            <th> 脚本名称</th>
-                            <th> 主机IP</th>
-                            <th> 连接类型</th>
-                            {#                            <th> 脚本文件名</th>#}
-                            <th> 用户名</th>
-                            <th> 密码</th>
-                            {#                            <th> 脚本文件路径</th>#}
-                            <th> 主机id</th>
-                            <th> 操作</th>
+                            <th style="width:40px;"> 序号</th>
+                            <th> 接口编号</th>
+                            <th> 接口名称</th>
+                            <th> 接口类型</th>
+                            <th style="width:50px;"> 操作</th>
                         </tr>
                         </thead>
                         <tbody>
