@@ -200,11 +200,16 @@ class KnowledgeFileDownload(models.Model):
     state = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
-class Vendor(models.Model):
+class UtilsManage(models.Model):
     """
-    Commvault/SQL Server账户表
+    工具管理表
+        content: Commvault/SQL Server账户信息
     """
-    content = models.TextField("内容", blank=True, null=True)
+    util_type = models.CharField("工具类型", default='', null=True, max_length=128)
+    code = models.CharField("工具编号", default='', null=True, max_length=128)
+    name = models.CharField("工具编号", default='', null=True, max_length=128)
+    content = models.TextField("内容", default='', null=True)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
 class Target(models.Model):

@@ -18,6 +18,7 @@ import requests
 from operator import itemgetter
 import logging
 from collections import OrderedDict
+import base64
 
 from django.utils.timezone import utc
 from django.utils.timezone import localtime
@@ -6761,92 +6762,178 @@ def hosts_manage_del(request):
         return HttpResponseRedirect("/login")
 
 
-def serverconfig(request, funid):
-    if request.user.is_authenticated():
-        cvvendor = Vendor.objects.first()
-        id = 0
-        webaddr = ""
-        port = ""
-        usernm = ""
-        passwd = ""
-
-        SQLServerHost = ""
-        SQLServerUser = ""
-        SQLServerPasswd = ""
-        SQLServerDataBase = ""
-        if cvvendor:
-            doc = etree.XML(cvvendor.content)
-            id = cvvendor.id
-            
-            # Commvault账户信息
-            webaddr = doc.xpath('//webaddr/text()')[0]
-            port = doc.xpath('//port/text()')[0]
-            usernm = doc.xpath('//username/text()')[0]
-            passwd = doc.xpath('//passwd/text()')[0]
-
-            # SQL Server账户信息
-            SQLServerHost = doc.xpath('//SQLServerHost/text()')[0]
-            SQLServerUser = doc.xpath('//SQLServerUser/text()')[0]
-            SQLServerPasswd = doc.xpath('//SQLServerPasswd/text()')[0]
-            SQLServerDataBase = doc.xpath('//SQLServerDataBase/text()')[0]
-
-        return render(request, 'serverconfig.html',
-                      {'username': request.user.userinfo.fullname, "id": id,
-                       "webaddr": webaddr, "port": port, "usernm": usernm, "passwd": passwd,
-                       "SQLServerHost": SQLServerHost, "SQLServerUser": SQLServerUser,
-                       "SQLServerPasswd": SQLServerPasswd, "SQLServerDataBase": SQLServerDataBase,
-                       "pagefuns": getpagefuns(funid, request=request)})
-    else:
-        return HttpResponseRedirect("/login")
+@login_required
+def util_manage(request, funid):
+    return render(request, 'util_manage.html',
+                    {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request)})
 
 
-def serverconfigsave(request):
-    if request.method == 'POST':
-        result = ""
-        id = request.POST.get('id', '')
-        webaddr = request.POST.get('webaddr', '')
-        port = request.POST.get('port', '')
-        usernm = request.POST.get('usernm', '')
-        passwd = request.POST.get('passwd', '')
+@login_required
+def util_manage_data(request):
+    """
+    工具管理信息
+    """
+    util_manage_list = []
+    
+    util_manages = UtilsManage.objects.exclude(state='9')
+    
+    for um in util_manages:
+        commvault_credit = {
+                'webaddr': '',
+                'port': '',
+                'usernm': '',
+                'passwd': '',
+            }
+        sqlserver_credit = {
+                'SQLServerHost': '',
+                'SQLServerUser': '',
+                'SQLServerPasswd': '',
+                'SQLServerDataBase': '',
+            }
+        if um.util_type.upper() == 'COMMVAULT':
+            try:
+                doc = etree.XML(um.content)
+                
+                # Commvault账户信息
+                commvault_credit['webaddr'] = doc.xpath('//webaddr/text()')[0]
+                commvault_credit['port'] = doc.xpath('//port/text()')[0]
+                commvault_credit['usernm'] = doc.xpath('//username/text()')[0]
+                commvault_credit['passwd'] = base64.b64decode(doc.xpath('//passwd/text()')[0]).decode()
 
-        SQLServerHost = request.POST.get('SQLServerHost', '')
-        SQLServerUser = request.POST.get('SQLServerUser', '')
-        SQLServerPasswd = request.POST.get('SQLServerPasswd', '')
-        SQLServerDataBase = request.POST.get('SQLServerDataBase', '')
+                # SQL Server账户信息
+                sqlserver_credit['SQLServerHost'] = doc.xpath('//SQLServerHost/text()')[0]
+                sqlserver_credit['SQLServerUser'] = doc.xpath('//SQLServerUser/text()')[0]
+                sqlserver_credit['SQLServerPasswd'] = base64.b64decode(doc.xpath('//SQLServerPasswd/text()')[0]).decode()
+                sqlserver_credit['SQLServerDataBase'] = doc.xpath('//SQLServerDataBase/text()')[0]
 
-        cvvendor_content = """<?xml version="1.0" ?>
-            <vendor>
-                <webaddr>{webaddr}</webaddr>
-                <port>{port}</port>
-                <username>{username}</username>
-                <passwd>{passwd}</passwd>
-                <SQLServerHost>{SQLServerHost}</SQLServerHost>
-                <SQLServerUser>{SQLServerUser}</SQLServerUser>
-                <SQLServerPasswd>{SQLServerPasswd}</SQLServerPasswd>
-                <SQLServerDataBase>{SQLServerDataBase}</SQLServerDataBase>
-            </vendor>""".format(**{
-            "webaddr": webaddr,
-            "port": port,
-            "username": usernm,
-            "passwd": passwd,
-            "SQLServerHost": SQLServerHost,
-            "SQLServerUser": SQLServerUser,
-            "SQLServerPasswd": SQLServerPasswd,
-            "SQLServerDataBase": SQLServerDataBase
+            except Exception as e:
+                print(e)
+
+        util_manage_list.append({
+            'id': um.id,
+            'code': um.code,
+            'name': um.name,
+            'util_type': um.util_type,
+            'commvault_credit': commvault_credit,
+            'sqlserver_credit': sqlserver_credit
         })
 
-        cvvendor = Vendor.objects.first()
-        if cvvendor:
-            cvvendor.content = cvvendor_content
-            cvvendor.save()
-            result = "保存成功。"
-        else:
-            cvvendor = Vendor()
-            cvvendor.content = cvvendor_content
-            cvvendor.save()
-            result = "保存成功。"
-        return HttpResponse(result)
+    return JsonResponse({"data": util_manage_list})
 
+
+@login_required
+def util_manage_save(request):
+    status = 1
+    info = '保存成功。'
+    
+    util_manage_id = request.POST.get('util_manage_id', '')
+    
+    util_type = request.POST.get('util_type', '')
+    code = request.POST.get('code', '')
+    name = request.POST.get('name', '')
+    
+    webaddr = request.POST.get('webaddr', '')
+    port = request.POST.get('port', '')
+    usernm = request.POST.get('usernm', '')
+    passwd = request.POST.get('passwd', '')
+
+    SQLServerHost = request.POST.get('SQLServerHost', '')
+    SQLServerUser = request.POST.get('SQLServerUser', '')
+    SQLServerPasswd = request.POST.get('SQLServerPasswd', '')
+    SQLServerDataBase = request.POST.get('SQLServerDataBase', '')
+
+    credit = ''
+
+    try:
+        util_manage_id = int(util_manage_id)
+    except:
+        status = 0
+        info = '网络异常。'
+    else:
+        if not util_type.strip():
+            status = 0
+            info = '工具类型未选择。'
+        elif not code.strip():
+            status = 0
+            info = '工具编号未填写。'
+        elif not name.strip():
+            status = 0
+            info = '工具名称未填写。'
+        elif UtilsManage.objects.exclude(state='9').exclude(id=util_manage_id).filter(code=code).exists():
+            status = 0
+            info = '工具编号已存在。'
+        else:
+            if util_type.strip().upper() == 'COMMVAULT':
+                credit = """<?xml version="1.0" ?>
+                    <vendor>
+                        <webaddr>{webaddr}</webaddr>
+                        <port>{port}</port>
+                        <username>{username}</username>
+                        <passwd>{passwd}</passwd>
+                        <SQLServerHost>{SQLServerHost}</SQLServerHost>
+                        <SQLServerUser>{SQLServerUser}</SQLServerUser>
+                        <SQLServerPasswd>{SQLServerPasswd}</SQLServerPasswd>
+                        <SQLServerDataBase>{SQLServerDataBase}</SQLServerDataBase>
+                    </vendor>""".format(**{
+                    "webaddr": webaddr,
+                    "port": port,
+                    "username": usernm,
+                    "passwd": base64.b64encode(passwd.encode()).decode(),
+                    "SQLServerHost": SQLServerHost,
+                    "SQLServerUser": SQLServerUser,
+                    "SQLServerPasswd": base64.b64encode(SQLServerPasswd.encode()).decode(),
+                    "SQLServerDataBase": SQLServerDataBase
+                })
+            try:
+                cur_util_manage = UtilsManage.objects.filter(id=util_manage_id)
+                if cur_util_manage.exists():
+                    cur_util_manage.update(**{
+                        'util_type': util_type,
+                        'code': code,
+                        'name': name,
+                        'content': credit
+                    })
+                else:
+                    cur_util_manage.create(**{
+                        'util_type': util_type,
+                        'code': code,
+                        'name': name,
+                        'content': credit
+                    })
+            except Exception as e:
+                print(e)
+                status = 0
+                info = '保存失败。'
+
+    return JsonResponse({
+        'status': status,
+        'info': info,
+    })
+
+
+@login_required
+def util_manage_del(request):
+    status = 1
+    info = '删除成功。'
+    util_manage_id = request.POST.get('util_manage_id', '')
+
+    try:
+        util_manage_id = int(util_manage_id)
+    except:
+        status = 0
+        info = '网络异常。'
+    else:
+        util_manage = UtilsManage.objects.filter(id=util_manage_id)
+        if util_manage.exists():
+            util_manage.update(**{'state': '9'})
+        else:
+            status = 0
+            info = '该工具不存在，删除失败。'
+    return JsonResponse({
+        'status': status,
+        'info': info
+    })
+    
 
 # 恢复资源
 def target(request, funid):

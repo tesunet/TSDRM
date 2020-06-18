@@ -134,9 +134,11 @@ urlpatterns = [
     url(r'^get_contact_tree/$', get_contact_tree),
     url(r'^get_contact_info/$', get_contact_info),
     
-    # 服务器信息配置
-    url(r'^serverconfig/$', serverconfig, {'funid': '72'}),
-    url(r'^serverconfigsave/$', serverconfigsave),
+    # 工具管理
+    url(r'^util_manage/$', util_manage, {'funid': '72'}),
+    url(r'^util_manage_save/$', util_manage_save),
+    url(r'^util_manage_data/$', util_manage_data),
+    url(r'^util_manage_del/$', util_manage_del),
 
     # 恢复资源
     url(r'^target/$', target, {'funid': '73'}),
