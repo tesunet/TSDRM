@@ -17,6 +17,7 @@ from operator import itemgetter
 import logging
 from collections import OrderedDict
 import base64
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from django.utils.timezone import utc
 from django.utils.timezone import localtime
@@ -6732,6 +6733,41 @@ def util_manage(request, funid):
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request)})
 
 
+def get_credit_info(content):
+    commvault_credit = {
+        'webaddr': '',
+        'port': '',
+        'usernm': '',
+        'passwd': '',
+    }
+    sqlserver_credit = {
+        'SQLServerHost': '',
+        'SQLServerUser': '',
+        'SQLServerPasswd': '',
+        'SQLServerDataBase': '',
+    }
+    try:
+        doc = etree.XML(content)
+
+        # Commvault账户信息
+        commvault_credit['webaddr'] = doc.xpath('//webaddr/text()')[0]
+        commvault_credit['port'] = doc.xpath('//port/text()')[0]
+        commvault_credit['usernm'] = doc.xpath('//username/text()')[0]
+        commvault_credit['passwd'] = base64.b64decode(doc.xpath('//passwd/text()')[0]).decode()
+
+        # SQL Server账户信息
+        sqlserver_credit['SQLServerHost'] = doc.xpath('//SQLServerHost/text()')[0]
+        sqlserver_credit['SQLServerUser'] = doc.xpath('//SQLServerUser/text()')[0]
+        sqlserver_credit['SQLServerPasswd'] = base64.b64decode(
+            doc.xpath('//SQLServerPasswd/text()')[0]).decode()
+        sqlserver_credit['SQLServerDataBase'] = doc.xpath('//SQLServerDataBase/text()')[0]
+
+    except Exception as e:
+        print(e)
+    return commvault_credit, sqlserver_credit
+
+
+
 @login_required
 def util_manage_data(request):
     """
@@ -6755,24 +6791,7 @@ def util_manage_data(request):
             'SQLServerDataBase': '',
         }
         if um.util_type.upper() == 'COMMVAULT':
-            try:
-                doc = etree.XML(um.content)
-
-                # Commvault账户信息
-                commvault_credit['webaddr'] = doc.xpath('//webaddr/text()')[0]
-                commvault_credit['port'] = doc.xpath('//port/text()')[0]
-                commvault_credit['usernm'] = doc.xpath('//username/text()')[0]
-                commvault_credit['passwd'] = base64.b64decode(doc.xpath('//passwd/text()')[0]).decode()
-
-                # SQL Server账户信息
-                sqlserver_credit['SQLServerHost'] = doc.xpath('//SQLServerHost/text()')[0]
-                sqlserver_credit['SQLServerUser'] = doc.xpath('//SQLServerUser/text()')[0]
-                sqlserver_credit['SQLServerPasswd'] = base64.b64decode(
-                    doc.xpath('//SQLServerPasswd/text()')[0]).decode()
-                sqlserver_credit['SQLServerDataBase'] = doc.xpath('//SQLServerDataBase/text()')[0]
-
-            except Exception as e:
-                print(e)
+            commvault_credit, sqlserver_credit = get_credit_info(um.content)
 
         util_manage_list.append({
             'id': um.id,
@@ -6903,46 +6922,91 @@ def util_manage_del(request):
 # 恢复资源
 @login_required
 def target(request, funid):
-    #############################################
-    # clientid, clientname, agent, instance, os #
-    #############################################
-    dm = SQLApi.CustomFilter(settings.sql_credit)
-
-    oracle_data = dm.get_instance_from_oracle()
-
-    # 获取包含oracle模块所有客户端
-    installed_client = dm.get_all_install_clients()
-    dm.close()
-    oracle_data_list = []
-    pre_od_name = ""
-    for od in oracle_data:
-        if "Oracle" in od["agent"]:
-            if od["clientname"] == pre_od_name:
-                continue
-            client_id = od["clientid"]
-            client_os = ""
-            for ic in installed_client:
-                if client_id == ic["client_id"]:
-                    client_os = ic["os"]
-
-            oracle_data_list.append({
-                "clientid": od["clientid"],
-                "clientname": od["clientname"],
-                "agent": od["agent"],
-                "instance": od["instance"],
-                "os": client_os
-            })
-            # 去重
-            pre_od_name = od["clientname"]
+    # 工具
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
     return render(request, 'target.html',
-                  {'username': request.user.userinfo.fullname,
-                   "oracle_data": json.dumps(oracle_data_list),
+                  {'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
+                   # "oracle_data": json.dumps(oracle_data_list),
                    "pagefuns": getpagefuns(funid, request=request)})
 
 
 @login_required
+def get_orcl_client_from_utils(request):
+    status = 1
+    info = '获取成功。'
+    data = []
+
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+
+    def get_oracle_client(um):
+        # 解析出账户信息
+        _, sqlserver_credit = get_credit_info(um.content)
+
+        #############################################
+        # clientid, clientname, agent, instance, os #
+        #############################################
+        sql_credit = {
+            "host": sqlserver_credit['SQLServerHost'],
+            "user": sqlserver_credit['SQLServerUser'],
+            "password": sqlserver_credit['SQLServerPasswd'],
+            "database": sqlserver_credit['SQLServerDataBase'],
+        }
+        dm = SQLApi.CustomFilter(sql_credit)
+
+        oracle_data = dm.get_instance_from_oracle()
+
+        # 获取包含oracle模块所有客户端
+        installed_client = dm.get_all_install_clients()
+        dm.close()
+        oracle_client_list = []
+        pre_od_name = ""
+        for od in oracle_data:
+            if "Oracle" in od["agent"]:
+                if od["clientname"] == pre_od_name:
+                    continue
+                client_id = od["clientid"]
+                client_os = ""
+                for ic in installed_client:
+                    if client_id == ic["client_id"]:
+                        client_os = ic["os"]
+
+                oracle_client_list.append({
+                    "clientid": od["clientid"],
+                    "clientname": od["clientname"],
+                    "agent": od["agent"],
+                    "instance": od["instance"],
+                    "os": client_os
+                })
+                # 去重
+                pre_od_name = od["clientname"]
+        return {
+            'utils_manage': um.id,
+            'oracle_client': oracle_client_list
+        }
+
+    try:
+        pool = ThreadPoolExecutor(max_workers=10)
+
+        all_tasks = [pool.submit(get_oracle_client, (um)) for um in utils_manage]
+        for future in as_completed(all_tasks):
+            if future.result():
+                data.append(future.result())
+    except Exception as e:
+        print(e)
+        status = 0
+        info = '获取客户端信息失败: {e}。'.format(**{'e': e})
+
+    return JsonResponse({
+        'status': status,
+        'info': info,
+        'data': data,
+    })
+
+
+
+@login_required
 def target_data(request):
-    all_target = Target.objects.exclude(state="9")
+    all_target = Target.objects.exclude(state="9").select_related('utils')
     all_target_list = []
     for target in all_target:
         target_info = json.loads(target.info)
@@ -6952,7 +7016,9 @@ def target_data(request):
             "client_name": target.client_name,
             "os": target.os,
             "agent": target_info["agent"],
-            "instance": target_info["instance"]
+            "instance": target_info["instance"],
+            "utils_id": target.utils_id,
+            "utils_name": target.utils.name if target.utils else ''
         })
     return JsonResponse({"data": all_target_list})
 
@@ -6965,60 +7031,40 @@ def target_save(request):
     agent = request.POST.get("agent", "").strip()
     instance = request.POST.get("instance", "").strip()
     os = request.POST.get("os", "").strip()
+    utils_manage = request.POST.get("utils_manage", "").strip()
     ret = 0
     info = ""
     try:
         target_id = int(target_id)
     except:
         ret = 0
-        info = "网络异常"
+        info = "网络异常。"
     else:
         try:
-            client_id = int(client_id)
+            utils_manage = int(utils_manage)
         except:
             ret = 0
-            info = "目标客户端未选择。"
+            info = "工具未选择。"
         else:
-            if target_id == 0:
-                # 判断是否存在
-                check_target = Target.objects.exclude(state="9").filter(client_id=client_id)
-                if check_target.exists():
-                    ret = 0
-                    info = "该客户端已选为目标客户端，请勿重复添加。"
-                else:
-                    try:
-                        cur_target = Target()
-                        cur_target.client_id = client_id
-                        cur_target.client_name = client_name
-                        cur_target.os = os
-                        cur_target.info = json.dumps({
-                            "agent": agent,
-                            "instance": instance
-                        })
-                        cur_target.save()
-                    except:
-                        ret = 0
-                        info = "数据保存失败。"
-                    else:
-                        ret = 1
-                        info = "新增成功。"
+            try:
+                client_id = int(client_id)
+            except:
+                ret = 0
+                info = "目标客户端未选择。"
             else:
-                check_target = Target.objects.exclude(state="9").exclude(id=target_id).filter(
-                    client_id=client_id)
-                if check_target.exists():
-                    ret = 0
-                    info = "该客户端已选为终端，请勿重复添加。"
-                else:
-                    try:
-                        cur_target = Target.objects.get(id=target_id)
-                    except Target.DoesNotExist as e:
+                if target_id == 0:
+                    # 判断是否存在
+                    check_target = Target.objects.exclude(state="9").filter(client_id=client_id)
+                    if check_target.exists():
                         ret = 0
-                        info = "终端不存在，请联系管理员。"
+                        info = "该客户端已选为目标客户端，请勿重复添加。"
                     else:
                         try:
+                            cur_target = Target()
                             cur_target.client_id = client_id
                             cur_target.client_name = client_name
                             cur_target.os = os
+                            cur_target.utils_id = utils_manage
                             cur_target.info = json.dumps({
                                 "agent": agent,
                                 "instance": instance
@@ -7026,10 +7072,39 @@ def target_save(request):
                             cur_target.save()
                         except:
                             ret = 0
-                            info = "数据修改失败。"
+                            info = "数据保存失败。"
                         else:
                             ret = 1
-                            info = "修改成功"
+                            info = "新增成功。"
+                else:
+                    check_target = Target.objects.exclude(state="9").exclude(id=target_id).filter(
+                        client_id=client_id)
+                    if check_target.exists():
+                        ret = 0
+                        info = "该客户端已选为终端，请勿重复添加。"
+                    else:
+                        try:
+                            cur_target = Target.objects.get(id=target_id)
+                        except Target.DoesNotExist as e:
+                            ret = 0
+                            info = "终端不存在，请联系管理员。"
+                        else:
+                            try:
+                                cur_target.client_id = client_id
+                                cur_target.client_name = client_name
+                                cur_target.os = os
+                                cur_target.utils_id = utils_manage
+                                cur_target.info = json.dumps({
+                                    "agent": agent,
+                                    "instance": instance
+                                })
+                                cur_target.save()
+                            except:
+                                ret = 0
+                                info = "数据修改失败。"
+                            else:
+                                ret = 1
+                                info = "修改成功"
 
     return JsonResponse({
         "ret": ret,
