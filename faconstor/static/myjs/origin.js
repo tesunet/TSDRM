@@ -1,18 +1,19 @@
-$(document).ready(function() {
+$(document).ready(function () {
     $('#origin_dt').dataTable({
         "bAutoWidth": true,
         "bSort": false,
         "bProcessing": true,
         "ajax": "../origin_data/",
         "columns": [
-            { "data": "id" },
-            { "data": "client_id" },
-            { "data": "client_name" },
-            { "data": "agent" },
-            { "data": "instance" },
-            { "data": "os" },
-            { "data": "target_client_name" },
-            { "data": null }
+            {"data": "id"},
+            {"data": "client_id"},
+            {"data": "client_name"},
+            {"data": "agent"},
+            {"data": "instance"},
+            {"data": "os"},
+            {"data": "target_client_name"},
+            {"data": "utils_name"},
+            {"data": null}
         ],
 
         "columnDefs": [{
@@ -23,7 +24,6 @@ $(document).ready(function() {
         }],
         "oLanguage": {
             "sLengthMenu": "每页显示 _MENU_ 条记录",
-            "sZeroRecords": "抱歉， 没有找到",
             "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
             "sInfoEmpty": "没有数据",
             "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
@@ -39,7 +39,7 @@ $(document).ready(function() {
         }
     });
     // 行按钮
-    $('#origin_dt tbody').on('click', 'button#delrow', function() {
+    $('#origin_dt tbody').on('click', 'button#delrow', function () {
         if (confirm("确定要删除该条数据？")) {
             var table = $('#origin_dt').DataTable();
             var data = table.row($(this).parents('tr')).data();
@@ -49,20 +49,20 @@ $(document).ready(function() {
                 data: {
                     origin_id: data.id,
                 },
-                success: function(data) {
+                success: function (data) {
                     if (data.ret == 1) {
                         table.ajax.reload();
                     }
                     alert(data.info);
                 },
-                error: function(e) {
+                error: function (e) {
                     alert("删除失败，请于管理员联系。");
                 }
             });
 
         }
     });
-    $('#origin_dt tbody').on('click', 'button#edit', function() {
+    $('#origin_dt tbody').on('click', 'button#edit', function () {
         var table = $('#origin_dt').DataTable();
         var data = table.row($(this).parents('tr')).data();
 
@@ -76,32 +76,62 @@ $(document).ready(function() {
         $("#copy_priority").val(data.copy_priority);
         $("#db_open").val(data.db_open);
         $("#data_path").val(data.data_path);
-        console.log(data.log_restore)
         $("#log_restore").val(data.log_restore);
+
+        $("#utils_manage").val(data.utils_id);
+
+        // 重载客户端列表
+        get_client_list()
     });
 
-    var oracle_data = JSON.parse($("#oracle_data").val());
-    for (var i = 0; i < oracle_data.length; i++) {
-        $("#origin").append('<option value="' + oracle_data[i].clientid + '">' + oracle_data[i].clientname + '</option>');
+    function get_client_list() {
+        $("#origin").empty();
+        // 加载目标客户端，如果有则选中第一个直接加载应用、实例、平台
+        var utils_manage_data = eval($('#utils_manage_info').val());
+        // 加载oracle_client
+        var utils_manage_id = $('#utils_manage').val()
+
+        for (var i = 0; i < utils_manage_data.length; i++) {
+            if (utils_manage_data[i].utils_manage == utils_manage_id) {
+                for (var j = 0; j < utils_manage_data[i].oracle_client.length; j++) {
+                    var clientInfo = JSON.stringify(utils_manage_data[i].oracle_client[j]);
+                    $("#origin").append('<option value="' + utils_manage_data[i].oracle_client[j].clientid
+                        + '" clientInfo="' + clientInfo + '">' + utils_manage_data[i].oracle_client[j].clientname + '</option>');
+                }
+                $('#selected_client_info').val(JSON.stringify(utils_manage_data[i].oracle_client))
+                break;
+            }
+        }
     }
 
-    // 切换
-    $("#origin").change(function() {
-        //..
-        var clientid = $(this).val();
 
-        for (var i = 0; i < oracle_data.length; i++) {
-            if (clientid == oracle_data[i].clientid) {
-                $("#agent").val(oracle_data[i].agent);
-                $("#instance").val(oracle_data[i].instance);
-                $("#os").val(oracle_data[i].os);
+    $('#utils_manage').change(function () {
+        get_client_list();
+        // 选中第一个
+        var firstNode = $("#origin").find('option:eq(0)').val()
+        fullfilled(firstNode);
+    })
+
+    // 选中填充信息
+    function fullfilled(clientid) {
+        var selected_client_info = eval($('#selected_client_info').val());
+        for (var i = 0; i < selected_client_info.length; i++) {
+            if (clientid == selected_client_info[i].clientid) {
+                $("#agent").val(selected_client_info[i].agent);
+                $("#instance").val(selected_client_info[i].instance);
+                $("#os").val(selected_client_info[i].os);
                 break
             }
         }
+    }
+
+    // 切换
+    $("#origin").change(function () {
+        var clientid = $(this).val();
+        fullfilled(clientid);
     });
 
-
-    $("#new").click(function() {
+    $("#new").click(function () {
         $("#origin_id").val("0");
         $("#origin").val("");
         $("#agent").val("");
@@ -115,9 +145,11 @@ $(document).ready(function() {
         $("#data_path").val("");
 
         $('#log_restore').val(1);
+
+        $('#utils_manage').val("");
     });
 
-    $('#save').click(function() {
+    $('#save').click(function () {
         var table = $('#origin_dt').DataTable();
         $.ajax({
             type: "POST",
@@ -139,21 +171,23 @@ $(document).ready(function() {
                 data_path: $("#data_path").val(),
 
                 log_restore: $("#log_restore").val(),
+
+                utils_manage: $('#utils_manage').val()
             },
-            success: function(data) {
+            success: function (data) {
                 if (data.ret == 1) {
                     $('#static').modal('hide');
                     table.ajax.reload();
                 }
                 alert(data.info);
             },
-            error: function(e) {
+            error: function (e) {
                 alert("页面出现错误，请于管理员联系。");
             }
         });
     });
 
-    $('#error').click(function() {
+    $('#error').click(function () {
         $(this).hide()
     })
 });

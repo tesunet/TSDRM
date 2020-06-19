@@ -145,7 +145,7 @@ urlpatterns = [
     url(r'^target_data/$', target_data),
     url(r'^target_save/$', target_save),
     url(r'^target_del/$', target_del),
-    url(r'^get_orcl_client_from_utils/$', get_orcl_client_from_utils),
+    # url(r'^get_orcl_client_from_utils/$', get_orcl_client_from_utils),
 
     # 客户端管理
     url(r'^origin/$', origin, {'funid': '74'}),

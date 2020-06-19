@@ -23,7 +23,6 @@ $(document).ready(function () {
         }],
         "oLanguage": {
             "sLengthMenu": "每页显示 _MENU_ 条记录",
-            "sZeroRecords": "抱歉， 没有找到",
             "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
             "sInfoEmpty": "没有数据",
             "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
@@ -85,27 +84,27 @@ $(document).ready(function () {
             {"clientname": "win-2qls3b7jx3v.hzx", "instance": "ORCL", "agent": "Oracle Database", "clientid": 3}]
          },]
      */
-    $.ajax({
-        type: "POST",
-        dataType: 'json',
-        url: "../get_orcl_client_from_utils/",
-        data: {},
-        success: function (data) {
-            if (data.status == 1) {
-                $('#utils_manage').data('utils_manage_data', data.data);
-            } else {
-                alert(data.info);
-            }
-        },
-        error: function (e) {
-            alert("页面出现错误，请于管理员联系。");
-        }
-    });
+    // $.ajax({
+    //     type: "POST",
+    //     dataType: 'json',
+    //     url: "../get_orcl_client_from_utils/",
+    //     data: {},
+    //     success: function (data) {
+    //         if (data.status == 1) {
+    //             $('#utils_manage').data('utils_manage_data', data.data);
+    //         } else {
+    //             alert(data.info);
+    //         }
+    //     },
+    //     error: function (e) {
+    //         alert("页面出现错误，请于管理员联系。");
+    //     }
+    // });
 
     function get_client_list(){
         $("#target").empty();
         // 加载目标客户端，如果有则选中第一个直接加载应用、实例、平台
-        var utils_manage_data = $('#utils_manage').data().utils_manage_data;
+        var utils_manage_data = eval($('#utils_manage_info').val());
         // 加载oracle_client
         var utils_manage_id = $('#utils_manage').val()
 

@@ -6924,19 +6924,7 @@ def util_manage_del(request):
 def target(request, funid):
     # 工具
     utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
-    return render(request, 'target.html',
-                  {'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
-                   # "oracle_data": json.dumps(oracle_data_list),
-                   "pagefuns": getpagefuns(funid, request=request)})
-
-
-@login_required
-def get_orcl_client_from_utils(request):
-    status = 1
-    info = '获取成功。'
     data = []
-
-    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
 
     def get_oracle_client(um):
         # 解析出账户信息
@@ -6991,16 +6979,86 @@ def get_orcl_client_from_utils(request):
         for future in as_completed(all_tasks):
             if future.result():
                 data.append(future.result())
-    except Exception as e:
-        print(e)
-        status = 0
-        info = '获取客户端信息失败: {e}。'.format(**{'e': e})
+    except:
+        pass
 
-    return JsonResponse({
-        'status': status,
-        'info': info,
-        'data': data,
-    })
+    return render(request, 'target.html',
+                  {'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
+                   "data": json.dumps(data),
+                   "pagefuns": getpagefuns(funid, request=request)})
+
+
+# @login_required
+# def get_orcl_client_from_utils(request):
+#     status = 1
+#     info = '获取成功。'
+#     data = []
+#
+#     utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+#
+#     def get_oracle_client(um):
+#         # 解析出账户信息
+#         _, sqlserver_credit = get_credit_info(um.content)
+#
+#         #############################################
+#         # clientid, clientname, agent, instance, os #
+#         #############################################
+#         sql_credit = {
+#             "host": sqlserver_credit['SQLServerHost'],
+#             "user": sqlserver_credit['SQLServerUser'],
+#             "password": sqlserver_credit['SQLServerPasswd'],
+#             "database": sqlserver_credit['SQLServerDataBase'],
+#         }
+#         dm = SQLApi.CustomFilter(sql_credit)
+#
+#         oracle_data = dm.get_instance_from_oracle()
+#
+#         # 获取包含oracle模块所有客户端
+#         installed_client = dm.get_all_install_clients()
+#         dm.close()
+#         oracle_client_list = []
+#         pre_od_name = ""
+#         for od in oracle_data:
+#             if "Oracle" in od["agent"]:
+#                 if od["clientname"] == pre_od_name:
+#                     continue
+#                 client_id = od["clientid"]
+#                 client_os = ""
+#                 for ic in installed_client:
+#                     if client_id == ic["client_id"]:
+#                         client_os = ic["os"]
+#
+#                 oracle_client_list.append({
+#                     "clientid": od["clientid"],
+#                     "clientname": od["clientname"],
+#                     "agent": od["agent"],
+#                     "instance": od["instance"],
+#                     "os": client_os
+#                 })
+#                 # 去重
+#                 pre_od_name = od["clientname"]
+#         return {
+#             'utils_manage': um.id,
+#             'oracle_client': oracle_client_list
+#         }
+#
+#     try:
+#         pool = ThreadPoolExecutor(max_workers=10)
+#
+#         all_tasks = [pool.submit(get_oracle_client, (um)) for um in utils_manage]
+#         for future in as_completed(all_tasks):
+#             if future.result():
+#                 data.append(future.result())
+#     except Exception as e:
+#         print(e)
+#         status = 0
+#         info = '获取客户端信息失败: {e}。'.format(**{'e': e})
+#
+#     return JsonResponse({
+#         'status': status,
+#         'info': info,
+#         'data': data,
+#     })
 
 
 
@@ -7141,44 +7199,71 @@ def target_del(request):
 
 @login_required
 def origin(request, funid):
-    #############################################
-    # clientid, clientname, agent, instance, os #
-    #############################################
-    dm = SQLApi.CustomFilter(settings.sql_credit)
+    # 工具
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+    data = []
 
-    oracle_data = dm.get_instance_from_oracle()
+    def get_oracle_client(um):
+        # 解析出账户信息
+        _, sqlserver_credit = get_credit_info(um.content)
 
-    # 获取包含oracle模块所有客户端
-    installed_client = dm.get_all_install_clients()
-    dm.close()
-    oracle_data_list = []
-    pre_od_name = ""
-    for od in oracle_data:
-        if "Oracle" in od["agent"]:
-            if od["clientname"] == pre_od_name:
-                continue
-            client_id = od["clientid"]
-            client_os = ""
-            for ic in installed_client:
-                if client_id == ic["client_id"]:
-                    client_os = ic["os"]
+        #############################################
+        # clientid, clientname, agent, instance, os #
+        #############################################
+        sql_credit = {
+            "host": sqlserver_credit['SQLServerHost'],
+            "user": sqlserver_credit['SQLServerUser'],
+            "password": sqlserver_credit['SQLServerPasswd'],
+            "database": sqlserver_credit['SQLServerDataBase'],
+        }
+        dm = SQLApi.CustomFilter(sql_credit)
 
-            oracle_data_list.append({
-                "clientid": od["clientid"],
-                "clientname": od["clientname"],
-                "agent": od["agent"],
-                "instance": od["instance"],
-                "os": client_os
-            })
-            # 去重
-            pre_od_name = od["clientname"]
+        oracle_data = dm.get_instance_from_oracle()
+
+        # 获取包含oracle模块所有客户端
+        installed_client = dm.get_all_install_clients()
+        dm.close()
+        oracle_client_list = []
+        pre_od_name = ""
+        for od in oracle_data:
+            if "Oracle" in od["agent"]:
+                if od["clientname"] == pre_od_name:
+                    continue
+                client_id = od["clientid"]
+                client_os = ""
+                for ic in installed_client:
+                    if client_id == ic["client_id"]:
+                        client_os = ic["os"]
+
+                oracle_client_list.append({
+                    "clientid": od["clientid"],
+                    "clientname": od["clientname"],
+                    "agent": od["agent"],
+                    "instance": od["instance"],
+                    "os": client_os
+                })
+                # 去重
+                pre_od_name = od["clientname"]
+        return {
+            'utils_manage': um.id,
+            'oracle_client': oracle_client_list
+        }
+
+    try:
+        pool = ThreadPoolExecutor(max_workers=10)
+
+        all_tasks = [pool.submit(get_oracle_client, (um)) for um in utils_manage]
+        for future in as_completed(all_tasks):
+            if future.result():
+                data.append(future.result())
+    except:
+        pass
 
     # 所有关联终端
     all_target = Target.objects.exclude(state="9")
     return render(request, 'origin.html',
-                  {'username': request.user.userinfo.fullname,
-                   "oracle_data": json.dumps(oracle_data_list),
-                   "all_target": all_target,
+                  {'username': request.user.userinfo.fullname,  'utils_manage': utils_manage,
+                   "data": json.dumps(data), "all_target": all_target,
                    "pagefuns": getpagefuns(funid, request=request)})
 
 
@@ -7201,6 +7286,9 @@ def origin_data(request):
             "db_open": origin.db_open,
             "data_path": origin.data_path,
             "log_restore": origin.log_restore,
+
+            "utils_id": origin.utils_id,
+            "utils_name": origin.utils.name if origin.utils else ''
         })
 
     return JsonResponse({"data": all_origin_list})
@@ -7221,6 +7309,7 @@ def origin_save(request):
     data_path = request.POST.get("data_path", "")
     log_restore = request.POST.get("log_restore", "")
 
+    utils_manage = request.POST.get("utils_manage", "").strip()
     ret = 0
     info = ""
     try:
@@ -7232,60 +7321,33 @@ def origin_save(request):
         info = "网络异常"
     else:
         try:
-            client_id = int(client_id)
+            utils_manage = int(utils_manage)
         except:
             ret = 0
-            info = "源端未选择。"
+            info = "工具未选择。"
         else:
             try:
-                target_client = int(target_client)
+                client_id = int(client_id)
             except:
                 ret = 0
-                info = "未关联终端"
+                info = "源端未选择。"
             else:
                 try:
-                    to_target = Target.objects.get(id=target_client)
-                except Target.DoesNotExist as e:
+                    target_client = int(target_client)
+                except:
                     ret = 0
-                    info = "该终端不存在。"
+                    info = "未关联终端"
                 else:
-                    target_id = to_target.id
-                    if origin_id == 0:
-                        try:
-                            cur_origin = Origin()
-                            cur_origin.client_id = client_id
-                            cur_origin.client_name = client_name
-                            cur_origin.os = client_os
-                            cur_origin.info = json.dumps({
-                                "agent": agent,
-                                "instance": instance
-                            })
-                            cur_origin.target_id = target_id
-                            cur_origin.copy_priority = copy_priority
-                            cur_origin.db_open = db_open
-                            cur_origin.data_path = data_path
-                            try:
-                                log_restore = int(log_restore)
-                            except:
-                                pass
-                            else:
-                                cur_origin.log_restore = log_restore
-                            cur_origin.save()
-                        except Exception as e:
-                            print(e)
-                            ret = 0
-                            info = "数据保存失败。"
-                        else:
-                            ret = 1
-                            info = "新增成功。"
+                    try:
+                        to_target = Target.objects.get(id=target_client)
+                    except Target.DoesNotExist as e:
+                        ret = 0
+                        info = "该终端不存在。"
                     else:
-                        try:
-                            cur_origin = Origin.objects.get(id=origin_id)
-                        except Origin.DoesNotExist as e:
-                            ret = 0
-                            info = "源端不存在，请联系管理员。"
-                        else:
+                        target_id = to_target.id
+                        if origin_id == 0:
                             try:
+                                cur_origin = Origin()
                                 cur_origin.client_id = client_id
                                 cur_origin.client_name = client_name
                                 cur_origin.os = client_os
@@ -7293,10 +7355,13 @@ def origin_save(request):
                                     "agent": agent,
                                     "instance": instance
                                 })
+                                cur_origin.target_id = target_id
                                 cur_origin.copy_priority = copy_priority
                                 cur_origin.db_open = db_open
                                 cur_origin.data_path = data_path
-                                cur_origin.target_id = target_id
+
+                                cur_origin.utils_id = utils_manage
+
                                 try:
                                     log_restore = int(log_restore)
                                 except:
@@ -7304,12 +7369,48 @@ def origin_save(request):
                                 else:
                                     cur_origin.log_restore = log_restore
                                 cur_origin.save()
-                            except:
+                            except Exception as e:
+                                print(e)
                                 ret = 0
-                                info = "数据修改失败。"
+                                info = "数据保存失败。"
                             else:
                                 ret = 1
-                                info = "修改成功"
+                                info = "新增成功。"
+                        else:
+                            try:
+                                cur_origin = Origin.objects.get(id=origin_id)
+                            except Origin.DoesNotExist as e:
+                                ret = 0
+                                info = "源端不存在，请联系管理员。"
+                            else:
+                                try:
+                                    cur_origin.client_id = client_id
+                                    cur_origin.client_name = client_name
+                                    cur_origin.os = client_os
+                                    cur_origin.info = json.dumps({
+                                        "agent": agent,
+                                        "instance": instance
+                                    })
+                                    cur_origin.copy_priority = copy_priority
+                                    cur_origin.db_open = db_open
+                                    cur_origin.data_path = data_path
+                                    cur_origin.target_id = target_id
+
+                                    cur_origin.utils_id = utils_manage
+
+                                    try:
+                                        log_restore = int(log_restore)
+                                    except:
+                                        pass
+                                    else:
+                                        cur_origin.log_restore = log_restore
+                                    cur_origin.save()
+                                except:
+                                    ret = 0
+                                    info = "数据修改失败。"
+                                else:
+                                    ret = 1
+                                    info = "修改成功"
 
     return JsonResponse({
         "ret": ret,

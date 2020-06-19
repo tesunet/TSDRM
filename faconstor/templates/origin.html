@@ -27,6 +27,7 @@
             <th> 实例</th>
             <th> 平台</th>
             <th> 关联终端</th>
+            <th> 工具</th>
             <th style="width:50px;"> 操作</th>
         </tr>
         </thead>
@@ -45,8 +46,21 @@
                     <form class="bs-example form-horizontal activate-form">{% csrf_token %}
                         <div class="form-body">
                             <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>工具</label>
+                                <div class="col-md-10">
+                                    <input type="text" id="utils_manage_info" name="utils_manage_info" value="{{ data }}" hidden>
+                                    <select name="utils_manage" id="utils_manage" class="form-control">
+                                        {% for um in utils_manage %}
+                                        <option value="{{ um.id }}">{{ um.name }} ({{ um.code }})</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>源客户端</label>
                                 <div class="col-md-10">
+                                    <input type="text" id="selected_client_info" name="selected_client_info" hidden>
                                     <select name="origin" id="origin" class="form-control">
 
                                     </select>
