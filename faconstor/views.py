@@ -6767,7 +6767,6 @@ def get_credit_info(content):
     return commvault_credit, sqlserver_credit
 
 
-
 @login_required
 def util_manage_data(request):
     """
@@ -7061,7 +7060,6 @@ def target(request, funid):
 #     })
 
 
-
 @login_required
 def target_data(request):
     all_target = Target.objects.exclude(state="9").select_related('utils')
@@ -7260,10 +7258,35 @@ def origin(request, funid):
         pass
 
     # 所有关联终端
-    all_target = Target.objects.exclude(state="9")
+    all_target = Target.objects.exclude(state="9").values()
+
+    u_targets = []
+
+    for um in utils_manage:
+        target_list = []
+        for target in all_target:
+            if target['utils_id'] == um.id:
+                target_list.append({
+                    'target_id': target['id'],
+                    'target_name': target['client_name']
+                })
+        u_targets.append({
+            'utils_manage': um.id,
+            'target_list': target_list
+        })
+
+    # 恢复资源
+    # [{
+    #     'utils_manage': '',
+    #     'target_list': [{
+    #         'target_id': '',
+    #         'target_name': ''
+    #     }]
+    # }]
+
     return render(request, 'origin.html',
-                  {'username': request.user.userinfo.fullname,  'utils_manage': utils_manage,
-                   "data": json.dumps(data), "all_target": all_target,
+                  {'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
+                   "data": json.dumps(data), "all_target": all_target, 'u_targets': u_targets,
                    "pagefuns": getpagefuns(funid, request=request)})
 
 

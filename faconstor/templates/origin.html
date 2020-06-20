@@ -95,10 +95,9 @@
                                 <div class="form-group">
                                     <label class="col-md-2 control-label"><span style="color:red; ">*</span>恢复资源</label>
                                     <div class="col-md-10">
+                                        <input type="text" id="u_targets" name="u_targets" value="{{ u_targets }}" hidden>
                                         <select name="target" id="target" class="form-control">
-                                            {% for target in all_target %}
-                                                <option value="{{ target.id }}">{{ target.client_name }}</option>
-                                            {% endfor %}
+
                                         </select>
                                         <div class="form-control-focus"></div>
                                     </div>

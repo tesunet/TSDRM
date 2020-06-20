@@ -63,6 +63,9 @@ $(document).ready(function () {
         }
     });
     $('#origin_dt tbody').on('click', 'button#edit', function () {
+        // 重载客户端列表
+        get_client_list();
+
         var table = $('#origin_dt').DataTable();
         var data = table.row($(this).parents('tr')).data();
 
@@ -79,14 +82,11 @@ $(document).ready(function () {
         $("#log_restore").val(data.log_restore);
 
         $("#utils_manage").val(data.utils_id);
-
-        // 重载客户端列表
-        get_client_list()
     });
 
     function get_client_list() {
         $("#origin").empty();
-        // 加载目标客户端，如果有则选中第一个直接加载应用、实例、平台
+        // 加载源客户端，如果有则选中第一个直接加载应用、实例、平台
         var utils_manage_data = eval($('#utils_manage_info').val());
         // 加载oracle_client
         var utils_manage_id = $('#utils_manage').val()
@@ -99,6 +99,18 @@ $(document).ready(function () {
                         + '" clientInfo="' + clientInfo + '">' + utils_manage_data[i].oracle_client[j].clientname + '</option>');
                 }
                 $('#selected_client_info').val(JSON.stringify(utils_manage_data[i].oracle_client))
+                break;
+            }
+        }
+        // 加载目标客户端
+        $('#target').empty();
+        var u_targets = eval($('#u_targets').val());
+        for (var i = 0; i < u_targets.length; i++) {
+            if (u_targets[i].utils_manage == utils_manage_id) {
+                for (var j = 0; j < u_targets[i].target_list.length; j++) {
+                    $("#target").append('<option value="' + u_targets[i].target_list[j].target_id
+                        + '">' + u_targets[i].target_list[j].target_name + '</option>');
+                }
                 break;
             }
         }
