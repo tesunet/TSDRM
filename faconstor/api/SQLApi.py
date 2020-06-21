@@ -10,10 +10,10 @@ import pymssql
 class DataMonitor(object):
     def __init__(self, credit):
         self.msg = ""
-        self.host = credit["host"]
-        self.user = credit["user"]
-        self.password = credit["password"]
-        self.database = credit["database"]
+        self.host = credit["SQLServerHost"]
+        self.user = credit["SQLServerUser"]
+        self.password = credit["SQLServerPasswd"]
+        self.database = credit["SQLServerDataBase"]
         self._conn = self._connection
 
     @property

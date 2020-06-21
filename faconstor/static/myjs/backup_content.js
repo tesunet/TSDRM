@@ -1,11 +1,13 @@
 $(document).ready(function () {
     $("#loading").show();
-    $.ajax({
+
+    function getBackupContent(utils_manage_id){
+         $.ajax({
         type: 'POST',
         dataType: 'json',
         url: '../get_backup_content/',
         data: {
-            "csrfmiddlewaretoken": $("[name='csrfmiddlewaretoken']").val(),
+            'utils_manage_id': utils_manage_id
         },
         success: function (data) {
             if (data.ret == 0) {
@@ -104,5 +106,12 @@ $(document).ready(function () {
                 $("#loading").hide();
             }
         }
-    })
+    });
+    }
+    getBackupContent($('#utils_manage').val());
+
+    $('#utils_manage').change(function () {
+        $("tbody").empty();
+        getBackupContent($(this).val());
+    });
 });

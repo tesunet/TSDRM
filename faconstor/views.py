@@ -6918,26 +6918,13 @@ def util_manage_del(request):
     })
 
 
-# 恢复资源
-@login_required
-def target(request, funid):
-    # 工具
-    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
-    data = []
-
-    def get_oracle_client(um):
+def get_oracle_client(um):
         # 解析出账户信息
         _, sqlserver_credit = get_credit_info(um.content)
 
         #############################################
         # clientid, clientname, agent, instance, os #
         #############################################
-        sql_credit = {
-            "host": sqlserver_credit['SQLServerHost'],
-            "user": sqlserver_credit['SQLServerUser'],
-            "password": sqlserver_credit['SQLServerPasswd'],
-            "database": sqlserver_credit['SQLServerDataBase'],
-        }
         dm = SQLApi.CustomFilter(sql_credit)
 
         oracle_data = dm.get_instance_from_oracle()
@@ -6970,6 +6957,14 @@ def target(request, funid):
             'utils_manage': um.id,
             'oracle_client': oracle_client_list
         }
+
+
+# 恢复资源
+@login_required
+def target(request, funid):
+    # 工具
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+    data = []
 
     try:
         pool = ThreadPoolExecutor(max_workers=10)
@@ -7200,52 +7195,6 @@ def origin(request, funid):
     # 工具
     utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
     data = []
-
-    def get_oracle_client(um):
-        # 解析出账户信息
-        _, sqlserver_credit = get_credit_info(um.content)
-
-        #############################################
-        # clientid, clientname, agent, instance, os #
-        #############################################
-        sql_credit = {
-            "host": sqlserver_credit['SQLServerHost'],
-            "user": sqlserver_credit['SQLServerUser'],
-            "password": sqlserver_credit['SQLServerPasswd'],
-            "database": sqlserver_credit['SQLServerDataBase'],
-        }
-        dm = SQLApi.CustomFilter(sql_credit)
-
-        oracle_data = dm.get_instance_from_oracle()
-
-        # 获取包含oracle模块所有客户端
-        installed_client = dm.get_all_install_clients()
-        dm.close()
-        oracle_client_list = []
-        pre_od_name = ""
-        for od in oracle_data:
-            if "Oracle" in od["agent"]:
-                if od["clientname"] == pre_od_name:
-                    continue
-                client_id = od["clientid"]
-                client_os = ""
-                for ic in installed_client:
-                    if client_id == ic["client_id"]:
-                        client_os = ic["os"]
-
-                oracle_client_list.append({
-                    "clientid": od["clientid"],
-                    "clientname": od["clientname"],
-                    "agent": od["agent"],
-                    "instance": od["instance"],
-                    "os": client_os
-                })
-                # 去重
-                pre_od_name = od["clientname"]
-        return {
-            'utils_manage': um.id,
-            'oracle_client': oracle_client_list
-        }
 
     try:
         pool = ThreadPoolExecutor(max_workers=10)
@@ -7499,42 +7448,57 @@ def backup_status(request, funid):
 
 @login_required
 def get_backup_content(request):
-    whole_list = []
-    try:
-        all_client_manage = Origin.objects.exclude(state="9").values("client_name")
-        tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+    utils_manage_id = request.POST.get('utils_manage_id', '')
 
-        dm = SQLApi.CustomFilter(settings.sql_credit)
-        ret, row_dict = dm.custom_all_backup_content(tmp_client_manage)
-        dm.close()
-        for content in ret:
-            content_dict = OrderedDict()
-            content_dict["clientName"] = content["clientname"]
-            content_dict["appName"] = content["idataagent"]
-            content_dict["backupsetName"] = content["backupset"]
-            # content_dict["subclientName"] = content["subclient"]
-            content_dict["content"] = content["content"]
-            whole_list.append(content_dict)
-    except Exception as e:
-        print(e)
+    try:
+        utils_manage_id = int(utils_manage_id)
+        utils_manage = UtilsManage.objects.get(id=utils_manage_id)
+    except:
         return JsonResponse({
             "ret": 0,
-            "data": "获取存储策略信息失败。",
+            "data": "Commvault工具未配置。",
         })
     else:
-        return JsonResponse({
-            "ret": 1,
-            "data": {
-                "whole_list": whole_list,
-                "row_dict": row_dict,
-            },
-        })
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+
+        whole_list = []
+        try:
+            all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+            tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            ret, row_dict = dm.custom_all_backup_content(tmp_client_manage)
+            dm.close()
+            for content in ret:
+                content_dict = OrderedDict()
+                content_dict["clientName"] = content["clientname"]
+                content_dict["appName"] = content["idataagent"]
+                content_dict["backupsetName"] = content["backupset"]
+                # content_dict["subclientName"] = content["subclient"]
+                content_dict["content"] = content["content"]
+                whole_list.append(content_dict)
+        except Exception as e:
+            print(e)
+            return JsonResponse({
+                "ret": 0,
+                "data": "获取存储策略信息失败。",
+            })
+        else:
+            return JsonResponse({
+                "ret": 1,
+                "data": {
+                    "whole_list": whole_list,
+                    "row_dict": row_dict,
+                },
+            })
 
 
 @login_required
 def backup_content(request, funid):
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+
     return render(request, "backup_content.html", {
-        'username': request.user.userinfo.fullname,
+        'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
         "pagefuns": getpagefuns(funid, request),
     })
 
