@@ -7519,42 +7519,55 @@ def backup_content(request, funid):
 @login_required
 def get_storage_policy(request):
     whole_list = []
+    utils_manage_id = request.POST.get('utils_manage_id', '')
+
     try:
-        all_client_manage = Origin.objects.exclude(state="9").values("client_name")
-        tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
-
-        dm = SQLApi.CustomFilter(settings.sql_credit)
-        ret, row_dict = dm.custom_all_storages(tmp_client_manage)
-        dm.close()
-        for storage in ret:
-            storage_dict = OrderedDict()
-            storage_dict["clientName"] = storage["clientname"]
-            storage_dict["appName"] = storage["idataagent"]
-            storage_dict["backupsetName"] = storage["backupset"]
-            # storage_dict["subclientName"] = storage["subclient"]
-            storage_dict["storagePolicy"] = storage["storagepolicy"]
-            whole_list.append(storage_dict)
-
-    except Exception as e:
-        print(e)
+        utils_manage_id = int(utils_manage_id)
+        utils_manage = UtilsManage.objects.get(id=utils_manage_id)
+    except:
         return JsonResponse({
             "ret": 0,
-            "data": "获取存储策略信息失败。",
+            "data": "Commvault工具未配置。",
         })
     else:
-        return JsonResponse({
-            "ret": 1,
-            "data": {
-                "whole_list": whole_list,
-                "row_dict": row_dict,
-            },
-        })
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        try:
+            all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+            tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            ret, row_dict = dm.custom_all_storages(tmp_client_manage)
+            dm.close()
+            for storage in ret:
+                storage_dict = OrderedDict()
+                storage_dict["clientName"] = storage["clientname"]
+                storage_dict["appName"] = storage["idataagent"]
+                storage_dict["backupsetName"] = storage["backupset"]
+                # storage_dict["subclientName"] = storage["subclient"]
+                storage_dict["storagePolicy"] = storage["storagepolicy"]
+                whole_list.append(storage_dict)
+
+        except Exception as e:
+            print(e)
+            return JsonResponse({
+                "ret": 0,
+                "data": "获取存储策略信息失败。",
+            })
+        else:
+            return JsonResponse({
+                "ret": 1,
+                "data": {
+                    "whole_list": whole_list,
+                    "row_dict": row_dict,
+                },
+            })
 
 
 @login_required
 def storage_policy(request, funid):
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
     return render(request, "storage_policy.html", {
-        'username': request.user.userinfo.fullname,
+        'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
         "pagefuns": getpagefuns(funid, request),
     })
 
