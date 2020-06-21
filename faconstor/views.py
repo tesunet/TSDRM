@@ -7419,29 +7419,42 @@ def origin_del(request):
 @login_required
 def get_backup_status(request):
     whole_list = []
-    try:
-        # 仅统计源客户端(客户端管理)
-        all_client_manage = Origin.objects.exclude(state="9").values("client_name")
-        tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+    utils_manage_id = request.POST.get('utils_manage_id', '')
 
-        dm = SQLApi.CustomFilter(settings.sql_credit)
-        whole_list = dm.custom_concrete_job_list(tmp_client_manage)
-        dm.close()
-    except Exception as e:
+    try:
+        utils_manage_id = int(utils_manage_id)
+        utils_manage = UtilsManage.objects.get(id=utils_manage_id)
+    except:
         return JsonResponse({
             "ret": 0,
-            "data": "获取备份状态信息失败。",
+            "data": "Commvault工具未配置。",
         })
-    return JsonResponse({
-        "ret": 1,
-        "data": whole_list,
-    })
+    else:
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        try:
+            # 仅统计源客户端(客户端管理)
+            all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+            tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            whole_list = dm.custom_concrete_job_list(tmp_client_manage)
+            dm.close()
+        except Exception as e:
+            return JsonResponse({
+                "ret": 0,
+                "data": "获取备份状态信息失败。",
+            })
+        return JsonResponse({
+            "ret": 1,
+            "data": whole_list,
+        })
 
 
 @login_required
 def backup_status(request, funid):
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
     return render(request, "backup_status.html", {
-        'username': request.user.userinfo.fullname,
+        'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
         "pagefuns": getpagefuns(funid, request),
     })
 

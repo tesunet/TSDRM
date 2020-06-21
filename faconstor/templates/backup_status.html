@@ -11,6 +11,13 @@
     </style>
     <div style="height:10px"></div>
     <div class="portlet-body">
+        <div class="col-md-2" style="padding-left: 20px;">
+            <select name="utils_manage" id="utils_manage" class="form-control">
+                {% for um in utils_manage %}
+                    <option value="{{ um.id }}">{{ um.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="portlet light portlet-fit  calendar">
             <div class="portlet-body">
                 <div class="table-scrollable">
@@ -38,14 +45,18 @@
 {% block script %}
     <script>
     </script>
-    <link href="/static/assets/global/plugins/jquery-multi-select/css/multi-select.css" rel="stylesheet" type="text/css"/>
-    <link href="/static/assets/global/plugins/jstree/dist/themes/default/style.min.css" rel="stylesheet" type="text/css"/>
+    <link href="/static/assets/global/plugins/jquery-multi-select/css/multi-select.css" rel="stylesheet"
+          type="text/css"/>
+    <link href="/static/assets/global/plugins/jstree/dist/themes/default/style.min.css" rel="stylesheet"
+          type="text/css"/>
     <link href="/static/assets/global/plugins/select2/css/select2.min.css" rel="stylesheet" type="text/css"/>
     <link href="/static/assets/global/plugins/select2/css/select2-bootstrap.min.css" rel="stylesheet" type="text/css"/>
     <script src="/static/assets/global/scripts/app.min.js" type="text/javascript"></script>
     <script src="/static/assets/global/plugins/jstree/dist/jstree.min.js" type="text/javascript"></script>
-    <script src="/static/assets/global/plugins/jquery-multi-select/js/jquery.multi-select.js" type="text/javascript"></script>
-    <script src="/static/assets/global/plugins/jquery-multi-select/js/jquery.quicksearch.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/jquery-multi-select/js/jquery.multi-select.js"
+            type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/jquery-multi-select/js/jquery.quicksearch.js"
+            type="text/javascript"></script>
     <script src="/static/assets/global/plugins/select2/js/select2.full.min.js" type="text/javascript"></script>
     <script src="/static/assets/pages/scripts/components-select2.min.js" type="text/javascript"></script>
 {% endblock %}
