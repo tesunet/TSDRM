@@ -1,11 +1,13 @@
 $(document).ready(function () {
     $("#loading").show();
-    $.ajax({
+
+    function getSchedulePolicy(utils_manage_id){
+        $.ajax({
         type: 'POST',
         dataType: 'json',
         url: '../get_schedule_policy/',
         data: {
-            "csrfmiddlewaretoken": $("[name='csrfmiddlewaretoken']").val(),
+            'utils_manage_id': utils_manage_id
         },
         success: function (data) {
             if (data.ret == 0) {
@@ -161,6 +163,9 @@ $(document).ready(function () {
             }
         }
     });
+    }
+
+    getSchedulePolicy($('#utils_manage').val());
 
     // 点击事件
     $('#schedule tbody').on('click', 'button[name="schedule_type"]', function () {
@@ -173,5 +178,8 @@ $(document).ready(function () {
         $("#schedbackuptype").val(siblingInput[5].value);
     });
 
-
+    $('#utils_manage').change(function () {
+        $("tbody").empty();
+        getSchedulePolicy($(this).val());
+    });
 });

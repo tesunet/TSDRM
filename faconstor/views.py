@@ -6919,44 +6919,44 @@ def util_manage_del(request):
 
 
 def get_oracle_client(um):
-        # 解析出账户信息
-        _, sqlserver_credit = get_credit_info(um.content)
+    # 解析出账户信息
+    _, sqlserver_credit = get_credit_info(um.content)
 
-        #############################################
-        # clientid, clientname, agent, instance, os #
-        #############################################
-        dm = SQLApi.CustomFilter(sql_credit)
+    #############################################
+    # clientid, clientname, agent, instance, os #
+    #############################################
+    dm = SQLApi.CustomFilter(sqlserver_credit)
 
-        oracle_data = dm.get_instance_from_oracle()
+    oracle_data = dm.get_instance_from_oracle()
 
-        # 获取包含oracle模块所有客户端
-        installed_client = dm.get_all_install_clients()
-        dm.close()
-        oracle_client_list = []
-        pre_od_name = ""
-        for od in oracle_data:
-            if "Oracle" in od["agent"]:
-                if od["clientname"] == pre_od_name:
-                    continue
-                client_id = od["clientid"]
-                client_os = ""
-                for ic in installed_client:
-                    if client_id == ic["client_id"]:
-                        client_os = ic["os"]
+    # 获取包含oracle模块所有客户端
+    installed_client = dm.get_all_install_clients()
+    dm.close()
+    oracle_client_list = []
+    pre_od_name = ""
+    for od in oracle_data:
+        if "Oracle" in od["agent"]:
+            if od["clientname"] == pre_od_name:
+                continue
+            client_id = od["clientid"]
+            client_os = ""
+            for ic in installed_client:
+                if client_id == ic["client_id"]:
+                    client_os = ic["os"]
 
-                oracle_client_list.append({
-                    "clientid": od["clientid"],
-                    "clientname": od["clientname"],
-                    "agent": od["agent"],
-                    "instance": od["instance"],
-                    "os": client_os
-                })
-                # 去重
-                pre_od_name = od["clientname"]
-        return {
-            'utils_manage': um.id,
-            'oracle_client': oracle_client_list
-        }
+            oracle_client_list.append({
+                "clientid": od["clientid"],
+                "clientname": od["clientname"],
+                "agent": od["agent"],
+                "instance": od["instance"],
+                "os": client_os
+            })
+            # 去重
+            pre_od_name = od["clientname"]
+    return {
+        'utils_manage': um.id,
+        'oracle_client': oracle_client_list
+    }
 
 
 # 恢复资源
@@ -7561,8 +7561,9 @@ def storage_policy(request, funid):
 
 @login_required
 def schedule_policy(request, funid):
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
     return render(request, "schedule_policy.html", {
-        'username': request.user.userinfo.fullname,
+        'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
         "pagefuns": getpagefuns(funid, request),
     })
 
@@ -7570,46 +7571,58 @@ def schedule_policy(request, funid):
 @login_required
 def get_schedule_policy(request):
     whole_list = []
+    utils_manage_id = request.POST.get('utils_manage_id', '')
+
     try:
-        all_client_manage = Origin.objects.exclude(state="9").values("client_name")
-        tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
-
-        dm = SQLApi.CustomFilter(settings.sql_credit)
-        ret, row_dict = dm.custom_all_schedules(tmp_client_manage)
-        dm.close()
-        for schedule in ret:
-            schedule_dict = OrderedDict()
-            schedule_dict["clientName"] = schedule["clientName"]
-            schedule_dict["appName"] = schedule["idaagent"]
-            schedule_dict["backupsetName"] = schedule["backupset"]
-            # schedule_dict["subclientName"] = schedule["subclient"]
-            schedule_dict["scheduePolicy"] = schedule["scheduePolicy"]
-            schedule_dict["schedbackuptype"] = schedule["schedbackuptype"]
-            schedule_dict["schedpattern"] = schedule["schedpattern"]
-            schedule_dict["schedbackupday"] = schedule["schedbackupday"]
-
-            schedule_dict["option"] = {
-                "schedpattern": schedule["schedpattern"],
-                "schednextbackuptime": schedule["schednextbackuptime"],
-                "scheduleName": schedule["scheduleName"],
-                "schedinterval": schedule["schedinterval"],
-                "schedbackupday": schedule["schedbackupday"],
-                "schedbackuptype": schedule["schedbackuptype"],
-            }
-
-            whole_list.append(schedule_dict)
-
-    except Exception as e:
-        print(e)
+        utils_manage_id = int(utils_manage_id)
+        utils_manage = UtilsManage.objects.get(id=utils_manage_id)
+    except:
         return JsonResponse({
             "ret": 0,
-            "data": "获取计划策略信息失败。",
+            "data": "Commvault工具未配置。",
         })
     else:
-        return JsonResponse({
-            "ret": 1,
-            "data": {
-                "whole_list": whole_list,
-                "row_dict": row_dict,
-            },
-        })
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        try:
+            all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+            tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            ret, row_dict = dm.custom_all_schedules(tmp_client_manage)
+            dm.close()
+            for schedule in ret:
+                schedule_dict = OrderedDict()
+                schedule_dict["clientName"] = schedule["clientName"]
+                schedule_dict["appName"] = schedule["idaagent"]
+                schedule_dict["backupsetName"] = schedule["backupset"]
+                # schedule_dict["subclientName"] = schedule["subclient"]
+                schedule_dict["scheduePolicy"] = schedule["scheduePolicy"]
+                schedule_dict["schedbackuptype"] = schedule["schedbackuptype"]
+                schedule_dict["schedpattern"] = schedule["schedpattern"]
+                schedule_dict["schedbackupday"] = schedule["schedbackupday"]
+
+                schedule_dict["option"] = {
+                    "schedpattern": schedule["schedpattern"],
+                    "schednextbackuptime": schedule["schednextbackuptime"],
+                    "scheduleName": schedule["scheduleName"],
+                    "schedinterval": schedule["schedinterval"],
+                    "schedbackupday": schedule["schedbackupday"],
+                    "schedbackuptype": schedule["schedbackuptype"],
+                }
+
+                whole_list.append(schedule_dict)
+
+        except Exception as e:
+            print(e)
+            return JsonResponse({
+                "ret": 0,
+                "data": "获取计划策略信息失败。",
+            })
+        else:
+            return JsonResponse({
+                "ret": 1,
+                "data": {
+                    "whole_list": whole_list,
+                    "row_dict": row_dict,
+                },
+            })

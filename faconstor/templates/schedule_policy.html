@@ -11,6 +11,13 @@
     </style>
     <div style="height:10px"></div>
     <div class="portlet-body">
+        <div class="col-md-2" style="padding-left: 20px;">
+            <select name="utils_manage" id="utils_manage" class="form-control">
+                {% for um in utils_manage %}
+                    <option value="{{ um.id }}">{{ um.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="portlet light portlet-fit  calendar">
             <div class="portlet-body">
                 <div class="table-scrollable">
@@ -50,7 +57,8 @@
                             <div class="form-group">
                                 <label class="col-md-3 control-label">计划名称</label>
                                 <div class="col-md-9">
-                                    <input id="scheduleName" type="text" name="scheduleName" class="form-control" placeholder="" value="" readonly>
+                                    <input id="scheduleName" type="text" name="scheduleName" class="form-control"
+                                           placeholder="" value="" readonly>
                                     <div class="form-control-focus"></div>
 
                                 </div>
@@ -58,7 +66,8 @@
                             <div class="form-group ">
                                 <label class="col-md-3 control-label" for="form_control_1">备份类型</label>
                                 <div class="col-md-9">
-                                    <input id="schedbackuptype" type="text" name="schedbackuptype" class="form-control" placeholder="" value="" readonly>
+                                    <input id="schedbackuptype" type="text" name="schedbackuptype" class="form-control"
+                                           placeholder="" value="" readonly>
                                     <div class="form-control-focus"></div>
 
                                 </div>
@@ -66,7 +75,8 @@
                             <div class="form-group ">
                                 <label class="col-md-3 control-label" for="form_control_1">周期</label>
                                 <div class="col-md-9">
-                                    <input id="schedpattern" type="text" name="schedpattern" class="form-control" placeholder="" value="" readonly>
+                                    <input id="schedpattern" type="text" name="schedpattern" class="form-control"
+                                           placeholder="" value="" readonly>
                                     <div class="form-control-focus"></div>
 
                                 </div>
@@ -74,7 +84,8 @@
                             <div class="form-group">
                                 <label class="col-md-3 control-label">模式</label>
                                 <div class="col-md-9">
-                                    <input id="schedbackupday" type="text" name="schedbackupday" class="form-control" placeholder="" value="" readonly>
+                                    <input id="schedbackupday" type="text" name="schedbackupday" class="form-control"
+                                           placeholder="" value="" readonly>
                                     <div class="form-control-focus"></div>
 
                                 </div>
@@ -82,7 +93,8 @@
                             <div class="form-group">
                                 <label class="col-md-3 control-label">开始时间</label>
                                 <div class="col-md-9">
-                                    <input id="schednextbackuptime" type="text" name="schednextbackuptime" class="form-control" placeholder="" value="" readonly>
+                                    <input id="schednextbackuptime" type="text" name="schednextbackuptime"
+                                           class="form-control" placeholder="" value="" readonly>
                                     <div class="form-control-focus"></div>
 
                                 </div>
@@ -90,7 +102,8 @@
                             <div class="form-group ">
                                 <label class="col-md-3 control-label" for="form_control_1">重复</label>
                                 <div class="col-md-9">
-                                    <input id="schedinterval" type="text" name="schedinterval" class="form-control" placeholder="" value="" readonly>
+                                    <input id="schedinterval" type="text" name="schedinterval" class="form-control"
+                                           placeholder="" value="" readonly>
                                     <div class="form-control-focus"></div>
 
                                 </div>
