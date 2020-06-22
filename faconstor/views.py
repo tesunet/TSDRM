@@ -1357,7 +1357,7 @@ def index(request, funid):
             curren_processrun_info_list.append(current_processrun_dict)
 
     # 系统切换成功率
-    all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
     process_success_rate_list = []
     if all_processes:
         for process in all_processes:
@@ -1386,7 +1386,7 @@ def index(request, funid):
 @login_required
 def get_process_rto(request):
     # 不同流程最近的12次切换RTO
-    all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
     process_rto_list = []
     if all_processes:
         for process in all_processes:
@@ -3352,7 +3352,7 @@ def processconfig(request, funid):
     if process_id:
         process_id = int(process_id)
 
-    processes = Process.objects.exclude(state="9").order_by("sort").filter(type="falconstor")
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None)|Q(type=""))
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -3559,8 +3559,8 @@ def process_design(request, funid):
 @login_required
 def process_data(request):
     result = []
-    all_process = Process.objects.exclude(state="9").filter(type="falconstor").order_by("sort").values()
-    if (len(all_process) > 0):
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type="")).order_by("sort").values()
+    if all_process:
         for process in all_process:
             result.append({
                 "process_id": process["id"],
@@ -3572,6 +3572,7 @@ def process_data(request):
                 "process_rpo": process["rpo"],
                 "process_sort": process["sort"],
                 "process_color": process["color"],
+                "type": process["type"],
             })
     return JsonResponse({"data": result})
 
@@ -3589,6 +3590,7 @@ def process_save(request):
         rpo = request.POST.get('rpo', '')
         sort = request.POST.get('sort', '')
         color = request.POST.get('color', '')
+        type = request.POST.get('type', '')
         try:
             id = int(id)
         except:
@@ -3599,40 +3601,23 @@ def process_save(request):
             if name.strip() == '':
                 result["res"] = '预案名称不能为空。'
             else:
-                if sign.strip() == '':
-                    result["res"] = '是否签到不能为空。'
+                if type.strip() == '':
+                    result["res"] = '预案类型不能为空。'
                 else:
-                    # if color.strip() == "":
-                    #     result["res"] = '项目图标配色不能为空。'
-                    # else:
-                    if id == 0:
-                        all_process = Process.objects.filter(code=code).exclude(
-                            state="9").filter(type="falconstor")
-                        if (len(all_process) > 0):
-                            result["res"] = '预案编码:' + code + '已存在。'
-                        else:
-                            processsave = Process()
-                            processsave.url = '/falconstor'
-                            processsave.type = 'falconstor'
-                            processsave.code = code
-                            processsave.name = name
-                            processsave.remark = remark
-                            processsave.sign = sign
-                            processsave.rto = rto if rto else None
-                            processsave.rpo = rpo if rpo else None
-                            processsave.sort = sort if sort else None
-                            processsave.color = color
-                            processsave.save()
-                            result["res"] = "保存成功。"
-                            result["data"] = processsave.id
+                    if sign.strip() == '':
+                        result["res"] = '是否签到不能为空。'
                     else:
-                        all_process = Script.objects.filter(code=code).exclude(
-                            id=id).exclude(state="9")
-                        if (len(all_process) > 0):
-                            result["res"] = '预案编码:' + code + '已存在。'
-                        else:
-                            try:
-                                processsave = Process.objects.get(id=id)
+                        # if color.strip() == "":
+                        #     result["res"] = '项目图标配色不能为空。'
+                        # else:
+                        if id == 0:
+                            all_process = Process.objects.filter(code=code).exclude(
+                                state="9").exclude(Q(type=None)|Q(type=""))
+                            if (len(all_process) > 0):
+                                result["res"] = '预案编码:' + code + '已存在。'
+                            else:
+                                processsave = Process()
+                                processsave.url = '/falconstor'
                                 processsave.code = code
                                 processsave.name = name
                                 processsave.remark = remark
@@ -3641,11 +3626,32 @@ def process_save(request):
                                 processsave.rpo = rpo if rpo else None
                                 processsave.sort = sort if sort else None
                                 processsave.color = color
+                                processsave.type = type
                                 processsave.save()
                                 result["res"] = "保存成功。"
                                 result["data"] = processsave.id
-                            except:
-                                result["res"] = "修改失败。"
+                        else:
+                            all_process = Script.objects.filter(code=code).exclude(
+                                id=id).exclude(state="9")
+                            if (len(all_process) > 0):
+                                result["res"] = '预案编码:' + code + '已存在。'
+                            else:
+                                try:
+                                    processsave = Process.objects.get(id=id)
+                                    processsave.code = code
+                                    processsave.name = name
+                                    processsave.remark = remark
+                                    processsave.sign = sign
+                                    processsave.rto = rto if rto else None
+                                    processsave.rpo = rpo if rpo else None
+                                    processsave.sort = sort if sort else None
+                                    processsave.color = color
+                                    processsave.type = type
+                                    processsave.save()
+                                    result["res"] = "保存成功。"
+                                    result["data"] = processsave.id
+                                except:
+                                    result["res"] = "修改失败。"
     return HttpResponse(json.dumps(result))
 
 
@@ -3778,10 +3784,43 @@ def falconstorswitch(request, process_id):
     else:
         return Http404()
 
+    # 预案类型
+    type = ''
+    try:
+        process = Process.objects.get(id=process_id)
+    except Process.DoesNotExist as e:
+        print(e)
+    else:
+        type = process.type
+
+    # commvault目标客户端
+    all_targets = Target.objects.exclude(state="9")
+
+    # commvault源客户端
+    all_steps = Step.objects.exclude(state="9").filter(process_id=process_id).prefetch_related(
+        "script_set", "script_set__origin", "script_set__origin__target")
+
+    target_id = ""
+    origin = ""
+    data_path = ""
+    copy_priority = ""
+    db_open = ""
+    for cur_step in all_steps:
+        # all_scripts = Script.objects.filter(step_id=cur_step.id).exclude(state="9").select_related("origin")
+        all_scripts = cur_step.script_set.exclude(state="9")
+        for cur_script in all_scripts:
+            if cur_script.origin:
+                origin = cur_script.origin
+                target_id = cur_script.origin.target.id
+                data_path = cur_script.origin.data_path
+                copy_priority = cur_script.origin.copy_priority
+                db_open = cur_script.origin.db_open
+                break
     return render(request, 'falconstorswitch.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                   "wrapper_step_list": wrapper_step_list, "process_id": process_id,
-                   "plan_process_run_id": plan_process_run_id})
+                   "wrapper_step_list": wrapper_step_list, "process_id": process_id, "type": type,
+                   "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
+                   "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open})
 
 
 @login_required
@@ -3839,20 +3878,29 @@ def falconstorrun(request):
     run_person = request.POST.get('run_person', '')
     run_time = request.POST.get('run_time', '')
     run_reason = request.POST.get('run_reason', '')
+
+    target = request.POST.get('target', '')
+    recovery_time = request.POST.get('recovery_time', '')
+    browseJobId = request.POST.get('browseJobId', '')
+    data_path = request.POST.get('data_path', '')
+    copy_priority = request.POST.get('copy_priority', '')
+    db_open = request.POST.get('db_open', '')
+
+    origin = request.POST.get('origin', '')
     try:
         processid = int(processid)
     except:
         raise Http404()
-    process = Process.objects.filter(id=processid).exclude(state="9").filter(type="falconstor")
-    if (len(process) <= 0):
+    process = Process.objects.filter(id=processid).exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    if not process.exists():
         result["res"] = '流程启动失败，该流程不存在。'
     else:
         running_process = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
-        if (len(running_process) > 0):
+        if running_process.exists():
             result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
         else:
             planning_process = ProcessRun.objects.filter(process=process[0], state="PLAN")
-            if (len(planning_process) > 0):
+            if planning_process.exists():
                 result["res"] = '流程启动失败，计划流程未执行，务必先完成计划流程。'
             else:
                 myprocessrun = ProcessRun()
@@ -3863,7 +3911,7 @@ def falconstorrun(request):
                 myprocessrun.state = "RUN"
                 myprocessrun.save()
                 mystep = process[0].step_set.exclude(state="9").order_by("sort")
-                if (len(mystep) <= 0):
+                if not mystep.exists():
                     result["res"] = '流程启动失败，没有找到可用步骤。'
                 else:
                     for step in mystep:
@@ -3935,7 +3983,7 @@ def falconstorrun(request):
                             exec_process.delay(myprocessrun.id)
                             result["res"] = "新增成功。"
                             result["data"] = "/processindex/" + str(myprocessrun.id)
-    return HttpResponse(json.dumps(result))
+    return JsonResponse(result)
 
 
 @login_required
@@ -3962,7 +4010,7 @@ def falconstor_run_invited(request):
             current_process_run.DataSet_id = 89
             current_process_run.save()
 
-            process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None)|Q(type=""))
 
             allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                 "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
@@ -4017,7 +4065,7 @@ def falconstor_run_invited(request):
 
 @login_required
 def walkthrough(request, funid):
-    processes = Process.objects.exclude(state="9").order_by("sort").filter(type="falconstor")
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None)|Q(type=""))
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -5888,7 +5936,7 @@ def falconstorsearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").filter(type="falconstor").order_by('-id')
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type="")).order_by('-id')
     processname_list = []
     for process in all_processes:
         processname_list.append(process.name)
@@ -6022,7 +6070,7 @@ def tasksearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").filter(type="falconstor")
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
     processname_list = []
     for process in all_processes:
         processname_list.append(process.name)
@@ -6219,7 +6267,7 @@ def save_invitation(request):
 
     if start_time:
         if end_time:
-            process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None)|Q(type=""))
             if (len(process) <= 0):
                 result["res"] = '流程计划失败，该流程不存在。'
             else:
@@ -6239,7 +6287,8 @@ def save_invitation(request):
                         myprocessrun.save()
                         current_process_run_id = myprocessrun.id
 
-                        process = Process.objects.filter(id=process_id).exclude(state="9").filter(type="falconstor")
+                        process = Process.objects.filter(id=process_id).exclude(state="9").exclude(
+                            Q(type="") & Q(type=None))
                         mystep = process[0].step_set.exclude(state="9")
                         if (len(mystep) <= 0):
                             result["res"] = '流程启动失败，没有找到可用步骤。'
@@ -6997,13 +7046,7 @@ def target(request, funid):
 #         #############################################
 #         # clientid, clientname, agent, instance, os #
 #         #############################################
-#         sql_credit = {
-#             "host": sqlserver_credit['SQLServerHost'],
-#             "user": sqlserver_credit['SQLServerUser'],
-#             "password": sqlserver_credit['SQLServerPasswd'],
-#             "database": sqlserver_credit['SQLServerDataBase'],
-#         }
-#         dm = SQLApi.CustomFilter(sql_credit)
+#         dm = SQLApi.CustomFilter(sqlserver_credit)
 #
 #         oracle_data = dm.get_instance_from_oracle()
 #
@@ -7639,3 +7682,24 @@ def get_schedule_policy(request):
                     "row_dict": row_dict,
                 },
             })
+
+
+@login_required
+def oraclerecoverydata(request):
+    if request.user.is_authenticated():
+        origin_id = request.GET.get('origin_id', '')
+        result = []
+        try:
+            origin_id = int(origin_id)
+            origin = Origin.objects.get(id=origin_id)
+            utils_manage = origin.utils
+            _, sqlserver_credit = get_credit_info(utils_manage.content)
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            result = dm.get_oracle_backup_job_list(client_name)
+            dm.close()
+        except:
+            pass
+
+        return JsonResponse({"data": result})
+    else:
+        return HttpResponseRedirect("/login")

@@ -8,6 +8,7 @@ $(document).ready(function () {
             {"data": "process_id"},
             {"data": "process_code"},
             {"data": "process_name"},
+            {"data": "type"},
             {"data": "process_remark"},
             {"data": "process_sign"},
             {"data": "process_rto"},
@@ -23,11 +24,11 @@ $(document).ready(function () {
                 return "<td><a href='/processconfig/?process_id=processid'>data</a></td>".replace("processid", full.process_id).replace("data", full.process_name)
             }
         }, {
-            "targets": 4,
+            "targets": 5,
             "render": function (data, type, full) {
                 var process_sign = "否"
                 if (full.process_sign == "1") {
-                    var process_sign = "是"
+                    process_sign = "是"
                 }
                 return "<td>process_sign</td>".replace("process_sign", process_sign);
             }
@@ -39,7 +40,6 @@ $(document).ready(function () {
         }],
         "oLanguage": {
             "sLengthMenu": "每页显示 _MENU_ 条记录",
-            "sZeroRecords": "抱歉， 没有找到",
             "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
             "sInfoEmpty": "没有数据",
             "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
@@ -93,6 +93,7 @@ $(document).ready(function () {
         $("#rpo").val(data.process_rpo);
         $("#sort").val(data.process_sort);
         $("#process_color").val(data.process_color);
+        $("#type").val(data.type);
     });
 
     $("#new").click(function () {
@@ -105,6 +106,7 @@ $(document).ready(function () {
         $("#rpo").val("");
         $("#sort").val("");
         $("#process_color").val("");
+        $("#type").val("");
     });
 
     $('#save').click(function () {
@@ -125,6 +127,7 @@ $(document).ready(function () {
                     rpo: $("#rpo").val(),
                     sort: $("#sort").val(),
                     color: $("#process_color").val(),
+                    type: $("#type").val(),
                 },
             success: function (data) {
                 var myres = data["res"];

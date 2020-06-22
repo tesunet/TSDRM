@@ -168,4 +168,6 @@ urlpatterns = [
     # 备份状态
     url(r'^backup_status/$', backup_status, {'funid': '76'}),
     url(r'^get_backup_status/$', get_backup_status),
+
+    url(r'^oraclerecoverydata/$', oraclerecoverydata),
 ]
