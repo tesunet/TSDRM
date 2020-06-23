@@ -5080,10 +5080,15 @@ def get_current_scriptinfo(request):
         starttime = scriptrun_obj.starttime.strftime("%Y-%m-%d %H:%M:%S") if scriptrun_obj.starttime else ""
         endtime = scriptrun_obj.endtime.strftime("%Y-%m-%d %H:%M:%S") if scriptrun_obj.endtime else ""
 
+        target = ""
+        if script_obj.interface_type == "commvault":
+            if scriptrun_obj.steprun.processrun.target:
+                target = scriptrun_obj.steprun.processrun.target.client_name
+
         script_info = {
             "processrunstate": scriptrun_obj.steprun.processrun.state,
             "code": script_obj.code,
-            "ip": script_obj.hosts_manage.host_ip,
+            "ip": script_obj.hosts_manage.host_ip if script_obj.hosts_manage else "",
             "filename": script_obj.filename,
             "scriptpath": script_obj.scriptpath,
             "state": state_dict["{0}".format(scriptrun_obj.state)],
@@ -5094,6 +5099,9 @@ def get_current_scriptinfo(request):
             "show_button": show_button,
             "step_id_from_script": step_id_from_script,
             "show_log_btn": "1" if script_obj.log_address else "0",
+            "origin": script_obj.origin.client_name if script_obj.origin else "",
+            "target": target,
+            "interface_type": script_obj.interface_type,
         }
 
         return JsonResponse({"data": script_info})

@@ -129,7 +129,8 @@
                                 <div class="form-actions noborder" style="text-align:center">
                                     <button id="stopbtn" type="button" class="btn red"> 停止</button>
                                     <button id="refresh" type="button" class="btn btn-primary"> 刷新</button>
-                                    <button id="show_force_script" type="button" class="btn btn-primary"> 显示强制执行脚本</button>
+                                    <button id="show_force_script" type="button" class="btn btn-primary"> 显示强制执行脚本
+                                    </button>
                                     <button id="show_result" type="button" class="btn btn-primary" hidden> 显示结果</button>
                                 </div>
                             </div>
@@ -155,7 +156,7 @@
                                     <div class="modal-header">
                                         <button type="button" class="close" data-dismiss="modal"
                                                 aria-hidden="true"></button>
-                                        <h4 class="modal-title">脚本信息</h4>
+                                        <h4 class="modal-title">接口信息</h4>
                                         <input hidden id="scriptid" type="text" name="scriptid">
                                         <input hidden id="script_button" type="text" name="script_button">
                                     </div>
@@ -166,7 +167,7 @@
                                             <div class="form-body">
                                                 <div class="form-group">
                                                     <label class="col-md-2 control-label"><span
-                                                            style="color:red; "></span>脚本编号</label>
+                                                            style="color:red; "></span>接口编号</label>
                                                     <div class="col-md-10">
                                                         <input id="code" type="text" name="code"
                                                                class="form-control "
@@ -176,6 +177,17 @@
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
+                                                    <label class="col-md-2 control-label"><span
+                                                            style="color:red; "></span>接口类型</label>
+                                                    <div class="col-md-10">
+                                                        <input id="interface_type" type="text" name="interface_type"
+                                                               class="form-control "
+                                                               placeholder="" readonly>
+                                                        <div class="form-control-focus"></div>
+
+                                                    </div>
+                                                </div>
+                                                <div class="form-group" id="script_ip_div" hidden>
                                                     <label class="col-md-2 control-label"><span
                                                             style="color:red; "></span>主机IP</label>
                                                     <div class="col-md-10">
@@ -187,35 +199,30 @@
                                                     </div>
 
                                                 </div>
-
-
-                                                <!--
-                                                <div class="form-group">
+                                                <div class="form-group" id="origin_div" hidden>
                                                     <label class="col-md-2 control-label"><span
-                                                            style="color:red; "></span>脚本名</label>
+                                                            style="color:red; "></span>源客户端</label>
                                                     <div class="col-md-10">
-                                                        <input id="filename" type="text" name="filename"
+                                                        <input id="origin" type="text" name="origin"
                                                                class="form-control"
                                                                placeholder="" readonly>
                                                         <div class="form-control-focus"></div>
                                                     </div>
                                                 </div>
-                                                <div class="form-group">
+                                                <div class="form-group" id="target_div" hidden>
                                                     <label class="col-md-2 control-label"><span
-                                                            style="color:red; "></span>脚本路径</label>
+                                                            style="color:red; "></span>目标客户端</label>
                                                     <div class="col-md-10">
-                                                        <input id="scriptpath" type="text" name="scriptpath"
+                                                        <input id="target" type="text" name="target"
                                                                class="form-control"
                                                                placeholder="" readonly>
                                                         <div class="form-control-focus"></div>
                                                     </div>
                                                 </div>
-                                                -->
-
 
                                                 <div class="form-group">
                                                     <label class="col-md-2 control-label"><span
-                                                            style="color:red; "></span>脚本状态</label>
+                                                            style="color:red; "></span>接口状态</label>
                                                     <div class="col-md-10">
                                                         <input id="scriptstate" type="text" name="scriptstate"
                                                                class="form-control"
@@ -243,7 +250,7 @@
                                                 </div>
                                                 <div class="form-group">
                                                     <label class="col-md-2 control-label"><span
-                                                            style="color:red; "></span>脚本信息</label>
+                                                            style="color:red; "></span>接口信息</label>
                                                     <div class="col-md-10">
                                                                 <textarea name="errorinfo" id="errorinfo" cols="50"
                                                                           rows="10"
@@ -440,14 +447,14 @@
 
                                 <div class="col-md-9 row">
                                     <div class="col-md-10 row" id="script_name_div">
-{#                                        <label class="control-label col-md-12" style="text-align: left;">清理历史日志</label>#}
-{#                                        <label class="control-label col-md-12" style="text-align: left;">清理控制文件</label>#}
-{#                                        <label class="control-label col-md-12" style="text-align: left;">关闭数据库</label>#}
+                                        {#                                        <label class="control-label col-md-12" style="text-align: left;">清理历史日志</label>#}
+                                        {#                                        <label class="control-label col-md-12" style="text-align: left;">清理控制文件</label>#}
+                                        {#                                        <label class="control-label col-md-12" style="text-align: left;">关闭数据库</label>#}
                                     </div>
                                     <div class="col-md-2 row" id="script_status_div">
-{#                                        <div class="control-label col-md-12"><i class="fa fa-check" style="color:#26C281;"></i></div>#}
-{#                                        <div class="control-label col-md-12"><i class="fa fa-times" style="color:#c51b26;"></i></div>#}
-{#                                        <div class="control-label col-md-12"><i class="fa fa-circle-o"></i></div>#}
+                                        {#                                        <div class="control-label col-md-12"><i class="fa fa-check" style="color:#26C281;"></i></div>#}
+                                        {#                                        <div class="control-label col-md-12"><i class="fa fa-times" style="color:#c51b26;"></i></div>#}
+                                        {#                                        <div class="control-label col-md-12"><i class="fa fa-circle-o"></i></div>#}
                                     </div>
                                 </div>
                             </div>
