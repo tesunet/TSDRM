@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from celery import shared_task
 from faconstor.models import *
 from django.db import connection
-from xml.dom.minidom import parse, parseString
 from . import remote
 from .models import *
 import datetime
@@ -10,7 +9,14 @@ from django.db.models import Q
 import time
 import paramiko
 import os
+import json
 from TSDRM import settings
+import subprocess
+from .api import SQLApi
+from .CVApi import *
+import logging
+
+logger = logging.getLogger('tasks')
 
 
 def is_connection_usable():
@@ -377,6 +383,8 @@ def runstep(steprun, if_repeat=False):
                 script.state = "RUN"
                 script.save()
 
+                origin = script.script.origin
+
                 if script.script.interface_type == "脚本":
                     # HostsManage
                     cur_host_manage = script.script.hosts_manage
@@ -544,28 +552,29 @@ def runstep(steprun, if_repeat=False):
                     # 执行文件
                     rm_obj = remote.ServerByPara(exe_cmd, ip, username, password, system_tag)
                     result = rm_obj.run(script.script.succeedtext)
-
                 else:
                     result = {}
                     commvault_api_path = os.path.join(os.path.join(settings.BASE_DIR, "faconstor"),
                                                       "commvault_api") + os.sep + script.script.commv_interface
                     ret = ""
 
-                    origin = script.script.origin.client_name if script.script.origin else ""
-                    target = ""
-                    if script.steprun.processrun.target:
-                        target = script.steprun.processrun.target.client_name if script.steprun.processrun.target else ""
+                    pr_target = script.steprun.processrun.target
+                    or_target = origin.target
+
+                    if pr_target:
+                        target_id = pr_target.id
                     else:
-                        target = script.script.target.client_name if script.script.target else ""
-                    oracle_info = json.loads(script.script.origin.info)
+                        target_id = or_target.id
+
+                    oracle_info = json.loads(origin.info)
 
                     instance = ""
                     if oracle_info:
                         instance = oracle_info["instance"]
 
-                    oracle_param = "%s %s %s %d" % (origin, target, instance, processrun.id)
+                    oracle_param = "{0} {1} {2} {3}".format(origin.id, target_id, instance, processrun.id)
                     try:
-                        ret = subprocess.getstatusoutput(commvault_api_path + " %s" % oracle_param)
+                        ret = subprocess.getstatusoutput(commvault_api_path + " {0}".format(oracle_param))
                         exec_status, recover_job_id = ret
                     except Exception as e:
                         result["exec_tag"] = 1
@@ -578,20 +587,26 @@ def runstep(steprun, if_repeat=False):
                             result["log"] = "调用commvault接口成功。"
                         elif exec_status == 2:
                             #######################################
-                            # ret=2时，查看任务错误信息写入日志    #
+                            # ret=2时，查看任务错误信息写入日志       #
                             # Oracle恢复出错                      #
                             #######################################
-
-                            # 查看Oracle恢复错误信息
-                            dm = SQLApi.CustomFilter(settings.sql_credit)
-                            job_controller = dm.get_job_controller()
-                            dm.close()
                             recover_error = "无"
+                            from faconstor.views import get_credit_info
 
-                            for jc in job_controller:
-                                if str(recover_job_id) == str(jc["jobID"]):
-                                    recover_error = jc["delayReason"]
-                                    break
+                            try:
+                                utils_manage = origin.utils_manage
+                                _, sqlserver_credit = get_credit_info(utils_manage.content)
+                                # 查看Oracle恢复错误信息
+                                dm = SQLApi.CustomFilter(sqlserver_credit)
+                                job_controller = dm.get_job_controller()
+                                dm.close()
+
+                                for jc in job_controller:
+                                    if str(recover_job_id) == str(jc["jobID"]):
+                                        recover_error = jc["delayReason"]
+                                        break
+                            except Exception as e:
+                                recover_error = e
 
                             result["exec_tag"] = 2
                             # 查看任务错误信息写入>>result["data"]
@@ -658,12 +673,20 @@ def runstep(steprun, if_repeat=False):
                             # 终止commvault作业
                             if recover_job_id != '':
                                 try:
+                                    utils_manage = origin.utils_manage
+                                    commvault_credit, _ = get_credit_info(utils_manage.content)
+                                    commvault_credit = {
+                                        'webaddr': commvault_credit['webaddr'],
+                                        'port': commvault_credit['port'],
+                                        'username': commvault_credit['usernm'],
+                                        'passwd': commvault_credit['passwd']
+                                    }
                                     cvToken = CV_RestApi_Token()
-                                    cvToken.login(settings.CVApi_credit)
+                                    cvToken.login(commvault_credit)
                                     cvOperate = CV_OperatorInterFace(cvToken)
                                     cvOperate.kill_job(recover_job_id)
                                 except Exception as e:
-                                    logger.info(str(e))
+                                    pass
 
                             myprocesstask.logtype = "STOP"
                             myprocesstask.content = "由于辅助拷贝未完成，本次演练中止。"

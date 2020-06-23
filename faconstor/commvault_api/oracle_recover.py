@@ -19,6 +19,20 @@ try:
 except:
     import urllib
 
+# 使用ORM
+import sys
+from django.core.wsgi import get_wsgi_application
+
+# 获取django路径
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.extend([r'%s' % BASE_DIR, ])
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "TSDRM.settings")
+application = get_wsgi_application()
+from faconstor.models import *
+import logging
+
+logger = logging.getLogger('oracle_recover')
+
 
 class CV_RestApi_Token(object):
     """
@@ -2796,6 +2810,9 @@ class CV_Backupset(CV_Client):
             if "curSCN" not in keys:
                 self.msg = "operator - no curSCN"
                 return jobId
+            if "restoreTime" not in keys:
+                self.msg = "operator - no restoreTime"
+                return jobId
         else:
             self.msg = "param not set"
             return jobId
@@ -3111,8 +3128,8 @@ class CV_Backupset(CV_Client):
             if "curSCN" not in keys:
                 self.msg = "operator - no curSCN"
                 return jobId
-            if "recover_time" not in keys:
-                self.msg = "operator - no recover_time"
+            if "restoreTime" not in keys:
+                self.msg = "operator - no restoreTime"
                 return jobId
         else:
             self.msg = "param not set"
@@ -3131,7 +3148,7 @@ class CV_Backupset(CV_Client):
         else:
             log_restore = 'false'
 
-        recover_time = operator["recover_time"]
+        restoreTime = operator["restoreTime"]
         curSCN = operator["curSCN"] if operator["curSCN"] else ""
 
         try:
@@ -3177,8 +3194,8 @@ class CV_Backupset(CV_Client):
             <redirectAllItemsSelected>true</redirectAllItemsSelected>
             '''.format(data_path=data_path)
 
-        # OracleRac 根据recover_time来判断恢复最新事件还是根据curSCN号恢复
-        if recover_time:
+        # OracleRac 根据restoreTime来判断恢复最新事件还是根据curSCN号恢复
+        if restoreTime:
             recover_from = 1
         else:
             recover_from = 4
@@ -3389,10 +3406,10 @@ class CV_Backupset(CV_Client):
                 </taskInfo>
             </TMMsg_CreateTaskReq>'''.format(sourceClient=sourceClient, destClient=destClient, instance=instance,
                                              restoreTime="{0:%Y-%m-%d %H:%M:%S}".format(
-                                                 recover_time if recover_time else datetime.datetime.now()),
+                                                 restoreTime if restoreTime else datetime.datetime.now()),
                                              copyPrecedence_xml=copyPrecedence_xml, data_path_xml=data_path_xml,
                                              curSCN=curSCN, db_open=db_open, recover_from=recover_from,
-                                             restoreFrom="1" if recover_time else "0", log_restore=log_restore)
+                                             restoreFrom="1" if restoreTime else "0", log_restore=log_restore)
 
         try:
             root = ET.fromstring(restoreoracleRacXML)
@@ -4025,146 +4042,125 @@ class DoMysql(object):
 
 
 def run(origin, target, instance, processrun_id):
-    #############################################
-    # 从config/db_config.xml中读取数据库认证信息 #
-    #############################################
-    db_host, db_name, db_user, db_password = '', '', '', ''
+    # 从ProcessRun表中读取 recover_time, browse_job_id, data_path, copy_priority, curSCN, db_open, log_restore
+    # 从UtilsManage表中读取，Commvault认证信息
+    def get_credit_info(content):
+        commvault_credit = {
+            'webaddr': '',
+            'port': '',
+            'usernm': '',
+            'passwd': '',
+        }
+        sqlserver_credit = {
+            'SQLServerHost': '',
+            'SQLServerUser': '',
+            'SQLServerPasswd': '',
+            'SQLServerDataBase': '',
+        }
+        try:
+            doc = etree.XML(content)
+
+            # Commvault账户信息
+            commvault_credit['webaddr'] = doc.xpath('//webaddr/text()')[0]
+            commvault_credit['port'] = doc.xpath('//port/text()')[0]
+            commvault_credit['usernm'] = doc.xpath('//username/text()')[0]
+            commvault_credit['passwd'] = base64.b64decode(doc.xpath('//passwd/text()')[0]).decode()
+
+            # SQL Server账户信息
+            sqlserver_credit['SQLServerHost'] = doc.xpath('//SQLServerHost/text()')[0]
+            sqlserver_credit['SQLServerUser'] = doc.xpath('//SQLServerUser/text()')[0]
+            sqlserver_credit['SQLServerPasswd'] = base64.b64decode(
+                doc.xpath('//SQLServerPasswd/text()')[0]).decode()
+            sqlserver_credit['SQLServerDataBase'] = doc.xpath('//SQLServerDataBase/text()')[0]
+
+        except Exception as e:
+            print(e)
+        return commvault_credit, sqlserver_credit
 
     try:
-        db_config_file = os.path.join(os.path.join(os.path.join(
-            os.getcwd(), "faconstor"), "config"), "db_config.xml")
-
-        with open(db_config_file, "r") as f:
-            content = etree.XML(f.read())
-            db_config = content.xpath('./DB_CONFIG')
-            if db_config:
-                db_config = db_config[0]
-                db_host = db_config.attrib.get("db_host", "")
-                db_name = db_config.attrib.get("db_name", "")
-                db_user = db_config.attrib.get("db_user", "")
-                db_password = db_config.attrib.get("db_password", "")
-    except:
-        print("获取数据库信息失败。")
-        exit(1)
-
-    db = DoMysql(db_host, db_user, db_password, db_name)
-
-    credit_result = {}
-    recovery_result = {}
-
-    credit_sql = "SELECT t.content FROM {db_name}.faconstor_vendor t;".format(
-        **{"db_name": db_name})
-    recovery_sql = """SELECT recover_time, browse_job_id, data_path, copy_priority, curSCN, db_open, log_restore FROM {db_name}.faconstor_processrun
-                      WHERE state!='9' AND id={processrun_id};""".format(
-        **{"processrun_id": processrun_id, "db_name": db_name})
-
-    try:
-        credit_result = db.fetchOne(credit_sql)
-        recovery_result = db.fetchOne(recovery_sql)
-    except:
-        pass
-
-    db.close()
-    browse_job_id = ""
-    data_path = ""
-    copy_priority = ""
-    curSCN = ""
-    db_open = ""
-    recover_time = ""
-    log_restore = 2
-
-    if recovery_result:
-        browse_job_id = recovery_result["browse_job_id"]
-        data_path = recovery_result["data_path"]
-        copy_priority = recovery_result["copy_priority"]
-        db_open = recovery_result["db_open"]
-        curSCN = recovery_result["curSCN"]
-        recover_time = recovery_result["recover_time"]
-        log_restore = recovery_result["log_restore"]
-
-    webaddr = ""
-    port = ""
-    usernm = ""
-    passwd = ""
-    if credit_result:
-        doc = parseString(credit_result["content"])
-        try:
-            webaddr = (doc.getElementsByTagName("webaddr"))[0].childNodes[0].data
-        except:
-            pass
-        try:
-            port = (doc.getElementsByTagName("port"))[0].childNodes[0].data
-        except:
-            pass
-        try:
-            usernm = (doc.getElementsByTagName("username"))[0].childNodes[0].data
-        except:
-            pass
-        try:
-            passwd = (doc.getElementsByTagName("passwd"))[0].childNodes[0].data
-        except:
-            pass
-
-    info = {
-        "webaddr": webaddr,
-        "port": port,
-        "username": usernm,
-        "passwd": passwd,
-        "token": "",
-        "last_login": 0
-    }
-
-    cvToken = CV_RestApi_Token()
-    cvToken.login(info)
-    cvAPI = CV_API(cvToken)
-
-    jobId = cvAPI.restoreOracleBackupset(origin, target, instance,
-                                         {'browseJobId': browse_job_id, 'data_path': data_path,
-                                          "copy_priority": copy_priority, "curSCN": curSCN,
-                                          "db_open": db_open, "restoreTime": recover_time, "log_restore": log_restore})
-    # jobId = 4553295
-    if jobId == -1:
-        print("oracle恢复接口调用失败，{0}。".format(cvAPI.msg))
+        processrun = ProcessRun.objects.get(id=processrun_id)
+    except ProcessRun.DoesNotExist as e:
+        print("流程不存在，{0}。".format(e))
         exit(1)
     else:
-        temp_tag = 0
-        waiting_times = 0
+        origin_name, target_name = '', ''
+        # 从源客户端表获取工具
+        try:
+            origin = Origin.objects.get(id=int(origin))
+            origin_name = origin.client_name
+        except Exception as e:
+            print('源客户端不存在，{0}。'.format(e))
+            exit(1)
+        try:
+            target = Target.objects.get(id=int(target))
+            target_name = target.client_name
+        except Exception as e:
+            print('目标客户端不存在，{0}。'.format(e))
+            exit(1)
 
-        while True:
-            ret = []
-            try:
-                ret = cvAPI.getJobList(origin, type="restore")
-            except:
-                temp_tag += 1
-            for i in ret:
-                if str(i["jobId"]) == str(jobId):
-                    if i['status'] in ['运行']:
-                        break
-                    elif i['status'] in ['等待', '未决']:
-                        if waiting_times > 450:
+        utils_manage = origin.utils
+
+        commvault_credit, _ = get_credit_info(utils_manage.content)
+        info = {
+            'webaddr': commvault_credit['webaddr'],
+            'port': commvault_credit['port'],
+            'username': commvault_credit['usernm'],
+            'passwd': commvault_credit['passwd'],
+            "token": "",
+            "last_login": 0
+        }
+
+        cvToken = CV_RestApi_Token()
+        cvToken.login(info)
+        cvAPI = CV_API(cvToken)
+
+        jobId = cvAPI.restoreOracleBackupset(origin_name, target_name, instance,
+                                             {'browseJobId': processrun.browse_job_id, 'data_path': processrun.data_path,
+                                              "copy_priority": processrun.copy_priority, "curSCN": processrun.curSCN,
+                                              "db_open": processrun.db_open, "restoreTime": processrun.recover_time,
+                                              "log_restore": processrun.log_restore})
+        # jobId = 4553295
+        if jobId == -1:
+            print("oracle恢复接口调用失败，{0}。".format(cvAPI.msg))
+            exit(1)
+        else:
+            temp_tag = 0
+            waiting_times = 0
+            while True:
+                ret = []
+                try:
+                    ret = cvAPI.getJobList(origin_name, type="restore")
+                except:
+                    temp_tag += 1
+                for i in ret:
+                    if str(i["jobId"]) == str(jobId):
+                        if i['status'] in ['运行']:
+                            break
+                        elif i['status'] in ['等待', '未决']:
+                            if waiting_times > 450:
+                                print(jobId)
+                                exit(2)
+                            waiting_times += 1
+                            break
+                        elif i['status'].upper() == '完成':
+                            exit(0)
+                        else:
+                            # oracle恢复出现异常
+                            #################################
+                            # 程序中不要出现其他print()      #
+                            # print()将会作为输出被服务器获取#
+                            #################################
                             print(jobId)
                             exit(2)
-                        waiting_times += 1
-                        break
-                    elif i['status'].upper() == '完成':
-                        exit(0)
-                    else:
-                        # oracle恢复出现异常
-                        #################################
-                        # 程序中不要出现其他print()      #
-                        # print()将会作为输出被服务器获取#
-                        #################################
-                        print(jobId)
-                        exit(2)
-            # 长时间未获取到Commvault状态，请检查Commvault恢复情况。
-            if temp_tag > 100:
-                exit(3)
-            time.sleep(4)
-        #################################
-        # exit() 1:调用Oracle恢复接口失败#
-        #        2:Oracle恢复出现异常    #
-        #        0:执行Oracle恢复成功    #
-        #################################
+                # 长时间未获取到Commvault状态，请检查Commvault恢复情况。
+                if temp_tag > 100:
+                    exit(3)
+                time.sleep(4)
+            #################################
+            # exit() 1:调用Oracle恢复接口失败#
+            #        2:Oracle恢复出现异常    #
+            #        0:执行Oracle恢复成功    #
+            #################################
 
 
 if len(sys.argv) == 5:

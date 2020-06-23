@@ -22,6 +22,7 @@ $(document).ready(function () {
             "columns": [
                 {"data": "processrun_id"},
                 {"data": "process_name"},
+                {"data": "process_type"},
                 {"data": "createuser"},
                 {"data": "state"},
                 {"data": "run_reason"},
@@ -117,7 +118,7 @@ $(document).ready(function () {
                     browseJobId: $("#browseJobId").val(),
                     data_path: $("#data_path").val(),
 
-                    origin: $("#origin").val(),
+                    origin: $("#origin_id").val(),
                     copy_priority: $("#copy_priority").val(),
                     db_open: $("#db_open").val(),
                 },

@@ -1357,7 +1357,7 @@ def index(request, funid):
             curren_processrun_info_list.append(current_processrun_dict)
 
     # 系统切换成功率
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
     process_success_rate_list = []
     if all_processes:
         for process in all_processes:
@@ -1386,7 +1386,7 @@ def index(request, funid):
 @login_required
 def get_process_rto(request):
     # 不同流程最近的12次切换RTO
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
     process_rto_list = []
     if all_processes:
         for process in all_processes:
@@ -3352,7 +3352,7 @@ def processconfig(request, funid):
     if process_id:
         process_id = int(process_id)
 
-    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None)|Q(type=""))
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type=""))
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -3559,7 +3559,7 @@ def process_design(request, funid):
 @login_required
 def process_data(request):
     result = []
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type="")).order_by("sort").values()
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").values()
     if all_process:
         for process in all_process:
             result.append({
@@ -3612,7 +3612,7 @@ def process_save(request):
                         # else:
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
-                                state="9").exclude(Q(type=None)|Q(type=""))
+                                state="9").exclude(Q(type=None) | Q(type=""))
                             if (len(all_process) > 0):
                                 result["res"] = '预案编码:' + code + '已存在。'
                             else:
@@ -3841,32 +3841,34 @@ def falconstorswitchdata(request):
         "": "",
     }
 
-    cursor = connection.cursor()
+    try:
+        with connection.cursor() as cursor:
+            exec_sql = """
+            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
+            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' and r.process_id = {0} order by r.starttime desc;
+            """.format(process_id)
 
-    exec_sql = """
-    select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
-    left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' and r.process_id = {0} order by r.starttime desc;
-    """.format(process_id)
+            cursor.execute(exec_sql)
+            rows = cursor.fetchall()
+            for processrun_obj in rows:
+                create_users = processrun_obj[2] if processrun_obj[2] else ""
+                create_user_objs = User.objects.filter(username=create_users)
+                create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
 
-    cursor.execute(exec_sql)
-    rows = cursor.fetchall()
-    for processrun_obj in rows:
-        if processrun_obj[9] == "falconstor":
-            create_users = processrun_obj[2] if processrun_obj[2] else ""
-            create_user_objs = User.objects.filter(username=create_users)
-            create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
-
-            result.append({
-                "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
-                "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
-                "createuser": create_user_fullname,
-                "state": state_dict["{0}".format(processrun_obj[3])] if processrun_obj[3] else "",
-                "process_id": processrun_obj[4] if processrun_obj[4] else "",
-                "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
-                "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
-                "process_name": processrun_obj[7] if processrun_obj[7] else "",
-                "process_url": processrun_obj[8] if processrun_obj[8] else ""
-            })
+                result.append({
+                    "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
+                    "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
+                    "createuser": create_user_fullname,
+                    "state": state_dict["{0}".format(processrun_obj[3])] if processrun_obj[3] else "",
+                    "process_id": processrun_obj[4] if processrun_obj[4] else "",
+                    "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
+                    "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
+                    "process_name": processrun_obj[7] if processrun_obj[7] else "",
+                    "process_url": processrun_obj[8] if processrun_obj[8] else "",
+                    "process_type": processrun_obj[9] if processrun_obj[9] else ""
+                })
+    finally:
+        connection.close()
 
     return JsonResponse({"data": result})
 
@@ -3891,10 +3893,22 @@ def falconstorrun(request):
         processid = int(processid)
     except:
         raise Http404()
-    process = Process.objects.filter(id=processid).exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    process = Process.objects.filter(id=processid).exclude(state="9").exclude(Q(type=None) | Q(type=""))
     if not process.exists():
         result["res"] = '流程启动失败，该流程不存在。'
     else:
+        # Commvault相关
+        if process[0].type.upper() == 'COMMVAULT':
+            try:
+                origin = int(origin)
+            except:
+                return JsonResponse({"res": "流程步骤中未添加Commvault接口，导致源客户端未空。"})
+
+            try:
+                target = int(target)
+            except:
+                return JsonResponse({"res": "目标客户端未选择。"})
+
         running_process = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
         if running_process.exists():
             result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
@@ -3909,6 +3923,24 @@ def falconstorrun(request):
                 myprocessrun.creatuser = request.user.username
                 myprocessrun.run_reason = run_reason
                 myprocessrun.state = "RUN"
+
+                if process[0].type.upper() == 'COMMVAULT':
+                    # Commvault 相关
+                    myprocessrun.target_id = target
+                    myprocessrun.browse_job_id = browseJobId
+                    myprocessrun.data_path = data_path
+                    myprocessrun.copy_priority = copy_priority
+                    myprocessrun.db_open = db_open
+                    myprocessrun.origin_id = origin
+                    myprocessrun.recover_time = datetime.datetime.strptime(recovery_time,
+                                                                           "%Y-%m-%d %H:%M:%S") if recovery_time else None
+                    # 是否回滚归档日志
+                    log_restore = 1
+                    origin = Origin.objects.filter(id=origin)
+                    if origin:
+                        log_restore = origin[0].log_restore
+                    myprocessrun.log_restore = log_restore
+
                 myprocessrun.save()
                 mystep = process[0].step_set.exclude(state="9").order_by("sort")
                 if not mystep.exists():
@@ -4010,7 +4042,7 @@ def falconstor_run_invited(request):
             current_process_run.DataSet_id = 89
             current_process_run.save()
 
-            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None)|Q(type=""))
+            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
 
             allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                 "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
@@ -4065,7 +4097,7 @@ def falconstor_run_invited(request):
 
 @login_required
 def walkthrough(request, funid):
-    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None)|Q(type=""))
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type=""))
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -5936,7 +5968,7 @@ def falconstorsearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type="")).order_by('-id')
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by('-id')
     processname_list = []
     for process in all_processes:
         processname_list.append(process.name)
@@ -6070,7 +6102,7 @@ def tasksearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
     processname_list = []
     for process in all_processes:
         processname_list.append(process.name)
@@ -6267,7 +6299,7 @@ def save_invitation(request):
 
     if start_time:
         if end_time:
-            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None)|Q(type=""))
+            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
             if (len(process) <= 0):
                 result["res"] = '流程计划失败，该流程不存在。'
             else:

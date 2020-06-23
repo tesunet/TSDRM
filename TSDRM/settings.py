@@ -157,83 +157,60 @@ EMAIL_PORT = 25
 # ]
 
 
-# CASHES_DIR = BASE_DIR + os.sep + "faconstor"+ os.sep + "static"+ os.sep + "mem"
-# CACHES = {
-#     'default': {
-#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
-#         'LOCATION': CASHES_DIR,  # 设置缓存文件的目录
-#         'OPTIONS': {
-#             'MAX_ENTRIES': 300,  # 最大缓存个数（默认300）
-#             'CULL_FREQUENCY': 3,  # 缓存到达最大个数之后，剔除缓存个数的比例，即：1/CULL_FREQUENCY（默认3）
-#         },
-#     }
-# }
+# 日志系统
+# 创建日志的路径
+LOG_PATH = os.path.join(BASE_DIR, 'log')
+# 如果地址不存在，则自动创建log文件夹
+if not os.path.exists(LOG_PATH):
+    os.mkdir(LOG_PATH)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,  # True表示禁用logger
+    'formatters': {
+        'default': {
+            'format': '%(levelno)s %(module)s %(asctime)s %(message)s ',
+            'datefmt': '%Y-%m-%d %A %H:%M:%S',
+        },
+    },
 
-# # 日志系统
-# # 创建日志的路径
-# LOG_PATH = os.path.join(BASE_DIR, 'log')
-# # 如果地址不存在，则自动创建log文件夹
-# if not os.path.join(LOG_PATH):
-#     os.mkdir(LOG_PATH)
-# LOGGING = {
-#     "version": 1,
-#     # True表示禁用logger
-#     "disable_existing_loggers": False,
-#     'formatters': {
-#         'default': {
-#             'format': '%(levelno)s %(module)s %(asctime)s %(message)s ',
-#             'datefmt': '%Y-%m-%d %A %H:%M:%S',
-#         },
-#     },
-#
-#     'handlers': {
-#         'process_handlers': {
-#             'level': 'DEBUG',
-#             # 日志文件指定为5M, 超过5m重新命名，然后写入新的日志文件
-#             'class': 'logging.handlers.RotatingFileHandler',
-#             # 指定文件大小
-#             'maxBytes': 5 * 1024,
-#             # 指定文件地址
-#             'filename': '%s/process.txt' % LOG_PATH,
-#             'formatter': 'default'
-#         },
-#         'step_handlers': {
-#             'level': 'DEBUG',
-#             # 日志文件指定为5M, 超过5m重新命名，然后写入新的日志文件
-#             'class': 'logging.handlers.RotatingFileHandler',
-#             # 指定文件大小
-#             'maxBytes': 5 * 1024,
-#             # 指定文件地址
-#             'filename': '%s/step.txt' % LOG_PATH,
-#             'formatter': 'default'
-#         },
-#         'script_handlers': {
-#             'level': 'DEBUG',
-#             # 日志文件指定为5M, 超过5m重新命名，然后写入新的日志文件
-#             'class': 'logging.handlers.RotatingFileHandler',
-#             # 指定文件大小
-#             'maxBytes': 5 * 1024,
-#             # 指定文件地址
-#             'filename': '%s/script.txt' % LOG_PATH,
-#             'formatter': 'default',
-#         },
-#     },
-#     'loggers': {
-#         'process': {
-#             'handlers': ['process_handlers'],
-#             'level': 'INFO'
-#         },
-#         'step': {
-#             'handlers': ['step_handlers'],
-#             'level': 'INFO'
-#         },
-#         'script': {
-#             'handlers': ['script_handlers'],
-#             'level': 'INFO'
-#         }
-#     },
-#
-#     'filters': {
-#         # 过滤器
-#     }
-# }
+    'handlers': {
+        'tasks': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',  # 日志文件指定为5M, 超过5m重新命名，然后写入新的日志文件
+            'maxBytes': 5 * 1024,  # 指定文件大小
+            'filename': '%s/tasks.txt' % LOG_PATH,  # 指定文件地址
+            'formatter': 'default',
+            'encoding': 'utf8',
+        },
+        'oracle_recover': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',  # 日志文件指定为5M, 超过5m重新命名，然后写入新的日志文件
+            'maxBytes': 5 * 1024,  # 指定文件大小
+            'filename': '%s/oracle_recover.txt' % LOG_PATH,  # 指定文件地址
+            'formatter': 'default',
+            'encoding': 'utf8',
+        },
+        'oracleRAC_recover': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',  # 日志文件指定为5M, 超过5m重新命名，然后写入新的日志文件
+            'maxBytes': 5 * 1024,  # 指定文件大小
+            'filename': '%s/oracleRAC_recover.txt' % LOG_PATH,  # 指定文件地址
+            'formatter': 'default',
+            'encoding': 'utf8',
+        },
+    },
+    'loggers': {
+        'tasks': {
+            'handlers': ['tasks'],
+            'level': 'INFO'
+        },
+        'oracle_recover': {
+            'handlers': ['oracle_recover'],
+            'level': 'INFO'
+        },
+        'oracleRAC_recover': {
+            'handlers': ['oracleRAC_recover'],
+            'level': 'INFO'
+        },
+    },
+}
