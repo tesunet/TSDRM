@@ -19,15 +19,6 @@ import logging
 logger = logging.getLogger('tasks')
 
 
-def is_connection_usable():
-    try:
-        connection.connection.ping()
-    except:
-        return False
-    else:
-        return True
-
-
 # @shared_task(bind=True, default_retry_delay=300, max_retries=5)  # 错误处理机制，因网络延迟等问题的重试；
 @shared_task
 def exec_script(steprunid, username, fullname):
@@ -1046,3 +1037,110 @@ def exec_process(processrunid, if_repeat=False):
     #         myprocesstask.state = "0"
     #         myprocesstask.content = processrun.process.name + " 流程运行出错，请处理。"
     #         myprocesstask.save()
+
+
+@shared_task
+def create_process_run(*args, **kwargs):
+    """
+    创建计划流程
+    :param process:
+    :return:
+    """
+    # exec_process.delay(processrunid)
+    # data_path/target/origin/
+    origin_id, target_id, data_path, copy_priority, db_open = "", None, "", 1, 1
+    try:
+        process_id = int(kwargs["cur_process"])
+    except ValueError as e:
+        pass
+    else:
+        try:
+            cur_process = Process.objects.get(id=process_id)
+        except Process.DoesNotExist as e:
+            print(e)
+        else:
+            process_type = cur_process.type
+
+            if process_type.upper() == "COMMVAULT":
+                # 过滤所有脚本
+                all_steps = cur_process.step_set.exclude(state="9")
+                for cur_step in all_steps:
+                    all_scripts = cur_step.script_set.exclude(state="9")
+                    for cur_script in all_scripts:
+                        if cur_script.origin:
+                            origin_id = cur_script.origin.id
+                            data_path = cur_script.origin.data_path
+                            copy_priority = cur_script.origin.copy_priority
+                            db_open = cur_script.origin.db_open
+                            if cur_script.origin.target:
+                                target_id = cur_script.origin.target.id
+                            break
+
+            # running_process = ProcessRun.objects.filter(process=cur_process, state__in=["RUN", "ERROR"])
+            running_process = ProcessRun.objects.filter(process=cur_process, state__in=["RUN"])
+            if running_process.exists():
+                myprocesstask = ProcessTask()
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "END"
+                myprocesstask.state = "0"
+                myprocesstask.processrun = running_process[0]
+                myprocesstask.content = "计划流程({0})已运行，无法按计划创建恢复流程任务。".format(running_process[0].process.name)
+                myprocesstask.save()
+            else:
+                myprocessrun = ProcessRun()
+                myprocessrun.creatuser = kwargs["creatuser"]
+                myprocessrun.process = cur_process
+                myprocessrun.starttime = datetime.datetime.now()
+                myprocessrun.state = "RUN"
+                if process_type.upper() == "COMMVAULT":
+                    myprocessrun.target_id = target_id
+                    myprocessrun.data_path = data_path
+                    myprocessrun.copy_priority = copy_priority
+                    myprocessrun.db_open = db_open
+                    myprocessrun.origin_id = origin_id
+
+                    # 是否回滚归档日志
+                    log_restore = 1
+                    origin = Origin.objects.exclude(state='9').filter(id=origin_id)
+                    if origin:
+                        log_restore = origin[0].log_restore
+
+                    myprocessrun.log_restore = log_restore
+                myprocessrun.save()
+                mystep = cur_process.step_set.exclude(state="9")
+                if not mystep.exists():
+                    myprocesstask = ProcessTask()
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "END"
+                    myprocesstask.state = "0"
+                    myprocesstask.processrun = myprocessrun
+                    myprocesstask.content = "计划流程({0})不存在可运行步骤，无法按计划创建恢复流程任务。".format(myprocessrun.process.name)
+                    myprocesstask.save()
+                else:
+                    for step in mystep:
+                        mysteprun = StepRun()
+                        mysteprun.step = step
+                        mysteprun.processrun = myprocessrun
+                        mysteprun.state = "EDIT"
+                        mysteprun.save()
+
+                        myscript = step.script_set.exclude(state="9")
+                        for script in myscript:
+                            myscriptrun = ScriptRun()
+                            myscriptrun.script = script
+                            myscriptrun.steprun = mysteprun
+                            myscriptrun.state = "EDIT"
+                            myscriptrun.save()
+
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun = myprocessrun
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "START"
+                    myprocesstask.state = "1"
+                    myprocesstask.content = "流程已启动。"
+                    myprocesstask.save()
+
+                    exec_process.delay(myprocessrun.id)

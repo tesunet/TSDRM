@@ -170,4 +170,11 @@ urlpatterns = [
     url(r'^get_backup_status/$', get_backup_status),
 
     url(r'^oraclerecoverydata/$', oraclerecoverydata),
+
+    # 流程计划
+    url(r'^process_schedule/$', process_schedule, {'funid': '81'}),
+    url(r'^process_schedule_save/$', process_schedule_save),
+    url(r'^process_schedule_data/$', process_schedule_data),
+    url(r'^change_periodictask/$', change_periodictask),
+    url(r'^process_schedule_del/$', process_schedule_del),
 ]

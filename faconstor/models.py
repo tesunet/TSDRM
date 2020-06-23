@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
+from djcelery import models as djmodels
 
 
 class Fun(models.Model):
@@ -263,3 +264,17 @@ class Origin(models.Model):
         (2, "否")
     ))
     utils = models.ForeignKey(UtilsManage, null=True, verbose_name="关联工具")
+
+
+class ProcessSchedule(models.Model):
+    dj_periodictask = models.OneToOneField(djmodels.PeriodicTask, null=True, verbose_name="定时任务")
+    process = models.ForeignKey(Process, null=True, verbose_name="流程预案")
+    name = models.CharField("流程计划名称", null=True, default="", max_length=256)
+    remark = models.TextField("计划说明", null=True, default="")
+    state = models.CharField("状态", null=True, default="", max_length=20)
+    schedule_type_choices = (
+        (1, "每日"),
+        (2, "每周"),
+        (3, "每月"),
+    )
+    schedule_type = models.IntegerField(choices=schedule_type_choices, default=1, null=True)
