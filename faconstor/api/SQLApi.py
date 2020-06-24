@@ -794,7 +794,8 @@ class CVApi(DataMonitor):
         FROM CommServ.dbo.CNMMMountPathView AS cmpv
         LEFT JOIN CommServ.dbo.CNMMMediaInfoView AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
         LEFT JOIN CommServ.dbo.CNMMMALibraryView AS cmalv ON cmalv.LibraryID=cmpv.LibraryID
-        LEFT JOIN CommServ.dbo.CNMMMAInfoView AS cmaiv ON cmaiv.MediaAgentID=cmalv.MediaAgentID"""
+        LEFT JOIN CommServ.dbo.CNMMMAInfoView AS cmaiv ON cmaiv.MediaAgentID=cmalv.MediaAgentID
+        ORDER BY cmaiv.DisplayName ASC, cmiv.LibraryName ASC"""
         content = self.fetch_all(library_space_sql)
         library_space_info = []
         for i in content:

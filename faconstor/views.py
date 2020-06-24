@@ -7726,6 +7726,80 @@ def get_schedule_policy(request):
 
 
 @login_required
+def disk_space(request, funid):
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+    return render(request, 'disk_space.html', {
+        'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
+        "pagefuns": getpagefuns(funid, request=request)
+    })
+
+
+@login_required
+def get_disk_space(request): 
+    # MA rowspan 总记录数
+    # 库 rowspan 相同库记录数
+    status = 1
+    data = []
+    info = ''
+    utils_manage_id = request.POST.get('utils_manage_id', '')
+
+    try:
+        utils_manage_id = int(utils_manage_id)
+        utils_manage = UtilsManage.objects.get(id=utils_manage_id)
+    except:
+        status = 0
+        info = 'Commvault工具未配置。'
+    else:
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        try:
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            data = dm.get_library_space_info()
+            dm.close()
+            # 遍历所有记录 总记录数
+            def get_rowspan(total_list, **kwargs):
+                row_span = 0
+                display_name = kwargs.get('DisplayName', '')
+                library_name = kwargs.get('LibraryName', '')
+                if all([display_name, library_name]):
+                    for tl in total_list:
+                        if tl['DisplayName'] == display_name and tl['LibraryName'] == library_name:
+                            row_span += 1
+                if display_name and not library_name:
+                    for tl in total_list:
+                        if tl['DisplayName'] == display_name:
+                            row_span += 1
+                return row_span
+            
+            for num, lsi in enumerate(data):
+                display_name_rowspan = get_rowspan(data, DisplayName=lsi['DisplayName'])
+                library_name_rowspan = get_rowspan(data, DisplayName=lsi['DisplayName'], LibraryName=lsi['LibraryName'])
+            
+                # 时间
+                try:
+                    data[num]["LastBackupTime"] = "{:%Y-%m-%d %H:%M:%S}".format(data[num]["LastBackupTime"])
+                except Exception as e:
+                    data[num]["LastBackupTime"] = ""
+                # 是否可用
+                if data[num]["Offline"] == 0:
+                    data[num]["Offline"] = '<i class="fa fa-plug" style="color:green; height:20px;width:14px;"></i>'
+                else:
+                    data[num]["Offline"] = '<i class="fa fa-plug" style="color:red; height:20px;width:14px;"></i>'
+            
+                data[num]['display_name_rowspan'] = display_name_rowspan
+                data[num]['library_name_rowspan'] = library_name_rowspan
+            
+        except Exception as e:
+            print(e)
+            status = 0
+            info = '获取磁盘容量信息失败: {e}。'.format(e)
+    return JsonResponse({
+        "status": status,
+        "info": info,
+        "data": data
+    })
+
+
+@login_required
 def oraclerecoverydata(request):
     origin_id = request.GET.get('origin_id', '')
     result = []
@@ -7744,291 +7818,283 @@ def oraclerecoverydata(request):
     return JsonResponse({"data": result})
 
 
+@login_required
 def process_schedule(request, funid):
-    if request.user.is_authenticated():
-        all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").only("id", "name")
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").only("id", "name")
 
-        return render(request, 'process_schedule.html', {'username': request.user.userinfo.fullname,
-                                                         "pagefuns": getpagefuns(funid, request=request),
-                                                         "all_process": all_process})
-    else:
-        return HttpResponseRedirect("/login")
+    return render(request, 'process_schedule.html', {'username': request.user.userinfo.fullname,
+                                                        "pagefuns": getpagefuns(funid, request=request),
+                                                        "all_process": all_process})
 
 
+@login_required
 def process_schedule_save(request):
-    if request.user.is_authenticated():
-        process_schedule_id = request.POST.get('process_schedule_id', '')
-        process_schedule_name = request.POST.get('process_schedule_name', '')
-        process = request.POST.get('process', '')
-        process_schedule_remark = request.POST.get('process_schedule_remark', '')
+    process_schedule_id = request.POST.get('process_schedule_id', '')
+    process_schedule_name = request.POST.get('process_schedule_name', '')
+    process = request.POST.get('process', '')
+    process_schedule_remark = request.POST.get('process_schedule_remark', '')
 
-        schedule_type = request.POST.get('schedule_type', '')
+    schedule_type = request.POST.get('schedule_type', '')
 
-        per_time = request.POST.get('per_time', '')
-        per_month = request.POST.get('per_month', '')
-        per_week = request.POST.get('per_week', '')
-        ret = 1
-        info = ""
+    per_time = request.POST.get('per_time', '')
+    per_month = request.POST.get('per_month', '')
+    per_week = request.POST.get('per_week', '')
+    ret = 1
+    info = ""
 
-        if not process_schedule_name:
-            return JsonResponse({
-                "ret": 0,
-                "info": "计划名称不能为空。"
-            })
-
-        try:
-            process = int(process)
-        except ValueError as e:
-            return JsonResponse({
-                "ret": 0,
-                "info": "流程未选择。"
-            })
-
-        try:
-            process_schedule_id = int(process_schedule_id)
-        except ValueError as e:
-            return JsonResponse({
-                "ret": 0,
-                "info": "网络异常。"
-            })
-
-        # 周期类型
-        try:
-            schedule_type = int(schedule_type)
-        except ValueError as e:
-            return JsonResponse({
-                "ret": 0,
-                "info": "周期类型未选择。"
-            })
-        else:
-            if schedule_type == 2:
-                per_month = "*"
-                if not per_week:
-                    return JsonResponse({
-                        "ret": 0,
-                        "info": "周几未选择。"
-                    })
-
-            if schedule_type == 3:
-                per_week = "*"
-                if not per_month:
-                    return JsonResponse({
-                        "ret": 0,
-                        "info": "每月第几天未选择。"
-                    })
-
-        try:
-            cur_process = Process.objects.get(id=process)
-        except Process.DoesNotExist as e:
-            ret = 0
-            info = "流程不存在。"
-        else:
-            if not per_time:
-                ret = 0
-                info = "时间未填写。"
-            else:
-                # 保存定时任务
-                hour, minute = per_time.split(':')
-                # 新增
-                if process_schedule_id == 0:
-                    cur_crontab_schedule = CrontabSchedule()
-                    cur_crontab_schedule.hour = hour
-                    cur_crontab_schedule.minute = minute
-                    cur_crontab_schedule.day_of_week = per_week if per_week else "*"
-                    cur_crontab_schedule.day_of_month = per_month if per_month else "*"
-
-                    cur_crontab_schedule.save()
-                    cur_crontab_schedule_id = cur_crontab_schedule.id
-
-                    # 启动定时任务
-                    cur_periodictask = PeriodicTask()
-                    cur_periodictask.crontab_id = cur_crontab_schedule_id
-                    cur_periodictask.name = uuid.uuid1()
-                    # 默认关闭
-                    cur_periodictask.enabled = 0
-                    # 任务名称
-                    cur_periodictask.task = "faconstor.tasks.create_process_run"
-                    # cur_periodictask.args = [cur_process.id, request]
-                    cur_periodictask.kwargs = json.dumps({
-                        'cur_process': cur_process.id,
-                        'creatuser': request.user.username
-                    })
-                    cur_periodictask.save()
-                    cur_periodictask_id = cur_periodictask.id
-
-                    ps = ProcessSchedule()
-                    ps.dj_periodictask_id = cur_periodictask_id
-                    ps.process = cur_process
-                    ps.name = process_schedule_name
-                    ps.remark = process_schedule_remark
-                    ps.schedule_type = schedule_type
-                    ps.save()
-                    ret = 1
-                    info = "保存成功。"
-                else:
-                    # 修改
-                    try:
-                        ps = ProcessSchedule.objects.get(id=process_schedule_id)
-                    except ProcessSchedule.DoesNotExist as e:
-                        ret = 0
-                        info = "计划流程不存在。"
-                    else:
-
-                        cur_periodictask_id = ps.dj_periodictask_id
-                        # 启动定时任务
-                        try:
-                            cur_periodictask = PeriodicTask.objects.get(id=cur_periodictask_id)
-                        except PeriodicTask.DoesNotExist as e:
-                            ret = 0
-                            info = "定时任务不存在。"
-                        else:
-                            cur_crontab_schedule = cur_periodictask.crontab
-                            cur_crontab_schedule.hour = hour
-                            cur_crontab_schedule.minute = minute
-                            cur_crontab_schedule.day_of_week = per_week if per_week else "*"
-                            cur_crontab_schedule.day_of_month = per_month if per_month else "*"
-                            cur_crontab_schedule.save()
-                            # 刷新定时器状态
-                            cur_periodictask.task = "faconstor.tasks.create_process_run"
-                            cur_periodictask.kwargs = json.dumps({
-                                'cur_process': cur_process.id,
-                                'creatuser': request.user.username
-                            })
-                            cur_periodictask_status = cur_periodictask.enabled
-                            cur_periodictask.enabled = cur_periodictask_status
-                            cur_periodictask.save()
-
-                            ps.process = cur_process
-                            ps.name = process_schedule_name
-                            ps.remark = process_schedule_remark
-                            ps.schedule_type = schedule_type
-
-                            ps.save()
-                            ret = 1
-                            info = "保存成功。"
+    if not process_schedule_name:
         return JsonResponse({
-            "ret": ret,
-            "info": info
+            "ret": 0,
+            "info": "计划名称不能为空。"
+        })
+
+    try:
+        process = int(process)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "流程未选择。"
+        })
+
+    try:
+        process_schedule_id = int(process_schedule_id)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "网络异常。"
+        })
+
+    # 周期类型
+    try:
+        schedule_type = int(schedule_type)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "周期类型未选择。"
         })
     else:
-        return HttpResponseRedirect("/login")
-
-
-def process_schedule_data(request):
-    if request.user.is_authenticated():
-        result = []
-
-        all_process_schedules = ProcessSchedule.objects.exclude(state="9").select_related("process", "dj_periodictask",
-                                                                                          "dj_periodictask__crontab")
-
-        for process_schedule in all_process_schedules:
-            process_id = process_schedule.process.id
-            process_name = process_schedule.process.name
-            remark = process_schedule.remark
-            schedule_type = process_schedule.schedule_type
-            schedule_type_display = process_schedule.get_schedule_type_display()
-            # 定时任务
-            status, minutes, hours, per_week, per_month = "", "", "", "", ""
-            periodictask = process_schedule.dj_periodictask
-            if periodictask:
-                status = periodictask.enabled
-                cur_crontab_schedule = periodictask.crontab
-                if cur_crontab_schedule:
-                    minutes = cur_crontab_schedule.minute
-                    hours = cur_crontab_schedule.hour
-                    per_week = cur_crontab_schedule.day_of_week
-                    per_month = cur_crontab_schedule.day_of_month
-
-            result.append({
-                "process_schedule_id": process_schedule.id,
-                "process_schedule_name": process_schedule.name,
-                "process_id": process_id,
-                "process_name": process_name,
-                "remark": remark,
-                "schedule_type": schedule_type,
-                "schedule_type_display": schedule_type_display,
-                "minutes": minutes,
-                "hours": hours,
-                "per_week": per_week,
-                "per_month": per_month,
-                "status": status,
-            })
-        return JsonResponse({"data": result})
-    else:
-        return HttpResponseRedirect("/login")
-
-
-def change_periodictask(request):
-    if request.user.is_authenticated():
-        process_schedule_id = request.POST.get("process_schedule_id", "")
-        process_periodictask_status = request.POST.get("process_periodictask_status", "")
-        try:
-            process_schedule_id = int(process_schedule_id)
-            process_periodictask_status = int(process_periodictask_status)
-        except ValueError as e:
-            return JsonResponse({
-                "ret": 0,
-                "info": "网络异常。"
-            })
-
-        try:
-            cur_process_schedule = ProcessSchedule.objects.get(id=process_schedule_id)
-        except ProcessSchedule.DoesNotExist as e:
-            return JsonResponse({
-                "ret": 0,
-                "info": "该计划流程不存在。"
-            })
-        else:
-            cur_periodictask = cur_process_schedule.dj_periodictask
-            if cur_periodictask:
-                cur_periodictask.enabled = process_periodictask_status
-                cur_periodictask.save()
-                return JsonResponse({
-                    "ret": 1,
-                    "info": "定时任务状态修改成功。"
-                })
-            else:
+        if schedule_type == 2:
+            per_month = "*"
+            if not per_week:
                 return JsonResponse({
                     "ret": 0,
-                    "info": "该计划流程对应的定时任务不存在。"
+                    "info": "周几未选择。"
                 })
+
+        if schedule_type == 3:
+            per_week = "*"
+            if not per_month:
+                return JsonResponse({
+                    "ret": 0,
+                    "info": "每月第几天未选择。"
+                })
+
+    try:
+        cur_process = Process.objects.get(id=process)
+    except Process.DoesNotExist as e:
+        ret = 0
+        info = "流程不存在。"
     else:
-        return HttpResponseRedirect("/login")
+        if not per_time:
+            ret = 0
+            info = "时间未填写。"
+        else:
+            # 保存定时任务
+            hour, minute = per_time.split(':')
+            # 新增
+            if process_schedule_id == 0:
+                cur_crontab_schedule = CrontabSchedule()
+                cur_crontab_schedule.hour = hour
+                cur_crontab_schedule.minute = minute
+                cur_crontab_schedule.day_of_week = per_week if per_week else "*"
+                cur_crontab_schedule.day_of_month = per_month if per_month else "*"
+
+                cur_crontab_schedule.save()
+                cur_crontab_schedule_id = cur_crontab_schedule.id
+
+                # 启动定时任务
+                cur_periodictask = PeriodicTask()
+                cur_periodictask.crontab_id = cur_crontab_schedule_id
+                cur_periodictask.name = uuid.uuid1()
+                # 默认关闭
+                cur_periodictask.enabled = 0
+                # 任务名称
+                cur_periodictask.task = "faconstor.tasks.create_process_run"
+                # cur_periodictask.args = [cur_process.id, request]
+                cur_periodictask.kwargs = json.dumps({
+                    'cur_process': cur_process.id,
+                    'creatuser': request.user.username
+                })
+                cur_periodictask.save()
+                cur_periodictask_id = cur_periodictask.id
+
+                ps = ProcessSchedule()
+                ps.dj_periodictask_id = cur_periodictask_id
+                ps.process = cur_process
+                ps.name = process_schedule_name
+                ps.remark = process_schedule_remark
+                ps.schedule_type = schedule_type
+                ps.save()
+                ret = 1
+                info = "保存成功。"
+            else:
+                # 修改
+                try:
+                    ps = ProcessSchedule.objects.get(id=process_schedule_id)
+                except ProcessSchedule.DoesNotExist as e:
+                    ret = 0
+                    info = "计划流程不存在。"
+                else:
+
+                    cur_periodictask_id = ps.dj_periodictask_id
+                    # 启动定时任务
+                    try:
+                        cur_periodictask = PeriodicTask.objects.get(id=cur_periodictask_id)
+                    except PeriodicTask.DoesNotExist as e:
+                        ret = 0
+                        info = "定时任务不存在。"
+                    else:
+                        cur_crontab_schedule = cur_periodictask.crontab
+                        cur_crontab_schedule.hour = hour
+                        cur_crontab_schedule.minute = minute
+                        cur_crontab_schedule.day_of_week = per_week if per_week else "*"
+                        cur_crontab_schedule.day_of_month = per_month if per_month else "*"
+                        cur_crontab_schedule.save()
+                        # 刷新定时器状态
+                        cur_periodictask.task = "faconstor.tasks.create_process_run"
+                        cur_periodictask.kwargs = json.dumps({
+                            'cur_process': cur_process.id,
+                            'creatuser': request.user.username
+                        })
+                        cur_periodictask_status = cur_periodictask.enabled
+                        cur_periodictask.enabled = cur_periodictask_status
+                        cur_periodictask.save()
+
+                        ps.process = cur_process
+                        ps.name = process_schedule_name
+                        ps.remark = process_schedule_remark
+                        ps.schedule_type = schedule_type
+
+                        ps.save()
+                        ret = 1
+                        info = "保存成功。"
+    return JsonResponse({
+        "ret": ret,
+        "info": info
+    })  
+
+
+@login_required
+def process_schedule_data(request):
+    result = []
+
+    all_process_schedules = ProcessSchedule.objects.exclude(state="9").select_related("process", "dj_periodictask",
+                                                                                        "dj_periodictask__crontab")
+
+    for process_schedule in all_process_schedules:
+        process_id = process_schedule.process.id
+        process_name = process_schedule.process.name
+        remark = process_schedule.remark
+        schedule_type = process_schedule.schedule_type
+        schedule_type_display = process_schedule.get_schedule_type_display()
+        # 定时任务
+        status, minutes, hours, per_week, per_month = "", "", "", "", ""
+        periodictask = process_schedule.dj_periodictask
+        if periodictask:
+            status = periodictask.enabled
+            cur_crontab_schedule = periodictask.crontab
+            if cur_crontab_schedule:
+                minutes = cur_crontab_schedule.minute
+                hours = cur_crontab_schedule.hour
+                per_week = cur_crontab_schedule.day_of_week
+                per_month = cur_crontab_schedule.day_of_month
+
+        result.append({
+            "process_schedule_id": process_schedule.id,
+            "process_schedule_name": process_schedule.name,
+            "process_id": process_id,
+            "process_name": process_name,
+            "remark": remark,
+            "schedule_type": schedule_type,
+            "schedule_type_display": schedule_type_display,
+            "minutes": minutes,
+            "hours": hours,
+            "per_week": per_week,
+            "per_month": per_month,
+            "status": status,
+        })
+    return JsonResponse({"data": result})
+
+
+@login_required
+def change_periodictask(request):
+    process_schedule_id = request.POST.get("process_schedule_id", "")
+    process_periodictask_status = request.POST.get("process_periodictask_status", "")
+    try:
+        process_schedule_id = int(process_schedule_id)
+        process_periodictask_status = int(process_periodictask_status)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "网络异常。"
+        })
+
+    try:
+        cur_process_schedule = ProcessSchedule.objects.get(id=process_schedule_id)
+    except ProcessSchedule.DoesNotExist as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "该计划流程不存在。"
+        })
+    else:
+        cur_periodictask = cur_process_schedule.dj_periodictask
+        if cur_periodictask:
+            cur_periodictask.enabled = process_periodictask_status
+            cur_periodictask.save()
+            return JsonResponse({
+                "ret": 1,
+                "info": "定时任务状态修改成功。"
+            })
+        else:
+            return JsonResponse({
+                "ret": 0,
+                "info": "该计划流程对应的定时任务不存在。"
+            })
 
 
 def process_schedule_del(request):
-    if request.user.is_authenticated():
-        process_schedule_id = request.POST.get("process_schedule_id", "")
+    process_schedule_id = request.POST.get("process_schedule_id", "")
 
-        try:
-            process_schedule_id = int(process_schedule_id)
-        except ValueError as e:
-            return JsonResponse({
-                "ret": 0,
-                "info": "网络异常。"
-            })
-
-        ret = 1
-        info = "流程计划删除成功。"
-        # 删除process_schedule/crontab/periodictask
-        try:
-            cur_process_schedule = ProcessSchedule.objects.get(id=process_schedule_id)
-        except ProcessSchedule.DoesNotExist as e:
-            ret = 0
-            info = "该流程计划不存在。"
-        else:
-            cur_process_schedule.state = "9"
-            cur_process_schedule.save()
-
-            try:
-                cur_process_schedule.dj_periodictask.crontab.delete()
-                cur_process_schedule.dj_periodictask.delete()
-            except:
-                ret = 0
-                info = "定时任务删除失败。"
+    try:
+        process_schedule_id = int(process_schedule_id)
+    except ValueError as e:
         return JsonResponse({
-            "ret": ret,
-            "info": info
+            "ret": 0,
+            "info": "网络异常。"
         })
+
+    ret = 1
+    info = "流程计划删除成功。"
+    # 删除process_schedule/crontab/periodictask
+    try:
+        cur_process_schedule = ProcessSchedule.objects.get(id=process_schedule_id)
+    except ProcessSchedule.DoesNotExist as e:
+        ret = 0
+        info = "该流程计划不存在。"
     else:
-        return HttpResponseRedirect("/login")
+        cur_process_schedule.state = "9"
+        cur_process_schedule.save()
+
+        try:
+            cur_process_schedule.dj_periodictask.crontab.delete()
+            cur_process_schedule.dj_periodictask.delete()
+        except:
+            ret = 0
+            info = "定时任务删除失败。"
+    return JsonResponse({
+        "ret": ret,
+        "info": info
+    })
+
+
+
