@@ -6786,7 +6786,7 @@ def get_credit_info(content):
     commvault_credit = {
         'webaddr': '',
         'port': '',
-        'usernm': '',
+        'username': '',
         'passwd': '',
     }
     sqlserver_credit = {
@@ -6801,7 +6801,7 @@ def get_credit_info(content):
         # Commvault账户信息
         commvault_credit['webaddr'] = doc.xpath('//webaddr/text()')[0]
         commvault_credit['port'] = doc.xpath('//port/text()')[0]
-        commvault_credit['usernm'] = doc.xpath('//username/text()')[0]
+        commvault_credit['username'] = doc.xpath('//username/text()')[0]
         commvault_credit['passwd'] = base64.b64decode(doc.xpath('//passwd/text()')[0]).decode()
 
         # SQL Server账户信息
@@ -6829,7 +6829,7 @@ def util_manage_data(request):
         commvault_credit = {
             'webaddr': '',
             'port': '',
-            'usernm': '',
+            'username': '',
             'passwd': '',
         }
         sqlserver_credit = {
@@ -6866,7 +6866,7 @@ def util_manage_save(request):
 
     webaddr = request.POST.get('webaddr', '')
     port = request.POST.get('port', '')
-    usernm = request.POST.get('usernm', '')
+    username = request.POST.get('usernm', '')
     passwd = request.POST.get('passwd', '')
 
     SQLServerHost = request.POST.get('SQLServerHost', '')
@@ -6909,7 +6909,7 @@ def util_manage_save(request):
                     </vendor>""".format(**{
                     "webaddr": webaddr,
                     "port": port,
-                    "username": usernm,
+                    "username": username,
                     "passwd": base64.b64encode(passwd.encode()).decode(),
                     "SQLServerHost": SQLServerHost,
                     "SQLServerUser": SQLServerUser,
