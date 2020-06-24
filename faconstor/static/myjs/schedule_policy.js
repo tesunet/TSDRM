@@ -180,6 +180,7 @@ $(document).ready(function () {
 
     $('#utils_manage').change(function () {
         $("tbody").empty();
+        $("#loading").show();
         getSchedulePolicy($(this).val());
     });
 });

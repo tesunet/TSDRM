@@ -790,23 +790,29 @@ class CVApi(DataMonitor):
         return automatic_clients
 
     def get_library_space_info(self):
-        library_space_sql = """select ma.DisplayName, ls.LibraryName, ls.TotalSpaceMB, ls.TotalFreeSpaceMB from CommServ.dbo.CNMMMediaInfoView as ls 
-                                inner join CommServ.dbo.CNMMMALibraryView as mc on mc.LibraryID = ls.LibraryID 
-                                inner join CommServ.dbo.CNMMMAInfoView as ma on mc.MediaAgentID = ma.MediaAgentID;"""
+        library_space_sql = """SELECT cmaiv.DisplayName, cmiv.LibraryName, cmpv.MountPathName, cmpv.CapacityAvailable, cmpv.SpaceReserved, cmiv.TotalSpaceMB, cmiv.LastBackupTime, cmpv.Offline
+        FROM CommServ.dbo.CNMMMountPathView AS cmpv
+        LEFT JOIN CommServ.dbo.CNMMMediaInfoView AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
+        LEFT JOIN CommServ.dbo.CNMMMALibraryView AS cmalv ON cmalv.LibraryID=cmpv.LibraryID
+        LEFT JOIN CommServ.dbo.CNMMMAInfoView AS cmaiv ON cmaiv.MediaAgentID=cmalv.MediaAgentID"""
         content = self.fetch_all(library_space_sql)
         library_space_info = []
         for i in content:
             library_space_info.append({
-                "MAName": i[0],
+                "DisplayName": i[0],
                 "LibraryName": i[1],
-                "TotalSpaceMB": i[2],
-                "TotalFreeSpaceMB": i[3],
+                "MountPathName": i[2],
+                "CapacityAvailable": i[3],
+                "SpaceReserved": i[4],
+                "TotalSpaceMB": i[5],
+                "LastBackupTime": i[6],
+                "Offline": i[7],
             })
         return library_space_info
 
     def get_commserv_info(self):
-        commserv_info_sql = """select cn.SWVersion, cn.ServicePack, cn.OSName, ac.CCHostName from CommServ.dbo.CNCommCellInfoView as cn
-                               inner join CommServ.dbo.APP_CommCellInfo as ac on ac.commcellId=cn.id;"""
+        commserv_info_sql = """SELECT cn.SWVersion, cn.ServicePack, cn.OSName, ac.CCHostName FROM CommServ.dbo.CNCommCellInfoView AS cn
+        INNER JOIN CommServ.dbo.APP_CommCellInfo AS ac ON ac.commcellId=cn.id;"""
         commserv_info = []
         commserv_info = self.fetch_one(commserv_info_sql)
 

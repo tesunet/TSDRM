@@ -44,6 +44,7 @@ $(document).ready(function () {
     getBackupStatus($('#utils_manage').val());
     $('#utils_manage').change(function () {
         $("tbody").empty();
+        $("#loading").show();
         getBackupStatus($(this).val());
     });
 });
