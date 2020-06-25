@@ -925,7 +925,7 @@ class CVApi(DataMonitor):
                                              where [id]=2;"""
             self.execute(update_sql)
 
-    def get_backup_status(self, tmp_client_manage):
+    def get_backup_status(self, selected_clients):
         """
         获取备份状态： 备份状态、辅助拷贝状态
         """
@@ -939,19 +939,27 @@ class CVApi(DataMonitor):
         FROM commserv.dbo.CommCellBackupInfo AS ccbi
         LEFT JOIN commserv.dbo.CommCellClientConfig AS cccc ON ccbi.clientname=cccc.Client AND cccc.ClientStatus='installed'
         LEFT JOIN commserv.dbo.CommCellAuxCopyInfo AS ccaci ON CAST(ccaci.storagepolicy AS char)= CAST(ccbi.data_sp AS char)
-        ORDER BY ccbi.clientname DESC, ccbi.idataagent DESC, ccbi.startdate DESC
+        ORDER BY ccbi.clientname DESC, ccbi.idataagent DESC, ccbi.instance DESC, ccbi.backupset DESC, ccbi.subclient DESC, ccbi.startdate DESC
         """
         content = self.fetch_all(backup_status_sql)
 
         backup_status_list = []
         pre_clientname = ""
         pre_idataagent = ""
+        pre_instance = ""
+        pre_backupset = ""
+        pre_subclient = ""
+        
+        
+        
         # 客户端 应用类型
         for c in content:
-            if c[0] == pre_clientname and c[1] == pre_idataagent:
+            # 去重
+            if c[0] == pre_clientname and c[1] == pre_idataagent and c[2] == pre_instance and c[3] == pre_backupset and c[4] == pre_subclient:
                 continue
             
-            if c[0] in tmp_client_manage:
+            # 在指定客户端列表内
+            if c[0] in selected_clients:
                 bk_status = c[6]
                 aux_status = c[7]
                 try:
@@ -972,9 +980,16 @@ class CVApi(DataMonitor):
                     "bk_status": bk_status if bk_status else "无",
                     "aux_status": aux_status if aux_status else "无"
                 })
-            pre_clientname = c[0]
-            pre_idataagent = c[1]
+                pre_clientname = c[0]
+                pre_idataagent = c[1]
+                pre_instance = c[2]
+                pre_backupset = c[3]
+                pre_subclient = c[4]
         return backup_status_list
+
+    def get_backup_content(self, selected_clients):
+        pass
+
 
 class CustomFilter(CVApi):
     def custom_all_backup_content(self, client_manage_list):

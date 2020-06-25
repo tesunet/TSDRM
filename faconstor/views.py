@@ -7524,16 +7524,39 @@ def get_backup_status(request):
             whole_list = dm.get_backup_status(tmp_client_manage)
             
             def get_backup_status_rowspan(whole_list, **kwargs):
-                row_span = 0
                 clientname = kwargs.get('clientname', '')
-                if clientname:
+                idataagent = kwargs.get('idataagent', '')
+                instance = kwargs.get('instance', '')
+                backupset = kwargs.get('backupset', '')
+                subclient = kwargs.get('subclient', '')
+                
+                row_span = 0
+                
+                if clientname and not any([idataagent, instance, backupset, subclient]):
                     for tl in whole_list:
                         if tl['clientname'] == clientname:
                             row_span += 1
+                if all([clientname, idataagent]) and not any([instance, backupset, subclient]):
+                    for tl in whole_list:
+                        if tl['clientname'] == clientname and tl['idataagent'] == idataagent:
+                            row_span += 1
+                if all([clientname, idataagent, instance]) and not any([backupset, subclient]):
+                    for tl in whole_list:
+                        if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['instance'] == instance:
+                            row_span += 1
+                if all([clientname, idataagent, instance, backupset]) and not subclient:            
+                    for tl in whole_list:
+                        if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['instance'] == instance and tl['backupset'] == backupset:
+                            row_span += 1
+
                 return row_span
             
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                instance_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], instance=wl['instance'])
+                backupset_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], instance=wl['instance'], backupset=wl['backupset'])
+                subclient_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], instance=wl['instance'], backupset=wl['backupset'], subclient=wl['subclient'])
                 # 时间
                 try:
                     whole_list[num]["startdate"] = "{:%Y-%m-%d %H:%M:%S}".format(whole_list[num]["startdate"])
@@ -7541,6 +7564,20 @@ def get_backup_status(request):
                     whole_list[num]["startdate"] = ""
 
                 whole_list[num]['clientname_rowspan'] = clientname_rowspan
+                whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
+                whole_list[num]['instance_rowspan'] = instance_rowspan
+                whole_list[num]['backupset_rowspan'] = backupset_rowspan
+            
+                # 判断使用 实例 还是 备份集
+                # Oracle SQL Server MySQL 等数据库 -> 实例
+                # 虚机 文件系统 -> 备份集
+                if "Oracle" in wl['idataagent'] or "SQL Server" in wl["idataagent"] or "MySQL" in wl["idataagent"]:
+                    whole_list[num]['type'] = wl['instance']
+                    whole_list[num]['type_rowspan'] = whole_list[num]['instance_rowspan']
+                    
+                if "File System" in wl["idataagent"] or "Virtual" in wl["idataagent"]:
+                    whole_list[num]['type'] = wl['backupset']
+                    whole_list[num]['type_rowspan'] = whole_list[num]['backupset_rowspan']
             
             dm.close()
         except Exception as e:

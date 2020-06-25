@@ -29,15 +29,26 @@ $(document).ready(function () {
                         return status_label;
                     }
                     var pre_clientname = "";
+                    var pre_idataagent = "";
+                    var pre_type = "";
                     var sort = 0;
                     for (var i = 0; i < backup_status.length; i++) {
                         var clientname_hidden = "";
+                        var idataagent_hidden = "";
+                        var type_hidden = "";
 
                         if (pre_clientname == backup_status[i]["clientname"]) {
+                            // 非首个客户端
                             clientname_hidden = "display:none";
                         } else {
                             sort+=1;
                         }
+                        if (pre_clientname == backup_status[i]["clientname"]&&pre_idataagent == backup_status[i]["idataagent"]) {
+                            idataagent_hidden = "display:none";
+                        } 
+                        if (pre_clientname == backup_status[i]["clientname"]&&pre_idataagent == backup_status[i]["idataagent"]&&pre_type == backup_status[i]["type"]) {
+                            type_hidden = "display:none";
+                        } 
 
                         var bk_status_label = get_status_label(backup_status[i].bk_status);
                         var aux_status_label = get_status_label(backup_status[i].aux_status);
@@ -46,7 +57,9 @@ $(document).ready(function () {
                             '<tr>' +
                             '<td rowspan="' + backup_status[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + sort + '</td>' +
                             '<td rowspan="' + backup_status[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + backup_status[i]["clientname"] + '</td>' +
-                            '<td style="vertical-align:middle">' + backup_status[i]["idataagent"] + '</td>' +
+                            '<td rowspan="' + backup_status[i].idataagent_rowspan + '" style="vertical-align:middle; ' + idataagent_hidden + '">' + backup_status[i]["idataagent"] + '</td>' +
+                            '<td rowspan="' + backup_status[i].type_rowspan + '" style="vertical-align:middle; ' + type_hidden + '">' + backup_status[i]["type"] + '</td>' +
+                            '<td style="vertical-align:middle">' + backup_status[i]["subclient"] + '</td>' +
                             '<td style="vertical-align:middle">' + backup_status[i]["startdate"] + '</td>' +
                             '<td style="vertical-align:middle"><span class="' + bk_status_label + '">' + backup_status[i]["bk_status"] + '</span></td>' +
                             '<td style="vertical-align:middle"><span class="' + aux_status_label + '">' + backup_status[i]["aux_status"] + '</span></td>' +
@@ -54,6 +67,8 @@ $(document).ready(function () {
                         );
 
                         pre_clientname = backup_status[i]["clientname"]
+                        pre_idataagent = backup_status[i]["idataagent"]
+                        pre_type = backup_status[i]["type"]
                     }
                     $("#loading").hide();
                 }
