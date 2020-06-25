@@ -7520,8 +7520,28 @@ def get_backup_status(request):
             all_client_manage = Origin.objects.exclude(state="9").values("client_name")
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            whole_list = dm.custom_concrete_job_list(tmp_client_manage)
+            dm = SQLApi.CVApi(sqlserver_credit)
+            whole_list = dm.get_backup_status(tmp_client_manage)
+            
+            def get_backup_status_rowspan(whole_list, **kwargs):
+                row_span = 0
+                clientname = kwargs.get('clientname', '')
+                if clientname:
+                    for tl in whole_list:
+                        if tl['clientname'] == clientname:
+                            row_span += 1
+                return row_span
+            
+            for num, wl in enumerate(whole_list):
+                clientname_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'])
+                # 时间
+                try:
+                    whole_list[num]["startdate"] = "{:%Y-%m-%d %H:%M:%S}".format(whole_list[num]["startdate"])
+                except Exception as e:
+                    whole_list[num]["startdate"] = ""
+
+                whole_list[num]['clientname_rowspan'] = clientname_rowspan
+            
             dm.close()
         except Exception as e:
             return JsonResponse({

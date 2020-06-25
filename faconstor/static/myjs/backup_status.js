@@ -13,28 +13,48 @@ $(document).ready(function () {
                 if (data.ret == 0) {
                     alert(data.data)
                 } else {
-                    var whole_list = data.data;
+                    var backup_status = data.data;
 
-                    // 加载数据
-                    var content_el = '';
-                    for (var i = 0; i < whole_list.length; i++) {
-
-                        var agent_job_list = whole_list[i].agent_job_list;
-                        var agent_length = whole_list[i].agent_length;
-
-                        for (var j = 0; j < agent_job_list.length; j++) {
-                            var tr_el = '<tr>';
-                            if (j == 0) {
-                                tr_el += '<td rowspan="' + whole_list[i].agent_length + '" style="vertical-align:middle">' + (i + 1) + '</td><td rowspan="' + whole_list[i].agent_length + '" style="vertical-align:middle">' + agent_job_list[j].client_name + '</td>';
-                            }
-                            tr_el += '<td>' + agent_job_list[j].agent_type_name + '</td><td>' + agent_job_list[j].job_start_time + '</td><td><span class="' + agent_job_list[j].status_label + '">' + agent_job_list[j].job_backup_status + '</span></td>'
-
-                            tr_el += '<td><span class="' + agent_job_list[j].aux_status_label + '">' + agent_job_list[j].aux_copy_status + '</span></td></tr>'
-                            content_el += tr_el;
+                    function get_status_label(job_status) {
+                        var status_label = "label label-sm label-danger";
+                        if (["运行", "正常", "等待", "QueuedCompleted", "Queued", "PartialSuccess", "成功"].indexOf(job_status) != -1) {
+                            status_label = "label label-sm label-success"
                         }
+                        if (["阻塞", "已完成，但有一个或多个错误", "已完成，但有一个或多个警告"].indexOf(job_status) != -1) {
+                            status_label = "label label-sm label-warning"
+                        }
+                        if (job_status == "无") {
+                            status_label = ""
+                        }
+                        return status_label;
                     }
+                    var pre_clientname = "";
+                    var sort = 0;
+                    for (var i = 0; i < backup_status.length; i++) {
+                        var clientname_hidden = "";
 
-                    $("tbody").append(content_el);
+                        if (pre_clientname == backup_status[i]["clientname"]) {
+                            clientname_hidden = "display:none";
+                        } else {
+                            sort+=1;
+                        }
+
+                        var bk_status_label = get_status_label(backup_status[i].bk_status);
+                        var aux_status_label = get_status_label(backup_status[i].aux_status);
+
+                        $("tbody").append(
+                            '<tr>' +
+                            '<td rowspan="' + backup_status[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + sort + '</td>' +
+                            '<td rowspan="' + backup_status[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + backup_status[i]["clientname"] + '</td>' +
+                            '<td style="vertical-align:middle">' + backup_status[i]["idataagent"] + '</td>' +
+                            '<td style="vertical-align:middle">' + backup_status[i]["startdate"] + '</td>' +
+                            '<td style="vertical-align:middle"><span class="' + bk_status_label + '">' + backup_status[i]["bk_status"] + '</span></td>' +
+                            '<td style="vertical-align:middle"><span class="' + aux_status_label + '">' + backup_status[i]["aux_status"] + '</span></td>' +
+                            '</tr>'
+                        );
+
+                        pre_clientname = backup_status[i]["clientname"]
+                    }
                     $("#loading").hide();
                 }
             }

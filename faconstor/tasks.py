@@ -853,6 +853,110 @@ def exec_process(processrunid, if_repeat=False):
     end_step_tag = 0
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
+    
+    # Commvault 流程特殊数据
+    if processrun.process.type.upper() == "COMMVAULT":
+        # nextSCN-1
+        # 获取流程客户端
+        cur_client = processrun.origin
+
+        dm = SQLApi.CustomFilter(settings.sql_credit)
+        ret = dm.get_oracle_backup_job_list(cur_client)
+
+        # 无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启
+        if not ret:
+            dm.close()
+            end_step_tag = 0
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun = processrun
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = processrun.creatuser
+            myprocesstask.receiveuser = processrun.creatuser
+            myprocesstask.type = "ERROR"
+            myprocesstask.state = "0"
+            myprocesstask.content = "无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启。"
+            myprocesstask.save()
+        else:
+            curSCN = None
+
+            process = processrun.process
+
+            # copy_priority
+            copy_priority = 1
+            steps = process.step_set.exclude(state='9')
+            for step in steps:
+                scripts = step.script_set.exclude(state='9')
+                for script in scripts:
+                    if script.interface_type == "commvault":
+                        origin_id = script.origin.id
+
+                        try:
+                            c_origin = Origin.objects.get(id=origin_id)
+                        except Origin.DoesNotExist:
+                            pass
+                        else:
+                            copy_priority = c_origin.copy_priority
+
+                        break
+
+            # 区分主动流程与定时流程
+            if processrun.copy_priority != copy_priority and processrun.copy_priority:
+                copy_priority = processrun.copy_priority
+
+            # 区分是当前时间还是选择时间点 > 从备份记录中匹配到对应SCN号
+            recover_time = '{:%Y-%m-%d %H:%M:%S}'.format(processrun.recover_time) if processrun.recover_time else ""
+            # print('~~~~~ %s' % recover_time)
+            if recover_time:
+                for i in ret:
+                    if i["subclient"] == "default" and i['LastTime'] == recover_time:
+                        # print('>>>>>')
+                        curSCN = i["cur_SCN"]
+                        break
+            else:
+                # 当前时间点，选择最新的SCN号
+                for i in ret:
+                    if i["subclient"] == "default":
+                        curSCN = i["cur_SCN"]
+                        break
+
+            # print('~~~~%s curSCN: %s' % (copy_priority, curSCN))
+            # 辅助拷贝优先的恢复
+            if copy_priority == 2:
+                if not recover_time:
+                    tmp_tag = 0
+                    for orcl_copy in ret:
+                        if orcl_copy["idataagent"] == "Oracle Database":
+                            if dm.has_auxiliary_job(orcl_copy['jobId']):
+                                orcl_copy_starttime = datetime.datetime.strptime(orcl_copy['StartTime'], "%Y-%m-%d %H:%M:%S")
+                                curSCN = orcl_copy['cur_SCN']
+                                processrun.recover_time = orcl_copy_starttime if orcl_copy_starttime else None
+
+                                if tmp_tag > 0:
+                                    break
+                                tmp_tag += 1
+                        else:
+                            break
+
+            dm.close()
+
+            processrun.curSCN = curSCN
+            processrun.save()
+
+            steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None,
+                                                                    step__pnode=None)
+            if len(steprunlist) > 0:
+                end_step_tag = runstep(steprunlist[0], if_repeat)
+            else:
+                myprocesstask = ProcessTask()
+                myprocesstask.processrun = processrun
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.senduser = processrun.creatuser
+                myprocesstask.receiveuser = processrun.creatuser
+                myprocesstask.type = "ERROR"
+                myprocesstask.state = "0"
+                myprocesstask.content = "流程配置错误，请处理。"
+                myprocesstask.save()
+ 
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
     if len(steprunlist) > 0:
         # 演练中，第一步不计入RTO时，自动开启下一流程

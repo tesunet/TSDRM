@@ -11,18 +11,19 @@ $(document).ready(function () {
             },
             success: function (data) {
                 if (data.status == 1) {
-                    var disk_table = "";
                     var disk_space = data.data;
 
                     var pre_display_name = "";
                     var pre_library_name = "";
-
+                    var sort = 0;
                     for (var i = 0; i < disk_space.length; i++) {
                         var display_name_hidden = "";
                         var library_name_hidden = "";
 
                         if (pre_display_name == disk_space[i]["DisplayName"]) {
                             display_name_hidden = "display:none";
+                        } else {
+                            sort+=1;
                         }
                         if (pre_display_name == disk_space[i]["DisplayName"] && pre_library_name == disk_space[i]["LibraryName"]) {
                             library_name_hidden = "display:none";
@@ -30,7 +31,7 @@ $(document).ready(function () {
 
                         $("tbody").append(
                             '<tr>' +
-                            '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + (i + 1) + '</td>' +
+                            '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + sort + '</td>' +
                             '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + disk_space[i]["DisplayName"] + '</td>' +
                             '<td rowspan="' + disk_space[i].library_name_rowspan + '" style="vertical-align:middle; ' + library_name_hidden + '">' + disk_space[i]["LibraryName"] + '</td>' +
                             '<td style="vertical-align:middle">' + disk_space[i]["MountPathName"] + '</td>' +
