@@ -925,9 +925,11 @@ class CVApi(DataMonitor):
                                              where [id]=2;"""
             self.execute(update_sql)
 
-    def get_backup_status(self, selected_clients):
+    def get_backup_status(self, selected_clients, selected_agents=[]):
         """
         获取备份状态： 备份状态、辅助拷贝状态
+            selected_clients 指定客户端列表
+            selected_agents 指定应用列表
         """
         status_list = {
             "Running": "运行", "Waiting": "等待", "Pending": "阻塞", "Suspend": "终止", "Completed": "正常",
@@ -950,10 +952,11 @@ class CVApi(DataMonitor):
         pre_backupset = ""
         pre_subclient = ""
         
-        
-        
         # 客户端 应用类型
         for c in content:
+            # 不在选择agents列表 不展示 默认都展示
+            if selected_agents and c[1] not in selected_agents:
+                continue
             # 去重
             if c[0] == pre_clientname and c[1] == pre_idataagent and c[2] == pre_instance and c[3] == pre_backupset and c[4] == pre_subclient:
                 continue
@@ -969,7 +972,20 @@ class CVApi(DataMonitor):
                 try:
                     aux_status = status_list[aux_status]
                 except:
-                    pass           
+                    pass  
+                
+                # 判断 实例 或 备份集 
+                type = ""
+                # 备份内容
+                if "File System" in c[1] or "Virtual" in c[1]:
+                    type = c[3]
+                if "Oracle" in c[1] or "SQL Server" in c[1] or "MySQL" in c[1]:
+                    type = c[2]
+                      
+                # 数据库没有实例 或者 文件系统没有备份集 
+                if not type:
+                    continue  
+                   
                 backup_status_list.append({
                     "clientname": c[0],
                     "idataagent": c[1],
@@ -978,7 +994,8 @@ class CVApi(DataMonitor):
                     "subclient": c[4],
                     "startdate": c[5],
                     "bk_status": bk_status if bk_status else "无",
-                    "aux_status": aux_status if aux_status else "无"
+                    "aux_status": aux_status if aux_status else "无",
+                    "type": type
                 })
                 pre_clientname = c[0]
                 pre_idataagent = c[1]
@@ -987,8 +1004,79 @@ class CVApi(DataMonitor):
                 pre_subclient = c[4]
         return backup_status_list
 
-    def get_backup_content(self, selected_clients):
-        pass
+    def get_backup_content(self, selected_clients, selected_agents=[]):
+        """
+        获取客户端备份内容
+            文件系统 MySQL -> 文件夹
+            Oracle SQL Server -> 实例
+            VMware -> vmname
+            
+            selected_clients 指定客户端列表
+            selected_agents 指定应用列表
+        """
+        backup_content_sql = """SELECT ccscc.clientname, ccscc.idataagent, ccscc.instance, ccscc.backupset, ccscc.subclient, ccvbi.vmname vm_content, cccff.content
+        FROM (SELECT clientname, idataagent, instance, backupset, subclient FROM commserv.dbo.CommCellSubClientConfig WHERE backupset!='Indexing BackupSet' AND subclient !='(command line)') AS ccscc
+        LEFT JOIN commserv.dbo.CommCellClientConfig AS cccc ON ccscc.clientname=cccc.Client AND cccc.ClientStatus='installed'
+        LEFT JOIN CommServ.dbo.CommCellVMBackupInfo AS ccvbi ON ccvbi.virtualizationclient=ccscc.clientname AND ccvbi.backupset=ccscc.backupset AND ccvbi.subclient=ccscc.subclient
+        LEFT JOIN commserv.dbo.CommCellClientFSFilters AS cccff ON cccff.clientname=ccscc.clientname AND cccff.idataagent=ccscc.idataagent AND cccff.backupset=ccscc.backupset AND cccff.subclient=ccscc.subclient AND cccff.subclientstatus='valid'
+        ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC
+        """
+        content = self.fetch_all(backup_content_sql)
+        
+        backup_content_list = []
+        pre_clientname = ""
+        pre_idataagent = ""
+        pre_instance = ""
+        pre_backupset = ""
+        pre_subclient = ""
+        
+        # 客户端 应用类型
+        for c in content:
+            # 不在选择agents列表 不展示 默认都展示
+            if selected_agents and c[1] not in selected_agents:
+                continue
+            # 去重
+            if c[0] == pre_clientname and c[1] == pre_idataagent and c[2] == pre_instance and c[3] == pre_backupset and c[4] == pre_subclient:
+                continue
+            
+            # 在指定客户端列表内
+            if c[0] in selected_clients: 
+                content = ""
+                # 备份内容
+                if "File System" in c[1] or "MySQL" in c[1]:
+                    content = c[6]
+                if "Oracle" in c[1] or "SQL Server" in c[1]:
+                    content = c[2]
+                if "Virtual" in c[1]:
+                    content = c[5]
+                  
+                # 判断 实例 或 备份集 
+                type = ""
+                # 备份内容
+                if "File System" in c[1] or "Virtual" in c[1]:
+                    type = c[3]
+                    
+                if "Oracle" in c[1] or "SQL Server" in c[1] or "MySQL" in c[1]:
+                    type = c[2]
+                
+                # 数据库没有实例 或者 文件系统没有备份集 
+                if not type:
+                    continue   
+                backup_content_list.append({
+                    "clientname": c[0],
+                    "idataagent": c[1],
+                    "instance": c[2],
+                    "backupset": c[3],
+                    "subclient": c[4],
+                    "content": content if content else "无",
+                    "type": type
+                })
+                pre_clientname = c[0]
+                pre_idataagent = c[1]
+                pre_instance = c[2]
+                pre_backupset = c[3]
+                pre_subclient = c[4]
+        return backup_content_list
 
 
 class CustomFilter(CVApi):

@@ -7500,6 +7500,31 @@ def origin_del(request):
             })
 
 
+def get_rowspan(whole_list, **kwargs):
+    clientname = kwargs.get('clientname', '')
+    idataagent = kwargs.get('idataagent', '')
+    type = kwargs.get('type', '')
+    subclient = kwargs.get('subclient', '')
+    
+    row_span = 0
+    
+    if clientname and not any([idataagent, type, subclient]):
+        for tl in whole_list:
+            if tl['clientname'] == clientname:
+                row_span += 1
+    if all([clientname, idataagent]) and not any([type, subclient]):
+        for tl in whole_list:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent:
+                row_span += 1
+    if all([clientname, idataagent, type]) and not subclient:
+        for tl in whole_list:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type:
+                row_span += 1
+
+    return row_span
+            
+
+
 @login_required
 def get_backup_status(request):
     whole_list = []
@@ -7522,41 +7547,11 @@ def get_backup_status(request):
 
             dm = SQLApi.CVApi(sqlserver_credit)
             whole_list = dm.get_backup_status(tmp_client_manage)
-            
-            def get_backup_status_rowspan(whole_list, **kwargs):
-                clientname = kwargs.get('clientname', '')
-                idataagent = kwargs.get('idataagent', '')
-                instance = kwargs.get('instance', '')
-                backupset = kwargs.get('backupset', '')
-                subclient = kwargs.get('subclient', '')
-                
-                row_span = 0
-                
-                if clientname and not any([idataagent, instance, backupset, subclient]):
-                    for tl in whole_list:
-                        if tl['clientname'] == clientname:
-                            row_span += 1
-                if all([clientname, idataagent]) and not any([instance, backupset, subclient]):
-                    for tl in whole_list:
-                        if tl['clientname'] == clientname and tl['idataagent'] == idataagent:
-                            row_span += 1
-                if all([clientname, idataagent, instance]) and not any([backupset, subclient]):
-                    for tl in whole_list:
-                        if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['instance'] == instance:
-                            row_span += 1
-                if all([clientname, idataagent, instance, backupset]) and not subclient:            
-                    for tl in whole_list:
-                        if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['instance'] == instance and tl['backupset'] == backupset:
-                            row_span += 1
 
-                return row_span
-            
             for num, wl in enumerate(whole_list):
-                clientname_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'])
-                idataagent_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
-                instance_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], instance=wl['instance'])
-                backupset_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], instance=wl['instance'], backupset=wl['backupset'])
-                subclient_rowspan = get_backup_status_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], instance=wl['instance'], backupset=wl['backupset'], subclient=wl['subclient'])
+                clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
                 # 时间
                 try:
                     whole_list[num]["startdate"] = "{:%Y-%m-%d %H:%M:%S}".format(whole_list[num]["startdate"])
@@ -7565,19 +7560,7 @@ def get_backup_status(request):
 
                 whole_list[num]['clientname_rowspan'] = clientname_rowspan
                 whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
-                whole_list[num]['instance_rowspan'] = instance_rowspan
-                whole_list[num]['backupset_rowspan'] = backupset_rowspan
-            
-                # 判断使用 实例 还是 备份集
-                # Oracle SQL Server MySQL 等数据库 -> 实例
-                # 虚机 文件系统 -> 备份集
-                if "Oracle" in wl['idataagent'] or "SQL Server" in wl["idataagent"] or "MySQL" in wl["idataagent"]:
-                    whole_list[num]['type'] = wl['instance']
-                    whole_list[num]['type_rowspan'] = whole_list[num]['instance_rowspan']
-                    
-                if "File System" in wl["idataagent"] or "Virtual" in wl["idataagent"]:
-                    whole_list[num]['type'] = wl['backupset']
-                    whole_list[num]['type_rowspan'] = whole_list[num]['backupset_rowspan']
+                whole_list[num]['type_rowspan'] = type_rowspan
             
             dm.close()
         except Exception as e:
@@ -7620,17 +7603,18 @@ def get_backup_content(request):
             all_client_manage = Origin.objects.exclude(state="9").values("client_name")
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            ret, row_dict = dm.custom_all_backup_content(tmp_client_manage)
-            dm.close()
-            for content in ret:
-                content_dict = OrderedDict()
-                content_dict["clientName"] = content["clientname"]
-                content_dict["appName"] = content["idataagent"]
-                content_dict["backupsetName"] = content["backupset"]
-                # content_dict["subclientName"] = content["subclient"]
-                content_dict["content"] = content["content"]
-                whole_list.append(content_dict)
+            dm = SQLApi.CVApi(sqlserver_credit)
+            whole_list = dm.get_backup_content(tmp_client_manage)
+            
+            for num, wl in enumerate(whole_list):
+                clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+                
+                whole_list[num]['clientname_rowspan'] = clientname_rowspan
+                whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
+                whole_list[num]['type_rowspan'] = type_rowspan
+                    
         except Exception as e:
             print(e)
             return JsonResponse({
@@ -7640,10 +7624,7 @@ def get_backup_content(request):
         else:
             return JsonResponse({
                 "ret": 1,
-                "data": {
-                    "whole_list": whole_list,
-                    "row_dict": row_dict,
-                },
+                "data": whole_list,
             })
 
 
