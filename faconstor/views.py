@@ -7719,30 +7719,39 @@ def get_schedule_policy(request):
             all_client_manage = Origin.objects.exclude(state="9").values("client_name")
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            ret, row_dict = dm.custom_all_schedules(tmp_client_manage)
+            dm = SQLApi.CVApi(sqlserver_credit)
+            whole_list = dm.get_schedule_policy(tmp_client_manage)
+            ordered_whole_list = []
             dm.close()
-            for schedule in ret:
+            for num, wl in enumerate(whole_list):
                 schedule_dict = OrderedDict()
-                schedule_dict["clientName"] = schedule["clientName"]
-                schedule_dict["appName"] = schedule["idaagent"]
-                schedule_dict["backupsetName"] = schedule["backupset"]
-                # schedule_dict["subclientName"] = schedule["subclient"]
-                schedule_dict["scheduePolicy"] = schedule["scheduePolicy"]
-                schedule_dict["schedbackuptype"] = schedule["schedbackuptype"]
-                schedule_dict["schedpattern"] = schedule["schedpattern"]
-                schedule_dict["schedbackupday"] = schedule["schedbackupday"]
+                
+                clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+                                
+                schedule_dict['clientname_rowspan'] = clientname_rowspan
+                schedule_dict['idataagent_rowspan'] = idataagent_rowspan
+                schedule_dict['type_rowspan'] = type_rowspan
+                
+                schedule_dict["clientname"] = wl["clientname"]
+                schedule_dict["idataagent"] = wl["idataagent"]
+                schedule_dict["type"] = wl["type"]
+                schedule_dict["subclient"] = wl["subclient"]
+                schedule_dict["scheduePolicy"] = wl["scheduePolicy"]
+                schedule_dict["schedbackuptype"] = wl["schedbackuptype"]
+                schedule_dict["schedpattern"] = wl["schedpattern"]
 
                 schedule_dict["option"] = {
-                    "schedpattern": schedule["schedpattern"],
-                    "schednextbackuptime": schedule["schednextbackuptime"],
-                    "scheduleName": schedule["scheduleName"],
-                    "schedinterval": schedule["schedinterval"],
-                    "schedbackupday": schedule["schedbackupday"],
-                    "schedbackuptype": schedule["schedbackuptype"],
+                    "schedpattern": wl["schedpattern"],
+                    "schednextbackuptime": wl["schednextbackuptime"],
+                    "scheduleName": wl["scheduleName"],
+                    "schedinterval": wl["schedinterval"],
+                    "schedbackupday": wl["schedbackupday"],
+                    "schedbackuptype": wl["schedbackuptype"],
                 }
 
-                whole_list.append(schedule_dict)
+                ordered_whole_list.append(schedule_dict)
 
         except Exception as e:
             print(e)
@@ -7753,10 +7762,7 @@ def get_schedule_policy(request):
         else:
             return JsonResponse({
                 "ret": 1,
-                "data": {
-                    "whole_list": whole_list,
-                    "row_dict": row_dict,
-                },
+                "data": ordered_whole_list,
             })
 
 

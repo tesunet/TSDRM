@@ -396,8 +396,6 @@ class CVApi(DataMonitor):
             schedbackuptype = type_chz[i[6]
                                        ] if i[6] in type_chz.keys() else i[6]
             schedules.append({
-                # "CommCellId": i[0],
-                # "CommCellName": i[1],
                 "scheduleId": i[2],
                 "scheduePolicy": i[3],
                 "scheduleName": i[4],
@@ -406,13 +404,12 @@ class CVApi(DataMonitor):
                 "schedpattern": schedpattern,
                 "schedinterval": schedinterval,
                 "schedbackupday": schedbackupday,
-                # "schedbackupTime": i[10] if i[7] != "One time" else i[11].strftime("%Y-%m-%d %H:%M:%S"),
                 "schednextbackuptime": i[11].strftime("%Y-%m-%d %H:%M:%S"),
                 "clientName": i[13],
                 "idaagent": i[14],
                 "instance": i[15],
                 "backupset": i[16],
-                # "subclient": i[17],
+                "subclient": i[17],
             })
 
         extra_content = self.get_installed_sub_clients_for_info()
@@ -1139,6 +1136,182 @@ class CVApi(DataMonitor):
                 pre_backupset = c[3]
                 pre_subclient = c[4]
         return storage_policy_list
+        
+    def get_schedule_policy(self, selected_clients, selected_agents=[]):
+        """
+        获取计划策略
+            文件系统 MySQL -> 文件夹
+            Oracle SQL Server -> 实例
+            VMware -> vmname
+            
+            selected_clients 指定客户端列表
+            selected_agents 指定应用列表
+        """
+        schedule_policy_sql = """SELECT ccscc.clientname, ccscc.idataagent, ccscc.instance, ccscc.backupset, ccscc.subclient, ccsfs.scheduleId, ccsfs.scheduePolicy, ccsfs.scheduleName, ccsfs.scheduletask, ccsfs.schedbackuptype, ccsfs.schedpattern,
+        ccsfs.schedinterval,ccsfs.schedbackupday,ccsfs.schednextbackuptime,ccsfs.schednextbackuptime
+        FROM (SELECT clientname, idataagent, instance, backupset, subclient FROM commserv.dbo.CommCellSubClientConfig WHERE backupset!='Indexing BackupSet' AND subclient !='(command line)') AS ccscc
+        LEFT JOIN commserv.dbo.CommCellClientConfig AS cccc ON ccscc.clientname=cccc.Client AND cccc.ClientStatus='installed'
+        LEFT JOIN commserv.dbo.CommCellBkScheduleForSubclients AS ccsfs ON ccsfs.clientname=ccscc.clientname AND ccsfs.idaagent=ccscc.idataagent AND ccsfs.backupset=ccscc.backupset AND ccsfs.subclient=ccscc.subclient
+        ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC, ccsfs.scheduePolicy DESC, ccsfs.schedbackuptype DESC
+        """
+        ret = self.fetch_all(schedule_policy_sql)
+        
+        period_chz = {
+            "One time": "次",
+            "Daily": "日",
+            "Weekly": "周",
+            "Monthly": "月",
+            "Monthly relative": "月",
+            "Yearly": "年",
+            "Yearly relative": "年",
+            "Automatic schedule": "自动",
+        }
+
+        schedbackupday_chz = {
+            "Sunday": "周日",
+            "Monday": "周一",
+            "Tuesday": "周二",
+            "Wednesday": "周三",
+            "Thursday": "周四",
+            "Friday": "周五",
+            "Saturday": "周六",
+        }
+
+        type_chz = {
+            "Full": "全备",
+            "Incremental": "增量",
+            "Synthetic Full": "综合完全",
+            "NONE": "无",
+            "Differential": "差量",
+            "Unknown": "预选备份类型"
+        }
+
+        month_chz = {
+            "January": "1月",
+            "February": "2月",
+            "March": "3月",
+            "April": "4月",
+            "May": "5月",
+            "June": "6月",
+            "July": "7月",
+            "August": "8月",
+            "September": "9月",
+            "October": "10月",
+            "November": "11月",
+            "December": "12月",
+        }
+        
+        schedule_policy_list = []
+        pre_clientname = ""
+        pre_idataagent = ""
+        pre_instance = ""
+        pre_backupset = ""
+        pre_subclient = ""
+        # 计划策略 备份类型
+        pre_schedule_policy = ""
+        pre_schedule_backuptype = ""
+        
+        # 客户端 应用类型
+        for c in ret:
+            # 不在选择agents列表 不展示 默认都展示
+            if selected_agents and c[1] not in selected_agents:
+                continue
+            # 去重
+            if c[0] == pre_clientname and c[1] == pre_idataagent and c[2] == pre_instance and c[3] == pre_backupset and c[4] == pre_subclient:
+                continue
+            
+            # 在指定客户端列表内
+            if c[0] in selected_clients: 
+                # 判断 实例 或 备份集 
+                type = ""
+                if "File System" in c[1] or "Virtual" in c[1]:
+                    type = c[3]
+                    
+                if "Oracle" in c[1] or "SQL Server" in c[1] or "MySQL" in c[1]:
+                    type = c[2]
+                
+                # 数据库没有实例 或者 文件系统没有备份集 
+                if not type:
+                    continue   
+                
+                # 处理schedbackupday
+                schedbackupday = ""
+                schedinterval = ""
+                if c[10] == "Weekly":
+                    for day in c[12].split(" "):
+                        if day:
+                            schedbackupday += "/" + \
+                                schedbackupday_chz[day] if day in schedbackupday_chz.keys(
+                                ) else day
+                    schedbackupday = schedbackupday[1:]
+
+                    # 重复schedinterval
+                    if c[11] == "Every 0":
+                        schedinterval = "不重复"
+                    else:
+                        schedinterval = c[11].replace("Every", "每") + "周"
+
+                if c[10] == "One time":
+                    schedbackupday = "仅一次"  # 具体时间
+
+                    if c[11] == "Every 0":
+                        schedinterval = "不重复"
+                    else:
+                        schedinterval = c[11].replace("Every", "每") + "次"
+
+                if c[10] == "Daily":
+                    schedbackupday = "每天"
+
+                    if c[11] == "Every 0":
+                        schedinterval = "不重复"
+                    else:
+                        schedinterval = c[11].replace("Every", "每") + "天"
+
+                if c[10] in ["Monthly", "Monthly relative"]:
+                    schedbackupday = "每月第{0}天".format(c[9])
+
+                    if c[11] == "Every 0":
+                        schedinterval = "不重复"
+                    else:
+                        schedinterval = c[11].replace("Every", "每") + "个月"
+
+                if c[10] in ["Yearly", "Yearly relative"]:
+                    year_list = c[12].split(" of ")
+                    schedbackupday = "每年{0}{1}日".format(
+                        month_chz[year_list[1]] if year_list[1] in month_chz.keys() else year_list[1], year_list[0])
+
+                    if c[11] == "Every 0":
+                        schedinterval = "不重复"
+                    else:
+                        schedinterval = c[11].replace("Every", "每") + "年"
+
+                schedpattern = period_chz[c[10]] if c[10] in period_chz.keys() else c[10]
+                schedbackuptype = type_chz[c[9]] if c[9] in type_chz.keys() else c[9]
+                    
+                schedule_policy_list.append({
+                    "clientname": c[0],
+                    "idataagent": c[1],
+                    "instance": c[2],
+                    "backupset": c[3],
+                    "subclient": c[4],
+                    "type": type,
+                    # 计划策略
+                    "scheduleId": c[5],
+                    "scheduePolicy": c[6] if c[6] else "无",
+                    "scheduleName": c[7],
+                    "scheduletask": c[8],
+                    "schedbackuptype": schedbackuptype if schedbackuptype else "无",
+                    "schedpattern": schedpattern if schedpattern else "无",
+                    "schedinterval": schedinterval,
+                    "schedbackupday": schedbackupday,
+                    "schednextbackuptime": c[14].strftime("%Y-%m-%d %H:%M:%S") if c[14] else "",
+                })
+                pre_clientname = c[0]
+                pre_idataagent = c[1]
+                pre_instance = c[2]
+                pre_backupset = c[3]
+                pre_subclient = c[4]
+        return schedule_policy_list
         
         
 class CustomFilter(CVApi):
