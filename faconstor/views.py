@@ -7657,17 +7657,17 @@ def get_storage_policy(request):
             all_client_manage = Origin.objects.exclude(state="9").values("client_name")
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            ret, row_dict = dm.custom_all_storages(tmp_client_manage)
-            dm.close()
-            for storage in ret:
-                storage_dict = OrderedDict()
-                storage_dict["clientName"] = storage["clientname"]
-                storage_dict["appName"] = storage["idataagent"]
-                storage_dict["backupsetName"] = storage["backupset"]
-                # storage_dict["subclientName"] = storage["subclient"]
-                storage_dict["storagePolicy"] = storage["storagepolicy"]
-                whole_list.append(storage_dict)
+            dm = SQLApi.CVApi(sqlserver_credit)
+            whole_list = dm.get_storage_policy(tmp_client_manage)
+            
+            for num, wl in enumerate(whole_list):
+                clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+                
+                whole_list[num]['clientname_rowspan'] = clientname_rowspan
+                whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
+                whole_list[num]['type_rowspan'] = type_rowspan
 
         except Exception as e:
             print(e)
@@ -7678,10 +7678,7 @@ def get_storage_policy(request):
         else:
             return JsonResponse({
                 "ret": 1,
-                "data": {
-                    "whole_list": whole_list,
-                    "row_dict": row_dict,
-                },
+                "data": whole_list
             })
 
 

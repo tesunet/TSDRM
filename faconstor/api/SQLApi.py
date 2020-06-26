@@ -943,7 +943,7 @@ class CVApi(DataMonitor):
         LEFT JOIN commserv.dbo.CommCellAuxCopyInfo AS ccaci ON CAST(ccaci.storagepolicy AS char)= CAST(ccbi.data_sp AS char)
         ORDER BY ccbi.clientname DESC, ccbi.idataagent DESC, ccbi.instance DESC, ccbi.backupset DESC, ccbi.subclient DESC, ccbi.startdate DESC
         """
-        content = self.fetch_all(backup_status_sql)
+        ret = self.fetch_all(backup_status_sql)
 
         backup_status_list = []
         pre_clientname = ""
@@ -953,7 +953,7 @@ class CVApi(DataMonitor):
         pre_subclient = ""
         
         # 客户端 应用类型
-        for c in content:
+        for c in ret:
             # 不在选择agents列表 不展示 默认都展示
             if selected_agents and c[1] not in selected_agents:
                 continue
@@ -1021,7 +1021,7 @@ class CVApi(DataMonitor):
         LEFT JOIN commserv.dbo.CommCellClientFSFilters AS cccff ON cccff.clientname=ccscc.clientname AND cccff.idataagent=ccscc.idataagent AND cccff.backupset=ccscc.backupset AND cccff.subclient=ccscc.subclient AND cccff.subclientstatus='valid'
         ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC
         """
-        content = self.fetch_all(backup_content_sql)
+        ret = self.fetch_all(backup_content_sql)
         
         backup_content_list = []
         pre_clientname = ""
@@ -1031,7 +1031,7 @@ class CVApi(DataMonitor):
         pre_subclient = ""
         
         # 客户端 应用类型
-        for c in content:
+        for c in ret:
             # 不在选择agents列表 不展示 默认都展示
             if selected_agents and c[1] not in selected_agents:
                 continue
@@ -1052,7 +1052,6 @@ class CVApi(DataMonitor):
                   
                 # 判断 实例 或 备份集 
                 type = ""
-                # 备份内容
                 if "File System" in c[1] or "Virtual" in c[1]:
                     type = c[3]
                     
@@ -1078,7 +1077,70 @@ class CVApi(DataMonitor):
                 pre_subclient = c[4]
         return backup_content_list
 
-
+    def get_storage_policy(self, selected_clients, selected_agents=[]):
+        """
+        获取存储策略
+            文件系统 MySQL -> 文件夹
+            Oracle SQL Server -> 实例
+            VMware -> vmname
+            
+            selected_clients 指定客户端列表
+            selected_agents 指定应用列表
+        """
+        storage_policy_sql = """SELECT ccscc.clientname, ccscc.idataagent, ccscc.instance, ccscc.backupset, ccscc.subclient, ccsp.storagepolicy
+        FROM (SELECT clientname, idataagent, instance, backupset, subclient FROM commserv.dbo.CommCellSubClientConfig WHERE backupset!='Indexing BackupSet' AND subclient !='(command line)') AS ccscc
+        LEFT JOIN commserv.dbo.CommCellClientConfig AS cccc ON ccscc.clientname=cccc.Client AND cccc.ClientStatus='installed'
+        LEFT JOIN commserv.dbo.CommCellStoragePolicy AS ccsp ON ccsp.clientname=ccscc.clientname AND ccsp.idataagent=ccscc.idataagent AND ccsp.backupset=ccscc.backupset AND ccsp.subclient=ccscc.subclient AND ccsp.hardwarecompress!='Unknown'
+        ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC
+        """
+        ret = self.fetch_all(storage_policy_sql)
+        
+        storage_policy_list = []
+        pre_clientname = ""
+        pre_idataagent = ""
+        pre_instance = ""
+        pre_backupset = ""
+        pre_subclient = ""
+        
+        # 客户端 应用类型
+        for c in ret:
+            # 不在选择agents列表 不展示 默认都展示
+            if selected_agents and c[1] not in selected_agents:
+                continue
+            # 去重
+            if c[0] == pre_clientname and c[1] == pre_idataagent and c[2] == pre_instance and c[3] == pre_backupset and c[4] == pre_subclient:
+                continue
+            
+            # 在指定客户端列表内
+            if c[0] in selected_clients: 
+                # 判断 实例 或 备份集 
+                type = ""
+                if "File System" in c[1] or "Virtual" in c[1]:
+                    type = c[3]
+                    
+                if "Oracle" in c[1] or "SQL Server" in c[1] or "MySQL" in c[1]:
+                    type = c[2]
+                
+                # 数据库没有实例 或者 文件系统没有备份集 
+                if not type:
+                    continue   
+                storage_policy_list.append({
+                    "clientname": c[0],
+                    "idataagent": c[1],
+                    "instance": c[2],
+                    "backupset": c[3],
+                    "subclient": c[4],
+                    "storage_policy": c[5] if c[5] else "无",
+                    "type": type
+                })
+                pre_clientname = c[0]
+                pre_idataagent = c[1]
+                pre_instance = c[2]
+                pre_backupset = c[3]
+                pre_subclient = c[4]
+        return storage_policy_list
+        
+        
 class CustomFilter(CVApi):
     def custom_all_backup_content(self, client_manage_list):
         whole_content_list = []
