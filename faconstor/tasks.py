@@ -15,8 +15,36 @@ import subprocess
 from .api import SQLApi
 from .CVApi import *
 import logging
-
+from .api import SQLApi
 logger = logging.getLogger('tasks')
+
+
+@shared_task
+def get_disk_space_crond():
+    """
+    一周获取一次Commvault磁盘信息
+        工具ID MediaID 可用容量、保留空间、总容量、取数时间
+        
+    """
+    from .views import get_credit_info
+    commvaul_utils = UtilsManage.objects.exclude(state="9").filter(util_type="Commvault")
+    for cu in commvaul_utils:
+        _, sqlserver_credit = get_credit_info(cu.content)
+        dm = SQLApi.CVApi(sqlserver_credit)
+        disk_space = dm.get_library_space_info()
+
+        for ds in disk_space:
+            disk_space_save_data = dict()
+            disk_space_save_data["utils_id"] = cu.id
+            disk_space_save_data["media_id"] = int(ds["MediaID"]) if ds["MediaID"] else 0
+            disk_space_save_data["capacity_avaible"] = int(ds["CapacityAvailable"]) if ds["CapacityAvailable"] else 0
+            disk_space_save_data["space_reserved"] = int(ds["SpaceReserved"]) if ds["SpaceReserved"] else 0
+            disk_space_save_data["total_space"] = int(ds["TotalSpaceMB"]) if ds["TotalSpaceMB"] else 0
+            disk_space_save_data["extract_time"] = datetime.datetime.now()
+            try:
+                DiskSpaceWeeklyData.objects.create(**disk_space_save_data)
+            except Exception as e:
+                print(e)
 
 
 # @shared_task(bind=True, default_retry_delay=300, max_retries=5)  # 错误处理机制，因网络延迟等问题的重试；

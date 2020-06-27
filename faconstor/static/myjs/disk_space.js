@@ -34,7 +34,7 @@ $(document).ready(function () {
                             '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + sort + '</td>' +
                             '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + disk_space[i]["DisplayName"] + '</td>' +
                             '<td rowspan="' + disk_space[i].library_name_rowspan + '" style="vertical-align:middle; ' + library_name_hidden + '">' + disk_space[i]["LibraryName"] + '</td>' +
-                            '<td style="vertical-align:middle">' + disk_space[i]["MountPathName"] + '</td>' +
+                            '<td style="vertical-align:middle"><input value="' + disk_space[i]["MediaID"] + '" hidden>' + disk_space[i]["MountPathName"] + '</td>' +
                             '<td style="vertical-align:middle">' + disk_space[i]["CapacityAvailable"] + '</td>' +
                             '<td style="vertical-align:middle">' + disk_space[i]["SpaceReserved"] + '</td>' +
                             '<td style="vertical-align:middle">' + disk_space[i]["TotalSpaceMB"] + '</td>' +
