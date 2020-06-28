@@ -7505,9 +7505,9 @@ def get_rowspan(whole_list, **kwargs):
     idataagent = kwargs.get('idataagent', '')
     type = kwargs.get('type', '')
     subclient = kwargs.get('subclient', '')
-    
+
     row_span = 0
-    
+
     if clientname and not any([idataagent, type, subclient]):
         for tl in whole_list:
             if tl['clientname'] == clientname:
@@ -7522,7 +7522,7 @@ def get_rowspan(whole_list, **kwargs):
                 row_span += 1
 
     return row_span
-            
+
 
 
 @login_required
@@ -7561,7 +7561,7 @@ def get_backup_status(request):
                 whole_list[num]['clientname_rowspan'] = clientname_rowspan
                 whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
                 whole_list[num]['type_rowspan'] = type_rowspan
-            
+
             dm.close()
         except Exception as e:
             return JsonResponse({
@@ -7605,16 +7605,16 @@ def get_backup_content(request):
 
             dm = SQLApi.CVApi(sqlserver_credit)
             whole_list = dm.get_backup_content(tmp_client_manage)
-            
+
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
                 idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
                 type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
-                
+
                 whole_list[num]['clientname_rowspan'] = clientname_rowspan
                 whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
                 whole_list[num]['type_rowspan'] = type_rowspan
-                    
+
         except Exception as e:
             print(e)
             return JsonResponse({
@@ -7659,12 +7659,12 @@ def get_storage_policy(request):
 
             dm = SQLApi.CVApi(sqlserver_credit)
             whole_list = dm.get_storage_policy(tmp_client_manage)
-            
+
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
                 idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
                 type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
-                
+
                 whole_list[num]['clientname_rowspan'] = clientname_rowspan
                 whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
                 whole_list[num]['type_rowspan'] = type_rowspan
@@ -7725,15 +7725,15 @@ def get_schedule_policy(request):
             dm.close()
             for num, wl in enumerate(whole_list):
                 schedule_dict = OrderedDict()
-                
+
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
                 idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
                 type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
-                                
+
                 schedule_dict['clientname_rowspan'] = clientname_rowspan
                 schedule_dict['idataagent_rowspan'] = idataagent_rowspan
                 schedule_dict['type_rowspan'] = type_rowspan
-                
+
                 schedule_dict["clientname"] = wl["clientname"]
                 schedule_dict["idataagent"] = wl["idataagent"]
                 schedule_dict["type"] = wl["type"]
@@ -7776,7 +7776,7 @@ def disk_space(request, funid):
 
 
 @login_required
-def get_disk_space(request): 
+def get_disk_space(request):
     # MA rowspan 总记录数
     # 库 rowspan 相同库记录数
     status = 1
@@ -7810,11 +7810,11 @@ def get_disk_space(request):
                         if tl['DisplayName'] == display_name:
                             row_span += 1
                 return row_span
-            
+
             for num, lsi in enumerate(data):
                 display_name_rowspan = get_rowspan(data, DisplayName=lsi['DisplayName'])
                 library_name_rowspan = get_rowspan(data, DisplayName=lsi['DisplayName'], LibraryName=lsi['LibraryName'])
-            
+
                 # 时间
                 try:
                     data[num]["LastBackupTime"] = "{:%Y-%m-%d %H:%M:%S}".format(data[num]["LastBackupTime"])
@@ -7825,10 +7825,10 @@ def get_disk_space(request):
                     data[num]["Offline"] = '<i class="fa fa-plug" style="color:green; height:20px;width:14px;"></i>'
                 else:
                     data[num]["Offline"] = '<i class="fa fa-plug" style="color:red; height:20px;width:14px;"></i>'
-            
+
                 data[num]['display_name_rowspan'] = display_name_rowspan
                 data[num]['library_name_rowspan'] = library_name_rowspan
-            
+
         except Exception as e:
             print(e)
             status = 0
@@ -7837,6 +7837,51 @@ def get_disk_space(request):
         "status": status,
         "info": info,
         "data": data
+    })
+
+
+@login_required
+def get_disk_space_daily(request):
+    disk_list = []
+
+    media_id = request.POST.get("media_id", "")
+    utils_id = request.POST.get("utils_id", "")
+
+    try:
+        media_id = int(media_id)
+        utils_id = int(utils_id)
+    except:
+        pass
+    else:
+        disk_space_weekly_data = DiskSpaceWeeklyData.objects.filter(utils_id=utils_id, media_id=media_id)
+        capacity_available_list = []
+        space_reserved_list = []
+        total_space_list = []
+        for num, dswd in enumerate(disk_space_weekly_data):
+            if num > 20:
+                break
+            capacity_available_list.append(round(dswd.capacity_avaible/1024, 2))
+            space_reserved_list.append(round(dswd.space_reserved/1024, 2))
+            total_space_list.append(round(dswd.total_space/1024, 2))
+
+        disk_list.append({
+            "name": "可用容量",
+            "color": "#3598dc",
+            "capacity_list": capacity_available_list
+        })
+        disk_list.append({
+            "name": "保留空间容量",
+            "color": "#e7505a",
+            "capacity_list": space_reserved_list
+        })
+        disk_list.append({
+            "name": "总容量",
+            "color": "#32c5d2",
+            "capacity_list": total_space_list
+        })
+
+    return JsonResponse({
+        "data": disk_list,
     })
 
 
@@ -8022,7 +8067,7 @@ def process_schedule_save(request):
     return JsonResponse({
         "ret": ret,
         "info": info
-    })  
+    })
 
 
 @login_required

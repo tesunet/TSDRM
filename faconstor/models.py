@@ -288,6 +288,6 @@ class DiskSpaceWeeklyData(models.Model):
     media_id = models.IntegerField("MediaID", null=True, default=0)
     capacity_avaible = models.BigIntegerField("可用容量", null=True, default=0)
     space_reserved = models.BigIntegerField("保留空间", null=True, default=0)
-    total_space = models.BigIntegerField("总流量", null=True, default=0)
+    total_space = models.BigIntegerField("总容量", null=True, default=0)
     extract_time = models.DateTimeField("取数时间", null=True)
 

@@ -173,6 +173,7 @@ urlpatterns = [
     # 磁盘空间
     url(r'^disk_space/$', disk_space, {'funid': '82'}),
     url(r'^get_disk_space/$', get_disk_space),
+    url(r'^get_disk_space_daily/$', get_disk_space_daily),
 
     # 流程计划
     url(r'^process_schedule/$', process_schedule, {'funid': '81'}),
