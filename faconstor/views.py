@@ -7524,7 +7524,6 @@ def get_rowspan(whole_list, **kwargs):
     return row_span
 
 
-
 @login_required
 def get_backup_status(request):
     whole_list = []
@@ -7551,7 +7550,8 @@ def get_backup_status(request):
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
                 idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
-                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'],
+                                           type=wl['type'])
                 # 时间
                 try:
                     whole_list[num]["startdate"] = "{:%Y-%m-%d %H:%M:%S}".format(whole_list[num]["startdate"])
@@ -7609,7 +7609,8 @@ def get_backup_content(request):
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
                 idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
-                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'],
+                                           type=wl['type'])
 
                 whole_list[num]['clientname_rowspan'] = clientname_rowspan
                 whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
@@ -7663,7 +7664,8 @@ def get_storage_policy(request):
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
                 idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
-                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'],
+                                           type=wl['type'])
 
                 whole_list[num]['clientname_rowspan'] = clientname_rowspan
                 whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
@@ -7728,7 +7730,8 @@ def get_schedule_policy(request):
 
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
                 idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
-                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'],
+                                           type=wl['type'])
 
                 schedule_dict['clientname_rowspan'] = clientname_rowspan
                 schedule_dict['idataagent_rowspan'] = idataagent_rowspan
@@ -7796,6 +7799,7 @@ def get_disk_space(request):
             dm = SQLApi.CustomFilter(sqlserver_credit)
             data = dm.get_library_space_info()
             dm.close()
+
             # 遍历所有记录 总记录数
             def get_rowspan(total_list, **kwargs):
                 row_span = 0
@@ -7860,9 +7864,9 @@ def get_disk_space_daily(request):
         for num, dswd in enumerate(disk_space_weekly_data):
             if num > 20:
                 break
-            capacity_available_list.append(round(dswd.capacity_avaible/1024, 2))
-            space_reserved_list.append(round(dswd.space_reserved/1024, 2))
-            total_space_list.append(round(dswd.total_space/1024, 2))
+            capacity_available_list.append(round(dswd.capacity_avaible / 1024, 2))
+            space_reserved_list.append(round(dswd.space_reserved / 1024, 2))
+            total_space_list.append(round(dswd.total_space / 1024, 2))
 
         disk_list.append({
             "name": "可用容量",
@@ -7882,6 +7886,66 @@ def get_disk_space_daily(request):
 
     return JsonResponse({
         "data": disk_list,
+    })
+
+
+@login_required
+def get_ma_disk_space(request):
+    """
+    获取总容量
+    :param request:
+    :return:
+    """
+    status = 1
+    data = []
+    info = ''
+    utils_id = request.POST.get('utils_id', '')
+
+    try:
+        utils_id = int(utils_id)
+        utils_manage = UtilsManage.objects.get(id=utils_id)
+    except:
+        status = 0
+        info = 'Commvault工具未配置。'
+    else:
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        try:
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            ret = dm.get_library_space_info()
+            dm.close()
+            capacity_available = 0
+            space_reserved = 0
+            total_space = 0
+
+            for r in ret:
+                if type(r["CapacityAvailable"]) == int:
+                    capacity_available += r["CapacityAvailable"]
+                if type(r["SpaceReserved"]) == int:
+                    space_reserved += r["SpaceReserved"]
+                if type(r["TotalSpaceMB"]) == int:
+                    total_space += r["TotalSpaceMB"]
+
+            capacity_available_percent = round((capacity_available / total_space) * 100, 0)
+            space_reserved_percent = round((space_reserved / total_space) * 100, 0)
+            used_space_percent = 100 - capacity_available_percent - space_reserved_percent
+            data.append({
+                "name": "可用容量",
+                "y": capacity_available_percent
+            })
+            data.append({
+                "name": "保留空间",
+                "y": space_reserved_percent
+            })
+            data.append({
+                "name": "已用空间",
+                "y": used_space_percent
+            })
+        except:
+            pass
+    return JsonResponse({
+        "status": status,
+        "info": info,
+        "data": data
     })
 
 
@@ -7906,11 +7970,12 @@ def oraclerecoverydata(request):
 
 @login_required
 def process_schedule(request, funid):
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").only("id", "name")
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").only("id",
+                                                                                                              "name")
 
     return render(request, 'process_schedule.html', {'username': request.user.userinfo.fullname,
-                                                        "pagefuns": getpagefuns(funid, request=request),
-                                                        "all_process": all_process})
+                                                     "pagefuns": getpagefuns(funid, request=request),
+                                                     "all_process": all_process})
 
 
 @login_required
@@ -8075,7 +8140,7 @@ def process_schedule_data(request):
     result = []
 
     all_process_schedules = ProcessSchedule.objects.exclude(state="9").select_related("process", "dj_periodictask",
-                                                                                        "dj_periodictask__crontab")
+                                                                                      "dj_periodictask__crontab")
 
     for process_schedule in all_process_schedules:
         process_id = process_schedule.process.id
@@ -8181,6 +8246,3 @@ def process_schedule_del(request):
         "ret": ret,
         "info": info
     })
-
-
-

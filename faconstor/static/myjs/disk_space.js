@@ -1,6 +1,60 @@
 $(document).ready(function () {
     $("#loading").show();
+    var pie_chart = new Highcharts.Chart({
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false,
+            type: 'pie',
+            renderTo: 'disk_space_container'
+        },
+        title: {
+            text: '磁盘容量'
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: true,
+                    format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+                    style: {
+                        color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
+                    }
+                }
+            }
+        },
+        series: [{
+            name: 'pie',
+            colorByPoint: true,
+            data: []
+        }]
+    });
 
+    function getMADiskSpace() {
+        pie_chart.series[0].setData([])
+        $.ajax({
+            type: "POST",
+            url: "../get_ma_disk_space/",
+            data: {
+                utils_id: $("#utils_manage").val(),
+            },
+            success: function (data) {
+                //定义一个数组
+                var browsers = []
+                //迭代，把异步获取的数据放到数组中
+                $.each(data.data, function (i, d) {
+                    browsers.push([d.name, d.y]);
+                });
+                //设置数据
+                pie_chart.series[0].setData(browsers);
+            }
+        });
+    }
+    getMADiskSpace();
     function getDiskSpace(utils_manage_id) {
         $.ajax({
             type: 'POST',
@@ -11,6 +65,7 @@ $(document).ready(function () {
             },
             success: function (data) {
                 if (data.status == 1) {
+                    // 磁盘容量表
                     var disk_space = data.data;
 
                     var pre_display_name = "";
@@ -104,7 +159,7 @@ $(document).ready(function () {
         $.ajax({
             type: "POST",
             url: "../get_disk_space_daily/",
-            data:{
+            data: {
                 media_id: media_id,
                 utils_id: utils_id
             },
@@ -136,5 +191,6 @@ $(document).ready(function () {
         $("tbody").empty();
         $("#loading").show();
         getDiskSpace($(this).val());
+        getMADiskSpace();
     });
 });
