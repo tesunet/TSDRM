@@ -37,6 +37,7 @@ from django.core.mail import send_mail
 from django.forms.models import model_to_dict
 from django.template.response import TemplateResponse
 from django.contrib.auth.decorators import login_required
+from djcelery.models import CrontabSchedule, PeriodicTask, IntervalSchedule
 
 from faconstor.tasks import *
 from faconstor.models import *
@@ -1357,7 +1358,7 @@ def index(request, funid):
             curren_processrun_info_list.append(current_processrun_dict)
 
     # 系统切换成功率
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
     process_success_rate_list = []
     if all_processes:
         for process in all_processes:
@@ -1386,7 +1387,7 @@ def index(request, funid):
 @login_required
 def get_process_rto(request):
     # 不同流程最近的12次切换RTO
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
     process_rto_list = []
     if all_processes:
         for process in all_processes:
@@ -3352,7 +3353,7 @@ def processconfig(request, funid):
     if process_id:
         process_id = int(process_id)
 
-    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None)|Q(type=""))
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type=""))
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -3559,7 +3560,7 @@ def process_design(request, funid):
 @login_required
 def process_data(request):
     result = []
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type="")).order_by("sort").values()
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").values()
     if all_process:
         for process in all_process:
             result.append({
@@ -3612,7 +3613,7 @@ def process_save(request):
                         # else:
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
-                                state="9").exclude(Q(type=None)|Q(type=""))
+                                state="9").exclude(Q(type=None) | Q(type=""))
                             if (len(all_process) > 0):
                                 result["res"] = '预案编码:' + code + '已存在。'
                             else:
@@ -3841,32 +3842,34 @@ def falconstorswitchdata(request):
         "": "",
     }
 
-    cursor = connection.cursor()
+    try:
+        with connection.cursor() as cursor:
+            exec_sql = """
+            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
+            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' and r.process_id = {0} order by r.starttime desc;
+            """.format(process_id)
 
-    exec_sql = """
-    select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
-    left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' and r.process_id = {0} order by r.starttime desc;
-    """.format(process_id)
+            cursor.execute(exec_sql)
+            rows = cursor.fetchall()
+            for processrun_obj in rows:
+                create_users = processrun_obj[2] if processrun_obj[2] else ""
+                create_user_objs = User.objects.filter(username=create_users)
+                create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
 
-    cursor.execute(exec_sql)
-    rows = cursor.fetchall()
-    for processrun_obj in rows:
-        if processrun_obj[9] == "falconstor":
-            create_users = processrun_obj[2] if processrun_obj[2] else ""
-            create_user_objs = User.objects.filter(username=create_users)
-            create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
-
-            result.append({
-                "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
-                "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
-                "createuser": create_user_fullname,
-                "state": state_dict["{0}".format(processrun_obj[3])] if processrun_obj[3] else "",
-                "process_id": processrun_obj[4] if processrun_obj[4] else "",
-                "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
-                "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
-                "process_name": processrun_obj[7] if processrun_obj[7] else "",
-                "process_url": processrun_obj[8] if processrun_obj[8] else ""
-            })
+                result.append({
+                    "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
+                    "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
+                    "createuser": create_user_fullname,
+                    "state": state_dict["{0}".format(processrun_obj[3])] if processrun_obj[3] else "",
+                    "process_id": processrun_obj[4] if processrun_obj[4] else "",
+                    "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
+                    "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
+                    "process_name": processrun_obj[7] if processrun_obj[7] else "",
+                    "process_url": processrun_obj[8] if processrun_obj[8] else "",
+                    "process_type": processrun_obj[9] if processrun_obj[9] else ""
+                })
+    finally:
+        connection.close()
 
     return JsonResponse({"data": result})
 
@@ -3891,10 +3894,22 @@ def falconstorrun(request):
         processid = int(processid)
     except:
         raise Http404()
-    process = Process.objects.filter(id=processid).exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    process = Process.objects.filter(id=processid).exclude(state="9").exclude(Q(type=None) | Q(type=""))
     if not process.exists():
         result["res"] = '流程启动失败，该流程不存在。'
     else:
+        # Commvault相关
+        if process[0].type.upper() == 'COMMVAULT':
+            try:
+                origin = int(origin)
+            except:
+                return JsonResponse({"res": "流程步骤中未添加Commvault接口，导致源客户端未空。"})
+
+            try:
+                target = int(target)
+            except:
+                return JsonResponse({"res": "目标客户端未选择。"})
+
         running_process = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
         if running_process.exists():
             result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
@@ -3909,6 +3924,24 @@ def falconstorrun(request):
                 myprocessrun.creatuser = request.user.username
                 myprocessrun.run_reason = run_reason
                 myprocessrun.state = "RUN"
+
+                if process[0].type.upper() == 'COMMVAULT':
+                    # Commvault 相关
+                    myprocessrun.target_id = target
+                    myprocessrun.browse_job_id = browseJobId
+                    myprocessrun.data_path = data_path
+                    myprocessrun.copy_priority = copy_priority
+                    myprocessrun.db_open = db_open
+                    myprocessrun.origin_id = origin
+                    myprocessrun.recover_time = datetime.datetime.strptime(recovery_time,
+                                                                           "%Y-%m-%d %H:%M:%S") if recovery_time else None
+                    # 是否回滚归档日志
+                    log_restore = 1
+                    origin = Origin.objects.filter(id=origin)
+                    if origin:
+                        log_restore = origin[0].log_restore
+                    myprocessrun.log_restore = log_restore
+
                 myprocessrun.save()
                 mystep = process[0].step_set.exclude(state="9").order_by("sort")
                 if not mystep.exists():
@@ -4010,7 +4043,7 @@ def falconstor_run_invited(request):
             current_process_run.DataSet_id = 89
             current_process_run.save()
 
-            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None)|Q(type=""))
+            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
 
             allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                 "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
@@ -4065,7 +4098,7 @@ def falconstor_run_invited(request):
 
 @login_required
 def walkthrough(request, funid):
-    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None)|Q(type=""))
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type=""))
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -5048,10 +5081,15 @@ def get_current_scriptinfo(request):
         starttime = scriptrun_obj.starttime.strftime("%Y-%m-%d %H:%M:%S") if scriptrun_obj.starttime else ""
         endtime = scriptrun_obj.endtime.strftime("%Y-%m-%d %H:%M:%S") if scriptrun_obj.endtime else ""
 
+        target = ""
+        if script_obj.interface_type == "commvault":
+            if scriptrun_obj.steprun.processrun.target:
+                target = scriptrun_obj.steprun.processrun.target.client_name
+
         script_info = {
             "processrunstate": scriptrun_obj.steprun.processrun.state,
             "code": script_obj.code,
-            "ip": script_obj.hosts_manage.host_ip,
+            "ip": script_obj.hosts_manage.host_ip if script_obj.hosts_manage else "",
             "filename": script_obj.filename,
             "scriptpath": script_obj.scriptpath,
             "state": state_dict["{0}".format(scriptrun_obj.state)],
@@ -5062,6 +5100,9 @@ def get_current_scriptinfo(request):
             "show_button": show_button,
             "step_id_from_script": step_id_from_script,
             "show_log_btn": "1" if script_obj.log_address else "0",
+            "origin": script_obj.origin.client_name if script_obj.origin else "",
+            "target": target,
+            "interface_type": script_obj.interface_type,
         }
 
         return JsonResponse({"data": script_info})
@@ -5936,7 +5977,7 @@ def falconstorsearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type="")).order_by('-id')
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by('-id')
     processname_list = []
     for process in all_processes:
         processname_list.append(process.name)
@@ -6070,7 +6111,7 @@ def tasksearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None)|Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
     processname_list = []
     for process in all_processes:
         processname_list.append(process.name)
@@ -6267,7 +6308,7 @@ def save_invitation(request):
 
     if start_time:
         if end_time:
-            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None)|Q(type=""))
+            process = Process.objects.filter(id=process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
             if (len(process) <= 0):
                 result["res"] = '流程计划失败，该流程不存在。'
             else:
@@ -7459,6 +7500,31 @@ def origin_del(request):
             })
 
 
+def get_rowspan(whole_list, **kwargs):
+    clientname = kwargs.get('clientname', '')
+    idataagent = kwargs.get('idataagent', '')
+    type = kwargs.get('type', '')
+    subclient = kwargs.get('subclient', '')
+
+    row_span = 0
+
+    if clientname and not any([idataagent, type, subclient]):
+        for tl in whole_list:
+            if tl['clientname'] == clientname:
+                row_span += 1
+    if all([clientname, idataagent]) and not any([type, subclient]):
+        for tl in whole_list:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent:
+                row_span += 1
+    if all([clientname, idataagent, type]) and not subclient:
+        for tl in whole_list:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type:
+                row_span += 1
+
+    return row_span
+
+
+
 @login_required
 def get_backup_status(request):
     whole_list = []
@@ -7479,8 +7545,23 @@ def get_backup_status(request):
             all_client_manage = Origin.objects.exclude(state="9").values("client_name")
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            whole_list = dm.custom_concrete_job_list(tmp_client_manage)
+            dm = SQLApi.CVApi(sqlserver_credit)
+            whole_list = dm.get_backup_status(tmp_client_manage)
+
+            for num, wl in enumerate(whole_list):
+                clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+                # 时间
+                try:
+                    whole_list[num]["startdate"] = "{:%Y-%m-%d %H:%M:%S}".format(whole_list[num]["startdate"])
+                except Exception as e:
+                    whole_list[num]["startdate"] = ""
+
+                whole_list[num]['clientname_rowspan'] = clientname_rowspan
+                whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
+                whole_list[num]['type_rowspan'] = type_rowspan
+
             dm.close()
         except Exception as e:
             return JsonResponse({
@@ -7522,17 +7603,18 @@ def get_backup_content(request):
             all_client_manage = Origin.objects.exclude(state="9").values("client_name")
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            ret, row_dict = dm.custom_all_backup_content(tmp_client_manage)
-            dm.close()
-            for content in ret:
-                content_dict = OrderedDict()
-                content_dict["clientName"] = content["clientname"]
-                content_dict["appName"] = content["idataagent"]
-                content_dict["backupsetName"] = content["backupset"]
-                # content_dict["subclientName"] = content["subclient"]
-                content_dict["content"] = content["content"]
-                whole_list.append(content_dict)
+            dm = SQLApi.CVApi(sqlserver_credit)
+            whole_list = dm.get_backup_content(tmp_client_manage)
+
+            for num, wl in enumerate(whole_list):
+                clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+
+                whole_list[num]['clientname_rowspan'] = clientname_rowspan
+                whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
+                whole_list[num]['type_rowspan'] = type_rowspan
+
         except Exception as e:
             print(e)
             return JsonResponse({
@@ -7542,10 +7624,7 @@ def get_backup_content(request):
         else:
             return JsonResponse({
                 "ret": 1,
-                "data": {
-                    "whole_list": whole_list,
-                    "row_dict": row_dict,
-                },
+                "data": whole_list,
             })
 
 
@@ -7578,17 +7657,17 @@ def get_storage_policy(request):
             all_client_manage = Origin.objects.exclude(state="9").values("client_name")
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            ret, row_dict = dm.custom_all_storages(tmp_client_manage)
-            dm.close()
-            for storage in ret:
-                storage_dict = OrderedDict()
-                storage_dict["clientName"] = storage["clientname"]
-                storage_dict["appName"] = storage["idataagent"]
-                storage_dict["backupsetName"] = storage["backupset"]
-                # storage_dict["subclientName"] = storage["subclient"]
-                storage_dict["storagePolicy"] = storage["storagepolicy"]
-                whole_list.append(storage_dict)
+            dm = SQLApi.CVApi(sqlserver_credit)
+            whole_list = dm.get_storage_policy(tmp_client_manage)
+
+            for num, wl in enumerate(whole_list):
+                clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+
+                whole_list[num]['clientname_rowspan'] = clientname_rowspan
+                whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
+                whole_list[num]['type_rowspan'] = type_rowspan
 
         except Exception as e:
             print(e)
@@ -7599,10 +7678,7 @@ def get_storage_policy(request):
         else:
             return JsonResponse({
                 "ret": 1,
-                "data": {
-                    "whole_list": whole_list,
-                    "row_dict": row_dict,
-                },
+                "data": whole_list
             })
 
 
@@ -7643,30 +7719,39 @@ def get_schedule_policy(request):
             all_client_manage = Origin.objects.exclude(state="9").values("client_name")
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            ret, row_dict = dm.custom_all_schedules(tmp_client_manage)
+            dm = SQLApi.CVApi(sqlserver_credit)
+            whole_list = dm.get_schedule_policy(tmp_client_manage)
+            ordered_whole_list = []
             dm.close()
-            for schedule in ret:
+            for num, wl in enumerate(whole_list):
                 schedule_dict = OrderedDict()
-                schedule_dict["clientName"] = schedule["clientName"]
-                schedule_dict["appName"] = schedule["idaagent"]
-                schedule_dict["backupsetName"] = schedule["backupset"]
-                # schedule_dict["subclientName"] = schedule["subclient"]
-                schedule_dict["scheduePolicy"] = schedule["scheduePolicy"]
-                schedule_dict["schedbackuptype"] = schedule["schedbackuptype"]
-                schedule_dict["schedpattern"] = schedule["schedpattern"]
-                schedule_dict["schedbackupday"] = schedule["schedbackupday"]
+
+                clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
+                idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
+                type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'], type=wl['type'])
+
+                schedule_dict['clientname_rowspan'] = clientname_rowspan
+                schedule_dict['idataagent_rowspan'] = idataagent_rowspan
+                schedule_dict['type_rowspan'] = type_rowspan
+
+                schedule_dict["clientname"] = wl["clientname"]
+                schedule_dict["idataagent"] = wl["idataagent"]
+                schedule_dict["type"] = wl["type"]
+                schedule_dict["subclient"] = wl["subclient"]
+                schedule_dict["scheduePolicy"] = wl["scheduePolicy"]
+                schedule_dict["schedbackuptype"] = wl["schedbackuptype"]
+                schedule_dict["schedpattern"] = wl["schedpattern"]
 
                 schedule_dict["option"] = {
-                    "schedpattern": schedule["schedpattern"],
-                    "schednextbackuptime": schedule["schednextbackuptime"],
-                    "scheduleName": schedule["scheduleName"],
-                    "schedinterval": schedule["schedinterval"],
-                    "schedbackupday": schedule["schedbackupday"],
-                    "schedbackuptype": schedule["schedbackuptype"],
+                    "schedpattern": wl["schedpattern"],
+                    "schednextbackuptime": wl["schednextbackuptime"],
+                    "scheduleName": wl["scheduleName"],
+                    "schedinterval": wl["schedinterval"],
+                    "schedbackupday": wl["schedbackupday"],
+                    "schedbackuptype": wl["schedbackuptype"],
                 }
 
-                whole_list.append(schedule_dict)
+                ordered_whole_list.append(schedule_dict)
 
         except Exception as e:
             print(e)
@@ -7677,29 +7762,425 @@ def get_schedule_policy(request):
         else:
             return JsonResponse({
                 "ret": 1,
-                "data": {
-                    "whole_list": whole_list,
-                    "row_dict": row_dict,
-                },
+                "data": ordered_whole_list,
             })
 
 
 @login_required
-def oraclerecoverydata(request):
-    if request.user.is_authenticated():
-        origin_id = request.GET.get('origin_id', '')
-        result = []
-        try:
-            origin_id = int(origin_id)
-            origin = Origin.objects.get(id=origin_id)
-            utils_manage = origin.utils
-            _, sqlserver_credit = get_credit_info(utils_manage.content)
-            dm = SQLApi.CustomFilter(sqlserver_credit)
-            result = dm.get_oracle_backup_job_list(client_name)
-            dm.close()
-        except:
-            pass
+def disk_space(request, funid):
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+    return render(request, 'disk_space.html', {
+        'username': request.user.userinfo.fullname, 'utils_manage': utils_manage,
+        "pagefuns": getpagefuns(funid, request=request)
+    })
 
-        return JsonResponse({"data": result})
+
+@login_required
+def get_disk_space(request):
+    # MA rowspan 总记录数
+    # 库 rowspan 相同库记录数
+    status = 1
+    data = []
+    info = ''
+    utils_manage_id = request.POST.get('utils_manage_id', '')
+
+    try:
+        utils_manage_id = int(utils_manage_id)
+        utils_manage = UtilsManage.objects.get(id=utils_manage_id)
+    except:
+        status = 0
+        info = 'Commvault工具未配置。'
     else:
-        return HttpResponseRedirect("/login")
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        try:
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            data = dm.get_library_space_info()
+            dm.close()
+            # 遍历所有记录 总记录数
+            def get_rowspan(total_list, **kwargs):
+                row_span = 0
+                display_name = kwargs.get('DisplayName', '')
+                library_name = kwargs.get('LibraryName', '')
+                if all([display_name, library_name]):
+                    for tl in total_list:
+                        if tl['DisplayName'] == display_name and tl['LibraryName'] == library_name:
+                            row_span += 1
+                if display_name and not library_name:
+                    for tl in total_list:
+                        if tl['DisplayName'] == display_name:
+                            row_span += 1
+                return row_span
+
+            for num, lsi in enumerate(data):
+                display_name_rowspan = get_rowspan(data, DisplayName=lsi['DisplayName'])
+                library_name_rowspan = get_rowspan(data, DisplayName=lsi['DisplayName'], LibraryName=lsi['LibraryName'])
+
+                # 时间
+                try:
+                    data[num]["LastBackupTime"] = "{:%Y-%m-%d %H:%M:%S}".format(data[num]["LastBackupTime"])
+                except Exception as e:
+                    data[num]["LastBackupTime"] = ""
+                # 是否可用
+                if data[num]["Offline"] == 0:
+                    data[num]["Offline"] = '<i class="fa fa-plug" style="color:green; height:20px;width:14px;"></i>'
+                else:
+                    data[num]["Offline"] = '<i class="fa fa-plug" style="color:red; height:20px;width:14px;"></i>'
+
+                data[num]['display_name_rowspan'] = display_name_rowspan
+                data[num]['library_name_rowspan'] = library_name_rowspan
+
+        except Exception as e:
+            print(e)
+            status = 0
+            info = '获取磁盘容量信息失败: {e}。'.format(e)
+    return JsonResponse({
+        "status": status,
+        "info": info,
+        "data": data
+    })
+
+
+@login_required
+def get_disk_space_daily(request):
+    disk_list = []
+
+    media_id = request.POST.get("media_id", "")
+    utils_id = request.POST.get("utils_id", "")
+
+    try:
+        media_id = int(media_id)
+        utils_id = int(utils_id)
+    except:
+        pass
+    else:
+        disk_space_weekly_data = DiskSpaceWeeklyData.objects.filter(utils_id=utils_id, media_id=media_id)
+        capacity_available_list = []
+        space_reserved_list = []
+        total_space_list = []
+        for num, dswd in enumerate(disk_space_weekly_data):
+            if num > 20:
+                break
+            capacity_available_list.append(round(dswd.capacity_avaible/1024, 2))
+            space_reserved_list.append(round(dswd.space_reserved/1024, 2))
+            total_space_list.append(round(dswd.total_space/1024, 2))
+
+        disk_list.append({
+            "name": "可用容量",
+            "color": "#3598dc",
+            "capacity_list": capacity_available_list
+        })
+        disk_list.append({
+            "name": "保留空间容量",
+            "color": "#e7505a",
+            "capacity_list": space_reserved_list
+        })
+        disk_list.append({
+            "name": "总容量",
+            "color": "#32c5d2",
+            "capacity_list": total_space_list
+        })
+
+    return JsonResponse({
+        "data": disk_list,
+    })
+
+
+@login_required
+def oraclerecoverydata(request):
+    origin_id = request.GET.get('origin_id', '')
+    result = []
+    try:
+        origin_id = int(origin_id)
+        origin = Origin.objects.get(id=origin_id)
+        utils_manage = origin.utils
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        dm = SQLApi.CustomFilter(sqlserver_credit)
+        result = dm.get_oracle_backup_job_list(origin.client_name)
+        dm.close()
+    except Exception as e:
+        print(e)
+        pass
+
+    return JsonResponse({"data": result})
+
+
+@login_required
+def process_schedule(request, funid):
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").only("id", "name")
+
+    return render(request, 'process_schedule.html', {'username': request.user.userinfo.fullname,
+                                                        "pagefuns": getpagefuns(funid, request=request),
+                                                        "all_process": all_process})
+
+
+@login_required
+def process_schedule_save(request):
+    process_schedule_id = request.POST.get('process_schedule_id', '')
+    process_schedule_name = request.POST.get('process_schedule_name', '')
+    process = request.POST.get('process', '')
+    process_schedule_remark = request.POST.get('process_schedule_remark', '')
+
+    schedule_type = request.POST.get('schedule_type', '')
+
+    per_time = request.POST.get('per_time', '')
+    per_month = request.POST.get('per_month', '')
+    per_week = request.POST.get('per_week', '')
+    ret = 1
+    info = ""
+
+    if not process_schedule_name:
+        return JsonResponse({
+            "ret": 0,
+            "info": "计划名称不能为空。"
+        })
+
+    try:
+        process = int(process)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "流程未选择。"
+        })
+
+    try:
+        process_schedule_id = int(process_schedule_id)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "网络异常。"
+        })
+
+    # 周期类型
+    try:
+        schedule_type = int(schedule_type)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "周期类型未选择。"
+        })
+    else:
+        if schedule_type == 2:
+            per_month = "*"
+            if not per_week:
+                return JsonResponse({
+                    "ret": 0,
+                    "info": "周几未选择。"
+                })
+
+        if schedule_type == 3:
+            per_week = "*"
+            if not per_month:
+                return JsonResponse({
+                    "ret": 0,
+                    "info": "每月第几天未选择。"
+                })
+
+    try:
+        cur_process = Process.objects.get(id=process)
+    except Process.DoesNotExist as e:
+        ret = 0
+        info = "流程不存在。"
+    else:
+        if not per_time:
+            ret = 0
+            info = "时间未填写。"
+        else:
+            # 保存定时任务
+            hour, minute = per_time.split(':')
+            # 新增
+            if process_schedule_id == 0:
+                cur_crontab_schedule = CrontabSchedule()
+                cur_crontab_schedule.hour = hour
+                cur_crontab_schedule.minute = minute
+                cur_crontab_schedule.day_of_week = per_week if per_week else "*"
+                cur_crontab_schedule.day_of_month = per_month if per_month else "*"
+
+                cur_crontab_schedule.save()
+                cur_crontab_schedule_id = cur_crontab_schedule.id
+
+                # 启动定时任务
+                cur_periodictask = PeriodicTask()
+                cur_periodictask.crontab_id = cur_crontab_schedule_id
+                cur_periodictask.name = uuid.uuid1()
+                # 默认关闭
+                cur_periodictask.enabled = 0
+                # 任务名称
+                cur_periodictask.task = "faconstor.tasks.create_process_run"
+                # cur_periodictask.args = [cur_process.id, request]
+                cur_periodictask.kwargs = json.dumps({
+                    'cur_process': cur_process.id,
+                    'creatuser': request.user.username
+                })
+                cur_periodictask.save()
+                cur_periodictask_id = cur_periodictask.id
+
+                ps = ProcessSchedule()
+                ps.dj_periodictask_id = cur_periodictask_id
+                ps.process = cur_process
+                ps.name = process_schedule_name
+                ps.remark = process_schedule_remark
+                ps.schedule_type = schedule_type
+                ps.save()
+                ret = 1
+                info = "保存成功。"
+            else:
+                # 修改
+                try:
+                    ps = ProcessSchedule.objects.get(id=process_schedule_id)
+                except ProcessSchedule.DoesNotExist as e:
+                    ret = 0
+                    info = "计划流程不存在。"
+                else:
+
+                    cur_periodictask_id = ps.dj_periodictask_id
+                    # 启动定时任务
+                    try:
+                        cur_periodictask = PeriodicTask.objects.get(id=cur_periodictask_id)
+                    except PeriodicTask.DoesNotExist as e:
+                        ret = 0
+                        info = "定时任务不存在。"
+                    else:
+                        cur_crontab_schedule = cur_periodictask.crontab
+                        cur_crontab_schedule.hour = hour
+                        cur_crontab_schedule.minute = minute
+                        cur_crontab_schedule.day_of_week = per_week if per_week else "*"
+                        cur_crontab_schedule.day_of_month = per_month if per_month else "*"
+                        cur_crontab_schedule.save()
+                        # 刷新定时器状态
+                        cur_periodictask.task = "faconstor.tasks.create_process_run"
+                        cur_periodictask.kwargs = json.dumps({
+                            'cur_process': cur_process.id,
+                            'creatuser': request.user.username
+                        })
+                        cur_periodictask_status = cur_periodictask.enabled
+                        cur_periodictask.enabled = cur_periodictask_status
+                        cur_periodictask.save()
+
+                        ps.process = cur_process
+                        ps.name = process_schedule_name
+                        ps.remark = process_schedule_remark
+                        ps.schedule_type = schedule_type
+
+                        ps.save()
+                        ret = 1
+                        info = "保存成功。"
+    return JsonResponse({
+        "ret": ret,
+        "info": info
+    })
+
+
+@login_required
+def process_schedule_data(request):
+    result = []
+
+    all_process_schedules = ProcessSchedule.objects.exclude(state="9").select_related("process", "dj_periodictask",
+                                                                                        "dj_periodictask__crontab")
+
+    for process_schedule in all_process_schedules:
+        process_id = process_schedule.process.id
+        process_name = process_schedule.process.name
+        remark = process_schedule.remark
+        schedule_type = process_schedule.schedule_type
+        schedule_type_display = process_schedule.get_schedule_type_display()
+        # 定时任务
+        status, minutes, hours, per_week, per_month = "", "", "", "", ""
+        periodictask = process_schedule.dj_periodictask
+        if periodictask:
+            status = periodictask.enabled
+            cur_crontab_schedule = periodictask.crontab
+            if cur_crontab_schedule:
+                minutes = cur_crontab_schedule.minute
+                hours = cur_crontab_schedule.hour
+                per_week = cur_crontab_schedule.day_of_week
+                per_month = cur_crontab_schedule.day_of_month
+
+        result.append({
+            "process_schedule_id": process_schedule.id,
+            "process_schedule_name": process_schedule.name,
+            "process_id": process_id,
+            "process_name": process_name,
+            "remark": remark,
+            "schedule_type": schedule_type,
+            "schedule_type_display": schedule_type_display,
+            "minutes": minutes,
+            "hours": hours,
+            "per_week": per_week,
+            "per_month": per_month,
+            "status": status,
+        })
+    return JsonResponse({"data": result})
+
+
+@login_required
+def change_periodictask(request):
+    process_schedule_id = request.POST.get("process_schedule_id", "")
+    process_periodictask_status = request.POST.get("process_periodictask_status", "")
+    try:
+        process_schedule_id = int(process_schedule_id)
+        process_periodictask_status = int(process_periodictask_status)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "网络异常。"
+        })
+
+    try:
+        cur_process_schedule = ProcessSchedule.objects.get(id=process_schedule_id)
+    except ProcessSchedule.DoesNotExist as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "该计划流程不存在。"
+        })
+    else:
+        cur_periodictask = cur_process_schedule.dj_periodictask
+        if cur_periodictask:
+            cur_periodictask.enabled = process_periodictask_status
+            cur_periodictask.save()
+            return JsonResponse({
+                "ret": 1,
+                "info": "定时任务状态修改成功。"
+            })
+        else:
+            return JsonResponse({
+                "ret": 0,
+                "info": "该计划流程对应的定时任务不存在。"
+            })
+
+
+def process_schedule_del(request):
+    process_schedule_id = request.POST.get("process_schedule_id", "")
+
+    try:
+        process_schedule_id = int(process_schedule_id)
+    except ValueError as e:
+        return JsonResponse({
+            "ret": 0,
+            "info": "网络异常。"
+        })
+
+    ret = 1
+    info = "流程计划删除成功。"
+    # 删除process_schedule/crontab/periodictask
+    try:
+        cur_process_schedule = ProcessSchedule.objects.get(id=process_schedule_id)
+    except ProcessSchedule.DoesNotExist as e:
+        ret = 0
+        info = "该流程计划不存在。"
+    else:
+        cur_process_schedule.state = "9"
+        cur_process_schedule.save()
+
+        try:
+            cur_process_schedule.dj_periodictask.crontab.delete()
+            cur_process_schedule.dj_periodictask.delete()
+        except:
+            ret = 0
+            info = "定时任务删除失败。"
+    return JsonResponse({
+        "ret": ret,
+        "info": info
+    })
+
+
+

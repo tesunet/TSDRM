@@ -13,152 +13,61 @@ $(document).ready(function () {
             if (data.ret == 0) {
                 alert(data.data)
             } else {
-                // 加载数据
-                var schedule_data = data.data.whole_list;
-                var row_dict = data.data.row_dict;
-                var schedule_el = ""
-                var pre_client_name = "",
-                    pre_agent = "",
-                    pre_backup_set = "",
-                    // pre_sub_client = "",
-                    pre_schedule_policy = "",
-                    pre_schedule_type = "",
-                    pre_description = "",
-                    pre_schedpattern = "";
-                var client_row_list = row_dict.client_row_list,
-                    agent_row_list = row_dict.agent_row_list,
-                    backupset_row_list = row_dict.backupset_row_list,
-                    // subclient_row_list = row_dict.subclient_row_list,
-                    schedule_row_list = row_dict.schedule_row_list,
-                    schedule_type_row_list = row_dict.schedule_type_row_list;
+                var schedule_policy = data.data;
 
-                agent_row_list = JSON.parse(JSON.stringify(agent_row_list));
-                backupset_row_list = JSON.parse(JSON.stringify(backupset_row_list));
-                // subclient_row_list = JSON.parse(JSON.stringify(subclient_row_list));
-                schedule_row_list = JSON.parse(JSON.stringify(schedule_row_list));
-                schedule_type_row_list = JSON.parse(JSON.stringify(schedule_type_row_list));
+                var pre_clientname = "";
+                var pre_idataagent = "";
+                var pre_type = "";
+                var sort = 0;
+                for (var i = 0; i < schedule_policy.length; i++) {
+                    var clientname_hidden = "";
+                    var idataagent_hidden = "";
+                    var type_hidden = "";
 
-                var client_num = 0;
-                for (var i = 0; i < schedule_data.length; i++) {
+                    if (pre_clientname == schedule_policy[i]["clientname"]) {
+                        // 非首个客户端
+                        clientname_hidden = "display:none";
+                    } else {
+                        sort+=1;
+                    }
+                    if (pre_clientname == schedule_policy[i]["clientname"]&&pre_idataagent == schedule_policy[i]["idataagent"]) {
+                        idataagent_hidden = "display:none";
+                    } 
+                    if (pre_clientname == schedule_policy[i]["clientname"]&&pre_idataagent == schedule_policy[i]["idataagent"]&&pre_type == schedule_policy[i]["type"]) {
+                        type_hidden = "display:none";
+                    } 
 
-                    schedule_el += "<tr>"
-                    for (var key in schedule_data[i]) {
-                        var client_row_span = "",
-                            agent_row_span = "",
-                            backupset_row_span = "",
-                            // subclient_row_span = "",
-                            schedule_row_span = "",
-                            scheduletype_row_span = "";
-
-                        // 首个client
-                        if (key == "clientName" && schedule_data[i]["clientName"] != pre_client_name) {
-                            client_num += 1
-                            var client_row = client_row_list.shift();
-                            client_row_span = 'rowspan="' + client_row + '" style="vertical-align:middle"';
-                            schedule_el += '<td ' + client_row_span + '>' + client_num + '</td>';
-                            schedule_el += '<td ' + client_row_span + '>' + schedule_data[i][key] + '</td>';
-
-                            pre_agent = "";
-                            pre_backup_set = "";
-                            // pre_sub_client = "";
-                            pre_schedule_policy = "";
-                            pre_schedule_type = "";
-                            pre_description = "";
-                            pre_schedpattern = "";
-                        }
-
-                        // 首个app
-                        if (key == "appName" && schedule_data[i]["appName"] != pre_agent) {
-                            var agent_row = agent_row_list.shift();
-                            agent_row_span = 'rowspan="' + agent_row + '" style="vertical-align:middle"';
-                            schedule_el += '<td ' + agent_row_span + '>' + schedule_data[i][key] + '</td>';
-
-                            pre_backup_set = "";
-                            // pre_sub_client = "";
-                            pre_schedule_policy = "";
-                            pre_schedule_type = "";
-                            pre_description = "";
-                            pre_schedpattern = "";
-                        }
-
-                        // 首个backupset
-                        if (key == "backupsetName" && schedule_data[i]["backupsetName"] != pre_backup_set) {
-                            var backupset_row = backupset_row_list.shift();
-                            backupset_row_span = 'rowspan="' + backupset_row + '" style="vertical-align:middle"';
-                            schedule_el += '<td ' + backupset_row_span + '>' + schedule_data[i][key] + '</td>';
-
-                            // pre_sub_client = "";
-                            pre_schedule_policy = "";
-                            pre_schedule_type = "";
-                            pre_description = "";
-                            pre_schedpattern = "";
-                        }
-
-                        // // 首个subclient
-                        // if (key == "subclientName" && schedule_data[i]["subclientName"] != pre_sub_client) {
-                        //     var subclient_row = subclient_row_list.shift();
-                        //     subclient_row_span = 'rowspan="' + subclient_row + '" style="vertical-align:middle"';
-                        //     schedule_el += '<td ' + subclient_row_span + '>' + schedule_data[i][key] + '</td>';
-                        //
-                        //     pre_schedule_policy = "";
-                        //     pre_schedule_type = "";
-                        //     pre_description = "";
-                        // }
-
-                        // 首个schedulepolicy
-                        if (key == "scheduePolicy" && schedule_data[i]["scheduePolicy"] != pre_schedule_policy) {
-                            var schedule_row = schedule_row_list.shift();
-                            schedule_row_span = 'rowspan="' + schedule_row + '" style="vertical-align:middle"';
-                            schedule_el += '<td ' + schedule_row_span + '>' + schedule_data[i][key] + '</td>';
-
-                            pre_schedule_type = "";
-                            pre_description = "";
-                            pre_schedpattern = "";
-                        }
-
-                        // 首个schedule_type
-                        if (key == "schedbackuptype" && schedule_data[i]["schedbackuptype"] != pre_schedule_type) {
-                            var schedule_type_row = schedule_type_row_list.shift();
-                            scheduletype_row_span = 'rowspan="' + schedule_type_row + '" style="vertical-align:middle"';
-                            schedule_el += '<td ' + scheduletype_row_span + '>' + schedule_data[i][key] + '</td>';
-
-                            pre_description = "";
-                            pre_schedpattern = "";
-                        }
-
-                        if (key == "schedpattern" && schedule_data[i]["schedpattern"] != pre_schedpattern) {
-                            schedule_el += '<td ' + scheduletype_row_span + '>' + schedule_data[i][key] + ' (' + schedule_data[i]['schedbackupday'] + ')' + '</td>';
-                        }
-
-                        if (key == "option" && schedule_data[i]["schedpattern"] != pre_schedpattern) {
-                            var disable_tag = ''
-                            if (schedule_data[i]["scheduePolicy"] == '无'){
-                                disable_tag = 'disabled'
-                            }
-
-                            schedule_el += '<td><button name="schedule_type" title="编辑" data-toggle="modal" data-target="#static" class="btn btn-xs btn-primary" type="button" '+ disable_tag +'><i class="fa fa-cogs"></i></button>' +
-                                '<input value="' + schedule_data[i][key]["scheduleName"] + '" hidden>' +
-                                '<input value="' + schedule_data[i][key]["schedpattern"] + '" hidden>' +
-                                '<input value="' + schedule_data[i][key]["schednextbackuptime"] + '" hidden>' +
-                                '<input value="' + schedule_data[i][key]["schedinterval"] + '" hidden>' +
-                                '<input value="' + schedule_data[i][key]["schedbackupday"] + '" hidden>' +
-                                '<input value="' + schedule_data[i][key]["schedbackuptype"] + '" hidden>' +
-                                '<td>';
-                        }
+                    // 是否展示操作按钮
+                    var disable_tag = ''
+                    if (schedule_policy[i]["scheduePolicy"] == '无'){
+                        disable_tag = 'disabled'
                     }
 
-                    pre_client_name = schedule_data[i]["clientName"]
-                    pre_agent = schedule_data[i]["appName"]
-                    pre_backup_set = schedule_data[i]["backupsetName"]
-                    // pre_sub_client = schedule_data[i]["subclientName"]
-                    pre_schedule_policy = schedule_data[i]["scheduePolicy"]
-                    pre_schedule_type = schedule_data[i]["schedbackuptype"]
-                    pre_schedpattern = schedule_data[i]["schedpattern"]
+                    $("tbody").append(
+                        '<tr>' +
+                        '<td rowspan="' + schedule_policy[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + sort + '</td>' +
+                        '<td rowspan="' + schedule_policy[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + schedule_policy[i]["clientname"] + '</td>' +
+                        '<td rowspan="' + schedule_policy[i].idataagent_rowspan + '" style="vertical-align:middle; ' + idataagent_hidden + '">' + schedule_policy[i]["idataagent"] + '</td>' +
+                        '<td rowspan="' + schedule_policy[i].type_rowspan + '" style="vertical-align:middle; ' + type_hidden + '">' + schedule_policy[i]["type"] + '</td>' +
+                        '<td style="vertical-align:middle">' + schedule_policy[i]["subclient"] + '</td>' +
+                        '<td style="vertical-align:middle">' + schedule_policy[i]["scheduePolicy"] + '</td>' +
+                        '<td style="vertical-align:middle">' + schedule_policy[i]["schedbackuptype"] + '</td>' +
+                        '<td style="vertical-align:middle">' + schedule_policy[i]["schedpattern"] + '</td>' +
+                        '<td><button name="schedule_type" title="编辑" data-toggle="modal" data-target="#static" class="btn btn-xs btn-primary" type="button" '+ disable_tag +'><i class="fa fa-cogs"></i></button>' +
+                        '<input value="' + schedule_policy[i]["option"]["scheduleName"] + '" hidden>' +
+                        '<input value="' + schedule_policy[i]["option"]["schedpattern"] + '" hidden>' +
+                        '<input value="' + schedule_policy[i]["option"]["schednextbackuptime"] + '" hidden>' +
+                        '<input value="' + schedule_policy[i]["option"]["schedinterval"] + '" hidden>' +
+                        '<input value="' + schedule_policy[i]["option"]["schedbackupday"] + '" hidden>' +
+                        '<input value="' + schedule_policy[i]["option"]["schedbackuptype"] + '" hidden>' +
+                        '<td>' + 
+                        '</tr>'
+                    );
 
-                    schedule_el += "</tr>";
+                    pre_clientname = schedule_policy[i]["clientname"]
+                    pre_idataagent = schedule_policy[i]["idataagent"]
+                    pre_type = schedule_policy[i]["type"]
                 }
-
-                $("tbody").append(schedule_el);
                 $("#loading").hide();
             }
         }
@@ -180,6 +89,7 @@ $(document).ready(function () {
 
     $('#utils_manage').change(function () {
         $("tbody").empty();
+        $("#loading").show();
         getSchedulePolicy($(this).val());
     });
 });

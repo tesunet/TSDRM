@@ -74,6 +74,8 @@ $(document).ready(function () {
         $('#SQLServerUser').val(data.sqlserver_credit.SQLServerUser);
         $('#SQLServerPasswd').val(data.sqlserver_credit.SQLServerPasswd);
         $('#SQLServerDataBase').val(data.sqlserver_credit.SQLServerDataBase);
+
+        displayCreditDiv(data.util_type);
     });
 
     $("#new").click(function () {
@@ -104,12 +106,14 @@ $(document).ready(function () {
 
     $('#util_type').change(function(){
         var util_type = $(this).val();
-        console.log(util_type)
+        displayCreditDiv(util_type);
+    });
+
+    function displayCreditDiv(util_type){
         if (util_type.toUpperCase() == 'COMMVAULT'){
             $('#credit_div').show();
         } else {
             $('#credit_div').hide();
         }
-    });
-
+    }
 });

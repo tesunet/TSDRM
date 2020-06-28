@@ -2,7 +2,6 @@ from __future__ import absolute_import
 from celery import shared_task
 from faconstor.models import *
 from django.db import connection
-from xml.dom.minidom import parse, parseString
 from . import remote
 from .models import *
 import datetime
@@ -10,16 +9,42 @@ from django.db.models import Q
 import time
 import paramiko
 import os
+import json
 from TSDRM import settings
+import subprocess
+from .api import SQLApi
+from .CVApi import *
+import logging
+from .api import SQLApi
+logger = logging.getLogger('tasks')
 
 
-def is_connection_usable():
-    try:
-        connection.connection.ping()
-    except:
-        return False
-    else:
-        return True
+@shared_task
+def get_disk_space_crond():
+    """
+    一周获取一次Commvault磁盘信息
+        工具ID MediaID 可用容量、保留空间、总容量、取数时间
+        
+    """
+    from .views import get_credit_info
+    commvaul_utils = UtilsManage.objects.exclude(state="9").filter(util_type="Commvault")
+    for cu in commvaul_utils:
+        _, sqlserver_credit = get_credit_info(cu.content)
+        dm = SQLApi.CVApi(sqlserver_credit)
+        disk_space = dm.get_library_space_info()
+
+        for ds in disk_space:
+            disk_space_save_data = dict()
+            disk_space_save_data["utils_id"] = cu.id
+            disk_space_save_data["media_id"] = int(ds["MediaID"]) if ds["MediaID"] else 0
+            disk_space_save_data["capacity_avaible"] = int(ds["CapacityAvailable"]) if ds["CapacityAvailable"] else 0
+            disk_space_save_data["space_reserved"] = int(ds["SpaceReserved"]) if ds["SpaceReserved"] else 0
+            disk_space_save_data["total_space"] = int(ds["TotalSpaceMB"]) if ds["TotalSpaceMB"] else 0
+            disk_space_save_data["extract_time"] = datetime.datetime.now()
+            try:
+                DiskSpaceWeeklyData.objects.create(**disk_space_save_data)
+            except Exception as e:
+                print(e)
 
 
 # @shared_task(bind=True, default_retry_delay=300, max_retries=5)  # 错误处理机制，因网络延迟等问题的重试；
@@ -377,6 +402,8 @@ def runstep(steprun, if_repeat=False):
                 script.state = "RUN"
                 script.save()
 
+                origin = script.script.origin
+
                 if script.script.interface_type == "脚本":
                     # HostsManage
                     cur_host_manage = script.script.hosts_manage
@@ -544,28 +571,29 @@ def runstep(steprun, if_repeat=False):
                     # 执行文件
                     rm_obj = remote.ServerByPara(exe_cmd, ip, username, password, system_tag)
                     result = rm_obj.run(script.script.succeedtext)
-
                 else:
                     result = {}
                     commvault_api_path = os.path.join(os.path.join(settings.BASE_DIR, "faconstor"),
                                                       "commvault_api") + os.sep + script.script.commv_interface
                     ret = ""
 
-                    origin = script.script.origin.client_name if script.script.origin else ""
-                    target = ""
-                    if script.steprun.processrun.target:
-                        target = script.steprun.processrun.target.client_name if script.steprun.processrun.target else ""
+                    pr_target = script.steprun.processrun.target
+                    or_target = origin.target
+
+                    if pr_target:
+                        target_id = pr_target.id
                     else:
-                        target = script.script.target.client_name if script.script.target else ""
-                    oracle_info = json.loads(script.script.origin.info)
+                        target_id = or_target.id
+
+                    oracle_info = json.loads(origin.info)
 
                     instance = ""
                     if oracle_info:
                         instance = oracle_info["instance"]
 
-                    oracle_param = "%s %s %s %d" % (origin, target, instance, processrun.id)
+                    oracle_param = "{0} {1} {2} {3}".format(origin.id, target_id, instance, processrun.id)
                     try:
-                        ret = subprocess.getstatusoutput(commvault_api_path + " %s" % oracle_param)
+                        ret = subprocess.getstatusoutput(commvault_api_path + " {0}".format(oracle_param))
                         exec_status, recover_job_id = ret
                     except Exception as e:
                         result["exec_tag"] = 1
@@ -578,20 +606,26 @@ def runstep(steprun, if_repeat=False):
                             result["log"] = "调用commvault接口成功。"
                         elif exec_status == 2:
                             #######################################
-                            # ret=2时，查看任务错误信息写入日志    #
+                            # ret=2时，查看任务错误信息写入日志       #
                             # Oracle恢复出错                      #
                             #######################################
-
-                            # 查看Oracle恢复错误信息
-                            dm = SQLApi.CustomFilter(settings.sql_credit)
-                            job_controller = dm.get_job_controller()
-                            dm.close()
                             recover_error = "无"
+                            from faconstor.views import get_credit_info
 
-                            for jc in job_controller:
-                                if str(recover_job_id) == str(jc["jobID"]):
-                                    recover_error = jc["delayReason"]
-                                    break
+                            try:
+                                utils_manage = origin.utils_manage
+                                _, sqlserver_credit = get_credit_info(utils_manage.content)
+                                # 查看Oracle恢复错误信息
+                                dm = SQLApi.CustomFilter(sqlserver_credit)
+                                job_controller = dm.get_job_controller()
+                                dm.close()
+
+                                for jc in job_controller:
+                                    if str(recover_job_id) == str(jc["jobID"]):
+                                        recover_error = jc["delayReason"]
+                                        break
+                            except Exception as e:
+                                recover_error = e
 
                             result["exec_tag"] = 2
                             # 查看任务错误信息写入>>result["data"]
@@ -658,12 +692,20 @@ def runstep(steprun, if_repeat=False):
                             # 终止commvault作业
                             if recover_job_id != '':
                                 try:
+                                    utils_manage = origin.utils_manage
+                                    commvault_credit, _ = get_credit_info(utils_manage.content)
+                                    commvault_credit = {
+                                        'webaddr': commvault_credit['webaddr'],
+                                        'port': commvault_credit['port'],
+                                        'username': commvault_credit['usernm'],
+                                        'passwd': commvault_credit['passwd']
+                                    }
                                     cvToken = CV_RestApi_Token()
-                                    cvToken.login(settings.CVApi_credit)
+                                    cvToken.login(commvault_credit)
                                     cvOperate = CV_OperatorInterFace(cvToken)
                                     cvOperate.kill_job(recover_job_id)
                                 except Exception as e:
-                                    logger.info(str(e))
+                                    pass
 
                             myprocesstask.logtype = "STOP"
                             myprocesstask.content = "由于辅助拷贝未完成，本次演练中止。"
@@ -839,6 +881,110 @@ def exec_process(processrunid, if_repeat=False):
     end_step_tag = 0
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
+    
+    # Commvault 流程特殊数据
+    if processrun.process.type.upper() == "COMMVAULT":
+        # nextSCN-1
+        # 获取流程客户端
+        cur_client = processrun.origin
+
+        dm = SQLApi.CustomFilter(settings.sql_credit)
+        ret = dm.get_oracle_backup_job_list(cur_client)
+
+        # 无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启
+        if not ret:
+            dm.close()
+            end_step_tag = 0
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun = processrun
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = processrun.creatuser
+            myprocesstask.receiveuser = processrun.creatuser
+            myprocesstask.type = "ERROR"
+            myprocesstask.state = "0"
+            myprocesstask.content = "无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启。"
+            myprocesstask.save()
+        else:
+            curSCN = None
+
+            process = processrun.process
+
+            # copy_priority
+            copy_priority = 1
+            steps = process.step_set.exclude(state='9')
+            for step in steps:
+                scripts = step.script_set.exclude(state='9')
+                for script in scripts:
+                    if script.interface_type == "commvault":
+                        origin_id = script.origin.id
+
+                        try:
+                            c_origin = Origin.objects.get(id=origin_id)
+                        except Origin.DoesNotExist:
+                            pass
+                        else:
+                            copy_priority = c_origin.copy_priority
+
+                        break
+
+            # 区分主动流程与定时流程
+            if processrun.copy_priority != copy_priority and processrun.copy_priority:
+                copy_priority = processrun.copy_priority
+
+            # 区分是当前时间还是选择时间点 > 从备份记录中匹配到对应SCN号
+            recover_time = '{:%Y-%m-%d %H:%M:%S}'.format(processrun.recover_time) if processrun.recover_time else ""
+            # print('~~~~~ %s' % recover_time)
+            if recover_time:
+                for i in ret:
+                    if i["subclient"] == "default" and i['LastTime'] == recover_time:
+                        # print('>>>>>')
+                        curSCN = i["cur_SCN"]
+                        break
+            else:
+                # 当前时间点，选择最新的SCN号
+                for i in ret:
+                    if i["subclient"] == "default":
+                        curSCN = i["cur_SCN"]
+                        break
+
+            # print('~~~~%s curSCN: %s' % (copy_priority, curSCN))
+            # 辅助拷贝优先的恢复
+            if copy_priority == 2:
+                if not recover_time:
+                    tmp_tag = 0
+                    for orcl_copy in ret:
+                        if orcl_copy["idataagent"] == "Oracle Database":
+                            if dm.has_auxiliary_job(orcl_copy['jobId']):
+                                orcl_copy_starttime = datetime.datetime.strptime(orcl_copy['StartTime'], "%Y-%m-%d %H:%M:%S")
+                                curSCN = orcl_copy['cur_SCN']
+                                processrun.recover_time = orcl_copy_starttime if orcl_copy_starttime else None
+
+                                if tmp_tag > 0:
+                                    break
+                                tmp_tag += 1
+                        else:
+                            break
+
+            dm.close()
+
+            processrun.curSCN = curSCN
+            processrun.save()
+
+            steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None,
+                                                                    step__pnode=None)
+            if len(steprunlist) > 0:
+                end_step_tag = runstep(steprunlist[0], if_repeat)
+            else:
+                myprocesstask = ProcessTask()
+                myprocesstask.processrun = processrun
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.senduser = processrun.creatuser
+                myprocesstask.receiveuser = processrun.creatuser
+                myprocesstask.type = "ERROR"
+                myprocesstask.state = "0"
+                myprocesstask.content = "流程配置错误，请处理。"
+                myprocesstask.save()
+ 
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
     if len(steprunlist) > 0:
         # 演练中，第一步不计入RTO时，自动开启下一流程
@@ -1023,3 +1169,110 @@ def exec_process(processrunid, if_repeat=False):
     #         myprocesstask.state = "0"
     #         myprocesstask.content = processrun.process.name + " 流程运行出错，请处理。"
     #         myprocesstask.save()
+
+
+@shared_task
+def create_process_run(*args, **kwargs):
+    """
+    创建计划流程
+    :param process:
+    :return:
+    """
+    # exec_process.delay(processrunid)
+    # data_path/target/origin/
+    origin_id, target_id, data_path, copy_priority, db_open = "", None, "", 1, 1
+    try:
+        process_id = int(kwargs["cur_process"])
+    except ValueError as e:
+        pass
+    else:
+        try:
+            cur_process = Process.objects.get(id=process_id)
+        except Process.DoesNotExist as e:
+            print(e)
+        else:
+            process_type = cur_process.type
+
+            if process_type.upper() == "COMMVAULT":
+                # 过滤所有脚本
+                all_steps = cur_process.step_set.exclude(state="9")
+                for cur_step in all_steps:
+                    all_scripts = cur_step.script_set.exclude(state="9")
+                    for cur_script in all_scripts:
+                        if cur_script.origin:
+                            origin_id = cur_script.origin.id
+                            data_path = cur_script.origin.data_path
+                            copy_priority = cur_script.origin.copy_priority
+                            db_open = cur_script.origin.db_open
+                            if cur_script.origin.target:
+                                target_id = cur_script.origin.target.id
+                            break
+
+            # running_process = ProcessRun.objects.filter(process=cur_process, state__in=["RUN", "ERROR"])
+            running_process = ProcessRun.objects.filter(process=cur_process, state__in=["RUN"])
+            if running_process.exists():
+                myprocesstask = ProcessTask()
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "END"
+                myprocesstask.state = "0"
+                myprocesstask.processrun = running_process[0]
+                myprocesstask.content = "计划流程({0})已运行，无法按计划创建恢复流程任务。".format(running_process[0].process.name)
+                myprocesstask.save()
+            else:
+                myprocessrun = ProcessRun()
+                myprocessrun.creatuser = kwargs["creatuser"]
+                myprocessrun.process = cur_process
+                myprocessrun.starttime = datetime.datetime.now()
+                myprocessrun.state = "RUN"
+                if process_type.upper() == "COMMVAULT":
+                    myprocessrun.target_id = target_id
+                    myprocessrun.data_path = data_path
+                    myprocessrun.copy_priority = copy_priority
+                    myprocessrun.db_open = db_open
+                    myprocessrun.origin_id = origin_id
+
+                    # 是否回滚归档日志
+                    log_restore = 1
+                    origin = Origin.objects.exclude(state='9').filter(id=origin_id)
+                    if origin:
+                        log_restore = origin[0].log_restore
+
+                    myprocessrun.log_restore = log_restore
+                myprocessrun.save()
+                mystep = cur_process.step_set.exclude(state="9")
+                if not mystep.exists():
+                    myprocesstask = ProcessTask()
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "END"
+                    myprocesstask.state = "0"
+                    myprocesstask.processrun = myprocessrun
+                    myprocesstask.content = "计划流程({0})不存在可运行步骤，无法按计划创建恢复流程任务。".format(myprocessrun.process.name)
+                    myprocesstask.save()
+                else:
+                    for step in mystep:
+                        mysteprun = StepRun()
+                        mysteprun.step = step
+                        mysteprun.processrun = myprocessrun
+                        mysteprun.state = "EDIT"
+                        mysteprun.save()
+
+                        myscript = step.script_set.exclude(state="9")
+                        for script in myscript:
+                            myscriptrun = ScriptRun()
+                            myscriptrun.script = script
+                            myscriptrun.steprun = mysteprun
+                            myscriptrun.state = "EDIT"
+                            myscriptrun.save()
+
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun = myprocessrun
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "START"
+                    myprocesstask.state = "1"
+                    myprocesstask.content = "流程已启动。"
+                    myprocesstask.save()
+
+                    exec_process.delay(myprocessrun.id)

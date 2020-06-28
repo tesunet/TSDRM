@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 from django.db import models
 from django.contrib.auth.models import User
+from djcelery import models as djmodels
 
 
 class Fun(models.Model):
@@ -122,6 +123,21 @@ class ProcessRun(models.Model):
     run_reason = models.TextField("启动原因", blank=True, null=True)
     note = models.TextField("记录", blank=True, null=True)
     walkthroughstate = models.CharField("状态", blank=True, null=True, max_length=20)
+
+    # Commvault Oracle
+    target = models.ForeignKey("Target", blank=True, null=True, verbose_name="oracle恢复流程指定目标客户端")
+    origin = models.ForeignKey("Origin", blank=True, null=True, verbose_name="源客户端")
+
+    recover_time = models.DateTimeField("指定恢复时间点", blank=True, null=True)
+    browse_job_id = models.CharField("指点时间点的备份任务ID", blank=True, null=True, max_length=50)
+    data_path = models.CharField("数据重定向路径", blank=True, null=True, max_length=512)
+    copy_priority = models.IntegerField("优先拷贝顺序", blank=True, default=1, null=True)
+    curSCN = models.BigIntegerField("当前备份nextSCN-1", blank=True, null=True)
+    db_open = models.IntegerField("是否打开数据库", default=1, null=True)
+
+    rto = models.IntegerField("流程RTO", default=0, null=True)
+    recover_end_time = models.DateTimeField("恢复结束时间", blank=True, null=True)
+    log_restore = models.IntegerField("是否回滚日志", null=True, default=1)
 
 
 class StepRun(models.Model):
@@ -248,3 +264,30 @@ class Origin(models.Model):
         (2, "否")
     ))
     utils = models.ForeignKey(UtilsManage, null=True, verbose_name="关联工具")
+
+
+class ProcessSchedule(models.Model):
+    dj_periodictask = models.OneToOneField(djmodels.PeriodicTask, null=True, verbose_name="定时任务")
+    process = models.ForeignKey(Process, null=True, verbose_name="流程预案")
+    name = models.CharField("流程计划名称", null=True, default="", max_length=256)
+    remark = models.TextField("计划说明", null=True, default="")
+    state = models.CharField("状态", null=True, default="", max_length=20)
+    schedule_type_choices = (
+        (1, "每日"),
+        (2, "每周"),
+        (3, "每月"),
+    )
+    schedule_type = models.IntegerField(choices=schedule_type_choices, default=1, null=True)
+
+
+class DiskSpaceWeeklyData(models.Model):
+    """
+    每周获取的磁盘空间信息
+    """
+    utils = models.ForeignKey(UtilsManage, null=True, verbose_name="工具")
+    media_id = models.IntegerField("MediaID", null=True, default=0)
+    capacity_avaible = models.BigIntegerField("可用容量", null=True, default=0)
+    space_reserved = models.BigIntegerField("保留空间", null=True, default=0)
+    total_space = models.BigIntegerField("总容量", null=True, default=0)
+    extract_time = models.DateTimeField("取数时间", null=True)
+

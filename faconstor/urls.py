@@ -79,6 +79,7 @@ urlpatterns = [
     url(r'^falconstor_run_invited/$', falconstor_run_invited),
     url(r'^fill_with_invitation/$', fill_with_invitation),
     url(r'^save_modify_invitation/$', save_modify_invitation),
+    url(r'^oraclerecoverydata/$', oraclerecoverydata),
 
     url(r'^walkthrough/$', walkthrough, {"funid": "69"}),
     url(r'^walkthroughdata/$', walkthroughdata),
@@ -169,5 +170,15 @@ urlpatterns = [
     url(r'^backup_status/$', backup_status, {'funid': '76'}),
     url(r'^get_backup_status/$', get_backup_status),
 
-    url(r'^oraclerecoverydata/$', oraclerecoverydata),
+    # 磁盘空间
+    url(r'^disk_space/$', disk_space, {'funid': '82'}),
+    url(r'^get_disk_space/$', get_disk_space),
+    url(r'^get_disk_space_daily/$', get_disk_space_daily),
+
+    # 流程计划
+    url(r'^process_schedule/$', process_schedule, {'funid': '81'}),
+    url(r'^process_schedule_save/$', process_schedule_save),
+    url(r'^process_schedule_data/$', process_schedule_data),
+    url(r'^change_periodictask/$', change_periodictask),
+    url(r'^process_schedule_del/$', process_schedule_del),
 ]
