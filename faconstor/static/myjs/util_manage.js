@@ -68,7 +68,9 @@ $(document).ready(function () {
         $('#util_type').val(data.util_type);
         $('#webaddr').val(data.commvault_credit.webaddr);
         $('#port').val(data.commvault_credit.port);
-        $('#usernm').val(data.commvault_credit.usernm);
+        $('#hostusernm').val(data.commvault_credit.hostusername);
+        $('#hostpasswd').val(data.commvault_credit.hostpasswd);
+        $('#usernm').val(data.commvault_credit.username);
         $('#passwd').val(data.commvault_credit.passwd);
         $('#SQLServerHost').val(data.sqlserver_credit.SQLServerHost);
         $('#SQLServerUser').val(data.sqlserver_credit.SQLServerUser);

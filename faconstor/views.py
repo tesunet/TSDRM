@@ -6817,6 +6817,9 @@ def hosts_manage_del(request):
             })
 
 
+######################
+# 工具管理
+######################
 @login_required
 def util_manage(request, funid):
     return render(request, 'util_manage.html',
@@ -6827,7 +6830,9 @@ def get_credit_info(content):
     commvault_credit = {
         'webaddr': '',
         'port': '',
-        'usernm': '',
+        'hostusername': '',
+        'hostpasswd': '',
+        'username': '',
         'passwd': '',
     }
     sqlserver_credit = {
@@ -6840,17 +6845,49 @@ def get_credit_info(content):
         doc = etree.XML(content)
 
         # Commvault账户信息
-        commvault_credit['webaddr'] = doc.xpath('//webaddr/text()')[0]
-        commvault_credit['port'] = doc.xpath('//port/text()')[0]
-        commvault_credit['usernm'] = doc.xpath('//username/text()')[0]
-        commvault_credit['passwd'] = base64.b64decode(doc.xpath('//passwd/text()')[0]).decode()
+        try:
+            commvault_credit['webaddr'] = doc.xpath('//webaddr/text()')[0]
+        except:
+            pass
+        try:
+            commvault_credit['port'] = doc.xpath('//port/text()')[0]
+        except:
+            pass
+        try:
+            commvault_credit['hostusername'] = doc.xpath('//hostusername/text()')[0]
+        except:
+            pass
+        try:
+            commvault_credit['hostpasswd'] = base64.b64decode(doc.xpath('//hostpasswd/text()')[0]).decode()
+        except:
+            pass
+        try:
+            commvault_credit['username'] = doc.xpath('//username/text()')[0]
+        except:
+            pass
+        try:
+            commvault_credit['passwd'] = base64.b64decode(doc.xpath('//passwd/text()')[0]).decode()
+        except:
+            pass
 
         # SQL Server账户信息
-        sqlserver_credit['SQLServerHost'] = doc.xpath('//SQLServerHost/text()')[0]
-        sqlserver_credit['SQLServerUser'] = doc.xpath('//SQLServerUser/text()')[0]
-        sqlserver_credit['SQLServerPasswd'] = base64.b64decode(
-            doc.xpath('//SQLServerPasswd/text()')[0]).decode()
-        sqlserver_credit['SQLServerDataBase'] = doc.xpath('//SQLServerDataBase/text()')[0]
+        try:
+            sqlserver_credit['SQLServerHost'] = doc.xpath('//SQLServerHost/text()')[0]
+        except:
+            pass
+        try:
+            sqlserver_credit['SQLServerUser'] = doc.xpath('//SQLServerUser/text()')[0]
+        except:
+            pass
+        try:
+            sqlserver_credit['SQLServerPasswd'] = base64.b64decode(
+                doc.xpath('//SQLServerPasswd/text()')[0]).decode()
+        except:
+            pass
+        try:
+            sqlserver_credit['SQLServerDataBase'] = doc.xpath('//SQLServerDataBase/text()')[0]
+        except:
+            pass
 
     except Exception as e:
         print(e)
@@ -6870,7 +6907,9 @@ def util_manage_data(request):
         commvault_credit = {
             'webaddr': '',
             'port': '',
-            'usernm': '',
+            'hostusername': '',
+            'hostpasswd': '',
+            'username': '',
             'passwd': '',
         }
         sqlserver_credit = {
@@ -6907,7 +6946,9 @@ def util_manage_save(request):
 
     webaddr = request.POST.get('webaddr', '')
     port = request.POST.get('port', '')
-    usernm = request.POST.get('usernm', '')
+    hostusername = request.POST.get('hostusernm', '')
+    hostpasswd = request.POST.get('hostpasswd', '')
+    username = request.POST.get('usernm', '')
     passwd = request.POST.get('passwd', '')
 
     SQLServerHost = request.POST.get('SQLServerHost', '')
@@ -6941,6 +6982,8 @@ def util_manage_save(request):
                     <vendor>
                         <webaddr>{webaddr}</webaddr>
                         <port>{port}</port>
+                        <hostusername>{hostusername}</hostusername>
+                        <hostpasswd>{hostpasswd}</hostpasswd>
                         <username>{username}</username>
                         <passwd>{passwd}</passwd>
                         <SQLServerHost>{SQLServerHost}</SQLServerHost>
@@ -6950,7 +6993,9 @@ def util_manage_save(request):
                     </vendor>""".format(**{
                     "webaddr": webaddr,
                     "port": port,
-                    "username": usernm,
+                    "hostusername": hostusername,
+                    "hostpasswd": base64.b64encode(hostpasswd.encode()).decode(),
+                    "username": username,
                     "passwd": base64.b64encode(passwd.encode()).decode(),
                     "SQLServerHost": SQLServerHost,
                     "SQLServerUser": SQLServerUser,
