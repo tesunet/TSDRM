@@ -290,4 +290,4 @@ class DiskSpaceWeeklyData(models.Model):
     space_reserved = models.BigIntegerField("保留空间", null=True, default=0)
     total_space = models.BigIntegerField("总容量", null=True, default=0)
     extract_time = models.DateTimeField("取数时间", null=True)
-
+    point_tag = models.CharField("用以判断同一记录", null=True, default="", max_length=128)

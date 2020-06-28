@@ -7898,36 +7898,92 @@ def get_disk_space_daily(request):
 
     try:
         media_id = int(media_id)
+    except:
+        pass
+    try:
         utils_id = int(utils_id)
     except:
         pass
-    else:
-        disk_space_weekly_data = DiskSpaceWeeklyData.objects.filter(utils_id=utils_id, media_id=media_id)
+    if media_id:
+        disk_space_weekly_data = DiskSpaceWeeklyData.objects.filter(utils_id=utils_id, media_id=media_id).values()
         capacity_available_list = []
         space_reserved_list = []
         total_space_list = []
-        for num, dswd in enumerate(disk_space_weekly_data):
-            if num > 20:
-                break
-            capacity_available_list.append(round(dswd.capacity_avaible / 1024, 2))
-            space_reserved_list.append(round(dswd.space_reserved / 1024, 2))
-            total_space_list.append(round(dswd.total_space / 1024, 2))
 
-        disk_list.append({
-            "name": "可用容量",
-            "color": "#3598dc",
-            "capacity_list": capacity_available_list
-        })
-        disk_list.append({
-            "name": "保留空间容量",
-            "color": "#e7505a",
-            "capacity_list": space_reserved_list
-        })
-        disk_list.append({
-            "name": "总容量",
-            "color": "#32c5d2",
-            "capacity_list": total_space_list
-        })
+        if disk_space_weekly_data:
+            for num, dswd in enumerate(disk_space_weekly_data):
+                if num > 20:
+                    break
+
+                capacity_available_list.append(round(dswd["capacity_avaible"] / 1024, 2))
+                space_reserved_list.append(round(dswd["space_reserved"] / 1024, 2))
+                total_space_list.append(round(dswd["total_space"] / 1024, 2))
+
+            disk_list.append({
+                "name": "可用容量",
+                "color": "#3598dc",
+                "capacity_list": capacity_available_list
+            })
+            disk_list.append({
+                "name": "保留空间容量",
+                "color": "#e7505a",
+                "capacity_list": space_reserved_list
+            })
+            disk_list.append({
+                "name": "总容量",
+                "color": "#32c5d2",
+                "capacity_list": total_space_list
+            })
+    else:
+        # 总
+        disk_space_weekly_data = DiskSpaceWeeklyData.objects.filter(utils_id=utils_id).values(
+            "utils_id", "capacity_avaible", "space_reserved", "total_space", "point_tag"
+        )
+        capacity_available_list = []
+        space_reserved_list = []
+        total_space_list = []
+        if disk_space_weekly_data:
+            pre_point_tag = ""
+            num = 0
+            for dswd in disk_space_weekly_data:
+                if num > 20:
+                    break
+                # util_id 与 相同记录的 数据相加
+                if dswd["point_tag"] == pre_point_tag:
+                    continue
+                num += 1
+
+                cur_disk_space_weekly_data = [i for i in disk_space_weekly_data if
+                                              i["utils_id"] == utils_id and i["point_tag"] == dswd["point_tag"]]
+
+                sum_capacity_avaible = 0
+                sum_space_reserved = 0
+                sum_total_space = 0
+                for cdswd in cur_disk_space_weekly_data:
+                    sum_capacity_avaible += cdswd["capacity_avaible"]
+                    sum_space_reserved += cdswd["space_reserved"]
+                    sum_total_space += cdswd["total_space"]
+
+                capacity_available_list.append(round(sum_capacity_avaible / 1024, 2))
+                space_reserved_list.append(round(sum_space_reserved / 1024, 2))
+                total_space_list.append(round(sum_total_space / 1024, 2))
+
+                pre_point_tag = dswd["point_tag"]
+            disk_list.append({
+                "name": "可用容量",
+                "color": "#3598dc",
+                "capacity_list": capacity_available_list
+            })
+            disk_list.append({
+                "name": "保留空间容量",
+                "color": "#e7505a",
+                "capacity_list": space_reserved_list
+            })
+            disk_list.append({
+                "name": "总容量",
+                "color": "#32c5d2",
+                "capacity_list": total_space_list
+            })
 
     return JsonResponse({
         "data": disk_list,

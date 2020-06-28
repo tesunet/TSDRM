@@ -787,9 +787,9 @@ class CVApi(DataMonitor):
         return automatic_clients
 
     def get_library_space_info(self):
-        library_space_sql = """SELECT cmaiv.DisplayName, cmiv.LibraryName, cmpv.MountPathName, cmpv.CapacityAvailable, cmpv.SpaceReserved, cmiv.TotalSpaceMB, cmiv.LastBackupTime, cmpv.Offline, cmiv.MediaID
+        library_space_sql = """SELECT cmaiv.DisplayName, cmiv.LibraryName, cmpv.MountPathName, cmpv.CapacityAvailable, cmpv.SpaceReserved, cmiv.TotalSpaceMB, cmiv.LastBackupTime, cmpv.Offline, cmiv.MediaID, cmiv.LibraryID
         FROM CommServ.dbo.CNMMMountPathView AS cmpv
-        LEFT JOIN CommServ.dbo.CNMMMediaInfoView AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
+        LEFT JOIN (SELECT DISTINCT LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID,max(LastBackupTime) LastBackupTime,max(MediaID) MediaID FROM CommServ.dbo.CNMMMediaInfoView GROUP BY LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID, MediaID) AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
         LEFT JOIN CommServ.dbo.CNMMMALibraryView AS cmalv ON cmalv.LibraryID=cmpv.LibraryID
         LEFT JOIN CommServ.dbo.CNMMMAInfoView AS cmaiv ON cmaiv.MediaAgentID=cmalv.MediaAgentID
         ORDER BY cmaiv.DisplayName ASC, cmiv.LibraryName ASC"""
@@ -805,7 +805,8 @@ class CVApi(DataMonitor):
                 "TotalSpaceMB": i[5],
                 "LastBackupTime": i[6],
                 "Offline": i[7],
-                "MediaID": i[8]
+                "MediaID": i[8],
+                "LibraryID": i[9]
             })
         return library_space_info
 

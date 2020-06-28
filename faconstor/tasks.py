@@ -16,6 +16,7 @@ from .api import SQLApi
 from .CVApi import *
 import logging
 from .api import SQLApi
+import uuid
 logger = logging.getLogger('tasks')
 
 
@@ -28,6 +29,7 @@ def get_disk_space_crond():
     """
     from .views import get_credit_info
     commvaul_utils = UtilsManage.objects.exclude(state="9").filter(util_type="Commvault")
+    point_tag = uuid.uuid1()
     for cu in commvaul_utils:
         _, sqlserver_credit = get_credit_info(cu.content)
         dm = SQLApi.CVApi(sqlserver_credit)
@@ -41,6 +43,7 @@ def get_disk_space_crond():
             disk_space_save_data["space_reserved"] = int(ds["SpaceReserved"]) if ds["SpaceReserved"] else 0
             disk_space_save_data["total_space"] = int(ds["TotalSpaceMB"]) if ds["TotalSpaceMB"] else 0
             disk_space_save_data["extract_time"] = datetime.datetime.now()
+            disk_space_save_data["point_tag"] = point_tag
             try:
                 DiskSpaceWeeklyData.objects.create(**disk_space_save_data)
             except Exception as e:

@@ -15,7 +15,7 @@ $(document).ready(function () {
             pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
         },
         plotOptions: {
-            pie: {
+            DiskSpace: {
                 allowPointSelect: true,
                 cursor: 'pointer',
                 dataLabels: {
@@ -28,7 +28,7 @@ $(document).ready(function () {
             }
         },
         series: [{
-            name: 'pie',
+            name: 'DiskSpace',
             colorByPoint: true,
             data: []
         }]
@@ -193,4 +193,39 @@ $(document).ready(function () {
         getDiskSpace($(this).val());
         getMADiskSpace();
     });
+
+
+    $('#weekly_total_space').click(function () {
+        console.log(1)
+        $.ajax({
+            type: "POST",
+            url: "../get_disk_space_daily/",
+            data: {
+                utils_id: $("#utils_manage").val()
+            },
+            success: function (data) {
+                console.log(data)
+                while (chart.series.length > 0) {
+                    chart.series[0].remove(true);
+                }
+                for (var i = 0; i < data.data.length; i++) {
+                    chart.addSeries({
+                        "name": data.data[i].name,
+                        "data": data.data[i].capacity_list,
+                        "color": data.data[i].color,
+                    });
+                }
+                // 动态生成横坐标
+                // 从1开始
+                var category_list = [];
+                for (var j = 1; j <= 20; j++) {
+                    category_list.push(j)
+                }
+                chart.xAxis[0].setCategories(category_list);
+            },
+            error: function () {
+                console.log('error')
+            }
+        });
+    })
 });
