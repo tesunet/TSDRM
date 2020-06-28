@@ -697,12 +697,6 @@ def runstep(steprun, if_repeat=False):
                                 try:
                                     utils_manage = origin.utils_manage
                                     commvault_credit, _ = get_credit_info(utils_manage.content)
-                                    commvault_credit = {
-                                        'webaddr': commvault_credit['webaddr'],
-                                        'port': commvault_credit['port'],
-                                        'username': commvault_credit['usernm'],
-                                        'passwd': commvault_credit['passwd']
-                                    }
                                     cvToken = CV_RestApi_Token()
                                     cvToken.login(commvault_credit)
                                     cvOperate = CV_OperatorInterFace(cvToken)

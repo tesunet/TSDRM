@@ -8347,3 +8347,161 @@ def process_schedule_del(request):
         "ret": ret,
         "info": info
     })
+
+
+@login_required
+def manualrecovery(request, funid):
+    result = []
+    all_targets = Target.objects.exclude(state="9")
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+    return render(request, 'manualrecovery.html',
+                    {'username': request.user.userinfo.fullname,  "pagefuns": getpagefuns(funid, request=request), 
+                     "all_targets": all_targets, "utils_manage": utils_manage})
+
+
+@login_required
+def manualrecoverydata(request):
+    utils_manage_id = request.GET.get("utils_manage_id", "")
+    result = []
+
+    try:
+        utils_manage_id = int(utils_manage_id)
+    except Exception as e:
+        print(e)
+    else:
+        all_origins = Origin.objects.exclude(state="9").filter(utils_id=utils_manage_id).select_related("target")
+        for origin in all_origins:
+            result.append({
+                "client_manage_id": origin.id,
+                "client_name": origin.client_name,
+                "client_id": origin.client_id,
+                "client_os": origin.os,
+                "model": json.loads(origin.info)["agent"],
+                "data_path": origin.data_path if origin.data_path else "",
+                "copy_priority": origin.copy_priority,
+                "target_client": origin.target.client_name
+            })
+    return JsonResponse({"data": result})
+
+
+@login_required
+def dooraclerecovery(request):
+    if request.method == 'POST':
+        sourceClient = request.POST.get('sourceClient', '')
+        destClient = request.POST.get('destClient', '')
+        restoreTime = request.POST.get('restoreTime', '')
+        browseJobId = request.POST.get('browseJobId', '')
+        agent = request.POST.get('agent', '')
+        data_path = request.POST.get('data_path', '')
+        copy_priority = request.POST.get('copy_priority', '')
+
+        try:
+            copy_priority = int(copy_priority)
+        except:
+            pass
+
+        data_sp = request.POST.get('data_sp', '')
+
+        #################################
+        # sourceClient>> instance_name  #
+        #################################
+        instance = ""
+        try:
+            cur_origin = Origin.objects.exclude(state="9").get(client_name=sourceClient)
+        except Origin.DoesNotExist as e:
+            return HttpResponse("恢复任务启动失败, 源客户端不存在。")
+        else:
+            oracle_info = json.loads(cur_origin.info)
+
+            if oracle_info:
+                try:
+                    instance = oracle_info["instance"]
+                except:
+                    pass
+            if not instance:
+                return HttpResponse("恢复任务启动失败, 数据库实例不存在。")
+
+            utils_content = cur_origin.utils.content if cur_origin.utils else ""
+            commvault_credit, sqlserver_credit = get_credit_info(utils_content)
+
+            # restoreTime对应curSCN号
+            dm = SQLApi.CustomFilter(sqlserver_credit)
+            oraclecopys = dm.get_oracle_backup_job_list(sourceClient)
+            # print("> %s" % restoreTime)
+            curSCN = ""
+            if restoreTime:
+                for i in oraclecopys:
+                    if i["subclient"] == "default" and i['LastTime'] == restoreTime:
+                        # print('>>>>>1')
+                        print(i['LastTime'])
+                        curSCN = i["cur_SCN"]
+                        break
+            else:
+                for i in oraclecopys:
+                    if i["subclient"] == "default":
+                        # print('>>>>>2')
+                        curSCN = i["cur_SCN"]
+                        break
+            
+            if copy_priority == 2:
+                # 辅助拷贝状态
+                auxcopys = dm.get_all_auxcopys()
+                jobs_controller = dm.get_job_controller()
+
+                dm.close()
+
+                # 判断当前存储策略是否有辅助拷贝未完成
+                auxcopy_completed = True
+                for job in jobs_controller:
+                    if job['storagePolicy'] == data_sp and job['operation'] == "Aux Copy":
+                        auxcopy_completed = False
+                        break
+                # 假设未恢复成功
+                # auxcopy_status = 'ERROR'
+                print('当前备份记录对应的辅助拷贝状态 %s' % auxcopy_completed)
+                if not auxcopy_completed:
+                    # 找到成功的辅助拷贝，开始时间在辅助拷贝前的、值对应上的主拷贝备份时间点(最终转化UTC)
+                    for auxcopy in auxcopys:
+                        if auxcopy['storagepolicy'] == data_sp and auxcopy['jobstatus'] in ["Completed", "Success"]:
+                            bytesxferred = auxcopy['bytesxferred']
+
+                            end_tag = False
+                            for orcl_copy in oraclecopys:
+                                try:
+                                    orcl_copy_starttime = datetime.datetime.strptime(orcl_copy['StartTime'], "%Y-%m-%d %H:%M:%S")
+                                    aux_copy_starttime = datetime.datetime.strptime(auxcopy['startdate'], "%Y-%m-%d %H:%M:%S")
+                                    if orcl_copy['numbytesuncomp'] == bytesxferred and orcl_copy_starttime < aux_copy_starttime and orcl_copy['subclient'] == "default":
+                                        # 获取enddate,转化时间
+                                        curSCN = orcl_copy['cur_SCN']
+                                        end_tag = True
+                                        break
+                                except Exception as e:
+                                    print(e)
+                            if end_tag:
+                                break
+
+            dm.close()
+            # print('Rac %s' % curSCN)
+            oraRestoreOperator = {"curSCN": curSCN, "browseJobId": None, "data_path": data_path, "copy_priority": copy_priority, "restoreTime": restoreTime}
+            # print("> %s > %s, %s, %s" % (oraRestoreOperator, sourceClient, destClient, instance))
+            
+            cvToken = CV_RestApi_Token()
+            cvToken.login(commvault_credit)
+            cvAPI = CV_API(cvToken)
+            if agent.upper() == "ORACLE DATABASE":
+                if cvAPI.restoreOracleBackupset(sourceClient, destClient, instance, oraRestoreOperator):
+                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
+                else:
+                    return HttpResponse("恢复任务启动失败。" + cvAPI.msg)
+            elif agent.upper() == "ORACLE RAC":
+                oraRestoreOperator["browseJobId"] = browseJobId
+                if cvAPI.restoreOracleRacBackupset(sourceClient, destClient, instance, oraRestoreOperator):
+                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
+                else:
+                    return HttpResponse("恢复任务启动失败。" + cvAPI.msg)
+            else:
+                return HttpResponse("无当前模块，恢复任务启动失败。")
+    else:
+        return HttpResponse("恢复任务启动失败。")
+
+

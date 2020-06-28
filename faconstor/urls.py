@@ -182,4 +182,11 @@ urlpatterns = [
     url(r'^process_schedule_data/$', process_schedule_data),
     url(r'^change_periodictask/$', change_periodictask),
     url(r'^process_schedule_del/$', process_schedule_del),
+    
+    # 自主恢复
+    url(r'^manualrecovery/$', manualrecovery, {'funid': '83'}),
+    url(r'^manualrecoverydata/$', manualrecoverydata),
+
+    url(r'^dooraclerecovery/$', dooraclerecovery),
+    url(r'^oraclerecoverydata/$', oraclerecoverydata),
 ]
