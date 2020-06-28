@@ -54,7 +54,9 @@ $(document).ready(function () {
             }
         });
     }
+
     getMADiskSpace();
+
     function getDiskSpace(utils_manage_id) {
         $.ajax({
             type: 'POST',
@@ -123,6 +125,9 @@ $(document).ready(function () {
         },
 
         xAxis: {
+            title: {
+                text: '周'
+            },
             reversed: true,
         },
         colors: [
