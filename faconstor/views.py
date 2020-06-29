@@ -7881,7 +7881,7 @@ def get_disk_space(request):
         except Exception as e:
             print(e)
             status = 0
-            info = '获取磁盘容量信息失败: {e}。'.format(e)
+            info = '获取磁盘容量信息失败: {e}。'.format(e=e)
     return JsonResponse({
         "status": status,
         "info": info,
