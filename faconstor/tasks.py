@@ -883,10 +883,12 @@ def exec_process(processrunid, if_repeat=False):
     if processrun.process.type.upper() == "COMMVAULT":
         # nextSCN-1
         # 获取流程客户端
-        cur_client = processrun.origin
-
-        dm = SQLApi.CustomFilter(settings.sql_credit)
-        ret = dm.get_oracle_backup_job_list(cur_client)
+        origin = processrun.origin
+        utils = origin.utils
+        from .views import get_credit_info
+        _, sqlserver_credit = get_credit_info(utils.content)
+        dm = SQLApi.CustomFilter(sqlserver_credit)
+        ret = dm.get_oracle_backup_job_list(origin.client_name)
 
         # 无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启
         if not ret:
