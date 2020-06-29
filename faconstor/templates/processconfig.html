@@ -238,7 +238,7 @@
                                 <div class="col-md-10">
                                     <select class="form-control" id="origin" name="origin">
                                         {% for origin in all_origins %}
-                                            <option value="{{ origin.id }}">{{ origin.client_name }}</option>
+                                            <option value="{{ origin.id }}">{{ origin.client_name }} （{{ origin.utils.name }}）</option>
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>

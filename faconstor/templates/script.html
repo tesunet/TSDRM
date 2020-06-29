@@ -1,7 +1,6 @@
 {% extends "base1.html" %}
 
 {% block content %}
-
     <div style="height:10px"></div>
     <div class="table-toolbar">
         <div id="error">
@@ -85,33 +84,36 @@
                             <div class="form-group" id="origin_div" hidden>
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
                                 <div class="col-md-10">
-                                    <select class="form-control" id="origin" name="origin">
+                                    <select class="form-control select2" id="origin" name="origin">
                                         {% for origin in all_origins %}
-                                        <option value="{{ origin.id }}">{{ origin.client_name }}</option>
+                                            <option value="{{ origin.id }}">{{ origin.client_name }}
+                                                （{{ origin.utils.name }}）
+                                            </option>
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
                             <div class="form-group" id="commv_interface_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>commvault接口</label>
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>commvault接口</label>
                                 <div class="col-md-10">
                                     <select class="form-control" id="commv_interface" name="commv_interface">
                                         {% for file in commv_file_list %}
-                                        <option value="{{ file }}">{{ file }}</option>
+                                            <option value="{{ file }}">{{ file }}</option>
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
 
-                            <div class="form-group"  id="host_id_div" hidden>
+                            <div class="form-group" id="host_id_div" hidden>
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; ">*</span>选择主机</label>
                                 <div class="col-md-10">
                                     <select class="form-control" id="ip" name="ip">
                                         {% for host in all_hosts_manage %}
-                                        <option value="{{host.id}}">{{host.host_name}}</option>
+                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>
@@ -123,13 +125,14 @@
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; ">*</span>脚本内容</label>
                                 <div class="col-md-10">
-                                    <textarea name="script_text" id="script_text" class="form-control" rows="8"></textarea>
+                                    <textarea name="script_text" id="script_text" class="form-control"
+                                              rows="8"></textarea>
                                     <div class="form-control-focus"></div>
 
                                 </div>
                             </div>
 
-                            <div class="form-group" id="success_text_div"  hidden>
+                            <div class="form-group" id="success_text_div" hidden>
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>SUCCESSTEXT</label>
                                 <div class="col-md-10">
@@ -139,7 +142,7 @@
 
                                 </div>
                             </div>
-                            <div class="form-group" id="log_address_div"  hidden>
+                            <div class="form-group" id="log_address_div" hidden>
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; "></span>日志地址</label>
                                 <div class="col-md-10">
@@ -216,6 +219,13 @@
     <script src="/static/assets/global/plugins/datatables/datatables.min.js" type="text/javascript"></script>
     <script src="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.js"
             type="text/javascript"></script>
+
+    <!-- Select2 -->
+    <link href="/static/assets/global/plugins/select2/css/select2.css" rel="stylesheet" type="text/css"/>
+    <link href="/static/assets/global/plugins/select2/css/select2-bootstrap.min.css" rel="stylesheet" type="text/css"/>
+
+    <script src="/static/assets/global/plugins/select2/js/select2.full.min.js" type="text/javascript"></script>
+    <script src="/static/assets/pages/scripts/components-select2.js" type="text/javascript"></script>
 
 {% endblock %}
 

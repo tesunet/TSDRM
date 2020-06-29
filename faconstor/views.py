@@ -2528,7 +2528,7 @@ def script(request, funid):
     all_hosts_manage = HostsManage.objects.exclude(state="9")
 
     # commvault源端客户端
-    all_origins = Origin.objects.exclude(state="9")
+    all_origins = Origin.objects.exclude(state="9").order_by("utils__name")
 
     # 过滤本地commvaul接口脚本
     commv_path = os.path.join(os.path.join(settings.BASE_DIR, "faconstor"), "commvault_api")
