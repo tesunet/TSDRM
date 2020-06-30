@@ -84,7 +84,7 @@
                             <div class="form-group" id="origin_div" hidden>
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
                                 <div class="col-md-10">
-                                    <select class="form-control select2" id="origin" name="origin">
+                                    <select class="form-control" id="origin" name="origin">
                                         {% for origin in all_origins %}
                                             <option value="{{ origin.id }}">{{ origin.client_name }}
                                                 （{{ origin.utils.name }}）
