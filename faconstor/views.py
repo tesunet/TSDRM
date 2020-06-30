@@ -8064,7 +8064,6 @@ def oraclerecoverydata(request):
         dm.close()
     except Exception as e:
         print(e)
-        pass
 
     return JsonResponse({"data": result})
 
@@ -8077,7 +8076,6 @@ def process_schedule(request, funid):
     return render(request, 'process_schedule.html', {'username': request.user.userinfo.fullname,
                                                      "pagefuns": getpagefuns(funid, request=request),
                                                      "all_process": all_process})
-
 
 @login_required
 def process_schedule_save(request):

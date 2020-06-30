@@ -789,10 +789,16 @@ class CVApi(DataMonitor):
     def get_library_space_info(self):
         library_space_sql = """SELECT cmaiv.DisplayName, cmiv.LibraryName, cmpv.MountPathName, cmpv.CapacityAvailable, cmpv.SpaceReserved, cmiv.TotalSpaceMB, cmiv.LastBackupTime, cmpv.Offline, cmiv.MediaID, cmiv.LibraryID
         FROM CommServ.dbo.CNMMMountPathView AS cmpv
-        LEFT JOIN (SELECT DISTINCT LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID,max(LastBackupTime) LastBackupTime,max(MediaID) MediaID FROM CommServ.dbo.CNMMMediaInfoView GROUP BY LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID, MediaID) AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
+        LEFT JOIN (SELECT LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID,max(LastBackupTime) LastBackupTime,max(MediaID) MediaID FROM CommServ.dbo.CNMMMediaInfoView GROUP BY LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID, MediaID) AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
         LEFT JOIN CommServ.dbo.CNMMMALibraryView AS cmalv ON cmalv.LibraryID=cmpv.LibraryID
         LEFT JOIN CommServ.dbo.CNMMMAInfoView AS cmaiv ON cmaiv.MediaAgentID=cmalv.MediaAgentID
-        ORDER BY cmaiv.DisplayName ASC, cmiv.LibraryName ASC"""
+        WHERE cmpv.offline=0 ORDER BY cmaiv.DisplayName ASC, cmiv.LibraryName ASC"""
+        # library_space_sql = """SELECT cmaiv.DisplayName, cmiv.LibraryName, cmpv.MountPathName, cmpv.CapacityAvailable, cmpv.SpaceReserved, cmiv.TotalSpaceMB, cmiv.LastBackupTime, cmpv.Offline, cmiv.MediaID, cmiv.LibraryID
+        # FROM CommServ.dbo.CNMMMountPathView AS cmpv
+        # LEFT JOIN (SELECT DISTINCT LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID,max(LastBackupTime) LastBackupTime,max(MediaID) MediaID FROM CommServ.dbo.CNMMMediaInfoView GROUP BY LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID, MediaID) AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
+        # LEFT JOIN CommServ.dbo.CNMMMALibraryView AS cmalv ON cmalv.LibraryID=cmpv.LibraryID
+        # LEFT JOIN CommServ.dbo.CNMMMAInfoView AS cmaiv ON cmaiv.MediaAgentID=cmalv.MediaAgentID
+        # ORDER BY cmaiv.DisplayName ASC, cmiv.LibraryName ASC"""
         content = self.fetch_all(library_space_sql)
         library_space_info = []
         for i in content:
