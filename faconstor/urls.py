@@ -188,5 +188,10 @@ urlpatterns = [
     url(r'^manualrecoverydata/$', manualrecoverydata),
 
     url(r'^dooraclerecovery/$', dooraclerecovery),
-    url(r'^oraclerecoverydata/$', oraclerecoverydata),
+    url(r'^oraclerecoverydata/$', oraclerecoverydata),\
+
+    # 大屏监控
+    url(r'^monitor/$', monitor),
+    url(r'^get_monitor_data/$', get_monitor_data),
+    url(r'^get_clients_status/$', get_clients_status),
 ]

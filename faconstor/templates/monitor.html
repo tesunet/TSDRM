@@ -1,0 +1,237 @@
+﻿<!doctype html>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="60">
+<title>嘉兴银行CommVault自动化恢复演练监控</title>
+<script src="/static/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+<link href="/static/monitor/css/style.css" rel="stylesheet" type="text/css" media="all"/>
+<script src="/static/monitor/js/echarts.min.js" charset="utf-8"></script>
+<script src="/static/myjs/monitor.js" charset="utf-8"></script>
+<style>
+    .jx_logo {
+        position: relative;
+        float: right;
+        margin-top: -38px;
+        margin-right: 50px;
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    /* 这是针对缺省样式 (必须的) */
+
+    ::-webkit-scrollbar-track {
+        background-color: rgba(255, 255, 255, .7);
+    }
+
+    /* 滚动条的滑轨背景颜色 */
+
+    ::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    /* 滑块颜色 */
+
+    ::-webkit-scrollbar-button {
+        background-color: #00065b;
+    }
+
+    /* 滑轨两头的监听按钮颜色 */
+
+    ::-webkit-scrollbar-corner {
+        background-color: black;
+    }
+
+    /* 横向滚动条和纵向滚动条相交处尖角的颜色 */
+
+
+    /*
+        工具下拉框
+     */
+    .utils {
+        width: 120px;
+        margin-right: -80px;
+        background-color: #0a6aa1;
+        border-radius: 3px;
+        -webkit-border-radius: 3px;
+        -moz-border-radius: 3px;
+    }
+</style>
+
+<body>
+<div class="wpbox" style="overflow:auto;height: 100%;">
+    {% csrf_token %}
+    <div class="bnt">
+        <h1 class="tith1 fl">自动化恢复演练监控</h1>
+        <div class="jx_logo"><a href="/index/" target="_blank"><img style="height: 61px"
+                                                                    src="/static/processindex/images/logo1.png"></a>
+        </div>
+    </div>
+    <!-- bnt end -->
+    <div class="left1">
+        <div class="aleftboxttop">
+            <h2 class="tith2">今日作业</h2>
+
+            <div class="lefttoday_tit"></div>
+            <div class="lefttoday_number">
+                <div class="widget-inline-box text-center fl">
+                    <p>运行中</p>
+                    <h3 class="ceeb1fd" id="running_job">0</h3>
+                </div>
+                <div class="widget-inline-box text-center fl">
+                    <p>成功</p>
+                    <h3 class="c24c9ff" id="success_job">0</h3>
+                </div>
+                <div class="widget-inline-box text-center fl">
+                    <p>失败</p>
+                    <h3 class="cffff00" id="error_job">0</h3>
+                </div>
+                <div class="widget-inline-box text-center fl">
+                    <p>未启动</p>
+                    <h3 class="c11e2dd" id="not_running">0</h3>
+                </div>
+            </div>
+            <!-- lefttoday_number end -->
+        </div>
+        <div class="aleftboxtmidd">
+            <h2 class="tith2">客户端状态
+                <select name="utils" id="utils" class="utils">
+                    {% for u in utils_manage %}
+                    <option value="{{ u.id }}">{{ u.name }}</option>
+                    {% endfor %}
+                </select>
+            </h2>
+            <div class="lefttoday_tit"></div>
+            <div class="lefttoday_number2">
+                <div class="widget-inline-box text-center fl">
+                    <p>服务状态</p>
+                    <h3 class="c24c9ff chinese-characters" id="service_status">正常</h3>
+                </div>
+                <div class="widget-inline-box text-center fl">
+                    <p>网络状态</p>
+                    <h3 class="c24c9ff chinese-characters" id="net_status">正常</h3>
+                </div>
+                <div class="widget-inline-box text-center fl">
+                    <p>监控客户端</p>
+                    <h3 class="c24c9ff" id="all_clients">0</h3>
+                </div>
+                <div class="widget-inline-box text-center fl">
+                    <p>报警客户端</p>
+                    <h3 class="cffff00" id="error_clients">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="aleftboxtbott">
+            <h2 class="tith2">演练成功率</h2>
+            <div class="lefttoday_tit height"></div>
+            <div id="lpeftbot" class="lpeftbotcont"></div>
+        </div>
+    </div>
+    <!--  left1 end -->
+    <div class="mrbox">
+        <div class="mrbox_topmidd" style="width: 69%;">
+            <div class="amiddboxttop">
+                <h2 class="tith2 pt1">演练监控</h2>
+                <table class="table table-hover" style="width: 100%">
+                    <thead>
+                    <tr>
+                        <th width="20%"> 流程名称</th>
+                        <th width="8%"> 状态</th>
+                        <th width="10%"> 策略时间</th>
+                        <th width="25%"> 开始时间</th>
+                        <th width="25%"> 结束时间</th>
+                        <th width="12%"> 进度</th>
+                    </tr>
+                    </thead>
+                    <tbody id="drill_monitor">
+                    <!--
+    <tr>
+        <td> 资金系统</td>
+        <td><span class="label label-sm label-success"> 成功 </span></td>
+        <td> 8:00</td>
+        <td> 2019-10-19 08:00:00</td>
+        <td> 2019-10-19 08:00:00</td>
+        <td> 100%</td>
+    </tr>
+    -->
+                    </tbody>
+                </table>
+            </div>
+            <!--  amiddboxttop end-->
+            <div class="amidd_bott">
+                <div class="amiddboxtbott1 fl">
+                    <h2 class="tith2 pt1">系统演练次数TOP5</h2>
+                    <div class="pvr fl liwp lpeftb2otcont1" style="height:86%;">
+                        <ul>
+                            <li class="hot1">1</li>
+                            <li class="hot2">2</li>
+                            <li class="hot3">3</li>
+                            <li class="hot4">4</li>
+                            <li class="hot5">5</li>
+                        </ul>
+                        <div id="pleftbox2bott_cont" class="lpeftb2otcont" style="height:100%;"></div>
+                    </div>
+                </div>
+
+                <div class="amiddboxtbott2 fl">
+                    <h2 class="tith2 ">最近7日演练次数</h2>
+                    <div class="lefttoday_tit">
+                        <p class="fl">状态：已调节</p>
+                        <p class="fr">时间：2018-06-14</p>
+                    </div>
+                    <div id="arightboxbott" class="arightboxbottcont" style=""></div>
+                </div>
+            </div>
+            <!-- amidd_bott end -->
+        </div>
+        <!-- mrbox_top end -->
+        <div class="mrbox_top_right">
+            <div class="arightboxtop">
+                <h2 class="tith2">演练日志</h2>
+                <div class="lefttoday_tit"></div>
+                <div class="left2_table">
+                    <ul id="drill_log" style="overflow:auto;height: 445px;">
+                        <!--
+                <li>
+                    <p class="fl"><b>票据系统</b><br>
+                        演练完成<br>
+                    </p>
+                    <p class="fr pt17">2018-06-22 08:12:59</p>
+                </li>
+                <li class="bg">
+                    <p class="fl"><b>财务系统</b><br>
+                        ***脚本出错。<br>
+                    </p>
+                    <p class="fr pt17">2018-06-22 08:12:59</p>
+                </li>
+                -->
+                    </ul>
+                </div>
+
+            </div>
+            <div class="arightboxbott">
+                <h2 class="tith2 pt1">待处理异常</h2>
+                <div class="lefttoday_tit"></div>
+                <div class="left2_table">
+                    <ul id="error_process" style="overflow:auto;height: 285px;">
+                        <!--
+                    <li>
+                        <p class="fl"><b>票据系统</b></p>
+                        <p class="fr pt17">2018-06-22 08:12:59</p>
+                    </li>
+                    <li class="bg">
+                        <p class="fl"><b>财务系统</b></p>
+                        <p class="fr pt17">2018-06-22 08:12:59</p>
+                    </li>
+                    -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!-- mrbox_top_right end -->
+    </div>
+</div>
+
+</body>
+
+</html>

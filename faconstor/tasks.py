@@ -797,8 +797,7 @@ def runstep(steprun, if_repeat=False):
                     current_process_run.DataSet_id = 89
                     current_process_run.save()
 
-                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
-                        type="falconstor")
+                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
 
                     allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                         "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
@@ -999,8 +998,7 @@ def exec_process(processrunid, if_repeat=False):
                 current_process_run.walkthroughstate = "RUN"
                 current_process_run.save()
 
-                process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
-                    type="falconstor")
+                process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
 
                 allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                     "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
@@ -1092,8 +1090,7 @@ def exec_process(processrunid, if_repeat=False):
                     current_process_run.walkthroughstate = "RUN"
                     current_process_run.save()
 
-                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").filter(
-                        type="falconstor")
+                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
 
                     allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                         "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
