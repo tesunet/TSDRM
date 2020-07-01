@@ -970,7 +970,7 @@ class CVApi(DataMonitor):
                 continue
             
             # 在指定客户端列表内
-            if c[0] in selected_clients:
+            if c[0] in selected_clients or not selected_clients:  # selected_clients为空
                 bk_status = c[6]
                 aux_status = c[7]
                 try:
@@ -1048,7 +1048,7 @@ class CVApi(DataMonitor):
                 continue
             
             # 在指定客户端列表内
-            if c[0] in selected_clients: 
+            if c[0] in selected_clients or not selected_clients:
                 content = ""
                 # 备份内容
                 if "File System" in c[1] or "MySQL" in c[1]:
@@ -1120,7 +1120,7 @@ class CVApi(DataMonitor):
                 continue
             
             # 在指定客户端列表内
-            if c[0] in selected_clients: 
+            if c[0] in selected_clients or not selected_clients:
                 # 判断 实例 或 备份集 
                 type = ""
                 if "File System" in c[1] or "Virtual" in c[1]:
@@ -1232,7 +1232,7 @@ class CVApi(DataMonitor):
                 continue
             
             # 在指定客户端列表内
-            if c[0] in selected_clients: 
+            if c[0] in selected_clients or not selected_clients:
                 # 判断 实例 或 备份集 
                 type = ""
                 if "File System" in c[1] or "Virtual" in c[1]:
