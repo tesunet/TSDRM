@@ -1281,7 +1281,7 @@ class CVApi(DataMonitor):
                         schedinterval = c[11].replace("Every", "每") + "天"
 
                 if c[10] in ["Monthly", "Monthly relative"]:
-                    schedbackupday = "每月第{0}天".format(c[9])
+                    schedbackupday = "每月第{0}天".format(c[12])
 
                     if c[11] == "Every 0":
                         schedinterval = "不重复"
