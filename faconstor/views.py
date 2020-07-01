@@ -8313,6 +8313,7 @@ def change_periodictask(request):
             })
 
 
+@login_required
 def process_schedule_del(request):
     process_schedule_id = request.POST.get("process_schedule_id", "")
 
