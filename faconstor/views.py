@@ -3056,7 +3056,7 @@ def get_script_data(request):
     script_data = {}
     if allscript.exists():
         cur_script = allscript[0]
-
+        print(cur_script.hosts_manage_id)
         cur_host_manage = cur_script.hosts_manage
         script_data = {
             "id": cur_script.id,
@@ -3819,7 +3819,7 @@ def falconstorswitch(request, process_id):
                 break
     return render(request, 'falconstorswitch.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                   "wrapper_step_list": wrapper_step_list, "process_id": process_id, "type": type,
+                   "wrapper_step_list": wrapper_step_list, "process_id": process_id, "type": type, "data_path": data_path,
                    "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
                    "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open})
 

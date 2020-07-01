@@ -252,12 +252,11 @@ function customTree() {
                                     },
                                     dataType: "json",
                                     success: function (data) {
-                                        console.log(data)
-                                        if (data.status == 1){
+                                        if (data.status == 1) {
                                             $("#scriptid").val(data.data.id);
                                             $("#scriptcode").val(data.data.code);
                                             $("#script_name").val(data.data.name);
-    
+
                                             // 判断是否为commvault
                                             if (data.data.interface_type == "commvault") {
                                                 $("#host_id_div").hide();
@@ -274,12 +273,17 @@ function customTree() {
                                                 $("#origin_div").hide();
                                                 $("#commv_interface_div").hide();
                                             }
-    
+
                                             $("#host_id").val(data.data.host_id);
                                             $("#script_text").val(data.data.script_text);
                                             $("#success_text").val(data.data.success_text);
                                             $("#log_address").val(data.data.log_address);
-    
+
+                                            // commvault
+                                            $("#interface_type").val(data.data.interface_type);
+                                            $("#origin").val(data.data.origin);
+                                            $("#commv_interface").val(data.data.commv_interface);
+
                                             $("#script_sort").val(data.data.script_sort);
                                         } else {
                                             alert(data.info)
@@ -445,6 +449,7 @@ function customTree() {
         }
     });
 }
+
 // interface_type change
 $("#interface_type").change(function () {
     var interface_type = $(this).val();
@@ -631,7 +636,7 @@ $('#save').click(function () {
             force_exec: $("#force_exec").val()
         },
         success: function (data) {
-            if (data["result"] != "保存成功。"){
+            if (data["result"] != "保存成功。") {
                 alert(data["result"])
             } else {
                 if (data["data"]) {
