@@ -3819,7 +3819,8 @@ def falconstorswitch(request, process_id):
                 break
     return render(request, 'falconstorswitch.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                   "wrapper_step_list": wrapper_step_list, "process_id": process_id, "type": type, "data_path": data_path,
+                   "wrapper_step_list": wrapper_step_list, "process_id": process_id, "type": type,
+                   "data_path": data_path,
                    "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
                    "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open})
 
@@ -7551,21 +7552,35 @@ def get_rowspan(whole_list, **kwargs):
     type = kwargs.get('type', '')
     subclient = kwargs.get('subclient', '')
 
+    scheduePolicy = kwargs.get('scheduePolicy', '')
+    schedbackuptype = kwargs.get('schedbackuptype', '')
+
     row_span = 0
 
-    if clientname and not any([idataagent, type, subclient]):
+    if clientname and not any([idataagent, type, subclient, scheduePolicy, schedbackuptype]):
         for tl in whole_list:
             if tl['clientname'] == clientname:
                 row_span += 1
-    if all([clientname, idataagent]) and not any([type, subclient]):
+    if all([clientname, idataagent]) and not any([type, subclient, scheduePolicy, schedbackuptype]):
         for tl in whole_list:
             if tl['clientname'] == clientname and tl['idataagent'] == idataagent:
                 row_span += 1
-    if all([clientname, idataagent, type]) and not subclient:
+    if all([clientname, idataagent, type]) and not any([subclient, scheduePolicy, schedbackuptype]):
         for tl in whole_list:
             if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type:
                 row_span += 1
-
+    if all([clientname, idataagent, type, subclient]) and not any([scheduePolicy, schedbackuptype]):
+        for tl in whole_list:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl['subclient'] == subclient:
+                row_span += 1
+    if all([clientname, idataagent, type, subclient, scheduePolicy]) and not schedbackuptype:
+        for tl in whole_list:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl['subclient'] == subclient and tl['scheduePolicy'] == scheduePolicy:
+                row_span += 1
+    if all([clientname, idataagent, type, subclient, scheduePolicy, schedbackuptype]):
+        for tl in whole_list:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl['subclient'] == subclient and tl['scheduePolicy'] == scheduePolicy and tl['schedbackuptype'] == schedbackuptype:
+                row_span += 1
     return row_span
 
 
@@ -7767,28 +7782,51 @@ def get_schedule_policy(request):
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
             dm = SQLApi.CVApi(sqlserver_credit)
+            tmp_client_manage = []
             whole_list = dm.get_schedule_policy(tmp_client_manage)
             ordered_whole_list = []
             dm.close()
             for num, wl in enumerate(whole_list):
+
                 schedule_dict = OrderedDict()
 
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
                 idataagent_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'])
                 type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'],
                                            type=wl['type'])
-
+                # 子客户端，计划策略，备份类型
+                subclient_rowspan = get_rowspan(whole_list, clientname=wl['clientname'],
+                                                      idataagent=wl['idataagent'],
+                                                      type=wl['type'], subclient=wl['subclient'])
+                if wl['scheduePolicy']:
+                    scheduePolicy_rowspan = get_rowspan(whole_list, clientname=wl['clientname'],
+                                                          idataagent=wl['idataagent'],
+                                                          type=wl['type'], subclient=wl['subclient'],
+                                                          scheduePolicy=wl['scheduePolicy'])
+                else:
+                    scheduePolicy_rowspan = 1
+                if wl['schedbackuptype'] and wl['scheduePolicy']:
+                    schedbackuptype_rowspan = get_rowspan(whole_list, clientname=wl['clientname'],
+                                                          idataagent=wl['idataagent'],
+                                                          type=wl['type'], subclient=wl['subclient'],
+                                                          scheduePolicy=wl['scheduePolicy'],
+                                                          schedbackuptype=wl['schedbackuptype'])
+                else:
+                    schedbackuptype_rowspan = 1
                 schedule_dict['clientname_rowspan'] = clientname_rowspan
                 schedule_dict['idataagent_rowspan'] = idataagent_rowspan
                 schedule_dict['type_rowspan'] = type_rowspan
+                schedule_dict['subclient_rowspan'] = subclient_rowspan
+                schedule_dict['scheduePolicy_rowspan'] = scheduePolicy_rowspan
+                schedule_dict['schedbackuptype_rowspan'] = schedbackuptype_rowspan
 
                 schedule_dict["clientname"] = wl["clientname"]
                 schedule_dict["idataagent"] = wl["idataagent"]
                 schedule_dict["type"] = wl["type"]
                 schedule_dict["subclient"] = wl["subclient"]
-                schedule_dict["scheduePolicy"] = wl["scheduePolicy"]
-                schedule_dict["schedbackuptype"] = wl["schedbackuptype"]
-                schedule_dict["schedpattern"] = wl["schedpattern"]
+                schedule_dict["scheduePolicy"] = wl["scheduePolicy"] if wl["scheduePolicy"] else "无"
+                schedule_dict["schedbackuptype"] = wl["schedbackuptype"] if wl["schedbackuptype"] else "无"
+                schedule_dict["schedpattern"] = wl["schedpattern"] if wl["schedpattern"] else "无"
 
                 schedule_dict["option"] = {
                     "schedpattern": wl["schedpattern"],

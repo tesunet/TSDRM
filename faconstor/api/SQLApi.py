@@ -1221,14 +1221,16 @@ class CVApi(DataMonitor):
         # 计划策略 备份类型
         pre_schedule_policy = ""
         pre_schedule_backuptype = ""
-        
+        pre_schedpattern = ""
+
         # 客户端 应用类型
         for c in ret:
             # 不在选择agents列表 不展示 默认都展示
             if selected_agents and c[1] not in selected_agents:
                 continue
             # 去重
-            if c[0] == pre_clientname and c[1] == pre_idataagent and c[2] == pre_instance and c[3] == pre_backupset and c[4] == pre_subclient:
+            if c[0] == pre_clientname and c[1] == pre_idataagent and c[2] == pre_instance and c[3] == pre_backupset \
+                    and c[4] == pre_subclient and c[6] == pre_schedule_policy and c[9] == pre_schedule_backuptype and c[10] == pre_schedpattern:
                 continue
             
             # 在指定客户端列表内
@@ -1308,11 +1310,11 @@ class CVApi(DataMonitor):
                     "type": type,
                     # 计划策略
                     "scheduleId": c[5],
-                    "scheduePolicy": c[6] if c[6] else "无",
+                    "scheduePolicy": c[6] if c[6] else "",
                     "scheduleName": c[7],
                     "scheduletask": c[8],
-                    "schedbackuptype": schedbackuptype if schedbackuptype else "无",
-                    "schedpattern": schedpattern if schedpattern else "无",
+                    "schedbackuptype": schedbackuptype if schedbackuptype else "",
+                    "schedpattern": schedpattern if schedpattern else "",
                     "schedinterval": schedinterval,
                     "schedbackupday": schedbackupday,
                     "schednextbackuptime": c[14].strftime("%Y-%m-%d %H:%M:%S") if c[14] else "",
@@ -1322,6 +1324,9 @@ class CVApi(DataMonitor):
                 pre_instance = c[2]
                 pre_backupset = c[3]
                 pre_subclient = c[4]
+                pre_schedule_policy = c[6]
+                pre_schedule_backuptype = c[9]
+                pre_schedpattern = c[10]
         return schedule_policy_list
         
         
