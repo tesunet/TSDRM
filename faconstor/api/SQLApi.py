@@ -933,7 +933,7 @@ class CVApi(DataMonitor):
                                              where [id]=2;"""
             self.execute(update_sql)
 
-    def get_backup_status(self, selected_clients, selected_agents=[]):
+    def get_backup_status(self, selected_clients=[], selected_agents=[]):
         """
         获取备份状态： 备份状态、辅助拷贝状态
             selected_clients 指定客户端列表
@@ -1012,7 +1012,7 @@ class CVApi(DataMonitor):
                 pre_subclient = c[4]
         return backup_status_list
 
-    def get_backup_content(self, selected_clients, selected_agents=[]):
+    def get_backup_content(self, selected_clients=[], selected_agents=[]):
         """
         获取客户端备份内容
             文件系统 MySQL -> 文件夹
@@ -1085,7 +1085,7 @@ class CVApi(DataMonitor):
                 pre_subclient = c[4]
         return backup_content_list
 
-    def get_storage_policy(self, selected_clients, selected_agents=[]):
+    def get_storage_policy(self, selected_clients=[], selected_agents=[]):
         """
         获取存储策略
             文件系统 MySQL -> 文件夹
@@ -1148,7 +1148,7 @@ class CVApi(DataMonitor):
                 pre_subclient = c[4]
         return storage_policy_list
         
-    def get_schedule_policy(self, selected_clients, selected_agents=[]):
+    def get_schedule_policy(self, selected_clients=[], selected_agents=[]):
         """
         获取计划策略
             文件系统 MySQL -> 文件夹
