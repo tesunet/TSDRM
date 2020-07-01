@@ -7782,7 +7782,6 @@ def get_schedule_policy(request):
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
             dm = SQLApi.CVApi(sqlserver_credit)
-            tmp_client_manage = []
             whole_list = dm.get_schedule_policy(tmp_client_manage)
             ordered_whole_list = []
             dm.close()
