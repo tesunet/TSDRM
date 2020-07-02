@@ -37,6 +37,10 @@ $(document).ready(function () {
                             type_hidden = "display:none";
                         } 
 
+                        // 备份大小、应用大小
+                        var numbytescomp = (backup_content[i]["numbytescomp"]/1024/1024/1024).toFixed(2)
+                        var numbytesuncomp = (backup_content[i]["numbytesuncomp"]/1024/1024/1024).toFixed(2)
+
                         $("tbody").append(
                             '<tr>' +
                             '<td rowspan="' + backup_content[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + sort + '</td>' +
@@ -45,6 +49,8 @@ $(document).ready(function () {
                             '<td rowspan="' + backup_content[i].type_rowspan + '" style="vertical-align:middle; ' + type_hidden + '">' + backup_content[i]["type"] + '</td>' +
                             '<td style="vertical-align:middle">' + backup_content[i]["subclient"] + '</td>' +
                             '<td style="vertical-align:middle">' + backup_content[i]["content"] + '</td>' +
+                            '<td style="vertical-align:middle">' + numbytesuncomp + ' GB</td>' +
+                            '<td style="vertical-align:middle">' + numbytescomp + ' GB</td>' +
                             '</tr>'
                         );
 

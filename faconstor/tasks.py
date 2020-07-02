@@ -619,7 +619,7 @@ def runstep(steprun, if_repeat=False):
                                 utils_manage = origin.utils_manage
                                 _, sqlserver_credit = get_credit_info(utils_manage.content)
                                 # 查看Oracle恢复错误信息
-                                dm = SQLApi.CustomFilter(sqlserver_credit)
+                                dm = SQLApi.CVApi(sqlserver_credit)
                                 job_controller = dm.get_job_controller()
                                 dm.close()
 
@@ -877,7 +877,7 @@ def exec_process(processrunid, if_repeat=False):
     end_step_tag = 0
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
-    
+
     # Commvault 流程特殊数据
     if processrun.process.type.upper() == "COMMVAULT":
         # nextSCN-1
@@ -886,7 +886,7 @@ def exec_process(processrunid, if_repeat=False):
         utils = origin.utils
         from .views import get_credit_info
         _, sqlserver_credit = get_credit_info(utils.content)
-        dm = SQLApi.CustomFilter(sqlserver_credit)
+        dm = SQLApi.CVApi(sqlserver_credit)
         ret = dm.get_oracle_backup_job_list(origin.client_name)
 
         # 无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启

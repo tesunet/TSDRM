@@ -86,15 +86,20 @@ $(document).ready(function () {
                             library_name_hidden = "display:none";
                         }
 
+                        // GB
+                        var CapacityAvailable = (disk_space[i]["CapacityAvailable"]/1024).toFixed(0)
+                        var SpaceReserved = (disk_space[i]["SpaceReserved"]/1024).toFixed(0)
+                        var TotalSpaceMB = (disk_space[i]["TotalSpaceMB"]/1024).toFixed(0)
+
                         $("tbody").append(
                             '<tr>' +
                             '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + sort + '</td>' +
                             '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + disk_space[i]["DisplayName"] + '</td>' +
                             '<td rowspan="' + disk_space[i].library_name_rowspan + '" style="vertical-align:middle; ' + library_name_hidden + '">' + disk_space[i]["LibraryName"] + '</td>' +
                             '<td style="vertical-align:middle">' + disk_space[i]["MountPathName"] + '</td>' +
-                            '<td style="vertical-align:middle">' + disk_space[i]["CapacityAvailable"] + '</td>' +
-                            '<td style="vertical-align:middle">' + disk_space[i]["SpaceReserved"] + '</td>' +
-                            '<td style="vertical-align:middle">' + disk_space[i]["TotalSpaceMB"] + '</td>' +
+                            '<td style="vertical-align:middle">' + CapacityAvailable + ' GB</td>' +
+                            '<td style="vertical-align:middle">' + SpaceReserved + ' GB</td>' +
+                            '<td style="vertical-align:middle">' + TotalSpaceMB + ' GB</td>' +
                             '<td style="vertical-align:middle">' + disk_space[i]["LastBackupTime"] + '</td>' +
                             '<td style="vertical-align:middle">' + disk_space[i]["Offline"] + '</td>' +
                             '<td style="vertical-align:middle"><button id="edit" title="图表" data-toggle="modal" data-target="#static" class="btn btn-xs btn-primary" type="button"><input value="' + disk_space[i]["MediaID"] + '" hidden><i class="fa fa-bar-chart"></i></button></td>' +
