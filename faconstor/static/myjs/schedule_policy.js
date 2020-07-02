@@ -60,6 +60,11 @@ $(document).ready(function () {
                             disable_tag = 'disabled'
                         }
 
+                        var schedbackupdayString = "";
+                        if (schedule_policy[i]["option"]["schedbackupday"]){
+                            schedbackupdayString = '(' + schedule_policy[i]["option"]["schedbackupday"] + ')';
+                        }
+
                         $("tbody").append(
                             '<tr>' +
                             '<td rowspan="' + schedule_policy[i]["clientname_rowspan"] + '" style="vertical-align:middle; ' + clientname_hidden + '">' + sort + '</td>' +
@@ -69,7 +74,7 @@ $(document).ready(function () {
                             '<td rowspan="' + schedule_policy[i]["subclient_rowspan"] + '" style="vertical-align:middle; ' + subclient_hidden + '">' + schedule_policy[i]["subclient"] + '</td>' +
                             '<td rowspan="' + schedule_policy[i]["scheduePolicy_rowspan"] + '" style="vertical-align:middle; ' + scheduePolicy_hidden + '">' + schedule_policy[i]["scheduePolicy"] + '</td>' +
                             '<td rowspan="' + schedule_policy[i]["schedbackuptype_rowspan"] + '" style="vertical-align:middle; ' + schedbackuptype_hidden + '">' + schedule_policy[i]["schedbackuptype"] + '</td>' +
-                            '<td style="vertical-align:middle">' + schedule_policy[i]["schedpattern"] + '</td>' +
+                            '<td style="vertical-align:middle">' + schedule_policy[i]["schedpattern"] + schedbackupdayString + '</td>' +
                             '<td><button name="schedule_type" title="编辑" data-toggle="modal" data-target="#static" class="btn btn-xs btn-primary" type="button" ' + disable_tag + '><i class="fa fa-cogs"></i></button>' +
                             '<input value="' + schedule_policy[i]["option"]["scheduleName"] + '" hidden>' +
                             '<input value="' + schedule_policy[i]["option"]["schedpattern"] + '" hidden>' +
