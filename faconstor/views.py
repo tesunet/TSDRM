@@ -7061,7 +7061,7 @@ def get_oracle_client(um):
     #############################################
     # clientid, clientname, agent, instance, os #
     #############################################
-    dm = SQLApi.CustomFilter(sqlserver_credit)
+    dm = SQLApi.CVApi(sqlserver_credit)
 
     oracle_data = dm.get_instance_from_oracle()
 
@@ -7133,7 +7133,7 @@ def target(request, funid):
 #         #############################################
 #         # clientid, clientname, agent, instance, os #
 #         #############################################
-#         dm = SQLApi.CustomFilter(sqlserver_credit)
+#         dm = SQLApi.CVApi(sqlserver_credit)
 #
 #         oracle_data = dm.get_instance_from_oracle()
 #
@@ -7719,6 +7719,7 @@ def get_storage_policy(request):
             tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
             dm = SQLApi.CVApi(sqlserver_credit)
+
             whole_list = dm.get_storage_policy(tmp_client_manage)
 
             for num, wl in enumerate(whole_list):
@@ -7878,7 +7879,7 @@ def get_disk_space(request):
     else:
         _, sqlserver_credit = get_credit_info(utils_manage.content)
         try:
-            dm = SQLApi.CustomFilter(sqlserver_credit)
+            dm = SQLApi.CVApi(sqlserver_credit)
             data = dm.get_library_space_info()
             dm.close()
 
@@ -8048,7 +8049,7 @@ def get_ma_disk_space(request):
     else:
         _, sqlserver_credit = get_credit_info(utils_manage.content)
         try:
-            dm = SQLApi.CustomFilter(sqlserver_credit)
+            dm = SQLApi.CVApi(sqlserver_credit)
             ret = dm.get_library_space_info()
             dm.close()
             capacity_available = 0
@@ -8096,7 +8097,7 @@ def oraclerecoverydata(request):
         origin = Origin.objects.get(id=origin_id)
         utils_manage = origin.utils
         _, sqlserver_credit = get_credit_info(utils_manage.content)
-        dm = SQLApi.CustomFilter(sqlserver_credit)
+        dm = SQLApi.CVApi(sqlserver_credit)
         result = dm.get_oracle_backup_job_list(origin.client_name)
         dm.close()
     except Exception as e:
@@ -8462,7 +8463,7 @@ def dooraclerecovery(request):
             commvault_credit, sqlserver_credit = get_credit_info(utils_content)
 
             # restoreTime对应curSCN号
-            dm = SQLApi.CustomFilter(sqlserver_credit)
+            dm = SQLApi.CVApi(sqlserver_credit)
             oraclecopys = dm.get_oracle_backup_job_list(sourceClient)
             # print("> %s" % restoreTime)
             curSCN = ""
@@ -8929,7 +8930,7 @@ def get_clients_status(request):
     else:
         _, sqlserver_credit = get_credit_info(utils_manage.content)
         # 客户端状态
-        dm = SQLApi.CustomFilter(sqlserver_credit)
+        dm = SQLApi.CVApi(sqlserver_credit)
 
         if dm.msg == "链接数据库失败。":
             service_status = "中断"
@@ -8942,7 +8943,7 @@ def get_clients_status(request):
         client_list = Origin.objects.exclude(state=9).values_list("client_name")
         client_name_list = [client_name[0] for client_name in client_list]
         # 报警客户端
-        whole_backup_list = dm.custom_concrete_job_list(client_name_list)
+        whole_backup_list = dm.get_backup_status(client_name_list)
         dm.close()
         return JsonResponse({
             "clients_status": {
