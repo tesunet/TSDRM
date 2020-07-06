@@ -1,190 +1,247 @@
-$(document).ready(function () {
-    $('#sample_1').dataTable({
-        "bAutoWidth": true,
-        "bSort": false,
-        "bProcessing": true,
-        "ajax": "../scriptdata/",
-        "columns": [
-            {"data": "id"},
-            {"data": "code"},
-            {"data": "name"},
-            {"data": "interface_type"},
-            {"data": null}
-        ],
+$('#tree_2').jstree({
+    'core': {
+        "themes": {
+            "responsive": false
+        },
+        "check_callback": true,
+        'data': treeData
+    },
 
-        "columnDefs": [{
-            "targets": -1,
-            "data": null,
-            "width": "100px",
-            "defaultContent": "<button  id='edit' title='编辑' data-toggle='modal'  data-target='#static'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>"
-        }],
-        "oLanguage": {
-            "sLengthMenu": "每页显示 _MENU_ 条记录",
-            "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
-            "sInfoEmpty": "没有数据",
-            "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
-            "sSearch": "搜索",
-            "oPaginate": {
-                "sFirst": "首页",
-                "sPrevious": "前一页",
-                "sNext": "后一页",
-                "sLast": "尾页"
-            },
-            "sZeroRecords": "没有检索到数据",
+    "types": {
+        "NODE": {
+            "icon": "fa fa-folder-open icon-state-warning icon-lg"
+        },
+        "INTERFACE": {
+            "icon": "fa fa-link icon-state-warning icon-lg"
         }
-    });
-    // 行按钮
-    $('#sample_1 tbody').on('click', 'button#delrow', function () {
-        if (confirm("确定要删除该条数据？")) {
-            var table = $('#sample_1').DataTable();
-            var data = table.row($(this).parents('tr')).data();
-            $.ajax({
-                type: "POST",
-                url: "../scriptdel/",
-                data: {
-                    id: data.id
-                },
-                success: function (data) {
-                    if (data == 1) {
-                        table.ajax.reload();
-                        alert("删除成功！");
-                    } else
-                        alert("删除失败，请于管理员联系。");
-                },
-                error: function (e) {
-                    alert("删除失败，请于管理员联系。");
+    },
+    "contextmenu": {
+        "items": {
+            "create": null,
+            "rename": null,
+            "remove": null,
+            "ccp": null,
+            "新建节点": {
+                "label": "新建节点",
+                "action": function (data) {
+                    var inst = jQuery.jstree.reference(data.reference),
+                        obj = inst.get_node(data.reference);
+                    if (obj.type == "INTERFACE") {
+                        alert("无法在接口下新建节点。");
+                    } else {
+                        $("#title").text("新建");
+                        $("#id").val("0");
+                        $("#pid").val(obj.id);
+                        $("#my_type").val(obj.type);
+                        $("#node_name").val("");
+                        $("#node_pname").val(obj.text);
+                        $("#remark").val("");
+
+                        $("#interface").hide();
+                        $("#node").show();
+                        $("#node_save").show();
+                    }
                 }
-            });
+            },
+            "新建接口": {
+                "label": "新建接口",
+                "action": function (data) {
+                    var inst = jQuery.jstree.reference(data.reference),
+                        obj = inst.get_node(data.reference);
+                    if (obj.type == "INTERFACE") {
+                        alert("无法在接口下新建接口。");
+                    } else {
+                        $("#title").text("新建")
+                        $("#id").val("0")
+                        $("#pid").val(obj.id)
+                        $("#my_type").val(obj.type)
+                        $("#pname").val(obj.text)
+
+                        $("#code").val("");
+                        $("#name").val("");
+                        $("#interface_type").val("");
+                        $("#origin").val("");
+                        $("#commv_interface").val("");
+                        $("#ip").val("");
+                        $("#script_text").val("");
+                        $("#success_text").val("");
+                        $("#log_address").val("");
+                        $("#remark").val("");
+
+                        $("#interface").show()
+                        $("#node").hide()
+                        $("#interface_save").show()
+                    }
+                }
+            },
+            "删除": {
+                "label": "删除",
+                "action": function (data) {
+                    var inst = jQuery.jstree.reference(data.reference),
+                        obj = inst.get_node(data.reference);
+                    if (obj.children.length > 0)
+                        alert("组织下还有其他组织或用户，无法删除。");
+                    else {
+                        if (confirm("确定要删除？删除后不可恢复。")) {
+                            $.ajax({
+                                type: "POST",
+                                url: "../orgdel/",
+                                data:
+                                    {
+                                        id: obj.id,
+                                    },
+                                success: function (data) {
+                                    if (data == 1) {
+                                        inst.delete_node(obj);
+                                        alert("删除成功！");
+                                    } else
+                                        alert("删除失败，请于管理员联系。");
+                                },
+                                error: function (e) {
+                                    alert("删除失败，请于管理员联系。");
+                                }
+                            });
+                        }
+                    }
+                }
+            },
 
         }
-    });
-    $('#sample_1 tbody').on('click', 'button#edit', function () {
-        var table = $('#sample_1').DataTable();
-        var data = table.row($(this).parents('tr')).data();
-        $("#id").val(data.id);
-        $("#code").val(data.code);
-        $("#name").val(data.name);
-
-        // 判断是否为commvault
-        if (data.interface_type == "commvault") {
-            $("#host_id_div").hide();
-            $("#script_text_div").hide();
-            $("#success_text_div").hide();
-            $("#log_address_div").hide();
-            $("#origin_div").show();
-            $("#commv_interface_div").show();
+    },
+    "plugins": ["contextmenu", "dnd", "types", "role"]
+})
+    .on('move_node.jstree', function (e, data) {
+        var moveid = data.node.id;
+        if (data.old_parent == "#") {
+            alert("根节点禁止移动。");
+            location.reload()
         } else {
-            $("#host_id_div").show();
-            $("#script_text_div").show();
-            $("#success_text_div").show();
-            $("#log_address_div").show();
-            $("#origin_div").hide();
-            $("#commv_interface_div").hide();
+            if (data.parent == "#") {
+                alert("禁止新建根节点。");
+                location.reload()
+            } else {
+                $.ajax({
+                    type: "POST",
+                    url: "../orgmove/",
+                    data:
+                        {
+                            id: data.node.id,
+                            parent: data.parent,
+                            old_parent: data.old_parent,
+                            position: data.position,
+                            old_position: data.old_position,
+                        },
+                    success: function (data) {
+                        if (data == "重名") {
+                            alert("目标组织下存在重名。");
+                            location.reload()
+                        } else {
+                            if (data == "类型") {
+                                alert("不能移动至用户下。");
+                                location.reload()
+                            } else {
+                                if (data != "0") {
+                                    if (selectid == moveid) {
+                                        var res = data.split('^')
+                                        $("#pid").val(res[1])
+                                        $("#pname").val(res[0])
+                                        $("#orgpname").val(res[0])
+                                    }
+
+
+                                }
+                            }
+                        }
+                    },
+                    error: function (e) {
+                        alert("移动失败，请于管理员联系。");
+                        location.reload()
+                    }
+                });
+
+
+            }
         }
+    })
+    .bind('select_node.jstree', function (event, data) {
+        $("#form_div").show();
+        var type = data.node.original.type;
 
-        $("#ip").val(data.host_id);
-        $("#filename").val(data.filename);
-        $("#scriptpath").val(data.scriptpath);
-        $("#success_text").val(data.success_text);
-        $("#log_address").val(data.log_address);
+        $("#id").val(data.node.id);
+        $("#pid").val(data.node.parent);
+        $("#my_type").val(type);
+        $("#pname").val(data.node.data.pname);
+        $("#title").text(data.node.text);
 
-        // add
-        $("#script_text").val(data.script_text);
+        if (type == "INTERFACE") {
+            // 接口编号 接口名称 接口类型 选择源客户端 类名 选择主机 脚本内容 SUCCESSTEXT 日志地址 接口说明
+            $("#code").val(data.node.data.code);
+            $("#name").val(data.node.data.name);
+            $("#ip").val(data.node.data.ip);
+            $("#script_text").val(data.node.data.script_text);
+            $("#success_text").val(data.node.data.success_text);
+            $("#log_address").val(data.node.data.log_address);
+            $("#remark").val(data.node.data.remark);
+            // Commvault
+            $("#origin").val(data.node.data.origin);
+            $("#commv_interface").val(data.node.data.commv_interface);
+            $("#interface_type").val(data.node.data.interface_type);
 
-        // commvault
-        $("#interface_type").val(data.interface_type);
-        $("#origin").val(data.origin);
-        $("#commv_interface").val(data.commv_interface);
+            if (data.node.data.interface_type == "Commvault") {
+                $("#host_id_div").hide();
+                $("#script_text_div").hide();
+                $("#success_text_div").hide();
+                $("#log_address_div").hide();
+                $("#origin_div").show();
+                $("#commv_interface_div").show();
+            } else {
+                $("#host_id_div").show();
+                $("#script_text_div").show();
+                $("#success_text_div").show();
+                $("#log_address_div").show();
+                $("#origin_div").hide();
+                $("#commv_interface_div").hide();
+            }
+
+            $("#interface").show()
+            $("#node").hide()
+        }
+        if (type == "NODE") {
+            $("#node_pname").val(data.node.data.pname)
+            $("#node_name").val(data.node.text)
+            $("#node_remark").val(data.node.data.remark)
+            $("#interface").hide()
+            $("#node").show()
+        }
+        if (data.node.parent == "#") {
+            $("#node_save").hide()
+            $("#interface_save").hide()
+        } else {
+            $("#node_save").show()
+            $("#interface_save").show()
+        }
     });
 
-    $("#new").click(function () {
-        $("#id").val("0");
-        $("#code").val("");
-        $("#name").val("");
-
-        $("#ip").val("");
-        $("#filename").val("");
-        $("#scriptpath").val("");
-        $("#success_text").val("");
-        $("#log_address").val("");
-        $("#script_text").val("");
-
-        // commvault
-        $("#origin").val("");
-        $("#commv_interface").val("");
-        $("#interface_type").val("");
-
+// interface_type change
+$("#interface_type").change(function () {
+    var interface_type = $(this).val();
+    if (interface_type == "Commvault") {
         $("#host_id_div").hide();
         $("#script_text_div").hide();
         $("#success_text_div").hide();
         $("#log_address_div").hide();
+        $("#origin_div").show();
+        $("#commv_interface_div").show();
+    } else {
+        $("#host_id_div").show();
+        $("#script_text_div").show();
+        $("#success_text_div").show();
+        $("#log_address_div").show();
         $("#origin_div").hide();
         $("#commv_interface_div").hide();
-    });
+    }
+});
 
-    // interface_type change
-    $("#interface_type").change(function () {
-        var interface_type = $(this).val();
-        if (interface_type == "commvault") {
-            $("#host_id_div").hide();
-            $("#script_text_div").hide();
-            $("#success_text_div").hide();
-            $("#log_address_div").hide();
-            $("#origin_div").show();
-            $("#commv_interface_div").show();
-        } else {
-            $("#host_id_div").show();
-            $("#script_text_div").show();
-            $("#success_text_div").show();
-            $("#log_address_div").show();
-            $("#origin_div").hide();
-            $("#commv_interface_div").hide();
-        }
-    });
-
-    $('#save').click(function () {
-        var table = $('#sample_1').DataTable();
-
-        $.ajax({
-            type: "POST",
-            dataType: 'json',
-            url: "../scriptsave/",
-            data: {
-                id: $("#id").val(),
-                code: $("#code").val(),
-                name: $("#name").val(),
-                ip: $("#ip").val(),
-                script_text: $("#script_text").val(),
-                success_text: $("#success_text").val(),
-                log_address: $("#log_address").val(),
-
-                // commvault接口
-                interface_type: $("#interface_type").val(),
-                origin: $("#origin").val(),
-                commv_interface: $("#commv_interface").val()
-            },
-            success: function (data) {
-                var myres = data["res"];
-                var mydata = data["data"];
-                if (myres == "新增成功。") {
-                    $("#id").val(data["data"]);
-                    $('#static').modal('hide');
-                    table.ajax.reload();
-                }
-                if (myres == "修改成功。") {
-                    $('#static').modal('hide');
-                    table.ajax.reload();
-                }
-
-                alert(myres);
-            },
-            error: function (e) {
-                alert("页面出现错误，请于管理员联系。");
-            }
-        });
-    });
-
-    $('#error').click(function () {
-        $(this).hide()
-    });
+$("#error").click(function () {
+    $(this).hide();
 });

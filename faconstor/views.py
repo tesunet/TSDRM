@@ -2088,6 +2088,7 @@ def organization(request, funid):
                                     title = orgname
                                 except:
                                     errors.append('保存失败。')
+
         treedata = []
         rootnodes = UserInfo.objects.order_by("sort").exclude(state="9").filter(pnode=None, type="org")
         if len(rootnodes) > 0:
@@ -2453,92 +2454,309 @@ def groupsavefuntree(request):
     return HttpResponse("保存成功。")
 
 
+def get_script_tree(parent, select_id):
+    nodes = []
+    children = parent.children.order_by("sort").exclude(state="9")
+    for child in children:
+        node = dict()
+        node["text"] = child.name
+        node["id"] = child.id
+        node["type"] = child.type
+        if child.type == "NODE":  # 节点
+            node["data"] = {
+                "remark": child.remark,
+                "pname": parent.name
+            }
+        if child.type == "INTERFACE":  # 接口
+            node["data"] = {
+                "pname": parent.name,
+                "remark": child.remark,
+                "code": child.code,
+                "name": child.name,
+                "type": child.type,
+                "interface_type": child.interface_type,
+                "origin": child.origin.id if child.origin else "",
+                "commv_interface": child.commv_interface,
+                "ip": child.hosts_manage.id if child.hosts_manage else "",
+                "script_text": child.script_text,
+                "success_text": child.succeedtext,
+                "log_address": child.log_address,
+            }
+        node["children"] = get_script_tree(child, select_id)
+        try:
+            if int(select_id) == child.id:
+                node["state"] = {"selected": True}
+        except:
+            pass
+        nodes.append(node)
+    return nodes
+
+
 @login_required
 def script(request, funid):
     errors = []
+    select_id = ""  # 当前修改的节点
+    # 接口信息与节点信息隐藏设置
+    interface_hidden = "hidden"
+    node_hidden = "hidden"
+    right_info_hidden = "hidden"
+
     if request.method == 'POST':
-        my_file = request.FILES.get("myfile", None)  # 获取上传的文件，如果没有文件，则默认为None
-        if not my_file:
-            errors.append("请选择要导入的文件。")
-        else:
-            filetype = my_file.name.split(".")[-1]
-            if filetype == "xls" or filetype == "xlsx":
-                myfilepath = os.path.join(os.path.join(os.path.dirname(__file__), "upload\\temp"), my_file.name)
-                destination = open(myfilepath, 'wb+')
-                for chunk in my_file.chunks():  # 分块写入文件
-                    destination.write(chunk)
-                destination.close()
+        id = request.POST.get('id', '')
+        code = request.POST.get('code', '')
+        name = request.POST.get('name', '')
+        host_id = request.POST.get('ip', '')
 
-                data = xlrd.open_workbook(myfilepath)
-                sheet = data.sheets()[0]
-                rows = sheet.nrows
+        # script_text
+        script_text = request.POST.get('script_text', '')
 
-                succeed_tag = True
-                for i in range(rows):
-                    if i > 0:
-                        allscript = Script.objects.filter(code=sheet.cell(i, 0).value).exclude(
-                            state="9").filter(step_id=None)
-                        if (len(allscript) > 0):
-                            errors.append(sheet.cell(i, 0).value + ":已存在。")
-                            succeed_tag = False
-                        else:
-                            try:
-                                # add hosts
-                                check_host_manage = HostsManage.objects.filter(
-                                    host_ip=sheet.cell(i, 2).value).exclude(state="9")
-                                if check_host_manage.exists():
-                                    cur_host = check_host_manage[0]
-                                else:
-                                    # add host
-                                    cur_host_manage = HostsManage()
-                                    cur_host_manage.host_ip = sheet.cell(i, 2).value
-                                    cur_host_manage.type = sheet.cell(i, 3).value
-                                    cur_host_manage.username = sheet.cell(i, 4).value
-                                    cur_host_manage.password = sheet.cell(i, 5).value
-                                    host_os = ""
-                                    if sheet.cell(i, 3).value == "SSH":
-                                        host_os = "Linux"
-                                    if sheet.cell(i, 3).value == "BAT":
-                                        host_os = "Windows"
-                                    cur_host_manage.os = host_os
-                                    cur_host_manage.save()
-                                    cur_host = cur_host_manage
+        success_text = request.POST.get('success_text', '')
+        log_address = request.POST.get('log_address', '')
 
-                                scriptsave = Script()
-                                scriptsave.code = sheet.cell(i, 0).value
-                                scriptsave.name = sheet.cell(i, 1).value
-                                scriptsave.hosts_manage = cur_host
-                                scriptsave.succeedtext = sheet.cell(i, 6).value
-                                scriptsave.script_text = sheet.cell(i, 7).value
-                                scriptsave.save()
-                            except Exception as e:
-                                succeed_tag = False
+        # commvault接口
+        interface_type = request.POST.get('interface_type', '')
+        origin = request.POST.get('origin', '')
+        commv_interface = request.POST.get('commv_interface', '')
 
-                                errors.append("脚本上传失败，请检查文件内容。")
-                                break
+        pid = request.POST.get('pid', '')
+        my_type = request.POST.get('my_type', '')
+        remark = request.POST.get('remark', '')
 
-                if succeed_tag:
-                    errors = ["导入成功。"]
+        # 节点
+        node_remark = request.POST.get('node_remark', '')
+        node_name = request.POST.get('node_name', '')
 
-                os.remove(myfilepath)
+        # 节点存储方法
+        def node_save(save_data):
+            result = {}
+            # 删除ID
+            copy_save_data = copy.deepcopy(save_data)
+            copy_save_data.pop("id")
+            if save_data["id"] == 0:
+                # 排序
+                sort = 1
+                try:
+                    max_sort = Script.objects.exclude(state="9").filter(pnode_id=save_data["pnode_id"]).aggregate(
+                        max_sort=Max('sort', distinct=True))["max_sort"]
+                    sort = max_sort + 1
+                except:
+                    pass
+                copy_save_data["sort"] = sort
+                try:
+                    scriptsave = Script.objects.create(**copy_save_data)
+                    result["res"] = "新增成功。"
+                    result["data"] = scriptsave.id
+                except Exception as e:
+                    print(e)
+                    result["res"] = "新增失败。"
             else:
-                errors.append("只能上传xls和xlsx文件，请选择正确的文件类型。")
+                # 修改
+                try:
+                    Script.objects.filter(id=save_data["id"]).update(**copy_save_data)
+                    result["res"] = "修改成功。"
+                    result["data"] = save_data["id"]
+                except:
+                    result["res"] = "修改失败。"
 
+        # 接口存储方法
+        def interface_save(save_data, cur_host_manage=None):
+            result = {}
+
+            if save_data["id"] == 0:
+                allscript = Script.objects.filter(code=save_data["code"]).exclude(state="9").filter(step_id=None)
+                if allscript.exists():
+                    result["res"] = '脚本编码:' + save_data["code"] + '已存在。'
+                else:
+                    scriptsave = Script()
+                    scriptsave.code = save_data["code"]
+                    scriptsave.name = save_data["name"]
+                    scriptsave.type = save_data["type"]
+                    scriptsave.pnode_id = save_data["pnode_id"]
+                    scriptsave.remark = save_data["remark"]
+
+                    # 判断是否commvault/脚本
+                    if save_data["interface_type"] == "Commvault":
+                        scriptsave.hosts_manage_id = None
+                        scriptsave.script_text = ""
+                        scriptsave.succeedtext = ""
+                        scriptsave.log_address = ""
+
+                        scriptsave.origin_id = save_data["origin"]
+                        scriptsave.commv_interface = save_data["commv_interface"]
+                    else:
+                        scriptsave.hosts_manage_id = cur_host_manage.id
+                        scriptsave.script_text = save_data["script_text"]
+                        scriptsave.succeedtext = save_data["succeedtext"]
+                        scriptsave.log_address = save_data["log_address"]
+
+                        scriptsave.origin_id = None
+                        scriptsave.commv_interface = ""
+
+                    scriptsave.interface_type = save_data["interface_type"]
+
+                    # 排序
+                    sort = 1
+                    try:
+                        max_sort = Script.objects.exclude(state="9").filter(pnode_id=save_data["pnode_id"]).aggregate(
+                            max_sort=Max('sort', distinct=True))["max_sort"]
+                        sort = max_sort + 1
+                    except:
+                        pass
+                    scriptsave.sort = sort
+
+                    scriptsave.save()
+                    result["res"] = "新增成功。"
+                    result["data"] = scriptsave.id
+            else:
+                # 修改
+                allscript = Script.objects.filter(code=save_data["code"]).exclude(id=save_data["id"]).exclude(
+                    state="9").filter(step_id=None)
+                if allscript.exists():
+                    result["res"] = '脚本编码:' + save_data["code"] + '已存在。'
+                else:
+                    try:
+                        scriptsave = Script.objects.get(id=save_data["id"])
+                        scriptsave.code = save_data["code"]
+                        scriptsave.name = save_data["name"]
+                        scriptsave.type = save_data["type"]
+                        scriptsave.remark = save_data["remark"]
+
+                        # 判断是否commvault/脚本
+                        if save_data["interface_type"] == "commvault":
+                            scriptsave.hosts_manage_id = None
+                            scriptsave.script_text = ""
+                            scriptsave.succeedtext = ""
+                            scriptsave.log_address = ""
+
+                            scriptsave.origin_id = save_data["origin"]
+                            scriptsave.commv_interface = save_data["commv_interface"]
+                        else:
+                            scriptsave.hosts_manage_id = cur_host_manage.id
+                            scriptsave.script_text = save_data["script_text"]
+                            scriptsave.succeedtext = save_data["succeedtext"]
+                            scriptsave.log_address = save_data["log_address"]
+
+                            scriptsave.origin_id = None
+                            scriptsave.commv_interface = ""
+
+                        scriptsave.interface_type = save_data["interface_type"]
+
+                        scriptsave.save()
+                        result["res"] = "修改成功。"
+                        result["data"] = scriptsave.id
+                    except Exception as e:
+                        print("scriptsave edit error:%s" % e)
+                        result["res"] = "修改失败。"
+
+            return result
+
+        try:
+            id = int(id)
+            pid = int(pid)
+        except ValueError as e:
+            errors.append('网络连接异常。')
+        else:
+            # NODE/INTERFACE
+            if my_type == "NODE":
+                save_data = {
+                    "id": id,
+                    "code": "",
+                    "name": node_name,
+                    "script_text": "",
+                    "succeedtext": "",
+                    "log_address": "",
+                    "hosts_manage_id": None,
+                    "interface_type": "",
+                    "origin": None,
+                    "commv_interface": "",
+                    "remark": node_remark,
+                    "pnode_id": pid,
+                    "type": my_type,
+                }
+                result = node_save(save_data)
+            else:
+                save_data = {
+                    "id": id,
+                    "code": code,
+                    "name": name,
+                    "script_text": script_text,
+                    "succeedtext": success_text,
+                    "log_address": log_address,
+                    "hosts_manage_id": host_id,
+                    "interface_type": interface_type,
+                    "origin": origin,
+                    "commv_interface": commv_interface,
+                    "remark": remark,
+                    "pnode_id": pid,
+                    "type": my_type,
+                }
+                if code.strip() == '':
+                    errors.append('接口编码不能为空。')
+                else:
+                    if name.strip() == '':
+                        errors.append('接口名称不能为空。')
+                    else:
+                        # 区分interface_type: commvault/脚本
+                        if interface_type.strip() == "":
+                            errors.append('接口类型未选择。')
+                        else:
+                            if interface_type == "Commvault":
+                                if origin.strip() == "":
+                                    errors.append('commvault源端未选择。')
+                                else:
+                                    if commv_interface.strip() == "":
+                                        errors.append('commvault接口未选择。')
+                                    else:
+                                        result = interface_save(save_data, cur_host_manage=None)
+                            else:
+                                try:
+                                    host_id = int(host_id)
+                                except ValueError as e:
+                                    print("host_id:%s" % e)
+                                    errors.append('网络连接异常。')
+                                else:
+                                    if not host_id:
+                                        errors.append('脚本存放的主机未选择。')
+                                    else:
+                                        if script_text.strip() == '':
+                                            errors.append('脚本内容不能为空。')
+                                        else:
+                                            try:
+                                                cur_host_manage = HostsManage.objects.get(id=host_id)
+                                            except HostsManage.DoesNotExist as e:
+                                                print(e)
+                                                errors.append('所选主机不存在。')
+                                            else:
+                                                result = interface_save(save_data, cur_host_manage=cur_host_manage)
+
+    tree_data = []
+    root_nodes = Script.objects.order_by("sort").exclude(state="9").filter(pnode=None, type="NODE")
+
+    for root_node in root_nodes:
+        root = dict()
+        root["text"] = root_node.name
+        root["id"] = root_node.id
+        root["type"] = "NODE"
+        root["data"] = {
+            "remark": root_node.remark,
+            "pname": "无"
+        }
+
+        root["children"] = get_script_tree(root_node, select_id)
+        tree_data.append(root)
+    tree_data = json.dumps(tree_data, ensure_ascii=False)
     # 主机选项
     all_hosts_manage = HostsManage.objects.exclude(state="9")
 
     # commvault源端客户端
     all_origins = Origin.objects.exclude(state="9").order_by("utils__name")
 
-    # 过滤本地commvaul接口脚本
-    commv_path = os.path.join(os.path.join(settings.BASE_DIR, "faconstor"), "commvault_api")
-
-    commv_file_list = os.listdir(commv_path)
-
-    return render(request, 'script.html',
-                  {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                   "errors": errors, "all_hosts_manage": all_hosts_manage, "all_origins": all_origins,
-                   "commv_file_list": commv_file_list})
+    return render(request, 'script.html', {
+        'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
+        "errors": errors, "all_hosts_manage": all_hosts_manage, "all_origins": all_origins,
+        "tree_data": tree_data, "interface_hidden": interface_hidden, "node_hidden": node_hidden,
+        "right_info_hidden": right_info_hidden
+    })
 
 
 @login_required
