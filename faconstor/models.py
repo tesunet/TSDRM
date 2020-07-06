@@ -103,6 +103,9 @@ class Script(models.Model):
     origin = models.ForeignKey("Origin", blank=True, null=True, verbose_name='源端客户端')
     commv_interface = models.CharField("commvault接口脚本", blank=True, null=True, max_length=64)
     config = models.TextField("接口参数", null=True, default="<root></root>")
+    # 树状
+    pnode = models.ForeignKey('self', null=True, related_name='children', verbose_name='父节点')
+    type = models.CharField("类型", blank=True, null=True, max_length=20)
 
 
 class Walkthrough(models.Model):
