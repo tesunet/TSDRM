@@ -51,6 +51,7 @@ class Process(models.Model):
     url = models.CharField("页面链接", blank=True, max_length=100)
     type = models.CharField("预案类型", blank=True, max_length=100, null=True)
     color = models.CharField("颜色", blank=True, max_length=50)
+    config = models.TextField("流程参数", null=True, default="<root></root>")
 
 
 class Step(models.Model):
@@ -82,6 +83,7 @@ class HostsManage(models.Model):
     username = models.CharField("用户名", blank=True, null=True, max_length=50)
     password = models.CharField("密码", blank=True, null=True, max_length=50)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
+    config = models.TextField("主机参数", null=True, default="<root></root>")
 
 
 class Script(models.Model):
@@ -100,6 +102,7 @@ class Script(models.Model):
     interface_type = models.CharField("日志地址", blank=True, null=True, max_length=32)
     origin = models.ForeignKey("Origin", blank=True, null=True, verbose_name='源端客户端')
     commv_interface = models.CharField("commvault接口脚本", blank=True, null=True, max_length=64)
+    config = models.TextField("接口参数", null=True, default="<root></root>")
 
 
 class Walkthrough(models.Model):
