@@ -3561,20 +3561,33 @@ def process_design(request, funid):
 def process_data(request):
     result = []
     all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").values()
-    if all_process:
-        for process in all_process:
-            result.append({
-                "process_id": process["id"],
-                "process_code": process["code"],
-                "process_name": process["name"],
-                "process_remark": process["remark"],
-                "process_sign": process["sign"],
-                "process_rto": process["rto"],
-                "process_rpo": process["rpo"],
-                "process_sort": process["sort"],
-                "process_color": process["color"],
-                "type": process["type"],
-            })
+    for process in all_process:
+        param_list = []
+        try:
+            config = etree.XML(process['config'])
+
+            param_el = config.xpath("//param")
+            for v_param in param_el:
+                param_list.append({
+                    "param_name": v_param.attrib.get("param_name", ""),
+                    "variable_name": v_param.attrib.get("variable_name", ""),
+                    "param_value": v_param.attrib.get("param_value", ""),
+                })
+        except Exception as e:
+            print(e)
+        result.append({
+            "process_id": process["id"],
+            "process_code": process["code"],
+            "process_name": process["name"],
+            "process_remark": process["remark"],
+            "process_sign": process["sign"],
+            "process_rto": process["rto"],
+            "process_rpo": process["rpo"],
+            "process_sort": process["sort"],
+            "process_color": process["color"],
+            "type": process["type"],
+            "variable_param_list": param_list,
+        })
     return JsonResponse({"data": result})
 
 
@@ -3592,6 +3605,8 @@ def process_save(request):
         sort = request.POST.get('sort', '')
         color = request.POST.get('color', '')
         type = request.POST.get('type', '')
+        config = request.POST.get("config", "")
+
         try:
             id = int(id)
         except:
@@ -3608,9 +3623,19 @@ def process_save(request):
                     if sign.strip() == '':
                         result["res"] = '是否签到不能为空。'
                     else:
-                        # if color.strip() == "":
-                        #     result["res"] = '项目图标配色不能为空。'
-                        # else:
+                        # 流程参数
+                        root = etree.Element("root")
+
+                        if config:
+                            config = json.loads(config)
+                            # 动态参数
+                            for c_config in config:
+                                param_node = etree.SubElement(root, "param")
+                                param_node.attrib["param_name"] = c_config["param_name"].strip()
+                                param_node.attrib["variable_name"] = c_config["variable_name"].strip()
+                                param_node.attrib["param_value"] = c_config["param_value"].strip()
+                        config = etree.tounicode(root)
+
                         if id == 0:
                             all_process = Process.objects.filter(code=code).exclude(
                                 state="9").exclude(Q(type=None) | Q(type=""))
@@ -3628,6 +3653,7 @@ def process_save(request):
                                 processsave.sort = sort if sort else None
                                 processsave.color = color
                                 processsave.type = type
+                                processsave.config = config
                                 processsave.save()
                                 result["res"] = "保存成功。"
                                 result["data"] = processsave.id
@@ -3648,6 +3674,7 @@ def process_save(request):
                                     processsave.sort = sort if sort else None
                                     processsave.color = color
                                     processsave.type = type
+                                    processsave.config = config
                                     processsave.save()
                                     result["res"] = "保存成功。"
                                     result["data"] = processsave.id
@@ -6696,6 +6723,8 @@ def host_save(request):
     connect_type = request.POST.get("type", "")
     username = request.POST.get("username", "")
     password = request.POST.get("password", "")
+    config = request.POST.get("config", "")
+
     ret = 0
     info = ""
     try:
@@ -6710,6 +6739,19 @@ def host_save(request):
                     if connect_type.strip():
                         if username.strip():
                             if password.strip():
+                                # 主机参数
+                                root = etree.Element("root")
+
+                                if config:
+                                    config = json.loads(config)
+                                    # 动态参数
+                                    for c_config in config:
+                                        param_node = etree.SubElement(root, "param")
+                                        param_node.attrib["param_name"] = c_config["param_name"].strip()
+                                        param_node.attrib["variable_name"] = c_config["variable_name"].strip()
+                                        param_node.attrib["param_value"] = c_config["param_value"].strip()
+                                config = etree.tounicode(root)
+
                                 # 新增
                                 if host_id == 0:
                                     # 判断主机是否已经存在
@@ -6726,6 +6768,7 @@ def host_save(request):
                                             cur_host_manage.type = connect_type
                                             cur_host_manage.username = username
                                             cur_host_manage.password = password
+                                            cur_host_manage.config = config
                                             cur_host_manage.save()
                                         except:
                                             ret = 0
@@ -6743,6 +6786,7 @@ def host_save(request):
                                         cur_host_manage.type = connect_type
                                         cur_host_manage.username = username
                                         cur_host_manage.password = password
+                                        cur_host_manage.config = config
                                         cur_host_manage.save()
 
                                         ret = 1
@@ -6779,6 +6823,19 @@ def hosts_manage_data(request):
     all_hosts_manage = HostsManage.objects.exclude(state="9")
     all_hm_list = []
     for host_manage in all_hosts_manage:
+        param_list = []
+        try:
+            config = etree.XML(host_manage.config)
+
+            param_el = config.xpath("//param")
+            for v_param in param_el:
+                param_list.append({
+                    "param_name": v_param.attrib.get("param_name", ""),
+                    "variable_name": v_param.attrib.get("variable_name", ""),
+                    "param_value": v_param.attrib.get("param_value", ""),
+                })
+        except Exception as e:
+            print(e)
         all_hm_list.append({
             "host_id": host_manage.id,
             "host_ip": host_manage.host_ip,
@@ -6786,7 +6843,8 @@ def hosts_manage_data(request):
             "os": host_manage.os,
             "type": host_manage.type,
             "username": host_manage.username,
-            "password": host_manage.password
+            "password": host_manage.password,
+            "variable_param_list": param_list,
         })
     return JsonResponse({"data": all_hm_list})
 
@@ -7571,15 +7629,19 @@ def get_rowspan(whole_list, **kwargs):
                 row_span += 1
     if all([clientname, idataagent, type, subclient]) and not any([scheduePolicy, schedbackuptype]):
         for tl in whole_list:
-            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl['subclient'] == subclient:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl[
+                'subclient'] == subclient:
                 row_span += 1
     if all([clientname, idataagent, type, subclient, scheduePolicy]) and not schedbackuptype:
         for tl in whole_list:
-            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl['subclient'] == subclient and tl['scheduePolicy'] == scheduePolicy:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl[
+                'subclient'] == subclient and tl['scheduePolicy'] == scheduePolicy:
                 row_span += 1
     if all([clientname, idataagent, type, subclient, scheduePolicy, schedbackuptype]):
         for tl in whole_list:
-            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl['subclient'] == subclient and tl['scheduePolicy'] == scheduePolicy and tl['schedbackuptype'] == schedbackuptype:
+            if tl['clientname'] == clientname and tl['idataagent'] == idataagent and tl['type'] == type and tl[
+                'subclient'] == subclient and tl['scheduePolicy'] == scheduePolicy and tl[
+                'schedbackuptype'] == schedbackuptype:
                 row_span += 1
     return row_span
 
@@ -7796,13 +7858,13 @@ def get_schedule_policy(request):
                                            type=wl['type'])
                 # 子客户端，计划策略，备份类型
                 subclient_rowspan = get_rowspan(whole_list, clientname=wl['clientname'],
-                                                      idataagent=wl['idataagent'],
-                                                      type=wl['type'], subclient=wl['subclient'])
+                                                idataagent=wl['idataagent'],
+                                                type=wl['type'], subclient=wl['subclient'])
                 if wl['scheduePolicy']:
                     scheduePolicy_rowspan = get_rowspan(whole_list, clientname=wl['clientname'],
-                                                          idataagent=wl['idataagent'],
-                                                          type=wl['type'], subclient=wl['subclient'],
-                                                          scheduePolicy=wl['scheduePolicy'])
+                                                        idataagent=wl['idataagent'],
+                                                        type=wl['type'], subclient=wl['subclient'],
+                                                        scheduePolicy=wl['scheduePolicy'])
                 else:
                     scheduePolicy_rowspan = 1
                 if wl['schedbackuptype'] and wl['scheduePolicy']:
