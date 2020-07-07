@@ -1,3 +1,89 @@
+function displayScriptTree(){
+    $('#script_tree').data('jstree', false).empty();
+    $('#script_tree').jstree({
+        'plugins': ["checkbox", "types"],
+        'core': {
+            "themes": {
+                "responsive": false,
+            },
+            'data': treeData,
+            'multiple': false,  // 单选
+        },
+    
+        "types": {
+            "NODE": {
+                "icon": "fa fa-folder icon-state-warning icon-lg"
+            },
+            "INTERFACE": {
+                "icon": "fa fa-file-code-o icon-state-warning icon-lg"
+            }
+        },
+        "checkbox": {
+            "keep_selected_style": false,  //是否默认选中
+            "three_state": false,  //父子级别级联选择
+        },
+    });
+}
+
+$("#load_script").click(function () {
+    var script_tree = $('#script_tree').jstree(true).get_selected(true);
+    var data = script_tree[0].data;
+    /*
+    data:
+        code: "5-5"
+        commv_interface: null
+        interface_type: "Linux"
+        ip: 4
+        log_address: ""
+        name: "5-5"
+        origin: ""
+        pname: "第一组"
+        remark: ""
+        script_text: ""
+        success_text: "tesunetsucceed"
+        type: "INTERFACE"
+        variable_param_list: []
+    id: "105"
+    parent: "187"
+    parents: (3) ["187", "183", "#"]
+    */
+    // 判断是否为commvault
+    if (data.interface_type == "Commvault") {
+        $("#host_id_div").hide();
+        $("#script_text_div").hide();
+        $("#success_text_div").hide();
+        $("#log_address_div").hide();
+        $("#origin_div").show();
+        $("#commv_interface_div").show();
+    } else {
+        $("#host_id_div").show();
+        $("#script_text_div").show();
+        $("#success_text_div").show();
+        $("#log_address_div").show();
+        $("#origin_div").hide();
+        $("#commv_interface_div").hide();
+    }
+
+    $("#scriptcode").val(data.code);
+    $("#script_name").val(data.name);
+    $("#script_text").val(data.script_text);
+    $("#success_text").val(data.success_text);
+    $("#log_address").val(data.log_address);
+    $("#host_id").val(data.ip);
+
+    // commvault
+    $("#interface_type").val(data.interface_type);
+    $("#origin").val(data.origin);
+    $("#commv_interface").val(data.commv_interface);
+
+    $("#static1").modal('hide');
+});
+
+// 展示树时取消checked
+$("#static1").on("shown.bs.modal",  function(){
+    displayScriptTree();
+})
+
 var treedata = "";
 
 // 定义构造树的函数
@@ -414,11 +500,11 @@ function customTree() {
                 "bProcessing": true,
                 "ajax": "../../scriptdata/",
                 "columns": [
-                    {"data": "id"},
-                    {"data": "code"},
-                    {"data": "name"},
-                    {"data": "interface_type"},
-                    {"data": null}
+                    { "data": "id" },
+                    { "data": "code" },
+                    { "data": "name" },
+                    { "data": "interface_type" },
+                    { "data": null }
                 ],
 
                 "columnDefs": [{

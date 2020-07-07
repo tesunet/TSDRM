@@ -2468,6 +2468,9 @@ def get_script_tree(parent, select_id):
                 "remark": child.remark,
                 "pname": parent.name
             }
+            node["a_attr"] = {
+                "class": "jstree-no-checkboxes"
+            }
         if child.type == "INTERFACE":  # 接口
             # 接口参数
             param_list = []
@@ -3822,10 +3825,38 @@ def processconfig(request, funid):
 
     commv_file_list = os.listdir(commv_path)
 
+    # tree_data
+    select_id = ""
+    tree_data = []
+    root_nodes = Script.objects.order_by("sort").exclude(state="9").filter(pnode=None).filter(type="NODE")
+
+    for root_node in root_nodes:
+        root = dict()
+        root["text"] = root_node.name
+        root["id"] = root_node.id
+        root["type"] = "NODE"
+        root["data"] = {
+            "remark": root_node.remark,
+            "pname": "无"
+        }
+        root["a_attr"] = {
+            "class": "jstree-no-checkboxes"
+        }
+        try:
+            if int(select_id) == root_node.id:
+                root["state"] = {"opened": True, "selected": True}
+            else:
+                root["state"] = {"opened": True}
+        except:
+            root["state"] = {"opened": True}
+        root["children"] = get_script_tree(root_node, select_id)
+        tree_data.append(root)
+    tree_data = json.dumps(tree_data, ensure_ascii=False)
+    
     return render(request, 'processconfig.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                    "processlist": processlist, "process_id": process_id, "all_hosts_manage": all_hosts_manage,
-                   "all_origins": all_origins, "commv_file_list": commv_file_list})
+                   "all_origins": all_origins, "commv_file_list": commv_file_list, "tree_data": tree_data})
 
 
 @login_required
