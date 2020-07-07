@@ -2462,12 +2462,28 @@ def get_script_tree(parent, select_id):
         node["text"] = child.name
         node["id"] = child.id
         node["type"] = child.type
+
         if child.type == "NODE":  # 节点
             node["data"] = {
                 "remark": child.remark,
                 "pname": parent.name
             }
         if child.type == "INTERFACE":  # 接口
+            # 接口参数
+            param_list = []
+            try:
+                config = etree.XML(child.config)
+
+                param_el = config.xpath("//param")
+                for v_param in param_el:
+                    param_list.append({
+                        "param_name": v_param.attrib.get("param_name", ""),
+                        "variable_name": v_param.attrib.get("variable_name", ""),
+                        "param_value": v_param.attrib.get("param_value", ""),
+                    })
+            except Exception as e:
+                print(e)
+
             node["data"] = {
                 "pname": parent.name,
                 "remark": child.remark,
@@ -2481,6 +2497,7 @@ def get_script_tree(parent, select_id):
                 "script_text": child.script_text,
                 "success_text": child.succeedtext,
                 "log_address": child.log_address,
+                "variable_param_list": param_list,
             }
         node["children"] = get_script_tree(child, select_id)
         try:
@@ -2520,6 +2537,7 @@ def script(request, funid):
     node_name = ""
     pname = ""
     node_pname = ""
+    insert_params = ""
 
     # 接口 脚本 隐藏设置
     interface_divs = {
@@ -2553,11 +2571,13 @@ def script(request, funid):
         my_type = request.POST.get('my_type', '')
         remark = request.POST.get('remark', '')
         pname = request.POST.get('pname')
-        pname = request.POST.get('pname')
 
         # 节点
         node_remark = request.POST.get('node_remark', '')
         node_pname = request.POST.get('node_pname', '')
+
+        insert_params = request.POST.get('insert_params', '')
+        insert_params = json.loads(insert_params)
 
         # 节点存储方法
         def node_save(save_data):
@@ -2614,6 +2634,7 @@ def script(request, funid):
                     scriptsave.type = save_data["type"]
                     scriptsave.pnode_id = save_data["pnode_id"]
                     scriptsave.remark = save_data["remark"]
+                    scriptsave.config = save_data["config"]
 
                     # 判断是否commvault/脚本
                     if save_data["interface_type"] == "Commvault":
@@ -2663,6 +2684,7 @@ def script(request, funid):
                         scriptsave.name = save_data["name"]
                         scriptsave.type = save_data["type"]
                         scriptsave.remark = save_data["remark"]
+                        scriptsave.config = save_data["config"]
 
                         # 判断是否commvault/脚本
                         if save_data["interface_type"] == "Commvault":
@@ -2727,6 +2749,18 @@ def script(request, funid):
             else:
                 interface_hidden = ""
 
+                # 接口参数
+                root = etree.Element("root")
+
+                if insert_params:
+                    # 动态参数
+                    for insert_param in insert_params:
+                        param_node = etree.SubElement(root, "param")
+                        param_node.attrib["param_name"] = insert_param["param_name"].strip()
+                        param_node.attrib["variable_name"] = insert_param["variable_name"].strip()
+                        param_node.attrib["param_value"] = insert_param["param_value"].strip()
+                config = etree.tounicode(root)
+
                 save_data = {
                     "id": id,
                     "code": code,
@@ -2741,6 +2775,7 @@ def script(request, funid):
                     "remark": remark,
                     "pnode_id": pid,
                     "type": my_type,
+                    "config": config,
                 }
                 if code.strip() == '':
                     errors.append('接口编码不能为空。')
@@ -2888,6 +2923,8 @@ def script(request, funid):
         "origin_list": origin_list,
         "host_list": host_list,
         "interface_divs": interface_divs,
+        "insert_params": insert_params,
+        "insert_params_json": json.dumps(insert_params),
     }
     return render(request, 'script.html', {
         'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),

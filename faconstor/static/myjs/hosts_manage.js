@@ -260,25 +260,13 @@ $(document).ready(function () {
         var variable_name = $('#variable_name').val();
         var param_value = $('#param_value').val();
 
-        var add = true;
-        // 判断参数变量名是否重复
-        $('#param_se option').each(function () {
-            if ($(this).prop("value") == variable_name && variable_name != "") {
-                alert("变量名不可重复添加。")
-                add = false;
-                return false;
-            }
-        });
-
-        if (add) {
-            if (param_operate == "new") {
-                $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
-            }
-            if (param_operate == "edit") {
-                // 指定value的option修改text
-                $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
-            }
-            $("#static01").modal("hide");
+        if (param_operate == "new") {
+            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
         }
+        if (param_operate == "edit") {
+            // 指定value的option修改text
+            $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
+        }
+        $("#static01").modal("hide");
     });
 });

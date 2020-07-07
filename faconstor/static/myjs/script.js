@@ -9,7 +9,7 @@ $('#tree_2').jstree({
 
     "types": {
         "NODE": {
-            "icon": "fa fa-folder-open icon-state-warning icon-lg"
+            "icon": "fa fa-folder icon-state-warning icon-lg"
         },
         "INTERFACE": {
             "icon": "fa fa-file-code-o icon-state-warning icon-lg"
@@ -185,6 +185,14 @@ $('#tree_2').jstree({
             $("#commv_interface").val(data.node.data.commv_interface);
             $("#interface_type").val(data.node.data.interface_type);
 
+            // 接口参数
+            $('#param_se').empty();
+            var variable_param_list = data.node.data.variable_param_list;
+            for (var i = 0; i < variable_param_list.length; i++) {
+                $('#param_se').append('<option value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ': ' + variable_param_list[i].param_value + '</option>');
+            }
+            insertParams();
+
             if (data.node.data.interface_type == "Commvault") {
                 $("#host_id_div").hide();
                 $("#script_text_div").hide();
@@ -243,3 +251,136 @@ $("#interface_type").change(function () {
 $("#error").click(function () {
     $(this).hide();
 });
+
+$('#param_se').contextmenu({
+    target: '#context-menu2',
+    onItem: function (context, e) {
+        if ($(e.target).text() == "新增") {
+            $('#param_operate').val('new');
+
+            // 清空所有子节点
+            $('#params').empty();
+
+            // 新增节点
+            $("#params").append(
+                '<div class="form-group">' +
+                '<label class="col-md-2 control-label"><span style="color:red; "></span>参数名称</label>' +
+                '<div class="col-md-10">' +
+                '<input id="param_name" type="text" name="param_name" class="form-control" placeholder="">' +
+                '<div class="form-control-focus"></div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label class="col-md-2 control-label"><span style="color:red; "></span>变量设置</label>' +
+                '<div class="col-md-10">' +
+                '<input id="variable_name" type="text" name="variable_name" class="form-control" placeholder="">' +
+                '<div class="form-control-focus"></div>' +
+                '</div>' +
+                '</div>' +
+                '<div class="form-group">' +
+                '<label class="col-md-2 control-label"><span style="color:red; "></span>参数值</label>' +
+                '<div class="col-md-10">' +
+                '<input id="param_value" type="text" name="param_value" class="form-control" placeholder="">' +
+                '<div class="form-control-focus"></div>' +
+                '</div>' +
+                '</div>'
+            );
+
+            $("button#param_edit").click();
+        }
+        if ($(e.target).text() == "修改") {
+            $('#param_operate').val('edit');
+            if ($("#param_se").find('option:selected').length == 0)
+                alert("请选择要修改的参数。");
+            else {
+                if ($("#param_se").find('option:selected').length > 1)
+                    alert("修改时请不要选择多条记录。");
+                else {
+                    var alpha_param = $("#param_se").val();
+                    var params_t = $("#param_se").find('option:selected').text();
+
+                    var params_t_list = params_t.split(":");
+                    var txt_param = params_t_list[0].trim();
+                    var v_param = params_t_list[1].trim();
+
+                    $("#params").empty();
+                    $("#params").append(
+                        '<div class="form-group">' +
+                        '<label class="col-md-2 control-label"><span style="color:red; "></span>参数名称</label>' +
+                        '<div class="col-md-10">' +
+                        '<input id="param_name" type="text" name="param_name" value="' + txt_param + '" class="form-control" placeholder="">' +
+                        '<div class="form-control-focus"></div>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label class="col-md-2 control-label"><span style="color:red; "></span>变量设置</label>' +
+                        '<div class="col-md-10">' +
+                        '<input id="variable_name" type="text" name="variable_name" value="' + alpha_param + '" class="form-control" placeholder="">' +
+                        '<div class="form-control-focus"></div>' +
+                        '</div>' +
+                        '</div>' +
+                        '<div class="form-group">' +
+                        '<label class="col-md-2 control-label"><span style="color:red; "></span>参数值</label>' +
+                        '<div class="col-md-10">' +
+                        '<input id="param_value" type="text" name="param_value" value="' + v_param + '" class="form-control" placeholder="">' +
+                        '<div class="form-control-focus"></div>' +
+                        '</div>' +
+                        '</div>'
+                    );
+                    $("button#param_edit").click();
+                }
+            }
+
+        }
+        if ($(e.target).text() == "删除") {
+            $('#param_operate').val('delete');
+            if ($("#param_se").find('option:selected').length == 0)
+                alert("请选择要删除的参数。");
+            else {
+                if (confirm("确定要删除该参数吗？")) {
+                    $("#param_se").find('option:selected').remove();
+                    insertParams();
+                }
+            }
+        }
+    }
+});
+
+
+
+$('#params_save').click(function () {
+    var param_operate = $('#param_operate').val();
+    var param_name = $('#param_name').val();
+    var variable_name = $('#variable_name').val();
+    var param_value = $('#param_value').val();
+
+
+    if (param_operate == "new") {
+        $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
+    }
+    if (param_operate == "edit") {
+        // 指定value的option修改text
+        $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
+    }
+    $("#static01").modal("hide");
+    insertParams();
+});
+
+function insertParams() {
+    // 修改数据 $('#param_se option')都写入$("#params")
+    var params_list = [];
+
+    // 构造参数Map>> Array (动态参数)
+    $('#param_se option').each(function () {
+        // 构造单个参数信息
+        var txt_param_list = $(this).text().split(":");
+        var val_param = $(this).prop("value");
+        var param_dict = {
+            "param_name": txt_param_list[0],
+            "variable_name": val_param,
+            "param_value": txt_param_list[1]
+        };
+        params_list.push(param_dict)
+    });
+    $("#insert_params").val(JSON.stringify(params_list));
+}
