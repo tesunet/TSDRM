@@ -2496,12 +2496,43 @@ def get_script_tree(parent, select_id):
 def script(request, funid):
     errors = []
     select_id = ""  # 当前修改的节点
+
     # 接口信息与节点信息隐藏设置
     interface_hidden = "hidden"
     node_hidden = "hidden"
     right_info_hidden = "hidden"
 
+    # 初始化信息
+    id = ""
+    code = ""
+    name = ""
+    host_id = ""
+    script_text = ""
+    success_text = ""
+    log_address = ""
+    interface_type = ""
+    origin = ""
+    commv_interface = ""
+    pid = ""
+    my_type = ""
+    remark = ""
+    node_remark = ""
+    node_name = ""
+    pname = ""
+    node_pname = ""
+
+    # 接口 脚本 隐藏设置
+    interface_divs = {
+        "host_id_div": "hidden",
+        "script_text_div": "hidden",
+        "success_text_div": "hidden",
+        "log_address_div": "hidden",
+        "origin_div": "hidden",
+        "commv_interface_div": "hidden",
+    }
     if request.method == 'POST':
+        right_info_hidden = ""
+
         id = request.POST.get('id', '')
         code = request.POST.get('code', '')
         name = request.POST.get('name', '')
@@ -2521,18 +2552,22 @@ def script(request, funid):
         pid = request.POST.get('pid', '')
         my_type = request.POST.get('my_type', '')
         remark = request.POST.get('remark', '')
+        pname = request.POST.get('pname')
+        pname = request.POST.get('pname')
 
         # 节点
         node_remark = request.POST.get('node_remark', '')
-        node_name = request.POST.get('node_name', '')
+        node_pname = request.POST.get('node_pname', '')
 
         # 节点存储方法
         def node_save(save_data):
-            result = {}
+            status = True
+            error = ""
             # 删除ID
             copy_save_data = copy.deepcopy(save_data)
             copy_save_data.pop("id")
             if save_data["id"] == 0:
+                select_id = save_data["pnode_id"]
                 # 排序
                 sort = 1
                 try:
@@ -2544,28 +2579,34 @@ def script(request, funid):
                 copy_save_data["sort"] = sort
                 try:
                     scriptsave = Script.objects.create(**copy_save_data)
-                    result["res"] = "新增成功。"
-                    result["data"] = scriptsave.id
+                    status = True
+                    select_id = scriptsave.id
                 except Exception as e:
                     print(e)
-                    result["res"] = "新增失败。"
+                    status = False
+                    error = "新增接口失败。"
             else:
                 # 修改
+                select_id = save_data["id"]
                 try:
                     Script.objects.filter(id=save_data["id"]).update(**copy_save_data)
-                    result["res"] = "修改成功。"
-                    result["data"] = save_data["id"]
+                    status = True
                 except:
-                    result["res"] = "修改失败。"
+                    status = False
+                    error = "修改接口失败。"
+            return status, error, select_id
 
         # 接口存储方法
         def interface_save(save_data, cur_host_manage=None):
-            result = {}
+            status = True
+            error = ""
 
             if save_data["id"] == 0:
+                select_id = save_data["pnode_id"]
                 allscript = Script.objects.filter(code=save_data["code"]).exclude(state="9").filter(step_id=None)
                 if allscript.exists():
-                    result["res"] = '脚本编码:' + save_data["code"] + '已存在。'
+                    status = False
+                    error = '脚本编码:' + save_data["code"] + '已存在。'
                 else:
                     scriptsave = Script()
                     scriptsave.code = save_data["code"]
@@ -2605,14 +2646,16 @@ def script(request, funid):
                     scriptsave.sort = sort
 
                     scriptsave.save()
-                    result["res"] = "新增成功。"
-                    result["data"] = scriptsave.id
+                    select_id = scriptsave.id
+                    status = True
             else:
                 # 修改
+                select_id = id
                 allscript = Script.objects.filter(code=save_data["code"]).exclude(id=save_data["id"]).exclude(
                     state="9").filter(step_id=None)
                 if allscript.exists():
-                    result["res"] = '脚本编码:' + save_data["code"] + '已存在。'
+                    error = '脚本编码:' + save_data["code"] + '已存在。'
+                    status = False
                 else:
                     try:
                         scriptsave = Script.objects.get(id=save_data["id"])
@@ -2622,7 +2665,7 @@ def script(request, funid):
                         scriptsave.remark = save_data["remark"]
 
                         # 判断是否commvault/脚本
-                        if save_data["interface_type"] == "commvault":
+                        if save_data["interface_type"] == "Commvault":
                             scriptsave.hosts_manage_id = None
                             scriptsave.script_text = ""
                             scriptsave.succeedtext = ""
@@ -2642,13 +2685,18 @@ def script(request, funid):
                         scriptsave.interface_type = save_data["interface_type"]
 
                         scriptsave.save()
-                        result["res"] = "修改成功。"
-                        result["data"] = scriptsave.id
+                        status = True
                     except Exception as e:
                         print("scriptsave edit error:%s" % e)
-                        result["res"] = "修改失败。"
+                        status = False
+                        error = "修改失败。"
 
-            return result
+            return status, error, select_id
+
+        try:
+            host_id = int(host_id)
+        except:
+            pass
 
         try:
             id = int(id)
@@ -2658,6 +2706,8 @@ def script(request, funid):
         else:
             # NODE/INTERFACE
             if my_type == "NODE":
+                node_hidden = ""
+
                 save_data = {
                     "id": id,
                     "code": "",
@@ -2673,8 +2723,10 @@ def script(request, funid):
                     "pnode_id": pid,
                     "type": my_type,
                 }
-                result = node_save(save_data)
+                status, error, select_id = node_save(save_data)
             else:
+                interface_hidden = ""
+
                 save_data = {
                     "id": id,
                     "code": code,
@@ -2701,14 +2753,32 @@ def script(request, funid):
                             errors.append('接口类型未选择。')
                         else:
                             if interface_type == "Commvault":
-                                if origin.strip() == "":
+                                interface_divs = {
+                                    "host_id_div": "hidden",
+                                    "script_text_div": "hidden",
+                                    "success_text_div": "hidden",
+                                    "log_address_div": "hidden",
+                                    "origin_div": "",
+                                    "commv_interface_div": "",
+                                }
+                                try:
+                                    origin = int(origin)
+                                except:
                                     errors.append('commvault源端未选择。')
                                 else:
                                     if commv_interface.strip() == "":
                                         errors.append('commvault接口未选择。')
                                     else:
-                                        result = interface_save(save_data, cur_host_manage=None)
+                                        status, error, select_id = interface_save(save_data, cur_host_manage=None)
                             else:
+                                interface_divs = {
+                                    "host_id_div": "",
+                                    "script_text_div": "",
+                                    "success_text_div": "",
+                                    "log_address_div": "",
+                                    "origin_div": "hidden",
+                                    "commv_interface_div": "hidden",
+                                }
                                 try:
                                     host_id = int(host_id)
                                 except ValueError as e:
@@ -2727,10 +2797,11 @@ def script(request, funid):
                                                 print(e)
                                                 errors.append('所选主机不存在。')
                                             else:
-                                                result = interface_save(save_data, cur_host_manage=cur_host_manage)
+                                                status, error, select_id = interface_save(save_data,
+                                                                                          cur_host_manage=cur_host_manage)
 
     tree_data = []
-    root_nodes = Script.objects.order_by("sort").exclude(state="9").filter(pnode=None, type="NODE")
+    root_nodes = Script.objects.order_by("sort").exclude(state="9").filter(pnode=None).filter(type="NODE")
 
     for root_node in root_nodes:
         root = dict()
@@ -2741,7 +2812,13 @@ def script(request, funid):
             "remark": root_node.remark,
             "pname": "无"
         }
-
+        try:
+            if int(select_id) == root_node.id:
+                root["state"] = {"opened": True, "selected": True}
+            else:
+                root["state"] = {"opened": True}
+        except:
+            root["state"] = {"opened": True}
         root["children"] = get_script_tree(root_node, select_id)
         tree_data.append(root)
     tree_data = json.dumps(tree_data, ensure_ascii=False)
@@ -2751,11 +2828,70 @@ def script(request, funid):
     # commvault源端客户端
     all_origins = Origin.objects.exclude(state="9").order_by("utils__name")
 
+    # 表单信息: 将提交上来的参数渲染到页面上
+    # 接口类型
+    interface_type_list = []
+    for x in ["Commvault", "Linux", "Windows"]:
+        selected = ""
+        if interface_type == x:
+            selected = "selected"
+        interface_type_list.append({
+            "value": x,
+            "selected": selected
+        })
+    # 源客户端
+    origin_list = []
+    for o in all_origins:
+        selected = ""
+        if o.id == origin:
+            selected = "selected"
+        origin_list.append({
+            "origin_id": o.id,
+            "origin_name": o.client_name,
+            "utils_name": o.utils.name if o.utils else "",
+            "selected": selected
+        })
+
+    # 选择主机
+    host_list = []
+    for h in all_hosts_manage:
+        selected = ""
+        if h.id == host_id:
+            selected = "selected"
+        host_list.append({
+            "host_id": h.id,
+            "host_name": h.host_name,
+            "selected": selected,
+        })
+
+    table = {
+        "interface_hidden": interface_hidden,
+        "node_hidden": node_hidden,
+        "right_info_hidden": right_info_hidden,
+        "id": id,
+        "code": code,
+        "name": name,
+        "script_text": script_text,
+        "success_text": success_text,
+        "log_address": log_address,
+        "interface_type": interface_type,
+        "origin": origin,
+        "commv_interface": commv_interface,
+        "pid": pid,
+        "my_type": my_type,
+        "remark": remark,
+        "node_remark": node_remark,
+        "node_name": node_name,
+        "pname": pname,
+        "node_pname": node_pname,
+        "interface_type_list": interface_type_list,
+        "origin_list": origin_list,
+        "host_list": host_list,
+        "interface_divs": interface_divs,
+    }
     return render(request, 'script.html', {
         'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-        "errors": errors, "all_hosts_manage": all_hosts_manage, "all_origins": all_origins,
-        "tree_data": tree_data, "interface_hidden": interface_hidden, "node_hidden": node_hidden,
-        "right_info_hidden": right_info_hidden
+        "errors": errors, "all_hosts_manage": all_hosts_manage, "tree_data": tree_data, "table": table,
     })
 
 
@@ -2810,7 +2946,7 @@ def scriptdata(request):
 @login_required
 def scriptdel(request):
     """
-    当删除脚本管理中的脚本的同时，需要删除预案中绑定的脚本；
+    当删除脚本管理中的脚本的同时
     :param request:
     :return:
     """
@@ -2819,16 +2955,10 @@ def scriptdel(request):
         try:
             id = int(id)
         except:
-            raise Http404()
+            return HttpResponse(0)
         script = Script.objects.get(id=id)
         script.state = "9"
         script.save()
-
-        script_code = script.code
-        related_scripts = Script.objects.filter(code=script_code)
-        for related_script in related_scripts:
-            related_script.state = "9"
-            related_script.save()
 
         return HttpResponse(1)
     else:
@@ -2869,7 +2999,7 @@ def scriptsave(request):
                     scriptsave.name = save_data["name"]
 
                     # 判断是否commvault/脚本
-                    if save_data["interface_type"] == "commvault":
+                    if save_data["interface_type"] == "Commvault":
                         scriptsave.hosts_manage_id = None
                         scriptsave.script_text = ""
                         scriptsave.succeedtext = ""
@@ -2903,7 +3033,7 @@ def scriptsave(request):
                         scriptsave.name = save_data["name"]
 
                         # 判断是否commvault/脚本
-                        if save_data["interface_type"] == "commvault":
+                        if save_data["interface_type"] == "Commvault":
                             scriptsave.hosts_manage_id = None
                             scriptsave.script_text = ""
                             scriptsave.succeedtext = ""
@@ -2991,6 +3121,74 @@ def scriptsave(request):
 
 
 @login_required
+def script_move(request):
+    id = request.POST.get('id', '')
+    parent = request.POST.get('parent', '')
+    old_parent = request.POST.get('old_parent', '')
+    position = request.POST.get('position', '')
+    old_position = request.POST.get('old_position', '')
+    try:
+        id = int(id)  # 节点 id
+        parent = int(parent)  # 目标位置父节点 pnode_id
+        position = int(position)  # 目标位置
+        old_parent = int(old_parent)  # 起点位置父节点 pnode_id
+        old_position = int(old_position)  # 起点位置
+    except:
+        return HttpResponse("0")
+    # sort = position + 1 sort从1开始
+
+    # 起始节点下方 所有节点  sort -= 1
+    old_script_parent = Script.objects.get(id=old_parent)
+    old_sort = old_position + 1
+    old_scripts = Script.objects.exclude(state="9").filter(pnode=old_script_parent).filter(sort__gt=old_sort)
+
+    # 目标节点下方(包括该节点) 所有节点 sort += 1
+    script_parent = Script.objects.get(id=parent)
+    sort = position + 1
+    scripts = Script.objects.exclude(state=9).exclude(id=id).filter(pnode=script_parent).filter(sort__gte=sort)
+
+    my_script = Script.objects.get(id=id)
+
+    # 判断目标父节点是否为接口，若为接口无法挪动
+    if script_parent.type == "INTERFACE":
+        return HttpResponse("接口")
+    else:
+        # 目标父节点下所有节点 除了自身 接口名称都不得相同 否则重名
+        script_same = Script.objects.exclude(state="9").exclude(id=id).filter(pnode=script_parent).filter(
+            name=my_script.name)
+
+        if script_same:
+            return HttpResponse("重名")
+        else:
+            for old_script in old_scripts:
+                try:
+                    old_script.sort -= 1
+                    old_script.save()
+                except:
+                    pass
+            for script in scripts:
+                try:
+                    script.sort += 1
+                    script.save()
+                except:
+                    pass
+
+            # 该节点位置变动
+            try:
+                my_script.pnode = script_parent
+                my_script.sort = sort
+                my_script.save()
+            except:
+                pass
+
+            # 起始 结束 点不在同一节点下 写入父节点名称与ID ?
+            if parent != old_parent:
+                return HttpResponse(script_parent.name + "^" + str(script_parent.id))
+            else:
+                return HttpResponse("0")
+
+
+@login_required
 def processscriptsave(request):
     if 'id' in request.POST:
         result = {}
@@ -3030,7 +3228,7 @@ def processscriptsave(request):
                         scriptsave.sort = save_data["script_sort"]
 
                         # 判断是否commvault/脚本
-                        if save_data["interface_type"] == "commvault":
+                        if save_data["interface_type"] == "Commvault":
                             scriptsave.hosts_manage_id = None
                             scriptsave.script_text = ""
                             scriptsave.succeedtext = ""

@@ -12,7 +12,7 @@ $('#tree_2').jstree({
             "icon": "fa fa-folder-open icon-state-warning icon-lg"
         },
         "INTERFACE": {
-            "icon": "fa fa-link icon-state-warning icon-lg"
+            "icon": "fa fa-file-code-o icon-state-warning icon-lg"
         }
     },
     "contextmenu": {
@@ -80,12 +80,12 @@ $('#tree_2').jstree({
                     var inst = jQuery.jstree.reference(data.reference),
                         obj = inst.get_node(data.reference);
                     if (obj.children.length > 0)
-                        alert("组织下还有其他组织或用户，无法删除。");
+                        alert("节点下还有其他节点或者接口，无法删除。");
                     else {
                         if (confirm("确定要删除？删除后不可恢复。")) {
                             $.ajax({
                                 type: "POST",
-                                url: "../orgdel/",
+                                url: "../scriptdel/",
                                 data:
                                     {
                                         id: obj.id,
@@ -122,7 +122,7 @@ $('#tree_2').jstree({
             } else {
                 $.ajax({
                     type: "POST",
-                    url: "../orgmove/",
+                    url: "../script_move/",
                     data:
                         {
                             id: data.node.id,
@@ -136,8 +136,8 @@ $('#tree_2').jstree({
                             alert("目标组织下存在重名。");
                             location.reload()
                         } else {
-                            if (data == "类型") {
-                                alert("不能移动至用户下。");
+                            if (data == "接口") {
+                                alert("不能移动至接口下。");
                                 location.reload()
                             } else {
                                 if (data != "0") {
@@ -145,10 +145,8 @@ $('#tree_2').jstree({
                                         var res = data.split('^')
                                         $("#pid").val(res[1])
                                         $("#pname").val(res[0])
-                                        $("#orgpname").val(res[0])
+                                        $("#node_pname").val(res[0])
                                     }
-
-
                                 }
                             }
                         }

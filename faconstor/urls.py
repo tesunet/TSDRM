@@ -51,6 +51,7 @@ urlpatterns = [
     url(r'^scriptdata/$', scriptdata),
     url(r'^scriptdel/$', scriptdel),
     url(r'^scriptsave/$', scriptsave),
+    url(r'^script_move/$', script_move),
 
     url(r'^processconfig/$', processconfig, {'funid': '31'}),
     url(r'^processscriptsave/$', processscriptsave),
