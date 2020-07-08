@@ -17,6 +17,7 @@ from .CVApi import *
 import logging
 from .api import SQLApi
 import uuid
+import re
 logger = logging.getLogger('tasks')
 
 
@@ -132,6 +133,62 @@ def exec_script(steprunid, username, fullname):
                     myprocesstask.save()
 
 
+def content_load_params(script):
+    """
+    脚本中传入参数
+    :return:
+    """
+    params = eval(script.params)
+    script_text = script.script_text
+    # 匹配出参数，替换
+    def get_variable_name(content, param_type):
+        variable_list = []
+        variable_list_with_symbol = []
+        com = ""
+        com_with_symbol = ""
+        if param_type == "HOST":
+            com = re.compile("\(\((.*?)\)\)")
+            com_with_symbol = re.compile("(\(\(.*?\)\))")
+        if param_type == "PROCESS":
+            com = re.compile("\{\{(.*?)\}\}")
+            com_with_symbol = re.compile("(\{\{.*?\}\})")
+        if param_type == "SCRIPT":
+            com = re.compile("\[\[(.*?)\]\]")
+            com_with_symbol = re.compile("(\[\[.*?\]\])")
+        if com:
+            variable_list = com.findall(content)
+        if com_with_symbol:
+            variable_list_with_symbol = com_with_symbol.findall(content)
+        return variable_list, variable_list_with_symbol
+
+    def get_value_from_params(variable_name, params):
+        param_value = ""
+        for param in params:
+            if variable_name.strip() == param["variable_name"]:
+                param_value = param["param_value"]
+                break
+        return param_value
+
+    # 流程参数参数 注意空格
+    process_variable_list, process_variable_list_with_symbol = get_variable_name(script_text, "PROCESS")
+    for n, pv in enumerate(process_variable_list):
+        param_value = get_value_from_params(pv, params)
+        script_text = script_text.replace(process_variable_list_with_symbol[n], param_value)
+
+    # 主机参数
+    host_variable_list, host_variable_list_with_symbol = get_variable_name(script_text, "HOST")
+    for n, hv in enumerate(host_variable_list):
+        param_value = get_value_from_params(hv, params)
+        script_text = script_text.replace(host_variable_list_with_symbol[n], param_value)
+    # 脚本参数
+    script_variable_list, script_variable_list_with_symbol = get_variable_name(script_text, "SCRIPT")
+    for n, sv in enumerate(script_variable_list):
+        param_value = get_value_from_params(sv, params)
+        script_text = script_text.replace(script_variable_list_with_symbol[n], param_value)
+
+    return script_text
+
+
 @shared_task
 def force_exec_script(processrunid):
     try:
@@ -181,8 +238,10 @@ def force_exec_script(processrunid):
                         local_file = script_path + os.sep + "{0}_local_script.sh".format(processrun.process.name)
 
                         try:
+                            # 处理脚本内容
+                            script_text = content_load_params(script.script)
                             with open(local_file, "w") as f:
-                                f.write(script.script.script_text)
+                                f.write(script_text)
                         except FileNotFoundError as e:
                             script.runlog = "Linux脚本写入本地失败。"  # 写入错误类型
                             script.explain = "Linux脚本写入本地失败：{0}。".format(e)
@@ -270,7 +329,11 @@ def force_exec_script(processrunid):
 
                         windows_temp_script_name = "tmp_script_{scriptrun_id}.bat".format(**{"scriptrun_id": script.id})
                         windows_temp_script_file = windows_temp_script_path + r"\\" + windows_temp_script_name
-                        para_list = script.script.script_text.split("\n")
+
+                        # 处理脚本内容
+                        script_text = content_load_params(script.script)
+
+                        para_list = script_text.split("\n")
                         for num, content in enumerate(para_list):
                             tmp_cmd = ""
                             if num == 0:
@@ -407,7 +470,7 @@ def runstep(steprun, if_repeat=False):
 
                 origin = script.script.origin
 
-                if script.script.interface_type == "脚本":
+                if script.script.interface_type in ["Linux", "Windows"]:
                     # HostsManage
                     cur_host_manage = script.script.hosts_manage
                     ip = cur_host_manage.host_ip
@@ -446,7 +509,9 @@ def runstep(steprun, if_repeat=False):
 
                         try:
                             with open(local_file, "w") as f:
-                                f.write(script.script.script_text)
+                                # 处理脚本内容
+                                script_text = content_load_params(script.script)
+                                f.write(script_text)
                         except FileNotFoundError as e:
                             script.runlog = "Linux脚本写入本地失败。"  # 写入错误类型
                             script.explain = "Linux脚本写入本地失败：{0}。".format(e)
@@ -537,7 +602,8 @@ def runstep(steprun, if_repeat=False):
 
                         windows_temp_script_name = "tmp_script_{scriptrun_id}.bat".format(**{"scriptrun_id": script.id})
                         windows_temp_script_file = windows_temp_script_path + r"\\" + windows_temp_script_name
-                        para_list = script.script.script_text.split("\n")
+                        script_text = content_load_params(script.script)
+                        para_list = script_text.split("\n")
                         for num, content in enumerate(para_list):
                             tmp_cmd = ""
                             if num == 0:

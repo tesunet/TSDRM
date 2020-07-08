@@ -3767,7 +3767,7 @@ def display_params(request):
             host_variable_list = get_variable_name(script_text, "HOST")
             for hv in host_variable_list:
                 for hp in host_param_list:
-                    if hv == hp["variable_name"]:
+                    if hv.strip() == hp["variable_name"]:
                         data.append({
                             "param_name": hp["param_name"],
                             "variable_name": hp["variable_name"],
@@ -3786,7 +3786,7 @@ def display_params(request):
                 process_variable_list = get_variable_name(script_text, "PROCESS")
                 for pv in process_variable_list:
                     for pp in process_param_list:
-                        if pv == pp["variable_name"]:
+                        if pv.strip() == pp["variable_name"]:
                             data.append({
                                 "param_name": pp["param_name"],
                                 "variable_name": pp["variable_name"],
@@ -3800,7 +3800,7 @@ def display_params(request):
             script_variable_list = get_variable_name(script_text, "SCRIPT")
             for sv in script_variable_list:
                 for sp in script_param_list:
-                    if sv == sp["variable_name"]:
+                    if sv.strip() == sp["variable_name"]:
                         data.append({
                             "param_name": sp["param_name"],
                             "variable_name": sp["variable_name"],
