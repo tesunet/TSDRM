@@ -107,6 +107,7 @@ class Script(models.Model):
     pnode = models.ForeignKey('self', null=True, related_name='children', verbose_name='父节点')
     type = models.CharField("类型", blank=True, null=True, max_length=20)
     remark = models.TextField("节点说明", null=True, default="")
+    params = models.TextField("脚本内容参数", null=True, default="")
 
 
 class Walkthrough(models.Model):

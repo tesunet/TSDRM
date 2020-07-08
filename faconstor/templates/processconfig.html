@@ -184,12 +184,12 @@
                                     <div class="input-group">
                                         <div class="input-group-control">
                                             <input id="scriptcode" type="text" name="scriptcode" class="form-control "
-                                                   placeholder="">
+                                                   placeholder="" readonly>
                                             <div class="form-control-focus"></div>
                                         </div>
                                         <span class="input-group-btn btn-right">
                                             <button class="btn green-haze dropdown-toggle" tabindex="-1"
-                                                    data-toggle="modal" data-target="#static1">选择</button>
+                                                    data-toggle="modal" data-target="#static03">选择</button>
                                         </span>
                                     </div>
                                 </div>
@@ -198,24 +198,14 @@
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口名称</label>
                                 <div class="col-md-10">
                                     <input id="script_name" type="text" name="script_name" class="form-control "
-                                           placeholder="">
+                                           placeholder="" readonly>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
-                            <div class="form-group ">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>排序</label>
-                                <div class="col-md-10">
-                                    <input id="script_sort" type="number" name="script_sort" class="form-control "
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
-
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口类型</label>
                                 <div class="col-md-10">
-                                    <select class="form-control" id="interface_type" name="interface_type">
+                                    <select class="form-control" id="interface_type" name="interface_type" disabled>
                                         <option value="Commvault">Commvault</option>
                                         <option value="Linux">Linux</option>
                                         <option value="Windows">Windows</option>
@@ -226,7 +216,7 @@
                             <div class="form-group" id="host_id_div" hidden>
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择主机</label>
                                 <div class="col-md-10">
-                                    <select class="form-control" id="host_id" name="host_id" hidden>
+                                    <select class="form-control" id="host_id" name="host_id" disabled>
                                         {% for host in all_hosts_manage %}
                                             <option value="{{ host.id }}">{{ host.host_name }}</option>
                                         {% endfor %}
@@ -237,9 +227,11 @@
                             <div class="form-group" id="origin_div" hidden>
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
                                 <div class="col-md-10">
-                                    <select class="form-control" id="origin" name="origin">
+                                    <select class="form-control" id="origin" name="origin" disabled>
                                         {% for origin in all_origins %}
-                                            <option value="{{ origin.id }}">{{ origin.client_name }} （{{ origin.utils.name }}）</option>
+                                            <option value="{{ origin.id }}">{{ origin.client_name }}
+                                                （{{ origin.utils.name }}）
+                                            </option>
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>
@@ -249,15 +241,18 @@
                                 <label class="col-md-2 control-label"><span
                                         style="color:red; ">*</span>commvault接口</label>
                                 <div class="col-md-10">
-                                    <input type="text" class="form-control" id="commv_interface" name="commv_interface">
+                                    <input type="text" class="form-control" id="commv_interface" name="commv_interface"
+                                           readonly>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
                             <div class="form-group" id="script_text_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>脚本内容</label>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>脚本内容
+                                    <i title="{% verbatim %}流程参数: {{}} 脚本参数: [[]] 主机参数: (()) {% endverbatim %}"
+                                       class="fa fa-question-circle"></i></label>
                                 <div class="col-md-10">
                                     <textarea name="script_text" id="script_text" class="form-control"
-                                              rows="8"></textarea>
+                                              rows="8" disabled></textarea>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
@@ -266,7 +261,7 @@
                                         style="color:red; "></span>SUCCESSTEXT</label>
                                 <div class="col-md-10">
                                     <input id="success_text" type="text" name="success_text" class="form-control"
-                                           placeholder="">
+                                           placeholder="" readonly>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
@@ -274,8 +269,56 @@
                                 <label class="col-md-2 control-label"><span style="color:red; "></span>日志地址</label>
                                 <div class="col-md-10">
                                     <input id="log_address" type="text" name="log_address" class="form-control"
-                                           placeholder="">
+                                           placeholder="" readonly>
                                     <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="process_div" hidden>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="col-md-2 control-label" for="form_control_1"
+                                           style="vertical-align: inherit;font-weight:bold;color: #2ab4c0">流程参数
+                                    </label>
+                                    <div class="col-md-10">
+                                        <hr style="border-color:#2ab4c0;">
+                                    </div>
+                                </div>
+                                <div id="process_param_div">
+                                    <div class="row col-md-2"></div>
+                                    <div class="row col-md-10">
+                                        <!-- ajax -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="script_div" hidden>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="col-md-2 control-label" for="form_control_1"
+                                           style="vertical-align: inherit;font-weight:bold;color: #2ab4c0">脚本参数
+                                    </label>
+                                    <div class="col-md-10">
+                                        <hr style="border-color: #2ab4c0;">
+                                    </div>
+                                </div>
+                                <div id="script_param_div">
+                                    <div class="row col-md-2"></div>
+                                    <div class="row col-md-10">
+                                        <!-- ajax -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="host_div" hidden>
+                                <div class="form-group" style="margin-bottom:0;">
+                                    <label class="col-md-2 control-label" for="form_control_1"
+                                           style="vertical-align: inherit;font-weight:bold;color: #2ab4c0">主机参数
+                                    </label>
+                                    <div class="col-md-10">
+                                        <hr style="border-color: #2ab4c0;">
+                                    </div>
+                                </div>
+                                <div id="host_param_div">
+                                    <div class="row col-md-2"></div>
+                                    <div class="row col-md-10">
+                                        <!-- ajax -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -293,15 +336,15 @@
         </div>
     </div>
 
-    <div id="static1" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div id="static03" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                        <h4 class="modal-title">选择接口</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">选择接口</h4>
                 </div>
                 <div style="height:400px;overflow:auto; ">
-                    <div id="script_tree" class="col-md-4 tree-demo"> </div>
+                    <div id="script_tree" class="col-md-4 tree-demo"></div>
 
                     <p>
                     <p>

@@ -108,7 +108,8 @@
 
                                     <div class="form-group" id="script_text_div" {{ table.interface_divs.script_text_div }}>
                                         <label class="col-md-2 control-label"><span
-                                                style="color:red; ">*</span>脚本内容</label>
+                                                style="color:red; ">*</span>脚本内容
+                                                <i title="{% verbatim %}流程参数: {{}} 脚本参数: [[]] 主机参数: (()) {% endverbatim %}" class="fa fa-question-circle"></i></label>
                                         <div class="col-md-10">
                                     <textarea name="script_text" id="script_text" class="form-control"
                                               rows="8">{{ table.script_text }}</textarea>
@@ -117,7 +118,7 @@
                                         </div>
                                     </div>
                                 <div class="form-group ">
-                                    <label class="col-md-2 control-label">接口参数</label>
+                                    <label class="col-md-2 control-label">脚本参数</label>
                                     <div class="col-md-10">
                                         <div id="context-menu2">
                                             <ul class="dropdown-menu" role="menu">

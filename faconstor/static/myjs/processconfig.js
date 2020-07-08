@@ -1,4 +1,4 @@
-function displayScriptTree(){
+function displayScriptTree() {
     $('#script_tree').data('jstree', false).empty();
     $('#script_tree').jstree({
         'plugins': ["checkbox", "types"],
@@ -9,7 +9,7 @@ function displayScriptTree(){
             'data': treeData,
             'multiple': false,  // 单选
         },
-    
+
         "types": {
             "NODE": {
                 "icon": "fa fa-folder icon-state-warning icon-lg"
@@ -25,64 +25,163 @@ function displayScriptTree(){
     });
 }
 
+function displayParams() {
+    /*
+        参数： script_id, process_id
+        响应： 
+            根据 脚本内容中 参数符号 从 主机参数、流程参数、脚本参数 匹配出 参数名称、变量、值、类别
+    */
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: "../display_params/",
+        data: {
+            process_id: $('#process').val(),
+            script_id: $('#scriptid').val()
+        },
+        success: function (data) {
+            $('#process_param_div').children().eq(1).empty();
+            $('#script_param_div').children().eq(1).empty();
+            $('#host_param_div').children().eq(1).empty();
+            var process_div_hidden = true,
+                script_div_hidden = true,
+                host_div_hidden = true;
+            for (var i = 0; i < data.data.length; i++) {
+                var params = data.data[i];
+                if (params["type"] == "PROCESS") {
+                    $('#process_param_div').children().eq(1).append('<div class="form-group">\n' +
+                        '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
+                        '    <div class="col-md-10">\n' +
+                        '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
+                        '               value="' + params.param_value + '"\n' +
+                        '               >\n' +
+                        '        <div class="form-control-focus"></div>\n' +
+                        '\n' +
+                        '    </div>\n' +
+                        '</div>');
+                    process_div_hidden = false;
+                }
+                if (params["type"] == "SCRIPT") {
+                    $('#script_param_div').children().eq(1).append('<div class="form-group">\n' +
+                        '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
+                        '    <div class="col-md-10">\n' +
+                        '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
+                        '               value="' + params.param_value + '"\n' +
+                        '               >\n' +
+                        '        <div class="form-control-focus"></div>\n' +
+                        '\n' +
+                        '    </div>\n' +
+                        '</div>');
+                    script_div_hidden = false;
+                }
+                if (params["type"] == "HOST") {
+                    $('#host_param_div').children().eq(1).append('<div class="form-group">\n' +
+                        '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
+                        '    <div class="col-md-10">\n' +
+                        '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
+                        '               value="' + params.param_value + '"\n' +
+                        '               >\n' +
+                        '        <div class="form-control-focus"></div>\n' +
+                        '\n' +
+                        '    </div>\n' +
+                        '</div>');
+                    host_div_hidden = false;
+                }
+            }
+            if (process_div_hidden) {
+                $('#process_div').hide();
+            } else {
+                $('#process_div').show();
+            }
+            if (script_div_hidden) {
+                $('#script_div').hide();
+            } else {
+                $('#script_div').show();
+            }
+            if (host_div_hidden) {
+                $('#host_div').hide();
+            } else {
+                $('#host_div').show();
+            }
+        }
+    })
+}
+
+
 $("#load_script").click(function () {
     var script_tree = $('#script_tree').jstree(true).get_selected(true);
-    var data = script_tree[0].data;
-    /*
-    data:
-        code: "5-5"
-        commv_interface: null
-        interface_type: "Linux"
-        ip: 4
-        log_address: ""
-        name: "5-5"
-        origin: ""
-        pname: "第一组"
-        remark: ""
-        script_text: ""
-        success_text: "tesunetsucceed"
-        type: "INTERFACE"
-        variable_param_list: []
-    id: "105"
-    parent: "187"
-    parents: (3) ["187", "183", "#"]
-    */
-    // 判断是否为commvault
-    if (data.interface_type == "Commvault") {
-        $("#host_id_div").hide();
-        $("#script_text_div").hide();
-        $("#success_text_div").hide();
-        $("#log_address_div").hide();
-        $("#origin_div").show();
-        $("#commv_interface_div").show();
-    } else {
-        $("#host_id_div").show();
-        $("#script_text_div").show();
-        $("#success_text_div").show();
-        $("#log_address_div").show();
-        $("#origin_div").hide();
-        $("#commv_interface_div").hide();
+    try {
+        if (script_tree[0].type == "INTERFACE") {
+            var data = script_tree[0].data;
+            /*
+            data:
+                code: "5-5"
+                commv_interface: null
+                interface_type: "Linux"
+                ip: 4
+                log_address: ""
+                name: "5-5"
+                origin: ""
+                pname: "第一组"
+                remark: ""
+                script_text: ""
+                success_text: "tesunetsucceed"
+                type: "INTERFACE"
+                variable_param_list: []
+            id: "105"
+            parent: "187"
+            parents: (3) ["187", "183", "#"]
+            */
+            // 判断是否为commvault
+            if (data.interface_type == "Commvault") {
+                $("#host_id_div").hide();
+                $("#script_text_div").hide();
+                $("#success_text_div").hide();
+                $("#log_address_div").hide();
+                $("#origin_div").show();
+                $("#commv_interface_div").show();
+            } else {
+                $("#host_id_div").show();
+                $("#script_text_div").show();
+                $("#success_text_div").show();
+                $("#log_address_div").show();
+                $("#origin_div").hide();
+                $("#commv_interface_div").hide();
+            }
+            $("#scriptid").val(script_tree[0].id);
+            $("#scriptcode").val(data.code);
+            $("#script_name").val(data.name);
+            $("#script_text").val(data.script_text);
+            $("#success_text").val(data.success_text);
+            $("#log_address").val(data.log_address);
+            $("#host_id").val(data.ip);
+
+            // commvault
+            $("#interface_type").val(data.interface_type);
+            $("#origin").val(data.origin);
+            $("#commv_interface").val(data.commv_interface);
+
+            displayParams();
+
+            $("#static03").modal('hide');
+        } else {
+            alert('请选择接口。')
+        }
+    } catch {
+        alert('请选择接口。')
     }
-
-    $("#scriptcode").val(data.code);
-    $("#script_name").val(data.name);
-    $("#script_text").val(data.script_text);
-    $("#success_text").val(data.success_text);
-    $("#log_address").val(data.log_address);
-    $("#host_id").val(data.ip);
-
-    // commvault
-    $("#interface_type").val(data.interface_type);
-    $("#origin").val(data.origin);
-    $("#commv_interface").val(data.commv_interface);
-
-    $("#static1").modal('hide');
 });
 
 // 展示树时取消checked
-$("#static1").on("shown.bs.modal",  function(){
+$("#static03").on("shown.bs.modal", function () {
     displayScriptTree();
 })
+
+function hideParamsDiv() {
+    $('#process_div').hide();
+    $('#script_div').hide();
+    $('#host_div').hide();
+}
 
 var treedata = "";
 
@@ -297,6 +396,8 @@ function customTree() {
                 target: '#context-menu2',
                 onItem: function (context, e) {
                     if ($(e.target).text() == "新增") {
+                        hideParamsDiv();
+
                         $("#scriptid").val("0");
                         $("#scriptcode").val("");
                         $("#script_name").val("");
@@ -318,8 +419,6 @@ function customTree() {
                         $("#origin_div").hide();
                         $("#commv_interface_div").hide();
 
-                        $("#script_sort").val("");
-
                         document.getElementById("edit").click();
                     }
                     if ($(e.target).text() == "修改") {
@@ -329,6 +428,7 @@ function customTree() {
                             if ($("#se_1").find('option:selected').length > 1)
                                 alert("修改时请不要选择多条记录。");
                             else {
+                                hideParamsDiv();
                                 $.ajax({
                                     type: "POST",
                                     url: "../get_script_data/",
@@ -369,8 +469,7 @@ function customTree() {
                                             $("#interface_type").val(data.data.interface_type);
                                             $("#origin").val(data.data.origin);
                                             $("#commv_interface").val(data.data.commv_interface);
-
-                                            $("#script_sort").val(data.data.script_sort);
+                                            displayParams();
                                         } else {
                                             alert(data.info)
                                         }
@@ -396,6 +495,7 @@ function customTree() {
                                     url: "../../remove_script/",
                                     data: {
                                         script_id: $("#se_1").find('option:selected').val(),
+                                        step_id: $("#id").val().replace("demo_node_", ""),
                                     },
                                     success: function (data) {
                                         if (data["status"] == 1) {
@@ -500,11 +600,11 @@ function customTree() {
                 "bProcessing": true,
                 "ajax": "../../scriptdata/",
                 "columns": [
-                    { "data": "id" },
-                    { "data": "code" },
-                    { "data": "name" },
-                    { "data": "interface_type" },
-                    { "data": null }
+                    {"data": "id"},
+                    {"data": "code"},
+                    {"data": "name"},
+                    {"data": "interface_type"},
+                    {"data": null}
                 ],
 
                 "columnDefs": [{
@@ -592,7 +692,7 @@ $('#sample_1 tbody').on('click', 'button#select', function () {
     $("#origin").val(data.origin);
     $("#commv_interface").val(data.commv_interface);
 
-    $('#static1').modal('hide');
+    $('#static03').modal('hide');
 });
 
 $("#process").change(function () {
@@ -604,56 +704,54 @@ $("#process").change(function () {
 
 // 脚本
 $('#scriptsave').click(function () {
+    var config = [];
+    $('#process_div').find('input').each(function () {
+        config.push({
+            param_name: $(this).parent().prev().text(),
+            variable_name: $(this).attr("id"),
+            param_value: $(this).val(),
+            type: "PROCESS"
+        })
+    })
+    $('#script_div').find('input').each(function () {
+        config.push({
+            param_name: $(this).parent().prev().text(),
+            variable_name: $(this).attr("id"),
+            param_value: $(this).val(),
+            type: "SCRIPT"
+        })
+    })
+    $('#host_div').find('input').each(function () {
+        config.push({
+            param_name: $(this).parent().prev().text(),
+            variable_name: $(this).attr("id"),
+            param_value: $(this).val(),
+            type: "HOST"
+        })
+    })
     $.ajax({
         type: "POST",
         dataType: 'json',
         url: "../../processscriptsave/",
         data: {
-            processid: $("#process option:selected").val(),
-            pid: $("#id").val().replace("demo_node_", ""),
-            id: $("#scriptid").val(),
-            code: $("#scriptcode").val(),
-            name: $("#script_name").val(),
-            script_text: $("#script_text").val(),
-            success_text: $("#success_text").val(),
-            log_address: $("#log_address").val(),
-            host_id: $("#host_id").val(),
-
-            // commvault接口
-            interface_type: $("#interface_type").val(),
-            origin: $("#origin").val(),
-            commv_interface: $("#commv_interface").val(),
-
-            script_sort: $("#script_sort").val()
+            step_id: $("#id").val().replace("demo_node_", ""),
+            script_id: $("#scriptid").val(),
+            config: JSON.stringify(config),
         },
         success: function (data) {
-            var myres = data["res"];
-            var mydata = data["data"];
-            alert(myres);
-            if (myres == "新增成功。") {
+            alert(data["info"]);
+            var mydata = eval(data.data);
+            if (data["status"] == 1) {
                 /*
                     加载所有脚本，重新排序
                  */
                 $("#se_1").empty();
                 for (var i = 0; i < mydata.length; i++) {
-                    $("#se_1").append("<option value='" + mydata[i].script_id + "'>" + mydata[i].script_name + "</option>");
+                    $("#se_1").append("<option value='" + mydata[i].id + "'>" + mydata[i].name + "</option>");
                 }
 
                 $('#static01').modal('hide');
                 // 重新构造树，停留当前修改脚本的步骤位置
-                $('#tree_2').jstree("destroy");
-                customTree();
-            }
-            if (myres == "修改成功。") {
-                /*
-                    加载所有脚本，重新排序
-                 */
-                $("#se_1").empty();
-                for (var i = 0; i < mydata.length; i++) {
-                    $("#se_1").append("<option value='" + mydata[i].script_id + "'>" + mydata[i].script_name + "</option>");
-                }
-
-                $('#static01').modal('hide');
                 $('#tree_2').jstree("destroy");
                 customTree();
             }
