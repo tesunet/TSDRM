@@ -8103,12 +8103,12 @@ def get_backup_status(request):
     else:
         _, sqlserver_credit = get_credit_info(utils_manage.content)
         try:
-            # 仅统计源客户端(客户端管理)
-            all_client_manage = Origin.objects.exclude(state="9").values("client_name")
-            tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+            # # 仅统计源客户端(客户端管理)
+            # all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+            # tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
             dm = SQLApi.CVApi(sqlserver_credit)
-            whole_list = dm.get_backup_status(tmp_client_manage)
+            whole_list = dm.get_backup_status()
 
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
@@ -8163,11 +8163,11 @@ def get_backup_content(request):
 
         whole_list = []
         try:
-            all_client_manage = Origin.objects.exclude(state="9").values("client_name")
-            tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+            # all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+            # tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
             dm = SQLApi.CVApi(sqlserver_credit)
-            whole_list = dm.get_backup_content(tmp_client_manage)
+            whole_list = dm.get_backup_content()
 
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
@@ -8218,12 +8218,12 @@ def get_storage_policy(request):
     else:
         _, sqlserver_credit = get_credit_info(utils_manage.content)
         try:
-            all_client_manage = Origin.objects.exclude(state="9").values("client_name")
-            tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+            # all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+            # tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
             dm = SQLApi.CVApi(sqlserver_credit)
 
-            whole_list = dm.get_storage_policy(tmp_client_manage)
+            whole_list = dm.get_storage_policy()
 
             for num, wl in enumerate(whole_list):
                 clientname_rowspan = get_rowspan(whole_list, clientname=wl['clientname'])
@@ -8282,11 +8282,11 @@ def get_schedule_policy(request):
     else:
         _, sqlserver_credit = get_credit_info(utils_manage.content)
         try:
-            all_client_manage = Origin.objects.exclude(state="9").values("client_name")
-            tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
+            # all_client_manage = Origin.objects.exclude(state="9").values("client_name")
+            # tmp_client_manage = [tmp_client["client_name"] for tmp_client in all_client_manage]
 
             dm = SQLApi.CVApi(sqlserver_credit)
-            whole_list = dm.get_schedule_policy(tmp_client_manage)
+            whole_list = dm.get_schedule_policy()
             ordered_whole_list = []
             dm.close()
             for num, wl in enumerate(whole_list):
