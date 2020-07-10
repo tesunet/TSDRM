@@ -4184,7 +4184,7 @@ def falconstorswitch(request, process_id):
         wrapper_step_dict["wrapper_step_group_name"] = wrapper_step_group_name
 
         wrapper_script_list = []
-        all_wrapper_scripts = wrapper_step.script_set.exclude(state="9").order_by("sort")
+        all_wrapper_scripts = wrapper_step.scriptinstance_set.exclude(state="9").order_by("sort")
         for wrapper_script in all_wrapper_scripts:
             wrapper_script_dict = {
                 "wrapper_script_name": wrapper_script.name
@@ -4222,7 +4222,7 @@ def falconstorswitch(request, process_id):
             inner_step_dict["inner_step_group_name"] = inner_step_group_name
 
             inner_script_list = []
-            all_inner_scripts = inner_step.script_set.exclude(state="9").order_by("sort")
+            all_inner_scripts = inner_step.scriptinstance_set.exclude(state="9").order_by("sort")
             for inner_script in all_inner_scripts:
                 inner_script_dict = {
                     "inner_script_name": inner_script.name
@@ -4276,8 +4276,7 @@ def falconstorswitch(request, process_id):
     all_targets = Target.objects.exclude(state="9")
 
     # commvault源客户端
-    all_steps = Step.objects.exclude(state="9").filter(process_id=process_id).prefetch_related(
-        "script_set", "script_set__origin", "script_set__origin__target")
+    all_steps = Step.objects.exclude(state="9").filter(process_id=process_id)
 
     target_id = ""
     origin = ""
@@ -4285,8 +4284,7 @@ def falconstorswitch(request, process_id):
     copy_priority = ""
     db_open = ""
     for cur_step in all_steps:
-        # all_scripts = Script.objects.filter(step_id=cur_step.id).exclude(state="9").select_related("origin")
-        all_scripts = cur_step.script_set.exclude(state="9")
+        all_scripts = cur_step.scriptinstance_set.exclude(state="9")
         for cur_script in all_scripts:
             if cur_script.origin:
                 origin = cur_script.origin
@@ -4952,7 +4950,7 @@ def getchildrensteps(processrun, curstep):
             except:
                 pass
         scripts = []
-        scriptlist = Script.objects.exclude(state="9").filter(step=step).order_by("sort")
+        scriptlist = ScriptInstance.objects.exclude(state="9").filter(step=step).order_by("sort")
         for script in scriptlist:
             runscriptid = 0
             scriptstarttime = ""
@@ -4979,7 +4977,8 @@ def getchildrensteps(processrun, curstep):
                     scriptrunresult = scriptrunlist[0].result
                     scriptexplain = scriptrunlist[0].explain
                     scriptstate = scriptrunlist[0].state
-            scripts.append({"id": script.id, "code": script.code, "name": script.name, "runscriptid": runscriptid,
+
+            scripts.append({"id": script.id, "name": script.name, "runscriptid": runscriptid,
                             "scriptstarttime": scriptstarttime,
                             "scriptendtime": scriptendtime, "scriptoperator": scriptoperator,
                             "scriptrunresult": scriptrunresult, "scriptexplain": scriptexplain,
@@ -5130,7 +5129,7 @@ def getrunsetps(request):
                     except:
                         pass
                 scripts = []
-                scriptlist = Script.objects.exclude(state="9").filter(step=step).order_by("sort")
+                scriptlist = ScriptInstance.objects.exclude(state="9").filter(step=step).order_by("sort")
                 for script in scriptlist:
                     runscriptid = 0
                     scriptstarttime = ""
@@ -5141,6 +5140,8 @@ def getrunsetps(request):
                     scriptrunlog = ""
                     scriptstate = ""
                     if len(steprunlist) > 0:
+                        # scriptrunlist = ScriptRun.objects.exclude(state="9").filter(steprun=steprunlist[0],
+                        #                                                             script=script)
                         scriptrunlist = ScriptRun.objects.exclude(state="9").filter(steprun=steprunlist[0],
                                                                                     script=script)
                         if len(scriptrunlist) > 0:
@@ -5159,7 +5160,7 @@ def getrunsetps(request):
                             scriptexplain = scriptrunlist[0].explain
                             scriptstate = scriptrunlist[0].state
                     scripts.append(
-                        {"id": script.id, "code": script.code, "name": script.name, "runscriptid": runscriptid,
+                        {"id": script.id, "name": script.name, "runscriptid": runscriptid,
                          "scriptstarttime": scriptstarttime,
                          "scriptendtime": scriptendtime, "scriptoperator": scriptoperator,
                          "scriptrunresult": scriptrunresult, "scriptexplain": scriptexplain,
@@ -6274,7 +6275,7 @@ def custom_pdf_report(request):
             "": "",
         }
 
-        current_scripts = Script.objects.exclude(state="9").filter(step_id=pstep.id).order_by("sort")
+        current_scripts = ScriptInstance.objects.exclude(state="9").filter(step_id=pstep.id).order_by("sort")
         script_list_wrapper = []
         if current_scripts:
             for snum, current_script in enumerate(current_scripts):
@@ -6365,7 +6366,7 @@ def custom_pdf_report(request):
                         inner_second_el_dict["operator"] = ""
 
                     # 当前步骤下脚本
-                    current_scripts = Script.objects.exclude(state="9").filter(step_id=step.id).order_by("sort")
+                    current_scripts = ScriptInstance.objects.exclude(state="9").filter(step_id=step.id).order_by("sort")
 
                     script_list_inner = []
                     if current_scripts:

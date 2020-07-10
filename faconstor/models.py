@@ -167,7 +167,7 @@ class StepRun(models.Model):
 
 
 class ScriptRun(models.Model):
-    script = models.ForeignKey(Script, blank=True, null=True)
+    script = models.ForeignKey(ScriptInstance, blank=True, null=True)
     steprun = models.ForeignKey(StepRun, blank=True, null=True)
     starttime = models.DateTimeField("开始时间", blank=True, null=True)
     endtime = models.DateTimeField("结束时间", blank=True, null=True)
