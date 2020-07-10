@@ -135,12 +135,13 @@ def exec_script(steprunid, username, fullname):
                     myprocesstask.save()
 
 
-def content_load_params(script):
+def content_load_params(script_instance):
     """
     脚本中传入参数
     :return:
     """
-    params = eval(script.params)
+    params = eval(script_instance.params)
+    script = script_instance.script
     script_text = script.script_text
     # 匹配出参数，替换
     def get_variable_name(content, param_type):

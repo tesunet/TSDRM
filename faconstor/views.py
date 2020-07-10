@@ -2652,7 +2652,7 @@ def script(request, funid):
             else:
                 # 修改
                 select_id = id
-                allscript = Script.objects.filter(code=save_data["code"]).exclude(id=save_data["id"]).exclude(state="9")
+                allscript = Script.objects.exclude(id=save_data["id"]).filter(code=save_data["code"]).exclude(state="9")
                 if allscript.exists():
                     error = '脚本编码:' + save_data["code"] + '已存在。'
                     status = False
@@ -2707,6 +2707,8 @@ def script(request, funid):
                     "type": my_type,
                 }
                 status, error, select_id = node_save(save_data)
+                if not status:
+                    errors.append(error)
             else:
                 interface_hidden = ""
 
@@ -2750,6 +2752,7 @@ def script(request, funid):
                                     "success_text_div": "hidden",
                                 }
                                 status, error, select_id = interface_save(save_data)
+                                errors.append(error)
                             else:
                                 interface_divs = {
                                     "script_text_div": "",
@@ -2759,6 +2762,8 @@ def script(request, funid):
                                     errors.append('脚本内容不能为空。')
                                 else:
                                     status, error, select_id = interface_save(save_data)
+                                    if not status:
+                                        errors.append(error)
 
     tree_data = []
     root_nodes = Script.objects.order_by("sort").exclude(state="9").filter(pnode=None).filter(type="NODE")
