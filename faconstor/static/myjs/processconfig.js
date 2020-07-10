@@ -44,8 +44,7 @@ function displayParams() {
             $('#script_param_div').children().eq(1).empty();
             $('#host_param_div').children().eq(1).empty();
             var process_div_hidden = true,
-                script_div_hidden = true,
-                host_div_hidden = true;
+                script_div_hidden = true;
             for (var i = 0; i < data.data.length; i++) {
                 var params = data.data[i];
                 if (params["type"] == "PROCESS") {
@@ -98,6 +97,60 @@ function displayParams() {
             } else {
                 $('#script_div').show();
             }
+        }
+    })
+}
+
+// 根据工具加载源客户端
+$("#utils").empty()
+for (var i=0; i<origin_data.length; i++){
+    $("#utils").append('<option value="' + origin_data[i].utils_id + '">' + origin_data[i].utils_name + '</option>');
+    if (i==0){
+        loadOrigins(origin_data[i].utils_id);
+    }
+}
+
+function loadOrigins(utils_id){
+    $('#origin').empty();
+    for (var i=0; i<origin_data.length; i++){
+        if (origin_data[i]["utils_id"] == utils_id){
+            var origins = origin_data[i]["origins"];
+            for (var j=0; j< origins.length; j++){
+                $("#origin").append('<option value="' + origins[j].id + '">' + origins[j].client_name + '</option>')
+            }
+            break;
+        }
+    }
+}
+
+function loadHostsParams(){
+    $.ajax({
+        type: "POST",
+        dataType: "JSON",
+        url: "../load_hosts_params/",
+        data: {
+            host_id: $('#host_id').val(),
+            script_id: $('#scriptid').val(),
+        },
+        success: function(data){
+            $('#host_param_div').children().eq(1).empty();
+            var host_div_hidden = true;
+            for (var i = 0; i < data.data.length; i++) {
+                var params = data.data[i];
+                if (params["type"] == "HOST") {
+                    $('#host_param_div').children().eq(1).append('<div class="form-group">\n' +
+                        '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
+                        '    <div class="col-md-10">\n' +
+                        '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
+                        '               value="' + params.param_value + '"\n' +
+                        '               >\n' +
+                        '        <div class="form-control-focus"></div>\n' +
+                        '\n' +
+                        '    </div>\n' +
+                        '</div>');
+                    host_div_hidden = false;
+                }
+            }
             if (host_div_hidden) {
                 $('#host_div').hide();
             } else {
@@ -107,21 +160,21 @@ function displayParams() {
     })
 }
 
+$('#host_id').change(function(){
+    loadHostsParams();
+})
 
 $("#load_script").click(function () {
     var script_tree = $('#script_tree').jstree(true).get_selected(true);
+    $("#sort_div").show();
     try {
         if (script_tree[0].type == "INTERFACE") {
             var data = script_tree[0].data;
             /*
             data:
                 code: "5-5"
-                commv_interface: null
                 interface_type: "Linux"
-                ip: 4
-                log_address: ""
                 name: "5-5"
-                origin: ""
                 pname: "第一组"
                 remark: ""
                 script_text: ""
@@ -133,6 +186,8 @@ $("#load_script").click(function () {
             parents: (3) ["187", "183", "#"]
             */
             // 判断是否为commvault
+            $('#script_instance_name_div').show();
+            $('#script_instance_remark_div').show();
             if (data.interface_type == "Commvault") {
                 $("#host_id_div").hide();
                 $("#script_text_div").hide();
@@ -140,6 +195,7 @@ $("#load_script").click(function () {
                 $("#log_address_div").hide();
                 $("#origin_div").show();
                 $("#commv_interface_div").show();
+                $('#utils_id_div').show();
             } else {
                 $("#host_id_div").show();
                 $("#script_text_div").show();
@@ -147,27 +203,25 @@ $("#load_script").click(function () {
                 $("#log_address_div").show();
                 $("#origin_div").hide();
                 $("#commv_interface_div").hide();
+                $('#utils_id_div').hide();
             }
             $("#scriptid").val(script_tree[0].id);
             $("#scriptcode").val(data.code);
             $("#script_name").val(data.name);
             $("#script_text").val(data.script_text);
             $("#success_text").val(data.success_text);
-            $("#log_address").val(data.log_address);
-            $("#host_id").val(data.ip);
 
             // commvault
             $("#interface_type").val(data.interface_type);
-            $("#origin").val(data.origin);
-            $("#commv_interface").val(data.commv_interface);
 
             displayParams();
-
+            loadHostsParams();
             $("#static03").modal('hide');
         } else {
             alert('请选择接口。')
         }
-    } catch {
+    } catch(e){
+        console.log(e)
         alert('请选择接口。')
     }
 });
@@ -358,7 +412,6 @@ function customTree() {
                     $("#approval").find("option[value='" + data.node.data.approval + "']").prop("selected", true);
                     $("#skip").find("option[value='" + data.node.data.skip + "']").prop("selected", true);
                     $("#rto_count_in").find("option[value='" + data.node.data.rto_count_in + "']").prop("selected", true);
-
                     if (data.node.data.verify != "first_node") {
                         var scriptInfoList = data.node.data.scripts.split("&");
                         for (var i = 0; i < scriptInfoList.length - 1; i++) {
@@ -397,27 +450,32 @@ function customTree() {
                 onItem: function (context, e) {
                     if ($(e.target).text() == "新增") {
                         hideParamsDiv();
-
+                        $("#script_instance_id").val("0");
                         $("#scriptid").val("0");
                         $("#scriptcode").val("");
                         $("#script_name").val("");
-
                         $("#script_text").val("");
-
                         $("#success_text").val("");
                         $("#log_address").val("");
                         $("#host_id").val("");
-
                         $("#origin").val("");
                         $("#commv_interface").val("");
                         $("#interface_type").val("");
+                        $("#sort").val('');
+                        $('#script_instance_name').val('');
+                        $('#script_instance_remark').val('');
+                        $('#utils').val('')
 
+                        // 隐藏
                         $("#host_id_div").hide();
                         $("#script_text_div").hide();
                         $("#success_text_div").hide();
                         $("#log_address_div").hide();
                         $("#origin_div").hide();
                         $("#commv_interface_div").hide();
+                        $('#utils_id_div').hide();
+                        $('#script_instance_name_div').hide();
+                        $('#script_instance_remark_div').hide();
 
                         document.getElementById("edit").click();
                     }
@@ -434,23 +492,43 @@ function customTree() {
                                     url: "../get_script_data/",
                                     data: {
                                         id: $("#id").val(),
-                                        script_id: $("#se_1").find('option:selected').val(),
+                                        script_instance_id: $("#se_1").find('option:selected').val(),
                                     },
                                     dataType: "json",
                                     success: function (data) {
                                         if (data.status == 1) {
-                                            $("#scriptid").val(data.data.id);
-                                            $("#scriptcode").val(data.data.code);
-                                            $("#script_name").val(data.data.name);
+                                            // script
+                                            $("#scriptid").val(data.data.script_id);
+                                            $("#scriptcode").val(data.data.script_code);
+                                            $("#script_name").val(data.data.script_name);
+                                            $("#script_text").val(data.data.script_text);
+                                            $("#success_text").val(data.data.success_text);
+                                            $("#interface_type").val(data.data.interface_type);
 
+                                            // script_instance
+                                            $('#script_instance_id').val(data.data.script_instance_id);
+                                            $("#sort").val(data.data.script_instance_sort);
+                                            $("#log_address").val(data.data.log_address);
+                                            $('#script_instance_name').val(data.data.script_instance_name);
+                                            $('#script_instance_remark').val(data.data.script_instance_remark);
+                                            // >> Linux/Windows
+                                            $("#host_id").val(data.data.host_id);
+                                            // >> Commvault
+                                            $('#utils').val(data.data.utils_id)
+                                            $("#origin").val(data.data.origin_id);
+                                            $("#commv_interface").val(data.data.commv_interface);
+                                            $('#script_instance_name_div').show();
+                                            $('#script_instance_remark_div').show();
                                             // 判断是否为commvault
-                                            if (data.data.interface_type == "commvault") {
+                                            if (data.data.interface_type == "Commvault") {
                                                 $("#host_id_div").hide();
                                                 $("#script_text_div").hide();
                                                 $("#success_text_div").hide();
                                                 $("#log_address_div").hide();
                                                 $("#origin_div").show();
                                                 $("#commv_interface_div").show();
+                                                $('#utils_id_div').show();
+
                                             } else {
                                                 $("#host_id_div").show();
                                                 $("#script_text_div").show();
@@ -458,18 +536,11 @@ function customTree() {
                                                 $("#log_address_div").show();
                                                 $("#origin_div").hide();
                                                 $("#commv_interface_div").hide();
+                                                $('#utils_id_div').hide();
                                             }
 
-                                            $("#host_id").val(data.data.host_id);
-                                            $("#script_text").val(data.data.script_text);
-                                            $("#success_text").val(data.data.success_text);
-                                            $("#log_address").val(data.data.log_address);
-
-                                            // commvault
-                                            $("#interface_type").val(data.data.interface_type);
-                                            $("#origin").val(data.data.origin);
-                                            $("#commv_interface").val(data.data.commv_interface);
                                             displayParams();
+                                            loadHostsParams();
                                         } else {
                                             alert(data.info)
                                         }
@@ -494,8 +565,7 @@ function customTree() {
                                     type: "POST",
                                     url: "../../remove_script/",
                                     data: {
-                                        script_id: $("#se_1").find('option:selected').val(),
-                                        step_id: $("#id").val().replace("demo_node_", ""),
+                                        script_instance_id: $("#se_1").find('option:selected').val(),
                                     },
                                     success: function (data) {
                                         if (data["status"] == 1) {
@@ -587,45 +657,6 @@ function customTree() {
                             }
                         }
                     }
-
-                }
-            });
-
-
-            // dataTable
-            $("#sample_1").dataTable().fnDestroy();
-            $('#sample_1').dataTable({
-                "bAutoWidth": true,
-                "bSort": false,
-                "bProcessing": true,
-                "ajax": "../../scriptdata/",
-                "columns": [
-                    {"data": "id"},
-                    {"data": "code"},
-                    {"data": "name"},
-                    {"data": "interface_type"},
-                    {"data": null}
-                ],
-
-                "columnDefs": [{
-                    "targets": -1,
-                    "data": null,
-                    "defaultContent": "<button  id='select' title='选择'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-check'></i></button>"
-                }],
-                "oLanguage": {
-                    "sLengthMenu": "每页显示 _MENU_ 条记录",
-                    "sZeroRecords": "抱歉， 没有找到",
-                    "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
-                    "sInfoEmpty": "没有数据",
-                    "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
-                    "sSearch": "搜索",
-                    "oPaginate": {
-                        "sFirst": "首页",
-                        "sPrevious": "前一页",
-                        "sNext": "后一页",
-                        "sLast": "尾页"
-                    },
-                    "sZeroRecords": "没有检索到数据",
 
                 }
             });
@@ -737,9 +768,29 @@ $('#scriptsave').click(function () {
             step_id: $("#id").val().replace("demo_node_", ""),
             script_id: $("#scriptid").val(),
             config: JSON.stringify(config),
+            interface_type: $('#interface_type').val(),  // 接口类型
+            /*
+            接口实例名称
+            选择工具
+            选择主机
+            选择客户端
+            填写类名
+            日志地址
+            接口实例说明
+             */
+            script_instance_id: $('#script_instance_id').val(),
+            script_instance_name: $('#script_instance_name').val(),
+            utils: $('#utils').val(),
+            host_id: $('#host_id').val(),
+            origin: $('#origin').val(),
+            commv_interface: $('#commv_interface').val(),
+            log_address: $('#log_address').val(),
+            sort: $('#sort').val(),
+            script_instance_remark: $('#script_instance_remark').val()
         },
         success: function (data) {
             alert(data["info"]);
+            $('#script_instance_id').val(data.id); // 新增后修改
             var mydata = eval(data.data);
             if (data["status"] == 1) {
                 /*

@@ -71,6 +71,7 @@ urlpatterns = [
     url(r'^get_verify_items_data/$', get_verify_items_data),
     url(r'^remove_verify_item/$', remove_verify_item),
     url(r'^display_params/$', display_params),
+    url(r'^load_hosts_params/$', load_hosts_params),
 
     # 切换演练
     url(r'^falconstorswitch/(?P<process_id>\d+)$', falconstorswitch),

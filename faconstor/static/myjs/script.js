@@ -60,12 +60,8 @@ $('#tree_2').jstree({
                         $("#code").val("");
                         $("#name").val("");
                         $("#interface_type").val("");
-                        $("#origin").val("");
-                        $("#commv_interface").val("");
-                        $("#ip").val("");
                         $("#script_text").val("");
                         $("#success_text").val("");
-                        $("#log_address").val("");
                         $("#remark").val("");
 
                         $("#interface").show()
@@ -175,14 +171,10 @@ $('#tree_2').jstree({
             // 接口编号 接口名称 接口类型 选择源客户端 类名 选择主机 脚本内容 SUCCESSTEXT 日志地址 接口说明
             $("#code").val(data.node.data.code);
             $("#name").val(data.node.data.name);
-            $("#ip").val(data.node.data.ip);
             $("#script_text").val(data.node.data.script_text);
             $("#success_text").val(data.node.data.success_text);
-            $("#log_address").val(data.node.data.log_address);
             $("#remark").val(data.node.data.remark);
             // Commvault
-            $("#origin").val(data.node.data.origin);
-            $("#commv_interface").val(data.node.data.commv_interface);
             $("#interface_type").val(data.node.data.interface_type);
 
             // 接口参数
@@ -197,16 +189,10 @@ $('#tree_2').jstree({
                 $("#host_id_div").hide();
                 $("#script_text_div").hide();
                 $("#success_text_div").hide();
-                $("#log_address_div").hide();
-                $("#origin_div").show();
-                $("#commv_interface_div").show();
             } else {
                 $("#host_id_div").show();
                 $("#script_text_div").show();
                 $("#success_text_div").show();
-                $("#log_address_div").show();
-                $("#origin_div").hide();
-                $("#commv_interface_div").hide();
             }
 
             $("#interface").show()
@@ -235,16 +221,10 @@ $("#interface_type").change(function () {
         $("#host_id_div").hide();
         $("#script_text_div").hide();
         $("#success_text_div").hide();
-        $("#log_address_div").hide();
-        $("#origin_div").show();
-        $("#commv_interface_div").show();
     } else {
         $("#host_id_div").show();
         $("#script_text_div").show();
         $("#success_text_div").show();
-        $("#log_address_div").show();
-        $("#origin_div").hide();
-        $("#commv_interface_div").hide();
     }
 });
 

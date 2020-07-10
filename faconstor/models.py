@@ -87,27 +87,32 @@ class HostsManage(models.Model):
 
 
 class Script(models.Model):
-    hosts_manage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='主机管理')
-    step = models.ForeignKey(Step, blank=True, null=True)
     code = models.CharField("脚本编号", blank=True, max_length=50)
     name = models.CharField("脚本名称", blank=True, max_length=500)
-    filename = models.CharField("脚本文件名", blank=True, null=True, max_length=50)
-    scriptpath = models.CharField("脚本文件路径", blank=True, null=True, max_length=100)
-    state = models.CharField("状态", blank=True, null=True, max_length=20)
     sort = models.IntegerField("排序", blank=True, null=True)
-    succeedtext = models.CharField("成功代码", blank=True, null=True, max_length=500)
-    log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
     script_text = models.TextField("脚本内容", blank=True, default="")
-    # commvault接口
-    interface_type = models.CharField("日志地址", blank=True, null=True, max_length=32)
-    origin = models.ForeignKey("Origin", blank=True, null=True, verbose_name='源端客户端')
-    commv_interface = models.CharField("commvault接口脚本", blank=True, null=True, max_length=64)
+    interface_type = models.CharField("接口类型", blank=True, null=True, max_length=32)
     config = models.TextField("接口参数", null=True, default="<root></root>")
-    # 树状
     pnode = models.ForeignKey('self', null=True, related_name='children', verbose_name='父节点')
     type = models.CharField("类型", blank=True, null=True, max_length=20)
-    remark = models.TextField("节点说明", null=True, default="")
+    remark = models.TextField("节点/接口说明", null=True, default="")
+    succeedtext = models.CharField("成功代码", blank=True, null=True, max_length=500)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
+
+
+class ScriptInstance(models.Model):
+    script = models.ForeignKey(Script, blank=True, null=True, verbose_name='源接口')
+    step = models.ForeignKey(Step, blank=True, null=True, verbose_name="步骤")
+    origin = models.ForeignKey("Origin", blank=True, null=True, verbose_name='源端客户端')
+    utils = models.ForeignKey("UtilsManage", blank=True, null=True, verbose_name='工具')
+    name = models.CharField("接口实例名称", blank=True, max_length=500)
+    remark = models.CharField("接口实例说明", blank=True, max_length=500)
+    sort = models.IntegerField("执行顺序", blank=True, null=True)
     params = models.TextField("脚本内容参数", null=True, default="")
+    log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
+    hosts_manage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='选择主机')
+    commv_interface = models.CharField("commvault接口类名", blank=True, null=True, max_length=64)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
 class Walkthrough(models.Model):

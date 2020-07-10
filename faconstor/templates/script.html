@@ -42,7 +42,8 @@
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; ">*</span>接口编号</label>
                                         <div class="col-md-10">
-                                            <input id="code" type="text" name="code" class="form-control" value="{{ table.code }}">
+                                            <input id="code" type="text" name="code" class="form-control"
+                                                   value="{{ table.code }}">
                                             <div class="form-control-focus"></div>
 
                                         </div>
@@ -51,7 +52,8 @@
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; ">*</span>接口名称</label>
                                         <div class="col-md-10">
-                                            <input id="name" type="text" name="name" class="form-control "value="{{ table.name }}">
+                                            <input id="name" type="text" name="name" class="form-control "
+                                                   value="{{ table.name }}">
                                             <div class="form-control-focus"></div>
 
                                         </div>
@@ -62,54 +64,17 @@
                                         <div class="col-md-10">
                                             <select class="form-control" id="interface_type" name="interface_type">
                                                 {% for it in table.interface_type_list %}
-                                                <option value="{{ it.value }}" {{ it.selected }}>{{ it.value }}</option>
+                                                    <option value="{{ it.value }}" {{ it.selected }}>{{ it.value }}</option>
                                                 {% endfor %}
                                             </select>
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
-                                    <div class="form-group" id="origin_div" {{ table.interface_divs.origin_div }}>
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; ">*</span>选择源客户端</label>
-                                        <div class="col-md-10">
-                                            <select class="form-control" id="origin" name="origin">
-                                                {% for origin in table.origin_list %}
-                                                    <option value="{{ origin.origin_id }}" {{ origin.selected }}>{{ origin.origin_name }}
-                                                        （{{ origin.utils_name }}）
-                                                    </option>
-                                                {% endfor %}
-                                            </select>
-                                            <div class="form-control-focus"></div>
-                                        </div>
-                                    </div>
-                                    <div class="form-group" id="commv_interface_div" {{ table.interface_divs.commv_interface_div }}>
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; ">*</span>类名</label>
-                                        <div class="col-md-10">
-                                            <input type="text" class="form-control" id="commv_interface"
-                                                   name="commv_interface" value="{{ table.commv_interface }}">
-                                            <div class="form-control-focus"></div>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group" id="host_id_div" {{ table.interface_divs.host_id_div }}>
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; ">*</span>选择主机</label>
-                                        <div class="col-md-10">
-                                            <select class="form-control" id="ip" name="ip">
-                                                {% for host in table.host_list %}
-                                                    <option value="{{ host.host_id }}" {{ host.selected }}>{{ host.host_name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                            <div class="form-control-focus"></div>
-
-                                        </div>
-                                    </div>
-
                                     <div class="form-group" id="script_text_div" {{ table.interface_divs.script_text_div }}>
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; ">*</span>脚本内容
-                                                <i title="{% verbatim %}流程参数: {{}} 脚本参数: [[]] 主机参数: (()) {% endverbatim %}" class="fa fa-question-circle"></i></label>
+                                            <i title="{% verbatim %}流程参数: {{}} 脚本参数: [[]] 主机参数: (()) {% endverbatim %}"
+                                               class="fa fa-question-circle"></i></label>
                                         <div class="col-md-10">
                                     <textarea name="script_text" id="script_text" class="form-control"
                                               rows="8">{{ table.script_text }}</textarea>
@@ -117,44 +82,38 @@
 
                                         </div>
                                     </div>
-                                <div class="form-group ">
-                                    <label class="col-md-2 control-label">脚本参数</label>
-                                    <div class="col-md-10">
-                                        <div id="context-menu2">
-                                            <ul class="dropdown-menu" role="menu">
-                                                <li><a tabindex="-1" data-toggle="modal" data-target="#static01">新增</a></li>
-                                                <li><a tabindex="-1" data-toggle="modal" data-target="#static01">修改</a></li>
-                                                <li><a tabindex="-1">删除</a></li>
-                                            </ul>
+                                    <div class="form-group ">
+                                        <label class="col-md-2 control-label">脚本参数</label>
+                                        <div class="col-md-10">
+                                            <div id="context-menu2">
+                                                <ul class="dropdown-menu" role="menu">
+                                                    <li><a tabindex="-1" data-toggle="modal"
+                                                           data-target="#static01">新增</a></li>
+                                                    <li><a tabindex="-1" data-toggle="modal"
+                                                           data-target="#static01">修改</a></li>
+                                                    <li><a tabindex="-1">删除</a></li>
+                                                </ul>
+                                            </div>
+                                            <button hidden id="param_edit" tabindex="-1" data-toggle="modal"
+                                                    data-target="#static01"></button>
+                                            <select id="param_se" size="7" class="form-control"
+                                                    style="overflow-y:auto;">
+                                                {% for p in table.insert_params %}
+                                                    <option value="{{ p.variable_name }}">{{ p.param_name }}: {{ p.param_value }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <input type="text" id="insert_params" name="insert_params"
+                                                   value="{{ table.insert_params_json }}" hidden>
                                         </div>
-                                        <button hidden id="param_edit" tabindex="-1" data-toggle="modal"
-                                                data-target="#static01"></button>
-                                        <select id="param_se" size="7" class="form-control" style="overflow-y:auto;">
-                                            {% for p in table.insert_params %}
-                                            <option value="{{ p.variable_name }}">{{ p.param_name }}: {{ p.param_value }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <input type="text" id="insert_params" name="insert_params" value="{{ table.insert_params_json }}" hidden>
                                     </div>
-                                </div>
-                                    <div class="form-group" id="success_text_div" {{ table.interface_divs.success_text_div }}>
+                                    <div class="form-group"
+                                         id="success_text_div" {{ table.interface_divs.success_text_div }}>
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; "></span>SUCCESSTEXT</label>
                                         <div class="col-md-10">
                                             <input id="success_text" type="text" name="success_text"
                                                    class="form-control" value="{{ table.success_text }}">
                                             <div class="form-control-focus"></div>
-
-                                        </div>
-                                    </div>
-                                    <div class="form-group" id="log_address_div" {{ table.interface_divs.log_address_div }}>
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; "></span>日志地址</label>
-                                        <div class="col-md-10">
-                                            <input id="log_address" type="text" name="log_address" class="form-control"
-                                                   value="{{ table.log_address }}">
-                                            <div class="form-control-focus"></div>
-
                                         </div>
                                     </div>
                                     <div class="form-group ">
@@ -163,7 +122,6 @@
                                             <textarea class="form-control" placeholder="最大限制2500个汉字" rows="4"
                                                       id="remark" name="remark">{{ table.remark }}</textarea>
                                             <div class="form-control-focus"></div>
-
                                         </div>
                                     </div>
 
@@ -196,7 +154,8 @@
                                         <label class="col-md-2 control-label" for="form_control_1">节点说明</label>
                                         <div class="col-md-10">
                                             <textarea class="form-control" placeholder="最大限制2500个汉字" rows="4"
-                                                      id="node_remark" name="node_remark">{{ table.node_remark }}</textarea>
+                                                      id="node_remark"
+                                                      name="node_remark">{{ table.node_remark }}</textarea>
                                             <div class="form-control-focus"></div>
 
                                         </div>

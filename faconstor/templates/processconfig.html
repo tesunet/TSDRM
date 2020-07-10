@@ -168,18 +168,19 @@
         </div>
     </div>
     <div id="static01" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog" style="width: 700px;">
             <div class="modal-content">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
                     <h4 class="modal-title">接口管理</h4>
                     <input hidden id="scriptid" type="text" name="scriptid">
+                    <input hidden id="script_instance_id" type="text" name="script_instance_id">
                 </div>
                 <div class="panel-body">
                     <div class="bs-example form-horizontal activate-form">
                         <div class="form-body">
                             <div class="form-group ">
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口编号</label>
+                                <label class="col-md-2 control-label">接口编号</label>
                                 <div class="col-md-10">
                                     <div class="input-group">
                                         <div class="input-group-control">
@@ -195,15 +196,15 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口名称</label>
+                                <label class="col-md-2 control-label">接口名称</label>
                                 <div class="col-md-10">
                                     <input id="script_name" type="text" name="script_name" class="form-control "
                                            placeholder="" readonly>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口类型</label>
+                            <div class="form-group" id="interface_type_div">
+                                <label class="col-md-2 control-label">接口类型</label>
                                 <div class="col-md-10">
                                     <select class="form-control" id="interface_type" name="interface_type" disabled>
                                         <option value="Commvault">Commvault</option>
@@ -213,41 +214,8 @@
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
-                            <div class="form-group" id="host_id_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择主机</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="host_id" name="host_id" disabled>
-                                        {% for host in all_hosts_manage %}
-                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
-                            <div class="form-group" id="origin_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="origin" name="origin" disabled>
-                                        {% for origin in all_origins %}
-                                            <option value="{{ origin.id }}">{{ origin.client_name }}
-                                                （{{ origin.utils.name }}）
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
-                            <div class="form-group" id="commv_interface_div" hidden>
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>commvault接口</label>
-                                <div class="col-md-10">
-                                    <input type="text" class="form-control" id="commv_interface" name="commv_interface"
-                                           readonly>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
                             <div class="form-group" id="script_text_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>脚本内容
+                                <label class="col-md-2 control-label">脚本内容
                                     <i title="{% verbatim %}流程参数: {{}} 脚本参数: [[]] 主机参数: (()) {% endverbatim %}"
                                        class="fa fa-question-circle"></i></label>
                                 <div class="col-md-10">
@@ -265,11 +233,74 @@
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
-                            <div class="form-group" id="log_address_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; "></span>日志地址</label>
+
+
+                            <div class="form-group" id="script_instance_name_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>接口实例名称</label>
                                 <div class="col-md-10">
-                                    <input id="log_address" type="text" name="log_address" class="form-control"
-                                           placeholder="" readonly>
+                                    <input id="script_instance_name" type="text" name="script_instance_name"
+                                           class="form-control">
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="commv_interface_div" hidden>
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>类名</label>
+                                <div class="col-md-10">
+                                    <input type="text" class="form-control" id="commv_interface" name="commv_interface">
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="utils_id_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择工具</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="utils" name="utils">
+
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="origin_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
+                                <div class="col-md-10">
+                                    <input type="text" id="origin_data" value="{{origin_data}}" hidden>
+                                    <select class="form-control" id="origin" name="origin">
+                                            <option value=""></option>
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="host_id_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择主机</label>
+                                <div class="col-md-10">
+                                    <select class="form-control" id="host_id" name="host_id">
+                                        {% for host in all_hosts_manage %}
+                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="log_address_div" hidden>
+                                <label class="col-md-2 control-label">日志地址</label>
+                                <div class="col-md-10">
+                                    <input id="log_address" type="text" name="log_address" class="form-control">
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="sort_div" hidden>
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>排序</label>
+                                <div class="col-md-10">
+                                    <input id="sort" type="text" name="sort" class="form-control">
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group" id="script_instance_remark_div" hidden>
+                                <label class="col-md-2 control-label" for="form_control_1">接口实例说明</label>
+                                <div class="col-md-10">
+                                    <textarea class="form-control" placeholder="最大限制2500个汉字" rows="4"
+                                              id="script_instance_remark"
+                                              name="script_instance_remark">{{ table.node_remark }}</textarea>
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
@@ -283,8 +314,8 @@
                                     </div>
                                 </div>
                                 <div id="process_param_div">
-                                    <div class="row col-md-2"></div>
-                                    <div class="row col-md-10">
+                                    <div class="row col-md-2" style="margin: 0;"></div>
+                                    <div class="row col-md-10" style="margin: 0;">
                                         <!-- ajax -->
                                     </div>
                                 </div>
@@ -299,8 +330,8 @@
                                     </div>
                                 </div>
                                 <div id="script_param_div">
-                                    <div class="row col-md-2"></div>
-                                    <div class="row col-md-10">
+                                    <div class="row col-md-2" style="margin: 0;"></div>
+                                    <div class="row col-md-10" style="margin: 0;">
                                         <!-- ajax -->
                                     </div>
                                 </div>
@@ -315,8 +346,8 @@
                                     </div>
                                 </div>
                                 <div id="host_param_div">
-                                    <div class="row col-md-2"></div>
-                                    <div class="row col-md-10">
+                                    <div class="row col-md-2" style="margin: 0;"></div>
+                                    <div class="row col-md-10" style="margin: 0;">
                                         <!-- ajax -->
                                     </div>
                                 </div>
@@ -407,6 +438,7 @@
             },
         });
         var treeData = {{tree_data|safe}};
+        var origin_data = {{origin_data|safe}};
     </script>
 
     <link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css"/>

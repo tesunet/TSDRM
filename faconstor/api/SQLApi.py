@@ -908,7 +908,7 @@ class CVApi(DataMonitor):
         schedule_policy_sql = """SELECT ccscc.clientname, ccscc.idataagent, ccscc.instance, ccscc.backupset, ccscc.subclient, ccsfs.scheduleId, ccsfs.scheduePolicy, ccsfs.scheduleName, ccsfs.scheduletask, ccsfs.schedbackuptype, ccsfs.schedpattern,
         ccsfs.schedinterval,ccsfs.schedbackupday,ccsfs.schednextbackuptime,ccsfs.schednextbackuptime
         FROM (SELECT clientname, idataagent, instance, backupset, subclient FROM commserv.dbo.CommCellSubClientConfig WHERE backupset!='Indexing BackupSet' AND subclient !='(command line)') AS ccscc
-        LEFT JOIN commserv.dbo.CommCellBkScheduleForSubclients AS ccsfs ON ccsfs.clientname=ccscc.clientname AND ccsfs.idaagent=ccscc.idataagent AND ccsfs.backupset=ccscc.backupset AND ccsfs.subclient=ccscc.subclient
+        LEFT JOIN commserv.dbo.CommCellBkScheduleForSubclients AS ccsfs ON ccsfs.clientname=ccscc.clientname AND ccsfs.idaagent=ccscc.idataagent AND ccsfs.instance=ccscc.instance AND ccsfs.backupset=ccscc.backupset AND ccsfs.subclient=ccscc.subclient
         ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC, ccsfs.scheduePolicy DESC, ccsfs.schedbackuptype DESC
         """
         ret = self.fetch_all(schedule_policy_sql)

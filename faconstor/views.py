@@ -45,6 +45,7 @@ from .remote import ServerByPara
 from TSDRM import settings
 from .api import SQLApi
 
+
 funlist = []
 
 info = {"webaddr": "cv-server", "port": "81", "username": "admin", "passwd": "Admin@2017", "token": "",
@@ -2487,9 +2488,6 @@ def get_script_tree(parent, select_id):
             except Exception as e:
                 print(e)
 
-            # 脚本内容匹配 脚本参数 流程参数 主机参数
-
-
             node["data"] = {
                 "pname": parent.name,
                 "remark": child.remark,
@@ -2497,12 +2495,8 @@ def get_script_tree(parent, select_id):
                 "name": child.name,
                 "type": child.type,
                 "interface_type": child.interface_type,
-                "origin": child.origin.id if child.origin else "",
-                "commv_interface": child.commv_interface,
-                "ip": child.hosts_manage.id if child.hosts_manage else "",
                 "script_text": child.script_text,
                 "success_text": child.succeedtext,
-                "log_address": child.log_address,
                 "variable_param_list": param_list,
             }
         node["children"] = get_script_tree(child, select_id)
@@ -2529,13 +2523,10 @@ def script(request, funid):
     id = ""
     code = ""
     name = ""
-    host_id = ""
     script_text = ""
     success_text = ""
     log_address = ""
     interface_type = ""
-    origin = ""
-    commv_interface = ""
     pid = ""
     my_type = ""
     remark = ""
@@ -2547,12 +2538,8 @@ def script(request, funid):
 
     # 接口 脚本 隐藏设置
     interface_divs = {
-        "host_id_div": "hidden",
         "script_text_div": "hidden",
         "success_text_div": "hidden",
-        "log_address_div": "hidden",
-        "origin_div": "hidden",
-        "commv_interface_div": "hidden",
     }
     if request.method == 'POST':
         right_info_hidden = ""
@@ -2560,7 +2547,6 @@ def script(request, funid):
         id = request.POST.get('id', '')
         code = request.POST.get('code', '')
         name = request.POST.get('name', '')
-        host_id = request.POST.get('ip', '')
 
         # script_text
         script_text = request.POST.get('script_text', '')
@@ -2570,8 +2556,6 @@ def script(request, funid):
 
         # commvault接口
         interface_type = request.POST.get('interface_type', '')
-        origin = request.POST.get('origin', '')
-        commv_interface = request.POST.get('commv_interface', '')
 
         pid = request.POST.get('pid', '')
         my_type = request.POST.get('my_type', '')
@@ -2623,13 +2607,13 @@ def script(request, funid):
             return status, error, select_id
 
         # 接口存储方法
-        def interface_save(save_data, cur_host_manage=None):
+        def interface_save(save_data):
             status = True
             error = ""
 
             if save_data["id"] == 0:
                 select_id = save_data["pnode_id"]
-                allscript = Script.objects.filter(code=save_data["code"]).exclude(state="9").filter(step_id=None)
+                allscript = Script.objects.filter(code=save_data["code"]).exclude(state="9")
                 if allscript.exists():
                     status = False
                     error = '脚本编码:' + save_data["code"] + '已存在。'
@@ -2644,21 +2628,11 @@ def script(request, funid):
 
                     # 判断是否commvault/脚本
                     if save_data["interface_type"] == "Commvault":
-                        scriptsave.hosts_manage_id = None
                         scriptsave.script_text = ""
                         scriptsave.succeedtext = ""
-                        scriptsave.log_address = ""
-
-                        scriptsave.origin_id = save_data["origin"]
-                        scriptsave.commv_interface = save_data["commv_interface"]
                     else:
-                        scriptsave.hosts_manage_id = cur_host_manage.id
                         scriptsave.script_text = save_data["script_text"]
                         scriptsave.succeedtext = save_data["succeedtext"]
-                        scriptsave.log_address = save_data["log_address"]
-
-                        scriptsave.origin_id = None
-                        scriptsave.commv_interface = ""
 
                     scriptsave.interface_type = save_data["interface_type"]
 
@@ -2678,8 +2652,7 @@ def script(request, funid):
             else:
                 # 修改
                 select_id = id
-                allscript = Script.objects.filter(code=save_data["code"]).exclude(id=save_data["id"]).exclude(
-                    state="9").filter(step_id=None)
+                allscript = Script.objects.filter(code=save_data["code"]).exclude(id=save_data["id"]).exclude(state="9")
                 if allscript.exists():
                     error = '脚本编码:' + save_data["code"] + '已存在。'
                     status = False
@@ -2697,18 +2670,9 @@ def script(request, funid):
                             scriptsave.hosts_manage_id = None
                             scriptsave.script_text = ""
                             scriptsave.succeedtext = ""
-                            scriptsave.log_address = ""
-
-                            scriptsave.origin_id = save_data["origin"]
-                            scriptsave.commv_interface = save_data["commv_interface"]
                         else:
-                            scriptsave.hosts_manage_id = cur_host_manage.id
                             scriptsave.script_text = save_data["script_text"]
                             scriptsave.succeedtext = save_data["succeedtext"]
-                            scriptsave.log_address = save_data["log_address"]
-
-                            scriptsave.origin_id = None
-                            scriptsave.commv_interface = ""
 
                         scriptsave.interface_type = save_data["interface_type"]
 
@@ -2720,11 +2684,6 @@ def script(request, funid):
                         error = "修改失败。"
 
             return status, error, select_id
-
-        try:
-            host_id = int(host_id)
-        except:
-            pass
 
         try:
             id = int(id)
@@ -2742,11 +2701,7 @@ def script(request, funid):
                     "name": node_name,
                     "script_text": "",
                     "succeedtext": "",
-                    "log_address": "",
-                    "hosts_manage_id": None,
                     "interface_type": "",
-                    "origin": None,
-                    "commv_interface": "",
                     "remark": node_remark,
                     "pnode_id": pid,
                     "type": my_type,
@@ -2773,11 +2728,7 @@ def script(request, funid):
                     "name": name,
                     "script_text": script_text,
                     "succeedtext": success_text,
-                    "log_address": log_address,
-                    "hosts_manage_id": host_id,
                     "interface_type": interface_type,
-                    "origin": origin,
-                    "commv_interface": commv_interface,
                     "remark": remark,
                     "pnode_id": pid,
                     "type": my_type,
@@ -2795,51 +2746,19 @@ def script(request, funid):
                         else:
                             if interface_type == "Commvault":
                                 interface_divs = {
-                                    "host_id_div": "hidden",
                                     "script_text_div": "hidden",
                                     "success_text_div": "hidden",
-                                    "log_address_div": "hidden",
-                                    "origin_div": "",
-                                    "commv_interface_div": "",
                                 }
-                                try:
-                                    origin = int(origin)
-                                except:
-                                    errors.append('commvault源端未选择。')
-                                else:
-                                    if commv_interface.strip() == "":
-                                        errors.append('commvault接口未选择。')
-                                    else:
-                                        status, error, select_id = interface_save(save_data, cur_host_manage=None)
+                                status, error, select_id = interface_save(save_data)
                             else:
                                 interface_divs = {
-                                    "host_id_div": "",
                                     "script_text_div": "",
                                     "success_text_div": "",
-                                    "log_address_div": "",
-                                    "origin_div": "hidden",
-                                    "commv_interface_div": "hidden",
                                 }
-                                try:
-                                    host_id = int(host_id)
-                                except ValueError as e:
-                                    print("host_id:%s" % e)
-                                    errors.append('网络连接异常。')
+                                if script_text.strip() == '':
+                                    errors.append('脚本内容不能为空。')
                                 else:
-                                    if not host_id:
-                                        errors.append('脚本存放的主机未选择。')
-                                    else:
-                                        if script_text.strip() == '':
-                                            errors.append('脚本内容不能为空。')
-                                        else:
-                                            try:
-                                                cur_host_manage = HostsManage.objects.get(id=host_id)
-                                            except HostsManage.DoesNotExist as e:
-                                                print(e)
-                                                errors.append('所选主机不存在。')
-                                            else:
-                                                status, error, select_id = interface_save(save_data,
-                                                                                          cur_host_manage=cur_host_manage)
+                                    status, error, select_id = interface_save(save_data)
 
     tree_data = []
     root_nodes = Script.objects.order_by("sort").exclude(state="9").filter(pnode=None).filter(type="NODE")
@@ -2863,11 +2782,6 @@ def script(request, funid):
         root["children"] = get_script_tree(root_node, select_id)
         tree_data.append(root)
     tree_data = json.dumps(tree_data, ensure_ascii=False)
-    # 主机选项
-    all_hosts_manage = HostsManage.objects.exclude(state="9")
-
-    # commvault源端客户端
-    all_origins = Origin.objects.exclude(state="9").order_by("utils__name")
 
     # 表单信息: 将提交上来的参数渲染到页面上
     # 接口类型
@@ -2880,30 +2794,7 @@ def script(request, funid):
             "value": x,
             "selected": selected
         })
-    # 源客户端
-    origin_list = []
-    for o in all_origins:
-        selected = ""
-        if o.id == origin:
-            selected = "selected"
-        origin_list.append({
-            "origin_id": o.id,
-            "origin_name": o.client_name,
-            "utils_name": o.utils.name if o.utils else "",
-            "selected": selected
-        })
 
-    # 选择主机
-    host_list = []
-    for h in all_hosts_manage:
-        selected = ""
-        if h.id == host_id:
-            selected = "selected"
-        host_list.append({
-            "host_id": h.id,
-            "host_name": h.host_name,
-            "selected": selected,
-        })
 
     table = {
         "interface_hidden": interface_hidden,
@@ -2914,10 +2805,7 @@ def script(request, funid):
         "name": name,
         "script_text": script_text,
         "success_text": success_text,
-        "log_address": log_address,
         "interface_type": interface_type,
-        "origin": origin,
-        "commv_interface": commv_interface,
         "pid": pid,
         "my_type": my_type,
         "remark": remark,
@@ -2926,15 +2814,13 @@ def script(request, funid):
         "pname": pname,
         "node_pname": node_pname,
         "interface_type_list": interface_type_list,
-        "origin_list": origin_list,
-        "host_list": host_list,
         "interface_divs": interface_divs,
         "insert_params": insert_params,
         "insert_params_json": json.dumps(insert_params),
     }
     return render(request, 'script.html', {
         'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-        "errors": errors, "all_hosts_manage": all_hosts_manage, "tree_data": tree_data, "table": table,
+        "errors": errors, "tree_data": tree_data, "table": table,
     })
 
 
@@ -3238,7 +3124,74 @@ def processscriptsave(request):
     result["info"] = "保存脚本成功。"
     step_id = request.POST.get('step_id', '')
     script_id = request.POST.get('script_id', '')
+    script_instance_id = request.POST.get('script_instance_id', '')
     config = request.POST.get('config', '')
+    interface_type = request.POST.get('interface_type', '')  # 接口类型：Commvault Linux Windows
+    
+    # add
+    script_instance_name = request.POST.get('script_instance_name', '')  # 必填
+    utils = request.POST.get('utils', '')  # Commvault 必填
+    host_id = request.POST.get('host_id', '')  # Linux Window 必填
+    origin_id = request.POST.get('origin', '')  # Commvault必填
+    commv_interface = request.POST.get('commv_interface', '')  # Commvault必填
+    log_address = request.POST.get('log_address', '')
+    sort = request.POST.get('sort', '')
+    script_instance_remark = request.POST.get('script_instance_remark', '')
+
+    try:
+        step_id = int(step_id)
+    except:
+        step_id = None
+    try:
+        script_id = int(script_id)
+    except:
+        script_id = None
+    try:
+        host_id = int(host_id)
+    except:
+        host_id = None
+    try:
+        origin_id = int(origin_id)
+    except:
+        origin_id = None
+    try:
+        utils = int(utils)
+    except:
+        utils = None
+    try:
+        script_instance_id = int(script_instance_id)
+    except:
+        script_instance_id = None   
+    # 初始化
+    if interface_type == "Commvault":
+        create_data = {
+            "params": config, 
+            "step_id": step_id, 
+            "script_id": script_id,
+            "name": script_instance_name,
+            "utils_id": utils,
+            "origin_id": origin_id,
+            "commv_interface": commv_interface,
+            "log_address": log_address,
+            "sort": sort,
+            "remark": script_instance_remark,
+            "hosts_manage_id": None,
+        }
+    else:
+        create_data = {
+            "params": config, 
+            "step_id": step_id, 
+            "script_id": script_id,
+            "hosts_manage_id": host_id,
+            "name": script_instance_name,
+            "log_address": log_address,
+            "sort": sort,
+            "remark": script_instance_remark,
+            
+            "utils_id": None,
+            "origin_id": None,
+            "commv_interface": "",
+        }
 
     try:
         step = Step.objects.get(id=int(step_id))
@@ -3247,24 +3200,25 @@ def processscriptsave(request):
         result["status"] = 0
         result["info"] = "保存脚本失败: {0}。".format(e)
     else:
-        # 步骤在已有该脚本不可保存
-        add = True
-        scripts = step.script_set.exclude(state="9")
-        for script in scripts:
-            if script_id == script.id:
-                add = False
-                break
-        if add:
+        # 步骤在已有该脚本实例不可保存
+        if script_instance_id:
             try:
-                Script.objects.exclude(state="9").filter(id=script_id).update(**{"params": config, "step_id": step_id})
+                ScriptInstance.objects.filter(id=script_instance_id).update(**create_data)
                 # 步骤下所有脚本
-                result["data"] = str(step.script_set.exclude(state="9").values("id", "name"))
+                result["data"] = str(step.scriptinstance_set.exclude(state="9").values("id", "name"))
+                result["id"] = script_instance_id
             except Exception as e:
                 result["status"] = 0
-                result["info"] = "保存脚本失败: {0}。".format(e)
+                result["info"] = "修改脚本失败: {0}。".format(e)
         else:
-            result["status"] = 0
-            result["info"] = "步骤下已存在该脚本，请不要重复添加。"
+            try:
+                script_instance_id = ScriptInstance.objects.create(**create_data).id
+                # 步骤下所有脚本
+                result["data"] = str(step.scriptinstance_set.exclude(state="9").values("id", "name"))
+                result["id"] = script_instance_id
+            except Exception as e:
+                result["status"] = 0
+                result["info"] = "新增脚本失败: {0}。".format(e)
 
     return JsonResponse(result)
 
@@ -3338,8 +3292,28 @@ def remove_verify_item(request):
 
 @login_required
 def get_script_data(request):
+    """
+    返回；
+        接口信息
+            接口编号
+            接口名称
+            接口类型
+            脚本内容
+            SUCCESSTEXT
+            接口说明
+        接口实例信息
+            接口实例名称
+            选择主机
+            选择工具
+            选择客户端
+            填写类名
+            日志地址
+            接口实例说明
+            参数值
+    """
     status = 1
     info = '获取脚本信息成功。'
+    data = []
 
     id = request.POST.get('id', '')
     try:
@@ -3347,33 +3321,38 @@ def get_script_data(request):
     except:
         status = 0
         info = '步骤未创建，请先保存步骤后添加脚本。'
-    script_id = request.POST.get("script_id", "")
-    allscript = Script.objects.exclude(state="9").filter(id=script_id).select_related("origin")
-    script_data = {}
-    if allscript.exists():
-        cur_script = allscript[0]
-        print(cur_script.hosts_manage_id)
-        cur_host_manage = cur_script.hosts_manage
-        script_data = {
-            "id": cur_script.id,
-            "code": cur_script.code,
-            "name": cur_script.name,
-            "host_id": cur_host_manage.id if cur_host_manage else "",
-            "script_text": cur_script.script_text,
-            "success_text": cur_script.succeedtext,
-            "log_address": cur_script.log_address,
-            # commvault
-            "interface_type": cur_script.interface_type,
-            "origin": cur_script.origin.id if cur_script.origin else "",
-            "commv_interface": cur_script.commv_interface,
-        }
+    script_instance_id = request.POST.get("script_instance_id", "")
+    try:
+        script_instance = ScriptInstance.objects.get(id=int(script_instance_id))
+    except:
+        pass
     else:
-        status = 0
-        info = '当前脚本不存在。'
+        script = script_instance.script
+        data = {
+            "script_id": script.id,
+            "script_code": script.code,
+            "script_name": script.name,
+            "interface_type": script.interface_type,
+            "script_text": script.script_text,
+            "succeedtext": script.succeedtext,
+            "remark": script.remark,
+            "type": script.type,
+            "script_instance_id": script_instance.id,
+            "script_instance_name": script_instance.name,
+            "script_instance_remark": script_instance.remark,
+            "script_instance_sort": script_instance.sort,
+            "params": "",
+            "log_address": script_instance.log_address,
+            "commv_interface": script_instance.commv_interface,
+            "host_id": script_instance.hosts_manage_id,
+            "origin_id": script_instance.origin_id,
+            "utils_id": script_instance.utils_id
+        }     
+
     return JsonResponse({
         'status': status,
         'info': info,
-        'data': script_data,
+        'data': data,
     })
 
 
@@ -3381,19 +3360,14 @@ def get_script_data(request):
 def remove_script(request):
     status = 1
     info = "移除成功。"
-
     # 取消步骤中脚本的关联
-    script_id = request.POST.get("script_id", "")
-    step_id = request.POST.get("step_id", "")
+    script_instance_id = request.POST.get("script_instance_id", "")
     try:
-        step = Step.objects.get(id=int(step_id))
-        script = Script.objects.get(id=int(script_id))
+        script_instance = ScriptInstance.objects.filter(id=int(script_instance_id)).update(state="9")
     except Exception as e:
         print(e)
         status = 0
         info = "移除失败：{0}".format(e)
-    else:
-        step.script_set.remove(script)
     return JsonResponse({
         "status": status,
         "info": info
@@ -3510,7 +3484,7 @@ def get_step_tree(parent, selectid):
         node["id"] = child.id
         node["children"] = get_step_tree(child, selectid)
 
-        scripts = child.script_set.exclude(state="9").order_by("sort")
+        scripts = child.scriptinstance_set.exclude(state="9").order_by("sort")
         script_string = ""
         for script in scripts:
             id_code_plus = str(script.id) + "+" + str(script.name) + "&"
@@ -3607,7 +3581,7 @@ def custom_step_tree(request):
     if len(rootnodes) > 0:
         for rootnode in rootnodes:
             root = {}
-            scripts = rootnode.script_set.exclude(state="9").order_by("sort")
+            scripts = rootnode.scriptinstance_set.exclude(state="9").order_by("sort")
             script_string = ""
             for script in scripts:
                 id_code_plus = str(script.id) + "+" + str(script.name) + "&"
@@ -3664,10 +3638,16 @@ def processconfig(request, funid):
     # commvault源端客户端
     all_origins = Origin.objects.exclude(state="9").order_by("utils__name")
 
-    # 过滤本地commvaul接口脚本
-    commv_path = os.path.join(os.path.join(settings.BASE_DIR, "faconstor"), "commvault_api")
-
-    commv_file_list = os.listdir(commv_path)
+    # 工具
+    origin_data = []
+    utils = UtilsManage.objects.exclude(state="9").filter(util_type="Commvault")
+    for u in utils:
+        origin_list = u.origin_set.exclude(state="9").values("id", "client_name")
+        origin_data.append({
+            "utils_id": u.id,
+            "utils_name": u.name,
+            "origins": origin_list,
+        })
 
     # tree_data
     select_id = ""
@@ -3700,7 +3680,45 @@ def processconfig(request, funid):
     return render(request, 'processconfig.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                    "processlist": processlist, "process_id": process_id, "all_hosts_manage": all_hosts_manage,
-                   "all_origins": all_origins, "commv_file_list": commv_file_list, "tree_data": tree_data})
+                   "all_origins": all_origins,  "tree_data": tree_data, "origin_data": origin_data})
+
+
+def get_params(config):
+    """
+    <root>
+        <param param_name="1" variable_name="2" param_value="3"/>
+        <param param_name="3" variable_name="4" param_value="5"/>
+        <param param_name="5" variable_name="6" param_value="7"/>
+    </root>
+    """
+    param_list = []
+    pre_config = "<root></root>"
+    if config:
+        config = etree.XML(config)
+    else:
+        config = etree.XML(pre_config)
+    param_nodes = config.xpath("//param")
+    for pn in param_nodes:
+        param_list.append({
+            "param_name": pn.attrib.get("param_name", ""),
+            "variable_name": pn.attrib.get("variable_name", ""),
+            "param_value": pn.attrib.get("param_value", ""),
+        })
+    return param_list
+
+
+def get_variable_name(content, param_type):
+    variable_list = []
+    com = ""
+    if param_type == "HOST":
+        com = re.compile("\(\((.*?)\)\)")
+    if param_type == "PROCESS":
+        com = re.compile("\{\{(.*?)\}\}")
+    if param_type == "SCRIPT":
+        com = re.compile("\[\[(.*?)\]\]")
+    if com:
+        variable_list = com.findall(content)
+    return variable_list
 
 
 @login_required
@@ -3723,47 +3741,73 @@ def display_params(request):
     else:
         script_text = script.script_text
 
-        def get_params(config):
-            """
-            <root>
-                <param param_name="1" variable_name="2" param_value="3"/>
-                <param param_name="3" variable_name="4" param_value="5"/>
-                <param param_name="5" variable_name="6" param_value="7"/>
-            </root>
-            """
-            param_list = []
-            pre_config = "<root></root>"
-            if config:
-                config = etree.XML(config)
-            else:
-                config = etree.XML(pre_config)
-            param_nodes = config.xpath("//param")
-            for pn in param_nodes:
-                param_list.append({
-                    "param_name": pn.attrib.get("param_name", ""),
-                    "variable_name": pn.attrib.get("variable_name", ""),
-                    "param_value": pn.attrib.get("param_value", ""),
-                })
-            return param_list
-
-        def get_variable_name(content, param_type):
-            variable_list = []
-            com = ""
-            if param_type == "HOST":
-                com = re.compile("\(\((.*?)\)\)")
-            if param_type == "PROCESS":
-                com = re.compile("\{\{(.*?)\}\}")
-            if param_type == "SCRIPT":
-                com = re.compile("\[\[(.*?)\]\]")
-            if com:
-                variable_list = com.findall(content)
-            return variable_list
-
-        if script.params:
-            data = eval(script.params)
+        # 流程参数
+        try:
+            process = Process.objects.get(id=int(process_id))
+        except:
+            pass
         else:
+            process_param_list = get_params(process.config)
+            process_variable_list = get_variable_name(script_text, "PROCESS")
+            for pv in process_variable_list:
+                for pp in process_param_list:
+                    if pv.strip() == pp["variable_name"]:
+                        data.append({
+                            "param_name": pp["param_name"],
+                            "variable_name": pp["variable_name"],
+                            "param_value": pp["param_value"],
+                            "type": "PROCESS"
+                        })
+                        break
+
+        # 脚本参数
+        script_param_list = get_params(script.config)
+        script_variable_list = get_variable_name(script_text, "SCRIPT")
+        for sv in script_variable_list:
+            for sp in script_param_list:
+                if sv.strip() == sp["variable_name"]:
+                    data.append({
+                        "param_name": sp["param_name"],
+                        "variable_name": sp["variable_name"],
+                        "param_value": sp["param_value"],
+                        "type": "SCRIPT"
+                    })
+                    break
+
+    return JsonResponse({
+        "status": status,
+        "data": data,
+        "info": info
+    })
+
+
+@login_required
+def load_hosts_params(request):
+    """
+    流程配置
+        切换主机，载入主机参数
+    """
+    host_id = request.POST.get("host_id", "")
+    script_id = request.POST.get("script_id", "")
+    data = []
+    status = 1
+    info = ""
+    try:
+        host = HostsManage.objects.get(id=int(host_id))
+    except:
+        stauts = 0
+        info = "载入主机参数失败：主机不存在。"
+    else:
+        try:
+            script = Script.objects.get(id=int(script_id))
+        except:
+            status = 0
+            info = "载入主机参数失败：当前脚本不存在。"
+        else:
+            script_text = script.script_text
+
             # 主机参数
-            host_param_list = get_params(script.hosts_manage.config) if script.hosts_manage else []
+            host_param_list = get_params(host.config) if host else []
             host_variable_list = get_variable_name(script_text, "HOST")
             for hv in host_variable_list:
                 for hp in host_param_list:
@@ -3775,40 +3819,6 @@ def display_params(request):
                             "type": "HOST"
                         })
                         break
-
-            # 流程参数
-            try:
-                process = Process.objects.get(id=int(process_id))
-            except:
-                pass
-            else:
-                process_param_list = get_params(process.config)
-                process_variable_list = get_variable_name(script_text, "PROCESS")
-                for pv in process_variable_list:
-                    for pp in process_param_list:
-                        if pv.strip() == pp["variable_name"]:
-                            data.append({
-                                "param_name": pp["param_name"],
-                                "variable_name": pp["variable_name"],
-                                "param_value": pp["param_value"],
-                                "type": "PROCESS"
-                            })
-                            break
-
-            # 脚本参数
-            script_param_list = get_params(script.config)
-            script_variable_list = get_variable_name(script_text, "SCRIPT")
-            for sv in script_variable_list:
-                for sp in script_param_list:
-                    if sv.strip() == sp["variable_name"]:
-                        data.append({
-                            "param_name": sp["param_name"],
-                            "variable_name": sp["variable_name"],
-                            "param_value": sp["param_value"],
-                            "type": "SCRIPT"
-                        })
-                        break
-
     return JsonResponse({
         "status": status,
         "data": data,
