@@ -2565,6 +2565,7 @@ def script(request, funid):
         # 节点
         node_remark = request.POST.get('node_remark', '')
         node_pname = request.POST.get('node_pname', '')
+        node_name = request.POST.get('node_name', '')
 
         insert_params = request.POST.get('insert_params', '')
         insert_params = json.loads(insert_params)
@@ -3166,7 +3167,11 @@ def processscriptsave(request):
     try:
         script_instance_id = int(script_instance_id)
     except:
-        script_instance_id = None   
+        script_instance_id = None 
+    try:
+        sort = int(sort)
+    except:
+        sort = None    
     # 初始化
     if interface_type == "Commvault":
         create_data = {
@@ -4436,7 +4441,7 @@ def falconstorrun(request):
                         mysteprun.state = "EDIT"
                         mysteprun.save()
 
-                        myscript = step.script_set.exclude(state="9").order_by("sort")
+                        myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
                         for script in myscript:
                             myscriptrun = ScriptRun()
                             myscriptrun.script = script
@@ -5530,30 +5535,28 @@ def reload_task_nums(request):
 
 @login_required
 def get_current_scriptinfo(request):
-    current_step_id = request.POST.get('steprunid', '')
-    selected_script_id = request.POST.get('scriptid', '')
+    """
+    获取脚本信息
+    Args:
+        steprun_id  运行步骤ID
+        script_instance_id  接口实例ID
 
-    if selected_script_id:
-        try:
-            selected_script_id = int(selected_script_id)
-        except:
-            selected_script_id = None
-    else:
-        selected_script_id = None
+    Returns:
+        接口信息 接口实例信息 步骤状态
+    """
+    status = 1
+    info = ""
+    data = {}
+    scriptrun_id = request.POST.get('scriptrun_id', '')
 
-    scriptrun_objs = ScriptRun.objects.filter(id=selected_script_id)
-    script_id = scriptrun_objs[0].script_id if scriptrun_objs else None
-
-    script_objs = Script.objects.filter(id=script_id)
-    script_obj = script_objs[0] if script_objs else None
-
-    if script_obj:
-        scriptrun_obj = scriptrun_objs[0]
-        step_id_from_script = scriptrun_obj.steprun.step_id
-        show_button = ""
-        if step_id_from_script == current_step_id:
-            # 显示button
-            show_button = 1
+    try:
+        scriptrun = ScriptRun.objects.get(id=int(scriptrun_id))
+        script_instance = scriptrun.script
+        script = script_instance.script
+        steprun = scriptrun.steprun
+        processrun = steprun.processrun
+        origin = script_instance.origin
+        
         state_dict = {
             "DONE": "已完成",
             "EDIT": "未执行",
@@ -5563,34 +5566,45 @@ def get_current_scriptinfo(request):
             "": "",
         }
 
-        starttime = scriptrun_obj.starttime.strftime("%Y-%m-%d %H:%M:%S") if scriptrun_obj.starttime else ""
-        endtime = scriptrun_obj.endtime.strftime("%Y-%m-%d %H:%M:%S") if scriptrun_obj.endtime else ""
+        starttime = '{0:%Y-%m-%d %H:%M:%S}'.format(scriptrun.starttime) if scriptrun.starttime else ""
+        endtime = '{0:%Y-%m-%d %H:%M:%S}'.format(scriptrun.endtime) if scriptrun.endtime else ""
 
+        # 目标客户端
         target = ""
-        if script_obj.interface_type == "commvault":
-            if scriptrun_obj.steprun.processrun.target:
-                target = scriptrun_obj.steprun.processrun.target.client_name
+        if script.interface_type == "Commvault":
+            target = processrun.target.client_name if processrun.target else ""
 
-        script_info = {
-            "processrunstate": scriptrun_obj.steprun.processrun.state,
-            "code": script_obj.code,
-            "ip": script_obj.hosts_manage.host_ip if script_obj.hosts_manage else "",
-            "filename": script_obj.filename,
-            "scriptpath": script_obj.scriptpath,
-            "state": state_dict["{0}".format(scriptrun_obj.state)],
+        # 状态
+        state = ""
+        try:
+            state = state_dict[scriptrun.state]
+        except:
+            pass
+
+        data = {
+            "processrunstate": processrun.state,
+            "code": script.code,
+            "ip": script_instance.hosts_manage.host_ip if script_instance.hosts_manage else "",
+            "state": state,
             "starttime": starttime,
             "endtime": endtime,
-            "operator": scriptrun_obj.operator,
-            "explain": scriptrun_obj.explain,
-            "show_button": show_button,
-            "step_id_from_script": step_id_from_script,
-            "show_log_btn": "1" if script_obj.log_address else "0",
-            "origin": script_obj.origin.client_name if script_obj.origin else "",
+            "operator": scriptrun.operator,
+            "explain": scriptrun.explain,
+            "step_id_from_script": steprun.step_id,
+            "show_log_btn": "1" if script_instance.log_address else "0",
+            "origin": origin.client_name if origin else "",
             "target": target,
-            "interface_type": script_obj.interface_type,
+            "interface_type": script.interface_type,
         }
+    except Exception as e:
+        status = 0
+        info = "获取脚本信息失败：{0}".format(e)
 
-        return JsonResponse({"data": script_info})
+    return JsonResponse({
+        "status": status,
+        "data": data,
+        "info": info    
+    })
 
 
 @login_required
@@ -7212,7 +7226,7 @@ def host_save(request):
                                 # 新增
                                 if host_id == 0:
                                     # 判断主机是否已经存在
-                                    check_host_manage = HostsManage.objects.filter(host_ip=host_ip)
+                                    check_host_manage = HostsManage.objects.exclude(state="9").filter(host_ip=host_ip)
                                     if check_host_manage.exists():
                                         ret = 0
                                         info = "主机已经存在，请勿重复添加。"

@@ -223,8 +223,8 @@ if __name__ == '__main__':
     # print(cmd)  # sed -i 's/\r$//' /tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh
     # server_obj = ServerByPara(r"echo 中文>C:\Users\Administrator\Desktop\test.bat",
     #                           "192.168.100.154", "administrator", "tesunet@2017", "Windows")
-    server_obj = ServerByPara("mkdir -p /tmp/drm/1",
-                              "192.168.184.101", "miaokela", "password", "Linux")
+    server_obj = ServerByPara(r"sed -i 's/\r$//' /tmp/drm/1038/tmp_script_6565.sh&&/tmp/drm/1038/tmp_script_6565.sh",
+                              "192.168.100.211", "root", "123456", "Linux")
     # server_obj = ServerByPara(r"echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好'", "192.168.184.66", "root","password", "Linux")
 
     server_obj.run("")

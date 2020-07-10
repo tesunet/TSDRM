@@ -633,47 +633,51 @@ if (App.isAngularJsApp() === false) {
                                 $("#script_button").val($(this).find('option:selected').val());
                                 // 获取当前步骤脚本信息
                                 var steprunid = "0";
-                                var scriptid = $(this).find('option:selected').val();
+                                var scriptrun_id = $(this).find('option:selected').val();
                                 $.ajax({
                                     url: "/get_current_scriptinfo/",
                                     type: "post",
-                                    data: {"steprunid": steprunid, "scriptid": scriptid},
+                                    data: {"steprunid": steprunid, "scriptrun_id": scriptrun_id},
                                     success: function (data) {
-                                        if (data.data.interface_type == "commvault") {
-                                            $("#script_ip_div").hide();
-                                            $("#origin_div").show();
-                                            $("#target_div").show();
+                                        if (data.status==1){
+                                            if (data.data.interface_type == "commvault") {
+                                                $("#script_ip_div").hide();
+                                                $("#origin_div").show();
+                                                $("#target_div").show();
+                                            } else {
+                                                $("#script_ip_div").show();
+                                                $("#origin_div").hide();
+                                                $("#target_div").hide();
+                                            }
+                                            $("#interface_type").val(data.data.interface_type);
+    
+                                            $("#origin").val(data.data.origin);
+                                            $("#target").val(data.data.target);
+    
+                                            $("#steprunid").val(scriptid);
+                                            $("#code").val(data.data["code"]);
+                                            $("#script_ip").val(data.data["ip"]);
+                                            $("#script_port").val(data.data["port"]);
+                                            $("#filename").val(data.data["filename"]);
+                                            $("#scriptpath").val(data.data["scriptpath"]);
+                                            $("#scriptstate").val(data.data["state"]);
+                                            $("#ontime").val(data.data["starttime"]);
+                                            $("#offtime").val(data.data["endtime"]);
+                                            $("#errorinfo").val(data.data["explain"]);
+                                            if (data.data["state"] == "执行失败" && data.data["processrunstate"] == "ERROR") {
+                                                $("#exec").show();
+                                                $("#ignore").show();
+                                            } else {
+                                                $("#exec").hide();
+                                                $("#ignore").hide();
+                                            }
+                                            if (data.data["show_log_btn"] == "1") {
+                                                $("#show_log").show();
+                                            } else {
+                                                $("#show_log").hide();
+                                            }
                                         } else {
-                                            $("#script_ip_div").show();
-                                            $("#origin_div").hide();
-                                            $("#target_div").hide();
-                                        }
-                                        $("#interface_type").val(data.data.interface_type);
-
-                                        $("#origin").val(data.data.origin);
-                                        $("#target").val(data.data.target);
-
-                                        $("#steprunid").val(scriptid);
-                                        $("#code").val(data.data["code"]);
-                                        $("#script_ip").val(data.data["ip"]);
-                                        $("#script_port").val(data.data["port"]);
-                                        $("#filename").val(data.data["filename"]);
-                                        $("#scriptpath").val(data.data["scriptpath"]);
-                                        $("#scriptstate").val(data.data["state"]);
-                                        $("#ontime").val(data.data["starttime"]);
-                                        $("#offtime").val(data.data["endtime"]);
-                                        $("#errorinfo").val(data.data["explain"]);
-                                        if (data.data["state"] == "执行失败" && data.data["processrunstate"] == "ERROR") {
-                                            $("#exec").show();
-                                            $("#ignore").show();
-                                        } else {
-                                            $("#exec").hide();
-                                            $("#ignore").hide();
-                                        }
-                                        if (data.data["show_log_btn"] == "1") {
-                                            $("#show_log").show();
-                                        } else {
-                                            $("#show_log").hide();
+                                            alert(data.info);
                                         }
                                     }
                                 });

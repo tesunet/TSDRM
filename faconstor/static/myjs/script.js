@@ -32,7 +32,7 @@ $('#tree_2').jstree({
                         $("#title").text("新建");
                         $("#id").val("0");
                         $("#pid").val(obj.id);
-                        $("#my_type").val(obj.type);
+                        $("#my_type").val("NODE");
                         $("#node_name").val("");
                         $("#node_pname").val(obj.text);
                         $("#remark").val("");
@@ -54,7 +54,7 @@ $('#tree_2').jstree({
                         $("#title").text("新建")
                         $("#id").val("0")
                         $("#pid").val(obj.id)
-                        $("#my_type").val(obj.type)
+                        $("#my_type").val("INTERFACE");
                         $("#pname").val(obj.text)
 
                         $("#code").val("");

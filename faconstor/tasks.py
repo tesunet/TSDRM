@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from logging import log
 from celery import shared_task
 from faconstor.models import *
 from django.db import connection
@@ -482,7 +483,6 @@ def runstep(steprun, if_repeat=False):
                 script = script_instance.script
                 origin = script_instance.origin
                 script_name = script_instance.name if script_instance.name else ""
-
                 if script.interface_type in ["Linux", "Windows"]:
                     # HostsManage
                     cur_host_manage = script_instance.hosts_manage
@@ -988,15 +988,17 @@ def exec_process(processrunid, if_repeat=False):
             copy_priority = 1
             steps = process.step_set.exclude(state='9')
             for step in steps:
-                scripts = step.script_set.exclude(state='9')
-                for script in scripts:
+                script_instances = step.scriptinstance_set.exclude(state='9')
+                for script_instance in script_instances:
+                    script = script_instance.script
+                    origin = script_instance.origin
                     if script.interface_type == "commvault":
-                        origin_id = script.origin.id
+                        origin_id = origin.id
 
                         try:
                             c_origin = Origin.objects.get(id=origin_id)
-                        except Origin.DoesNotExist:
-                            pass
+                        except Exception as e:
+                            print(e)
                         else:
                             copy_priority = c_origin.copy_priority
 
