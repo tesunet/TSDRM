@@ -737,7 +737,11 @@ def walkthrough_run_invited(request):
                 current_process_run.starttime = datetime.datetime.now()
                 current_process_run.state = "RUN"
                 current_process_run.walkthroughstate = "RUN"
-                current_process_run.DataSet_id = 89
+                
+                process_type = current_process_run.process.type
+                if process_type.upper() == "COMMVAULT":
+                    cv_oracle_restore_params_save(current_process_run)
+                
                 current_process_run.save()
 
                 process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(
@@ -4413,6 +4417,7 @@ def falconstorrun(request):
                 myprocessrun.state = "RUN"
 
                 if process[0].type.upper() == 'COMMVAULT':
+                    # 流程恢复 指定恢复选项
                     # Commvault 相关
                     myprocessrun.target_id = target
                     myprocessrun.browse_job_id = browseJobId
@@ -4691,7 +4696,7 @@ def walkthroughsave(request):
                                     mysteprun.state = "EDIT"
                                     mysteprun.save()
 
-                                    myscript = step.script_set.exclude(state="9").order_by("sort")
+                                    myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
                                     for script in myscript:
                                         myscriptrun = ScriptRun()
                                         myscriptrun.script = script
@@ -4771,7 +4776,7 @@ def walkthroughsave(request):
                                     mysteprun.state = "EDIT"
                                     mysteprun.save()
 
-                                    myscript = step.script_set.exclude(state="9").order_by("sort")
+                                    myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
                                     for script in myscript:
                                         myscriptrun = ScriptRun()
                                         myscriptrun.script = script

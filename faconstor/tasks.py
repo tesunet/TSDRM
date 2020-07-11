@@ -600,9 +600,8 @@ def runstep(steprun, if_repeat=False):
                                 sftp.chmod(linux_temp_script_file, int("755", 8))
 
                             ssh.close()
-
                         # 执行脚本(上传文件(dos格式>>shell))
-                        exe_cmd = r"sed -i 's/\r$//' {0}&&{0}".format(linux_temp_script_file)
+                        exe_cmd = r"sed -i 's/\r$//' {0}&&sed -i 's/\r$//' {0}&&sh {0}".format(linux_temp_script_file)
                     else:
                         ############################
                         # 创建windows下目录:       #
@@ -660,14 +659,8 @@ def runstep(steprun, if_repeat=False):
                                                       "commvault_api") + os.sep + script_instance.commv_interface
                     ret = ""
 
-                    # 流程目标客户端> 源机关联目标端
-                    pr_target = processrun.target
-                    or_target = origin.target
-
-                    if pr_target:
-                        target_id = pr_target.id
-                    else:
-                        target_id = or_target.id
+                    target_id = processrun.target.id if processrun.target else ""
+                    origin_id = processrun.origin.id if processrun.origin else ""
 
                     oracle_info = json.loads(origin.info)
 
@@ -675,7 +668,7 @@ def runstep(steprun, if_repeat=False):
                     if oracle_info:
                         instance = oracle_info["instance"]
 
-                    oracle_param = "{0} {1} {2} {3}".format(origin.id, target_id, instance, processrun.id)
+                    oracle_param = "{0} {1} {2} {3}".format(origin_id, target_id, instance, processrun.id)
                     try:
                         ret = subprocess.getstatusoutput(commvault_api_path + " {0}".format(oracle_param))
                         exec_status, recover_job_id = ret
@@ -954,15 +947,20 @@ def exec_process(processrunid, if_repeat=False):
     end_step_tag = 0
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
+    process = processrun.process
 
-    # Commvault 流程特殊数据
+    # Commvault流程恢复 nextSCN选项
+    # 流程恢复 ...ProcessRun>>copy_priority
+    # 计划流程 ...Origin>>copy_priority
+    #   先获取优先级 再获取nextSCN选项(主拷贝、辅助拷贝) 
     if processrun.process.type.upper() == "COMMVAULT":
         # nextSCN-1
         # 获取流程客户端
         origin = processrun.origin
         utils = origin.utils
+
         from .views import get_credit_info
-        _, sqlserver_credit = get_credit_info(utils.content)
+        _, sqlserver_credit = get_credit_info(utils.content if utils else None)
         dm = SQLApi.CVApi(sqlserver_credit)
         ret = dm.get_oracle_backup_job_list(origin.client_name)
 
@@ -982,39 +980,16 @@ def exec_process(processrunid, if_repeat=False):
         else:
             curSCN = None
 
-            process = processrun.process
+            # ** 获取 主拷贝 辅助拷贝优先级
+            copy_priority = processrun.copy_priority
 
-            # copy_priority
-            copy_priority = 1
-            steps = process.step_set.exclude(state='9')
-            for step in steps:
-                script_instances = step.scriptinstance_set.exclude(state='9')
-                for script_instance in script_instances:
-                    script = script_instance.script
-                    origin = script_instance.origin
-                    if script.interface_type == "commvault":
-                        origin_id = origin.id
-
-                        try:
-                            c_origin = Origin.objects.get(id=origin_id)
-                        except Exception as e:
-                            print(e)
-                        else:
-                            copy_priority = c_origin.copy_priority
-
-                        break
-
-            # 区分主动流程与定时流程
-            if processrun.copy_priority != copy_priority and processrun.copy_priority:
-                copy_priority = processrun.copy_priority
-
-            # 区分是当前时间还是选择时间点 > 从备份记录中匹配到对应SCN号
+            # ** 获得SCN号
+            # 指定时间 匹配该时间点的SCN
+            # 最新时间 匹配最新的SCN号
             recover_time = '{:%Y-%m-%d %H:%M:%S}'.format(processrun.recover_time) if processrun.recover_time else ""
-            # print('~~~~~ %s' % recover_time)
             if recover_time:
                 for i in ret:
                     if i["subclient"] == "default" and i['LastTime'] == recover_time:
-                        # print('>>>>>')
                         curSCN = i["cur_SCN"]
                         break
             else:
@@ -1024,8 +999,7 @@ def exec_process(processrunid, if_repeat=False):
                         curSCN = i["cur_SCN"]
                         break
 
-            # print('~~~~%s curSCN: %s' % (copy_priority, curSCN))
-            # 辅助拷贝优先的恢复
+            # 辅助拷贝优先的恢复 最新
             if copy_priority == 2:
                 if not recover_time:
                     tmp_tag = 0
@@ -1046,21 +1020,6 @@ def exec_process(processrunid, if_repeat=False):
 
             processrun.curSCN = curSCN
             processrun.save()
-
-            steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None,
-                                                                    step__pnode=None)
-            if len(steprunlist) > 0:
-                end_step_tag = runstep(steprunlist[0], if_repeat)
-            else:
-                myprocesstask = ProcessTask()
-                myprocesstask.processrun = processrun
-                myprocesstask.starttime = datetime.datetime.now()
-                myprocesstask.senduser = processrun.creatuser
-                myprocesstask.receiveuser = processrun.creatuser
-                myprocesstask.type = "ERROR"
-                myprocesstask.state = "0"
-                myprocesstask.content = "流程配置错误，请处理。"
-                myprocesstask.save()
  
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
     if len(steprunlist) > 0:
@@ -1075,6 +1034,11 @@ def exec_process(processrunid, if_repeat=False):
                 current_process_run.starttime = datetime.datetime.now()
                 current_process_run.state = "RUN"
                 current_process_run.walkthroughstate = "RUN"
+                
+                process_type = current_process_run.process.type
+                if process_type.upper() == "COMMVAULT":
+                    cv_oracle_restore_params_save(current_process_run)
+                
                 current_process_run.save()
 
                 process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
@@ -1255,7 +1219,6 @@ def create_process_run(*args, **kwargs):
     """
     # exec_process.delay(processrunid)
     # data_path/target/origin/
-    origin_id, target_id, data_path, copy_priority, db_open = "", None, "", 1, 1
     try:
         process_id = int(kwargs["cur_process"])
     except ValueError as e:
@@ -1266,24 +1229,6 @@ def create_process_run(*args, **kwargs):
         except Process.DoesNotExist as e:
             print(e)
         else:
-            process_type = cur_process.type
-
-            if process_type.upper() == "COMMVAULT":
-                # 过滤所有脚本
-                all_steps = cur_process.step_set.exclude(state="9")
-                for cur_step in all_steps:
-                    all_scripts = cur_step.script_set.exclude(state="9")
-                    for cur_script in all_scripts:
-                        if cur_script.origin:
-                            origin_id = cur_script.origin.id
-                            data_path = cur_script.origin.data_path
-                            copy_priority = cur_script.origin.copy_priority
-                            db_open = cur_script.origin.db_open
-                            if cur_script.origin.target:
-                                target_id = cur_script.origin.target.id
-                            break
-
-            # running_process = ProcessRun.objects.filter(process=cur_process, state__in=["RUN", "ERROR"])
             running_process = ProcessRun.objects.filter(process=cur_process, state__in=["RUN"])
             if running_process.exists():
                 myprocesstask = ProcessTask()
@@ -1300,20 +1245,10 @@ def create_process_run(*args, **kwargs):
                 myprocessrun.process = cur_process
                 myprocessrun.starttime = datetime.datetime.now()
                 myprocessrun.state = "RUN"
+                process_type = myprocessrun.process.type
                 if process_type.upper() == "COMMVAULT":
-                    myprocessrun.target_id = target_id
-                    myprocessrun.data_path = data_path
-                    myprocessrun.copy_priority = copy_priority
-                    myprocessrun.db_open = db_open
-                    myprocessrun.origin_id = origin_id
+                    cv_oracle_restore_params_save(myprocessrun)
 
-                    # 是否回滚归档日志
-                    log_restore = 1
-                    origin = Origin.objects.exclude(state='9').filter(id=origin_id)
-                    if origin:
-                        log_restore = origin[0].log_restore
-
-                    myprocessrun.log_restore = log_restore
                 myprocessrun.save()
                 mystep = cur_process.step_set.exclude(state="9")
                 if not mystep.exists():
@@ -1351,3 +1286,41 @@ def create_process_run(*args, **kwargs):
                     myprocesstask.save()
 
                     exec_process.delay(myprocessrun.id)
+
+
+def cv_oracle_restore_params_save(processrun):
+    """
+    保存 Commvault Oracle 恢复需要的参数
+    Args:
+        processrun 流程对象
+    """
+    # 计划流程用的是默认 恢复选项
+    # 计划流程如果是Commvault 在流程中首个 客户端 对应的 恢复选项 写到ProcessRun
+    try:
+        origin_id, target_id, data_path, copy_priority, db_open, log_restore = "", None, "", 1, 1, 1
+        process = processrun.process
+
+        # 过滤所有脚本
+        all_steps = process.step_set.exclude(state="9")
+        for cur_step in all_steps:
+            script_instances = cur_step.scriptinstance_set.exclude(state="9")
+            for script_instance in script_instances:
+                if script_instance.origin:
+                    origin_id = script_instance.origin.id
+                    data_path = script_instance.origin.data_path
+                    copy_priority = script_instance.origin.copy_priority
+                    db_open = script_instance.origin.db_open
+                    log_restore = script_instance.origin.log_restore
+                    if script_instance.origin.target:
+                        target_id = script_instance.origin.target.id
+                    break
+        
+        processrun.target_id = target_id
+        processrun.data_path = data_path
+        processrun.copy_priority = copy_priority
+        processrun.db_open = db_open
+        processrun.origin_id = origin_id
+        processrun.log_restore = log_restore
+        processrun.save()
+    except:
+        pass

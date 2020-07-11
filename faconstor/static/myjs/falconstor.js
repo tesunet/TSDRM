@@ -640,7 +640,7 @@ if (App.isAngularJsApp() === false) {
                                     data: {"steprunid": steprunid, "scriptrun_id": scriptrun_id},
                                     success: function (data) {
                                         if (data.status==1){
-                                            if (data.data.interface_type == "commvault") {
+                                            if (data.data.interface_type == "Commvault") {
                                                 $("#script_ip_div").hide();
                                                 $("#origin_div").show();
                                                 $("#target_div").show();

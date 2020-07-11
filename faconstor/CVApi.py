@@ -3851,7 +3851,7 @@ if __name__ == "__main__":
     # commvault-10
     # info = {"webaddr": "192.168.1.121", "port": "81", "username": "admin", "passwd": "admin", "token": "",
     #         "lastlogin": 0}
-    info = {"webaddr": "10.1.5.160", "port": "81", "username": "sa_cloud", "passwd": "1qaz@WSX", "token": "",
+    info = {"webaddr": "192.168.100.222", "port": "81", "username": "admin", "passwd": "1qaz@WSX", "token": "",
             "lastlogin": 0}
     # info = {"webaddr": "cv-server", "port": "81", "username": "cvadmin", "passwd": "1qaz@WSX", "token": "",
     #         "lastlogin": 0}
@@ -3863,14 +3863,15 @@ if __name__ == "__main__":
 
     # ret = cvAPI.getClient("10.64.7.43")  # backup status
     # ret = cvAPI.getClientInfo(3)
-    ret = cvAPI.getJobList('jxxd_bf', type='restore')
-    tmp = []
-    for i in ret:
-        if i['status'] != "完成":
-            tmp.append(i)
-    # ret = cvAPI.kill_job('585784')
-
-    print(tmp)
+    ret = cvAPI.getJobList('getJobList', type='backup')
+    print(ret)
+    # tmp = []
+    # for i in ret:
+    #     if i['status'] != "完成":
+    #         tmp.append(i)
+    # # ret = cvAPI.kill_job('585784')
+    #
+    # print(tmp)
     # import json
 
     # with open(r"C:\Users\Administrator\Desktop\ret.json", "w") as f:
