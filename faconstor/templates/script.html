@@ -70,6 +70,14 @@
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
+                                    <div class="form-group" id="commv_interface_div" {{ table.interface_divs.commv_interface_div }}>
+                                        <label class="col-md-2 control-label"><span
+                                                style="color:red; ">*</span>类名</label>
+                                        <div class="col-md-10">
+                                            <input type="text" class="form-control" id="commv_interface" name="commv_interface" value="{{ table.commv_interface }}">
+                                            <div class="form-control-focus"></div>
+                                        </div>
+                                    </div>
                                     <div class="form-group" id="script_text_div" {{ table.interface_divs.script_text_div }}>
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; ">*</span>脚本内容
@@ -82,7 +90,7 @@
 
                                         </div>
                                     </div>
-                                    <div class="form-group ">
+                                    <div class="form-group" id="script_params_div" {{ table.interface_divs.script_text_div }}>
                                         <label class="col-md-2 control-label">脚本参数</label>
                                         <div class="col-md-10">
                                             <div id="context-menu2">

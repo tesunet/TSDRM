@@ -48,7 +48,6 @@ urlpatterns = [
 
     # 预案管理
     url(r'^script/$', script, {'funid': '32'}),
-    url(r'^scriptdata/$', scriptdata),
     url(r'^scriptdel/$', scriptdel),
     url(r'^scriptsave/$', scriptsave),
     url(r'^script_move/$', script_move),

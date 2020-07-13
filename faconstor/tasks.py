@@ -656,67 +656,75 @@ def runstep(steprun, if_repeat=False):
                 else:
                     result = {}
                     commvault_api_path = os.path.join(os.path.join(settings.BASE_DIR, "faconstor"),
-                                                      "commvault_api") + os.sep + script_instance.commv_interface
-                    ret = ""
+                                                      "commvault_api") + os.sep + "{0}.py".format(script.commv_interface)
 
-                    target_id = processrun.target.id if processrun.target else ""
-                    origin_id = processrun.origin.id if processrun.origin else ""
-
-                    oracle_info = json.loads(origin.info)
-
-                    instance = ""
-                    if oracle_info:
-                        instance = oracle_info["instance"]
-
-                    oracle_param = "{0} {1} {2} {3}".format(origin_id, target_id, instance, processrun.id)
-                    try:
-                        ret = subprocess.getstatusoutput(commvault_api_path + " {0}".format(oracle_param))
-                        exec_status, recover_job_id = ret
-                    except Exception as e:
+                    # 判断接口文件是否存在
+                    interface_existed = os.path.exists(commvault_api_path)
+                    if not interface_existed:
                         result["exec_tag"] = 1
-                        result["data"] = "执行commvault接口出现异常{0}。".format(e)
-                        result["log"] = "执行commvault接口出现异常{0}。".format(e)
+                        result["data"] = "Commvault接口文件不存在。"
+                        result["log"] = "Commvault接口文件不存在。"
                     else:
-                        if exec_status == 0:
-                            result["exec_tag"] = 0
-                            result["data"] = "调用commvault接口成功。"
-                            result["log"] = "调用commvault接口成功。"
-                        elif exec_status == 2:
-                            #######################################
-                            # ret=2时，查看任务错误信息写入日志       #
-                            # Oracle恢复出错                      #
-                            #######################################
-                            recover_error = "无"
-                            from faconstor.views import get_credit_info
+                        ret = ""
 
-                            try:
-                                utils_manage = origin.utils_manage
-                                _, sqlserver_credit = get_credit_info(utils_manage.content)
-                                # 查看Oracle恢复错误信息
-                                dm = SQLApi.CVApi(sqlserver_credit)
-                                job_controller = dm.get_job_controller()
-                                dm.close()
+                        target_id = processrun.target.id if processrun.target else ""
+                        origin_id = processrun.origin.id if processrun.origin else ""
 
-                                for jc in job_controller:
-                                    if str(recover_job_id) == str(jc["jobID"]):
-                                        recover_error = jc["delayReason"]
-                                        break
-                            except Exception as e:
-                                recover_error = e
+                        oracle_info = json.loads(origin.info)
 
-                            result["exec_tag"] = 2
-                            # 查看任务错误信息写入>>result["data"]
-                            result["data"] = recover_error
-                            result["log"] = "Oracle恢复出错。"
-                        elif exec_status == 3:
-                            result["exec_tag"] = 3
-                            # 查看任务错误信息写入>>result["data"]
-                            result["data"] = "长时间未获取到Commvault状态，请检查Commvault恢复情况。"
-                            result["log"] = "长时间未获取到Commvault状态，请检查Commvault恢复情况。"
-                        else:
+                        instance = ""
+                        if oracle_info:
+                            instance = oracle_info["instance"]
+
+                        oracle_param = "{0} {1} {2} {3}".format(origin_id, target_id, instance, processrun.id)
+                        try:
+                            ret = subprocess.getstatusoutput(commvault_api_path + " {0}".format(oracle_param))
+                            exec_status, recover_job_id = ret
+                        except Exception as e:
                             result["exec_tag"] = 1
-                            result["data"] = recover_job_id
-                            result["log"] = recover_job_id
+                            result["data"] = "执行commvault接口出现异常{0}。".format(e)
+                            result["log"] = "执行commvault接口出现异常{0}。".format(e)
+                        else:
+                            if exec_status == 0:
+                                result["exec_tag"] = 0
+                                result["data"] = "调用commvault接口成功。"
+                                result["log"] = "调用commvault接口成功。"
+                            elif exec_status == 2:
+                                #######################################
+                                # ret=2时，查看任务错误信息写入日志       #
+                                # Oracle恢复出错                      #
+                                #######################################
+                                recover_error = "无"
+                                from faconstor.views import get_credit_info
+
+                                try:
+                                    utils_manage = origin.utils_manage
+                                    _, sqlserver_credit = get_credit_info(utils_manage.content)
+                                    # 查看Oracle恢复错误信息
+                                    dm = SQLApi.CVApi(sqlserver_credit)
+                                    job_controller = dm.get_job_controller()
+                                    dm.close()
+
+                                    for jc in job_controller:
+                                        if str(recover_job_id) == str(jc["jobID"]):
+                                            recover_error = jc["delayReason"]
+                                            break
+                                except Exception as e:
+                                    recover_error = e
+
+                                result["exec_tag"] = 2
+                                # 查看任务错误信息写入>>result["data"]
+                                result["data"] = recover_error
+                                result["log"] = "Oracle恢复出错。"
+                            elif exec_status == 3:
+                                result["exec_tag"] = 3
+                                # 查看任务错误信息写入>>result["data"]
+                                result["data"] = "长时间未获取到Commvault状态，请检查Commvault恢复情况。"
+                                result["log"] = "长时间未获取到Commvault状态，请检查Commvault恢复情况。"
+                            else:
+                                result["exec_tag"] = 1
+                                result["data"] = recover_job_id
+                                result["log"] = recover_job_id
 
                 scriptrun.result = result['exec_tag']
                 scriptrun.explain = result['data']

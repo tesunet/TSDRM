@@ -60,6 +60,7 @@ $('#tree_2').jstree({
                         $("#code").val("");
                         $("#name").val("");
                         $("#interface_type").val("");
+                        $("#commv_interface").val("");
                         $("#script_text").val("");
                         $("#success_text").val("");
                         $("#remark").val("");
@@ -176,6 +177,7 @@ $('#tree_2').jstree({
             $("#remark").val(data.node.data.remark);
             // Commvault
             $("#interface_type").val(data.node.data.interface_type);
+            $("#commv_interface").val(data.node.data.commv_interface);
 
             // 接口参数
             $('#param_se').empty();
@@ -188,11 +190,15 @@ $('#tree_2').jstree({
             if (data.node.data.interface_type == "Commvault") {
                 $("#host_id_div").hide();
                 $("#script_text_div").hide();
+                $("#script_params_div").hide();
                 $("#success_text_div").hide();
+                $("#commv_interface_div").show();
             } else {
                 $("#host_id_div").show();
                 $("#script_text_div").show();
+                $("#script_params_div").show();
                 $("#success_text_div").show();
+                $("#commv_interface_div").hide();
             }
 
             $("#interface").show()
@@ -220,11 +226,15 @@ $("#interface_type").change(function () {
     if (interface_type == "Commvault") {
         $("#host_id_div").hide();
         $("#script_text_div").hide();
+        $("#script_params_div").hide();
         $("#success_text_div").hide();
+        $("#commv_interface_div").show();
     } else {
         $("#host_id_div").show();
         $("#script_text_div").show();
+        $("#script_params_div").show();
         $("#success_text_div").show();
+        $("#commv_interface_div").hide();
     }
 });
 

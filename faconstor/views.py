@@ -2499,6 +2499,7 @@ def get_script_tree(parent, select_id):
                 "name": child.name,
                 "type": child.type,
                 "interface_type": child.interface_type,
+                "commv_interface": child.commv_interface,
                 "script_text": child.script_text,
                 "success_text": child.succeedtext,
                 "variable_param_list": param_list,
@@ -2531,6 +2532,7 @@ def script(request, funid):
     success_text = ""
     log_address = ""
     interface_type = ""
+    commv_interface = ""
     pid = ""
     my_type = ""
     remark = ""
@@ -2544,6 +2546,7 @@ def script(request, funid):
     interface_divs = {
         "script_text_div": "hidden",
         "success_text_div": "hidden",
+        "commv_interface_div": "hidden",
     }
     if request.method == 'POST':
         right_info_hidden = ""
@@ -2561,6 +2564,9 @@ def script(request, funid):
         # commvault接口
         interface_type = request.POST.get('interface_type', '')
 
+        # 类名
+        commv_interface = request.POST.get('commv_interface', '')
+        
         pid = request.POST.get('pid', '')
         my_type = request.POST.get('my_type', '')
         remark = request.POST.get('remark', '')
@@ -2635,9 +2641,11 @@ def script(request, funid):
                     if save_data["interface_type"] == "Commvault":
                         scriptsave.script_text = ""
                         scriptsave.succeedtext = ""
+                        scriptsave.commv_interface = save_data["commv_interface"]
                     else:
                         scriptsave.script_text = save_data["script_text"]
                         scriptsave.succeedtext = save_data["succeedtext"]
+                        scriptsave.commv_interface = ""
 
                     scriptsave.interface_type = save_data["interface_type"]
 
@@ -2675,9 +2683,11 @@ def script(request, funid):
                             scriptsave.hosts_manage_id = None
                             scriptsave.script_text = ""
                             scriptsave.succeedtext = ""
+                            scriptsave.commv_interface = save_data["commv_interface"]
                         else:
                             scriptsave.script_text = save_data["script_text"]
                             scriptsave.succeedtext = save_data["succeedtext"]
+                            scriptsave.commv_interface = ""
 
                         scriptsave.interface_type = save_data["interface_type"]
 
@@ -2736,6 +2746,7 @@ def script(request, funid):
                     "script_text": script_text,
                     "succeedtext": success_text,
                     "interface_type": interface_type,
+                    "commv_interface": commv_interface,
                     "remark": remark,
                     "pnode_id": pid,
                     "type": my_type,
@@ -2752,16 +2763,22 @@ def script(request, funid):
                             errors.append('接口类型未选择。')
                         else:
                             if interface_type == "Commvault":
-                                interface_divs = {
-                                    "script_text_div": "hidden",
-                                    "success_text_div": "hidden",
-                                }
-                                status, error, select_id = interface_save(save_data)
-                                errors.append(error)
+                                if not commv_interface:
+                                    errors.append('Commvault类名不能为空。')
+                                else:
+                                    interface_divs = {
+                                        "script_text_div": "hidden",
+                                        "success_text_div": "hidden",
+                                        "commv_interface_div": "",
+                                    }
+                                    status, error, select_id = interface_save(save_data)
+                                    if not status:
+                                        errors.append(error)
                             else:
                                 interface_divs = {
                                     "script_text_div": "",
                                     "success_text_div": "",
+                                    "commv_interface_div": "hidden",
                                 }
                                 if script_text.strip() == '':
                                     errors.append('脚本内容不能为空。')
@@ -2816,6 +2833,7 @@ def script(request, funid):
         "script_text": script_text,
         "success_text": success_text,
         "interface_type": interface_type,
+        "commv_interface": commv_interface,
         "pid": pid,
         "my_type": my_type,
         "remark": remark,
@@ -2832,54 +2850,6 @@ def script(request, funid):
         'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
         "errors": errors, "tree_data": tree_data, "table": table,
     })
-
-
-@login_required
-def scriptdata(request):
-    result = []
-    allscript = Script.objects.exclude(state="9").filter(step_id=None).select_related("origin", "hosts_manage")
-    if (len(allscript) > 0):
-        for script in allscript:
-            # modify
-            if script.interface_type == "commvault":
-                cur_origin = script.origin
-                if cur_origin:
-                    result.append({
-                        "id": script.id,
-                        "code": script.code,
-                        "name": script.name,
-                        "ip": "",
-                        "host_id": "",
-                        "script_text": "",
-                        "success_text": "",
-                        "log_address": "",
-
-                        "interface_type": script.interface_type,
-                        "commv_interface": script.commv_interface,
-                        "origin": cur_origin.id
-                    })
-            else:
-                cur_host = script.hosts_manage
-                if cur_host:
-                    host_id = cur_host.id
-                    ip = cur_host.host_ip
-
-                    result.append({
-                        "id": script.id,
-                        "code": script.code,
-                        "name": script.name,
-                        "ip": ip,
-                        "host_id": host_id,
-                        "script_text": script.script_text,
-                        "success_text": script.succeedtext,
-                        "log_address": script.log_address,
-
-                        "interface_type": script.interface_type,
-                        "commv_interface": "",
-                        "origin": "",
-                    })
-
-    return HttpResponse(json.dumps({"data": result}))
 
 
 @login_required
@@ -3027,7 +2997,7 @@ def scriptsave(request):
                             "commv_interface": commv_interface
                         }
 
-                        if interface_type == "commvault":
+                        if interface_type == "Commvault":
                             if origin.strip() == "":
                                 result["res"] = 'commvault源端未选择。'
                             else:
@@ -3143,7 +3113,6 @@ def processscriptsave(request):
     utils = request.POST.get('utils', '')  # Commvault 必填
     host_id = request.POST.get('host_id', '')  # Linux Window 必填
     origin_id = request.POST.get('origin', '')  # Commvault必填
-    commv_interface = request.POST.get('commv_interface', '')  # Commvault必填
     log_address = request.POST.get('log_address', '')
     sort = request.POST.get('sort', '')
     script_instance_remark = request.POST.get('script_instance_remark', '')
@@ -3185,7 +3154,6 @@ def processscriptsave(request):
             "name": script_instance_name,
             "utils_id": utils,
             "origin_id": origin_id,
-            "commv_interface": commv_interface,
             "log_address": log_address,
             "sort": sort,
             "remark": script_instance_remark,
@@ -3204,7 +3172,6 @@ def processscriptsave(request):
             
             "utils_id": None,
             "origin_id": None,
-            "commv_interface": "",
         }
 
     try:
@@ -3347,6 +3314,7 @@ def get_script_data(request):
             "script_code": script.code,
             "script_name": script.name,
             "interface_type": script.interface_type,
+            "commv_interface": script.commv_interface,
             "script_text": script.script_text,
             "succeedtext": script.succeedtext,
             "remark": script.remark,
@@ -3357,7 +3325,6 @@ def get_script_data(request):
             "script_instance_sort": script_instance.sort,
             "params": "",
             "log_address": script_instance.log_address,
-            "commv_interface": script_instance.commv_interface,
             "host_id": script_instance.hosts_manage_id,
             "origin_id": script_instance.origin_id,
             "utils_id": script_instance.utils_id

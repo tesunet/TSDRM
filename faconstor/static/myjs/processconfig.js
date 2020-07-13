@@ -213,6 +213,7 @@ $("#load_script").click(function () {
 
             // commvault
             $("#interface_type").val(data.interface_type);
+            $("#commv_interface").val(data.commv_interface);
 
             displayParams();
             loadHostsParams();
@@ -504,6 +505,7 @@ function customTree() {
                                             $("#script_text").val(data.data.script_text);
                                             $("#success_text").val(data.data.success_text);
                                             $("#interface_type").val(data.data.interface_type);
+                                            $("#commv_interface").val(data.data.commv_interface);
 
                                             // script_instance
                                             $('#script_instance_id').val(data.data.script_instance_id);
