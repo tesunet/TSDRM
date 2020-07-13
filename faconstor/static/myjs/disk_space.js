@@ -15,8 +15,8 @@ $(document).ready(function () {
 
                 if (data.status == 1){
                     capacity_available_percent = data.data.capacity_available_percent,
-                    space_reserved_percent =  data.data.capacity_available_percent,
-                    used_space_percent = data.data.capacity_available_percent;
+                    space_reserved_percent =  data.data.space_reserved_percent,
+                    used_space_percent = data.data.used_space_percent;
                 }
                 AmCharts.makeChart("disk_space_container", {
                     "type": "pie",
