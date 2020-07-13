@@ -8593,7 +8593,6 @@ def get_ma_disk_space(request):
             capacity_available = 0
             space_reserved = 0
             total_space = 0
-
             for r in ret:
                 if type(r["CapacityAvailable"]) == int:
                     capacity_available += r["CapacityAvailable"]
@@ -8602,21 +8601,14 @@ def get_ma_disk_space(request):
                 if type(r["TotalSpaceMB"]) == int:
                     total_space += r["TotalSpaceMB"]
 
-            capacity_available_percent = round((capacity_available / total_space) * 100, 0)
-            space_reserved_percent = round((space_reserved / total_space) * 100, 0)
-            used_space_percent = 100 - capacity_available_percent - space_reserved_percent
-            data.append({
-                "name": "可用容量",
-                "y": capacity_available_percent
-            })
-            data.append({
-                "name": "保留空间",
-                "y": space_reserved_percent
-            })
-            data.append({
-                "name": "已用空间",
-                "y": used_space_percent
-            })
+            capacity_available_percent = round((capacity_available / total_space) * 100, 2)
+            space_reserved_percent = round((space_reserved / total_space) * 100, 2)
+            used_space_percent = round((100 - capacity_available_percent - space_reserved_percent), 2)
+            data = {
+                "capacity_available_percent": capacity_available_percent,
+                "space_reserved_percent": space_reserved_percent,
+                "used_space_percent": used_space_percent
+            }
         except:
             pass
     return JsonResponse({

@@ -1,41 +1,7 @@
 $(document).ready(function () {
     $("#loading").show();
-    var pie_chart = new Highcharts.Chart({
-        chart: {
-            plotBackgroundColor: null,
-            plotBorderWidth: null,
-            plotShadow: false,
-            type: 'pie',
-            renderTo: 'disk_space_container'
-        },
-        title: {
-            text: '磁盘容量'
-        },
-        tooltip: {
-            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
-        },
-        plotOptions: {
-            DiskSpace: {
-                allowPointSelect: true,
-                cursor: 'pointer',
-                dataLabels: {
-                    enabled: true,
-                    format: '<b>{point.name}</b>: {point.percentage:.1f} %',
-                    style: {
-                        color: (Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black'
-                    }
-                }
-            }
-        },
-        series: [{
-            name: 'DiskSpace',
-            colorByPoint: true,
-            data: []
-        }]
-    });
 
     function getMADiskSpace() {
-        pie_chart.series[0].setData([])
         $.ajax({
             type: "POST",
             url: "../get_ma_disk_space/",
@@ -43,14 +9,41 @@ $(document).ready(function () {
                 utils_id: $("#utils_manage").val(),
             },
             success: function (data) {
-                //定义一个数组
-                var browsers = []
-                //迭代，把异步获取的数据放到数组中
-                $.each(data.data, function (i, d) {
-                    browsers.push([d.name, d.y]);
+                var capacity_available_percent = 0,
+                    space_reserved_percent = 0,
+                    used_space_percent = 0;
+
+                if (data.status == 1){
+                    capacity_available_percent = data.data.capacity_available_percent,
+                    space_reserved_percent =  data.data.capacity_available_percent,
+                    used_space_percent = data.data.capacity_available_percent;
+                }
+                AmCharts.makeChart("disk_space_container", {
+                    "type": "pie",
+                    "theme": "light",
+                    "fontSize":15,
+                    "fontFamily": 'Open Sans',
+
+                    "color": '#000',
+                    "colors":["#228B22", "#FF6600", "#FF0F00"],
+
+                    "dataProvider": [{
+                        "name": "可用空间",
+                        "value": capacity_available_percent
+                    }, {
+                        "name": "保留空间",
+                        "value": space_reserved_percent
+                    }, {
+                        "name": "已用空间",
+                        "value": used_space_percent
+                    }],
+                    "valueField": "value",
+                    "titleField": "name",
+                    "outlineAlpha": 0.4,
+                    "depth3D": 15,
+                    "balloonText": "[[title]]<br><span style='font-size:15px'><b>[[value]]</b> ([[percents]]%)</span>",
+                    "angle": 30,
                 });
-                //设置数据
-                pie_chart.series[0].setData(browsers);
             }
         });
     }
