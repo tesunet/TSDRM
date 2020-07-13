@@ -97,6 +97,7 @@ class Script(models.Model):
     type = models.CharField("类型", blank=True, null=True, max_length=20)
     remark = models.TextField("节点/接口说明", null=True, default="")
     succeedtext = models.CharField("成功代码", blank=True, null=True, max_length=500)
+    commv_interface = models.CharField("commvault接口类名", blank=True, null=True, max_length=64)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
@@ -111,7 +112,6 @@ class ScriptInstance(models.Model):
     params = models.TextField("脚本内容参数", null=True, default="")
     log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
     hosts_manage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='选择主机')
-    commv_interface = models.CharField("commvault接口类名", blank=True, null=True, max_length=64)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
