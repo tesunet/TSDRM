@@ -65,9 +65,11 @@ $('#tree_2').jstree({
                         $("#success_text").val("");
                         $("#remark").val("");
 
-                        $("#interface").show()
-                        $("#node").hide()
-                        $("#interface_save").show()
+                        $("#interface").show();
+                        $("#node").hide();
+                        $("#interface_save").show();
+
+                        $("param_se").empty();
                     }
                 }
             },

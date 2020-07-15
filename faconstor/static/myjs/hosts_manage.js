@@ -93,6 +93,7 @@ $(document).ready(function () {
         $("#type").val("");
         $("#username").val("");
         $("#password").val("");
+        $("#param_se").empty();
     });
 
     $('#save').click(function () {

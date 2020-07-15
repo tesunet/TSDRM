@@ -113,6 +113,7 @@ $(document).ready(function () {
         $("#sort").val("");
         $("#process_color").val("");
         $("#type").val("");
+        $("#param_se").empty();
     });
 
     $('#save').click(function () {
