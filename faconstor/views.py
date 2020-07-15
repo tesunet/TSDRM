@@ -8448,7 +8448,7 @@ def get_disk_space_daily(request):
     except:
         pass
     if media_id:
-        disk_space_weekly_data = DiskSpaceWeeklyData.objects.filter(utils_id=utils_id, media_id=media_id).values()
+        disk_space_weekly_data = DiskSpaceWeeklyData.objects.filter(utils_id=utils_id).filter(media_id=media_id).values()
         capacity_available_list = []
         space_reserved_list = []
         total_space_list = []
