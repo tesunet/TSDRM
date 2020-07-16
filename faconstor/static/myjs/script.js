@@ -338,24 +338,45 @@ $('#param_se').contextmenu({
     }
 });
 
-
-
 $('#params_save').click(function () {
     var param_operate = $('#param_operate').val();
     var param_name = $('#param_name').val();
     var variable_name = $('#variable_name').val();
     var param_value = $('#param_value').val();
-
-
+    var existed = false;
     if (param_operate == "new") {
-        $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
+        // 判断是否重复
+        $("#param_se option").each(function () {
+            if (variable_name == $(this).val()) {
+                existed = true;
+                return false;
+            }
+        })
+        if (!existed) {
+            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
+            $("#static01").modal("hide");
+            insertParams();
+        } else {
+            alert("该变量名(" + variable_name + ")已存在，请重写填写。")
+        }
     }
     if (param_operate == "edit") {
-        // 指定value的option修改text
-        $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
+        // 非当前选中节点，相同的表示重复
+        var paramOption = $("#param_se option");
+        for (var i = 0; i < paramOption.length; i++) {
+            if (variable_name == $(paramOption[i]).val() && $("#param_se").find('option:selected').get(0).index != i) {
+                existed = true;
+                break;
+            }
+        }
+        if (!existed) {
+            $("#param_se").find('option:selected').val(variable_name).text(param_name + ": " + param_value);
+            $("#static01").modal("hide");
+            insertParams();
+        } else {
+            alert("该变量名(" + variable_name + ")已存在，请重写填写。")
+        }
     }
-    $("#static01").modal("hide");
-    insertParams();
 });
 
 function insertParams() {

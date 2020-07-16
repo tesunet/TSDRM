@@ -5,14 +5,14 @@ $(document).ready(function () {
         "bProcessing": true,
         "ajax": "../hosts_manage_data/",
         "columns": [
-            {"data": "host_id"},
-            {"data": "host_ip"},
-            {"data": "host_name"},
-            {"data": "os"},
-            {"data": "type"},
-            {"data": "username"},
-            {"data": "password"},
-            {"data": null}
+            { "data": "host_id" },
+            { "data": "host_ip" },
+            { "data": "host_name" },
+            { "data": "os" },
+            { "data": "type" },
+            { "data": "username" },
+            { "data": "password" },
+            { "data": null }
         ],
 
         "columnDefs": [{
@@ -81,7 +81,7 @@ $(document).ready(function () {
         $('#param_se').empty();
         var variable_param_list = data.variable_param_list;
         for (var i = 0; i < variable_param_list.length; i++) {
-            $('#param_se').append('<option value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ': ' + variable_param_list[i].param_value + '</option>');
+            $('#param_se').append('<option param_id="' + variable_param_list[i].param_id + '" value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ': ' + variable_param_list[i].param_value + '</option>');
         }
     });
 
@@ -105,10 +105,12 @@ $(document).ready(function () {
             // 构造单个参数信息
             var txt_param_list = $(this).text().split(":");
             var val_param = $(this).prop("value");
+            var param_id = $(this).attr("param_id");
             var param_dict = {
                 "param_name": txt_param_list[0],
                 "variable_name": val_param,
-                "param_value": txt_param_list[1]
+                "param_value": txt_param_list[1],
+                "param_id": param_id
             };
             params_list.push(param_dict)
         });
@@ -260,14 +262,37 @@ $(document).ready(function () {
         var param_name = $('#param_name').val();
         var variable_name = $('#variable_name').val();
         var param_value = $('#param_value').val();
-
+        var existed = false;
         if (param_operate == "new") {
-            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
+            // 判断是否重复
+            $("#param_se option").each(function () {
+                if (variable_name == $(this).val()) {
+                    existed = true;
+                    return false;
+                }
+            })
+            if (!existed) {
+                $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
+                $("#static01").modal("hide");
+            } else {
+                alert("该变量名(" + variable_name + ")已存在，请重写填写。")
+            }
         }
         if (param_operate == "edit") {
-            // 指定value的option修改text
-            $('#param_se option[value="' + variable_name + '"]').text(param_name + ": " + param_value);
+            // 非当前选中节点，相同的表示重复
+            var paramOption = $("#param_se option");
+            for (var i = 0; i < paramOption.length; i++) {
+                if (variable_name == $(paramOption[i]).val() && $("#param_se").find('option:selected').get(0).index != i) {
+                    existed = true;
+                    break;
+                }
+            }
+            if (!existed) {
+                $("#param_se").find('option:selected').val(variable_name).text(param_name + ": " + param_value);
+                $("#static01").modal("hide");
+            } else {
+                alert("该变量名(" + variable_name + ")已存在，请重写填写。")
+            }
         }
-        $("#static01").modal("hide");
     });
 });
