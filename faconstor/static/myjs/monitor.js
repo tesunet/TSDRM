@@ -343,10 +343,10 @@ $(document).ready(function () {
             // var month = myDate.getMonth() + 1;   //获取当前月
             // var date = myDate.getDate();            //获取当前日
             // var curTime = year + "-" + month + "-" + date;
-            var aSuccessHref = '/restore_search?runstate=DONE';
-            var aRunningHref = '/restore_search?runstate=RUN';
-            var aErrorHref = '/restore_search?runstate=ERROR';
-            var aEditHref = '/restore_search?runstate=EDIT';
+            var aSuccessHref = '/falconstorsearch?runstate=DONE';
+            var aRunningHref = '/falconstorsearch?runstate=RUN';
+            var aErrorHref = '/falconstorsearch?runstate=ERROR';
+            var aEditHref = '/falconstorsearch?runstate=EDIT';
 
             if (data.today_job.running_job > 0) {
                 $("#running_job").html('<a href="' + aRunningHref + '" target="_blank">' + data.today_job.running_job + '</a>');
