@@ -110,7 +110,7 @@ $(document).ready(function () {
         });
     }
 
-    chart = new Highcharts.Chart({
+    var chart = new Highcharts.Chart({
         chart: {
             renderTo: 'disk_space_hc',
             style: {
@@ -124,7 +124,7 @@ $(document).ready(function () {
 
         xAxis: {
             title: {
-                text: '周'
+                text: '时间'
             },
             reversed: true,
         },
@@ -156,6 +156,24 @@ $(document).ready(function () {
         series: [{}]
     })
 
+    function setDiskSpaceChart(chart, data){
+        while (chart.series.length > 0) {
+            chart.series[0].remove(true);
+        }
+
+        // 设置横轴
+        chart.xAxis[0].setCategories(data.categories);
+
+        var disk_list = data.disk_list;
+        for (var i = 0; i < disk_list.length; i++) {
+            chart.addSeries({
+                "name": disk_list[i].name,
+                "data": disk_list[i].capacity_list,
+                "color": disk_list[i].color,
+            });
+        }
+    }
+
     $('#disk_space tbody').on('click', 'button#edit', function () {
         var media_id = $(this).find('input').val();
         var utils_id = $("#utils_manage").val();
@@ -167,23 +185,7 @@ $(document).ready(function () {
                 utils_id: utils_id
             },
             success: function (data) {
-                while (chart.series.length > 0) {
-                    chart.series[0].remove(true);
-                }
-                for (var i = 0; i < data.data.length; i++) {
-                    chart.addSeries({
-                        "name": data.data[i].name,
-                        "data": data.data[i].capacity_list,
-                        "color": data.data[i].color,
-                    });
-                }
-                // 动态生成横坐标
-                // 从1开始
-                var category_list = [];
-                for (var j = 1; j <= 20; j++) {
-                    category_list.push(j)
-                }
-                chart.xAxis[0].setCategories(category_list);
+                setDiskSpaceChart(chart, data);
             }
         });
     });
@@ -199,7 +201,6 @@ $(document).ready(function () {
 
 
     $('#weekly_total_space').click(function () {
-        console.log(1)
         $.ajax({
             type: "POST",
             url: "../get_disk_space_daily/",
@@ -207,24 +208,7 @@ $(document).ready(function () {
                 utils_id: $("#utils_manage").val()
             },
             success: function (data) {
-                console.log(data)
-                while (chart.series.length > 0) {
-                    chart.series[0].remove(true);
-                }
-                for (var i = 0; i < data.data.length; i++) {
-                    chart.addSeries({
-                        "name": data.data[i].name,
-                        "data": data.data[i].capacity_list,
-                        "color": data.data[i].color,
-                    });
-                }
-                // 动态生成横坐标
-                // 从1开始
-                var category_list = [];
-                for (var j = 1; j <= 20; j++) {
-                    category_list.push(j)
-                }
-                chart.xAxis[0].setCategories(category_list);
+                setDiskSpaceChart(chart, data);
             },
             error: function () {
                 console.log('error')
