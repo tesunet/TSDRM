@@ -109,7 +109,12 @@ $(document).ready(function () {
             }
         });
     }
-
+    // 不换算单位
+    Highcharts.setOptions({
+        lang: {
+            numericSymbols: null
+        }
+    })
     var chart = new Highcharts.Chart({
         chart: {
             renderTo: 'disk_space_hc',
