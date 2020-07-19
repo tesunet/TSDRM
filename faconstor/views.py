@@ -3146,60 +3146,79 @@ def processscriptsave(request):
     except:
         sort = None    
     # 初始化
-    if interface_type == "Commvault":
-        create_data = {
-            "params": config, 
-            "step_id": step_id, 
-            "script_id": script_id,
-            "name": script_instance_name,
-            "utils_id": utils,
-            "origin_id": origin_id,
-            "log_address": log_address,
-            "sort": sort,
-            "remark": script_instance_remark,
-            "hosts_manage_id": None,
-        }
-    else:
-        create_data = {
-            "params": config, 
-            "step_id": step_id, 
-            "script_id": script_id,
-            "hosts_manage_id": host_id,
-            "name": script_instance_name,
-            "log_address": log_address,
-            "sort": sort,
-            "remark": script_instance_remark,
-            
-            "utils_id": None,
-            "origin_id": None,
-        }
-
-    try:
-        step = Step.objects.get(id=int(step_id))
-        script_id = int(script_id)
-    except Exception as e:
+    if not script_instance_name:
         result["status"] = 0
-        result["info"] = "保存脚本失败: {0}。".format(e)
+        result["info"] = "接口实例名称未填写。"
     else:
-        # 步骤在已有该脚本实例不可保存
-        if script_instance_id:
-            try:
-                ScriptInstance.objects.filter(id=script_instance_id).update(**create_data)
-                # 步骤下所有脚本
-                result["data"] = str(step.scriptinstance_set.exclude(state="9").values("id", "name"))
-                result["id"] = script_instance_id
-            except Exception as e:
-                result["status"] = 0
-                result["info"] = "修改脚本失败: {0}。".format(e)
+        if interface_type == "Commvault":
+            if not utils:
+                return JsonResponse({
+                    "status": 0,
+                    "info": "未选择工具。"
+                })
+            if not origin_id:
+                return JsonResponse({
+                    "status": 0,
+                    "info": "未选择源客户端"
+                })
+            create_data = {
+                "params": config, 
+                "step_id": step_id, 
+                "script_id": script_id,
+                "name": script_instance_name,
+                "utils_id": utils,
+                "origin_id": origin_id,
+                "log_address": log_address,
+                "sort": sort,
+                "remark": script_instance_remark,
+                "hosts_manage_id": None,
+            }
         else:
-            try:
-                script_instance_id = ScriptInstance.objects.create(**create_data).id
-                # 步骤下所有脚本
-                result["data"] = str(step.scriptinstance_set.exclude(state="9").values("id", "name"))
-                result["id"] = script_instance_id
-            except Exception as e:
-                result["status"] = 0
-                result["info"] = "新增脚本失败: {0}。".format(e)
+            if not host_id:
+                return JsonResponse({
+                    "status": 0,
+                    "info": "未选择主机"
+                })
+            create_data = {
+                "params": config, 
+                "step_id": step_id, 
+                "script_id": script_id,
+                "hosts_manage_id": host_id,
+                "name": script_instance_name,
+                "log_address": log_address,
+                "sort": sort,
+                "remark": script_instance_remark,
+                
+                "utils_id": None,
+                "origin_id": None,
+            }
+
+        try:
+            step = Step.objects.get(id=int(step_id))
+            script_id = int(script_id)
+        except Exception as e:
+            result["status"] = 0
+            result["info"] = "保存脚本失败: {0}。".format(e)
+        else:
+            # 步骤在已有该脚本实例不可保存
+            if script_instance_id:
+                try:
+                    ScriptInstance.objects.filter(id=script_instance_id).update(**create_data)
+                    # 步骤下所有脚本
+                    result["data"] = str(step.scriptinstance_set.exclude(state="9").values("id", "name"))
+                    result["id"] = script_instance_id
+                except Exception as e:
+                    result["status"] = 0
+                    result["info"] = "修改脚本失败: {0}。".format(e)
+            else:
+                try:
+                    script_instance_id = ScriptInstance.objects.create(**create_data).id
+                    # 步骤下所有脚本
+                    result["data"] = str(step.scriptinstance_set.exclude(state="9").values("id", "name"))
+                    result["id"] = script_instance_id
+                except Exception as e:
+                    result["status"] = 0
+                    result["info"] = "新增脚本失败: {0}。".format(e)
 
     return JsonResponse(result)
 

@@ -185,7 +185,7 @@ $('#tree_2').jstree({
             $('#param_se').empty();
             var variable_param_list = data.node.data.variable_param_list;
             for (var i = 0; i < variable_param_list.length; i++) {
-                $('#param_se').append('<option value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ': ' + variable_param_list[i].param_value + '</option>');
+                $('#param_se').append('<option value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ':' + variable_param_list[i].variable_name + ':' + variable_param_list[i].param_value + '</option>');
             }
             insertParams();
 
@@ -293,7 +293,7 @@ $('#param_se').contextmenu({
 
                     var params_t_list = params_t.split(":");
                     var txt_param = params_t_list[0].trim();
-                    var v_param = params_t_list[1].trim();
+                    var v_param = params_t_list[2].trim();
 
                     $("#params").empty();
                     $("#params").append(
@@ -353,7 +353,7 @@ $('#params_save').click(function () {
             }
         })
         if (!existed) {
-            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
+            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ':'  + variable_name + ':' + param_value + '</option>');
             $("#static01").modal("hide");
             insertParams();
         } else {
@@ -370,7 +370,7 @@ $('#params_save').click(function () {
             }
         }
         if (!existed) {
-            $("#param_se").find('option:selected').val(variable_name).text(param_name + ": " + param_value);
+            $("#param_se").find('option:selected').val(variable_name).text(param_name+ ':'  + variable_name + ':' + param_value);
             $("#static01").modal("hide");
             insertParams();
         } else {
@@ -391,7 +391,7 @@ function insertParams() {
         var param_dict = {
             "param_name": txt_param_list[0],
             "variable_name": val_param,
-            "param_value": txt_param_list[1]
+            "param_value": txt_param_list[2]
         };
         params_list.push(param_dict)
     });

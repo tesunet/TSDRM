@@ -98,7 +98,7 @@ $(document).ready(function () {
         $('#param_se').empty();
         var variable_param_list = data.variable_param_list;
         for (var i = 0; i < variable_param_list.length; i++) {
-            $('#param_se').append('<option value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ': ' + variable_param_list[i].param_value + '</option>');
+            $('#param_se').append('<option value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ':' + variable_param_list[i].variable_name + ':' + variable_param_list[i].param_value + '</option>');
         }
     });
 
@@ -128,7 +128,7 @@ $(document).ready(function () {
             var param_dict = {
                 "param_name": txt_param_list[0],
                 "variable_name": val_param,
-                "param_value": txt_param_list[1]
+                "param_value": txt_param_list[2]
             };
             params_list.push(param_dict)
         });
@@ -220,7 +220,7 @@ $(document).ready(function () {
                         var params_t_list = params_t.split(":");
 
                         var txt_param = params_t_list[0];
-                        var v_param = params_t_list[1];
+                        var v_param = params_t_list[2];
 
                         $("#params").empty();
                         $("#params").append(
@@ -278,7 +278,7 @@ $(document).ready(function () {
                 }
             })
             if (!existed) {
-                $('#param_se').append('<option value="' + variable_name + '">' + param_name + ': ' + param_value + '</option>');
+                $('#param_se').append('<option value="' + variable_name + '">' + param_name + ':'  + variable_name + ':' + param_value + '</option>');
                 $("#static01").modal("hide");
             } else {
                 alert("该变量名(" + variable_name + ")已存在，请重写填写。")
@@ -294,7 +294,7 @@ $(document).ready(function () {
                 }
             }
             if (!existed) {
-                $("#param_se").find('option:selected').val(variable_name).text(param_name + ": " + param_value);
+                $("#param_se").find('option:selected').val(variable_name).text(param_name+ ':'  + variable_name + ':' + param_value);
                 $("#static01").modal("hide");
             } else {
                 alert("该变量名(" + variable_name + ")已存在，请重写填写。")
