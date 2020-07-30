@@ -789,12 +789,23 @@ class CVApi(DataMonitor):
                 numbytescomp = 0  # 备份大小
                 numbytesuncomp = 0  # 应用大小
                 # 备份记录中找到最近全备的 应用大小 备份大小
-                for jl in job_list:
-                    if c[0] == jl["clientname"] and c[1] == jl["idataagent"] and c[2] == jl["instance"] and c[3] == jl[
-                        "backupset"] and c[4] == jl["subclient"]:
-                        numbytescomp = jl["numbytescomp"]
-                        numbytesuncomp = jl["numbytesuncomp"]
-                        break
+
+                # Virtual Server备份内容 为两个客户端 的 备份与应用大小
+                # 其他Agent 备份大小为 子客户端的备份与应用大小
+                if c[1] == "Virtual Server":
+                    for jl in job_list:
+                        if jl["clientname"] == c[5]:
+                            numbytescomp = jl["numbytescomp"]
+                            numbytesuncomp = jl["numbytesuncomp"]
+                            break
+                else:
+                    for jl in job_list:
+                        if c[0] == jl["clientname"] and c[1] == jl["idataagent"] and c[2] == jl["instance"] and c[3] == jl[
+                            "backupset"] and c[4] == jl["subclient"]:
+                            numbytescomp = jl["numbytescomp"]
+                            numbytesuncomp = jl["numbytesuncomp"]
+                            break
+
                 if c[0] in client_list:
                     backup_content_list.append({
                         "clientname": c[0],
