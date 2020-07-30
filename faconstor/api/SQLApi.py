@@ -356,7 +356,7 @@ class CVApi(DataMonitor):
                         ORDER BY [startdate] DESC"""
         if full and success:
             job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize], [numbytescomp], [numbytesuncomp]
-                        FROM [commserv].[dbo].[CommCellBackupInfo] WHERE [backuplevel] LIKE '%Full%' AND [jobstatus]='Success'
+                        FROM [commserv].[dbo].[CommCellBackupInfo] WHERE [backuplevel] LIKE '%Full%' AND [jobstatus] LIKE '%Success%'
                         ORDER BY [startdate] DESC"""
         content = self.fetch_all(job_sql)
         backup_jobs = []
@@ -752,7 +752,7 @@ class CVApi(DataMonitor):
         pre_instance = ""
         pre_backupset = ""
         pre_subclient = ""
-
+        pre_vm_content = ""
         # 客户端 应用类型
         for c in ret:
             # 不在选择agents列表 不展示 默认都展示
@@ -760,7 +760,7 @@ class CVApi(DataMonitor):
                 continue
             # 去重
             if c[0] == pre_clientname and c[1] == pre_idataagent and c[2] == pre_instance and c[3] == pre_backupset and \
-                    c[4] == pre_subclient:
+                    c[4] == pre_subclient and c[5] == pre_vm_content:
                 continue
 
             # 在指定客户端列表内
@@ -812,6 +812,7 @@ class CVApi(DataMonitor):
                 pre_instance = c[2]
                 pre_backupset = c[3]
                 pre_subclient = c[4]
+                pre_vm_content = c[5]
 
         # 排序
         final_list = []
