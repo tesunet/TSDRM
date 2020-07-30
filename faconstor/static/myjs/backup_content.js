@@ -45,7 +45,7 @@ $(document).ready(function () {
                         var numbytescomp = (backup_content[i]["numbytescomp"] / 1024 / 1024 / 1024).toFixed(2)
                         var numbytesuncomp = (backup_content[i]["numbytesuncomp"] / 1024 / 1024 / 1024).toFixed(2)
 
-                        $("#tbody3").append(
+                        $("tbody").append(
                             '<tr>' +
                             '<td rowspan="' + backup_content[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + sort + '</td>' +
                             '<td rowspan="' + backup_content[i].clientname_rowspan + '" style="vertical-align:middle; ' + clientname_hidden + '">' + backup_content[i]["clientname"] + '</td>' +
@@ -63,7 +63,7 @@ $(document).ready(function () {
                         pre_type = backup_content[i]["type"]
                         pre_subclient = backup_content[i]["subclient"]
                     }
-                    $("#loading3").hide();
+                    $("#loading").hide();
                 }
             }
         });
