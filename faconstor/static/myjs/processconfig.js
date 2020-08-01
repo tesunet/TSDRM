@@ -40,15 +40,15 @@ function displayParams() {
             script_id: $('#scriptid').val()
         },
         success: function (data) {
-            $('#process_param_div').children().eq(1).empty();
-            $('#script_param_div').children().eq(1).empty();
-            $('#host_param_div').children().eq(1).empty();
+            $('#process_param_div').children().eq(0).empty();
+            $('#script_param_div').children().eq(0).empty();
+            $('#host_param_div').children().eq(0).empty();
             var process_div_hidden = true,
                 script_div_hidden = true;
             for (var i = 0; i < data.data.length; i++) {
                 var params = data.data[i];
                 if (params["type"] == "PROCESS") {
-                    $('#process_param_div').children().eq(1).append('<div class="form-group">\n' +
+                    $('#process_param_div').children().eq(0).append('<div class="form-group">\n' +
                         '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
                         '    <div class="col-md-10">\n' +
                         '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
@@ -61,7 +61,7 @@ function displayParams() {
                     process_div_hidden = false;
                 }
                 if (params["type"] == "SCRIPT") {
-                    $('#script_param_div').children().eq(1).append('<div class="form-group">\n' +
+                    $('#script_param_div').children().eq(0).append('<div class="form-group">\n' +
                         '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
                         '    <div class="col-md-10">\n' +
                         '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
@@ -74,7 +74,7 @@ function displayParams() {
                     script_div_hidden = false;
                 }
                 if (params["type"] == "HOST") {
-                    $('#host_param_div').children().eq(1).append('<div class="form-group">\n' +
+                    $('#host_param_div').children().eq(0).append('<div class="form-group">\n' +
                         '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
                         '    <div class="col-md-10">\n' +
                         '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
@@ -133,12 +133,12 @@ function loadHostsParams(){
             script_id: $('#scriptid').val(),
         },
         success: function(data){
-            $('#host_param_div').children().eq(1).empty();
+            $('#host_param_div').children().eq(0).empty();
             var host_div_hidden = true;
             for (var i = 0; i < data.data.length; i++) {
                 var params = data.data[i];
                 if (params["type"] == "HOST") {
-                    $('#host_param_div').children().eq(1).append('<div class="form-group">\n' +
+                    $('#host_param_div').children().eq(0).append('<div class="form-group">\n' +
                         '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
                         '    <div class="col-md-10">\n' +
                         '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
