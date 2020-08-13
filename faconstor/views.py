@@ -45,7 +45,6 @@ from .remote import ServerByPara
 from TSDRM import settings
 from .api import SQLApi
 
-
 funlist = []
 
 info = {"webaddr": "cv-server", "port": "81", "username": "admin", "passwd": "Admin@2017", "token": "",
@@ -737,11 +736,11 @@ def walkthrough_run_invited(request):
                 current_process_run.starttime = datetime.datetime.now()
                 current_process_run.state = "RUN"
                 current_process_run.walkthroughstate = "RUN"
-                
+
                 process_type = current_process_run.process.type
                 if process_type.upper() == "COMMVAULT":
                     cv_oracle_restore_params_save(current_process_run)
-                
+
                 current_process_run.save()
 
                 process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(
@@ -2566,7 +2565,7 @@ def script(request, funid):
 
         # 类名
         commv_interface = request.POST.get('commv_interface', '')
-        
+
         pid = request.POST.get('pid', '')
         my_type = request.POST.get('my_type', '')
         remark = request.POST.get('remark', '')
@@ -2821,7 +2820,6 @@ def script(request, funid):
             "value": x,
             "selected": selected
         })
-
 
     table = {
         "interface_hidden": interface_hidden,
@@ -3107,7 +3105,7 @@ def processscriptsave(request):
     script_instance_id = request.POST.get('script_instance_id', '')
     config = request.POST.get('config', '')
     interface_type = request.POST.get('interface_type', '')  # 接口类型：Commvault Linux Windows
-    
+
     # add
     script_instance_name = request.POST.get('script_instance_name', '')  # 必填
     utils = request.POST.get('utils', '')  # Commvault 必填
@@ -3140,12 +3138,12 @@ def processscriptsave(request):
     try:
         script_instance_id = int(script_instance_id)
     except:
-        script_instance_id = None 
+        script_instance_id = None
     try:
         sort = int(sort)
     except:
-        sort = None    
-    # 初始化
+        sort = None
+        # 初始化
     if not script_instance_name:
         result["status"] = 0
         result["info"] = "接口实例名称未填写。"
@@ -3162,12 +3160,12 @@ def processscriptsave(request):
                     "info": "未选择源客户端"
                 })
             create_data = {
-                "params": config, 
-                "step_id": step_id, 
+                "params": config,
+                "step_id": step_id,
                 "script_id": script_id,
                 "name": script_instance_name,
                 "utils_id": utils,
-                "origin_id": origin_id,
+                "primary_id": origin_id,
                 "log_address": log_address,
                 "sort": sort,
                 "remark": script_instance_remark,
@@ -3180,19 +3178,19 @@ def processscriptsave(request):
                     "info": "未选择主机"
                 })
             create_data = {
-                "params": config, 
-                "step_id": step_id, 
+                "params": config,
+                "step_id": step_id,
                 "script_id": script_id,
                 "hosts_manage_id": host_id,
                 "name": script_instance_name,
                 "log_address": log_address,
                 "sort": sort,
                 "remark": script_instance_remark,
-                
-                "utils_id": None,
-                "origin_id": None,
-            }
 
+                "utils_id": None,
+                "primary_id": None,
+            }
+        print(create_data)
         try:
             step = Step.objects.get(id=int(step_id))
             script_id = int(script_id)
@@ -3345,9 +3343,9 @@ def get_script_data(request):
             "params": "",
             "log_address": script_instance.log_address,
             "host_id": script_instance.hosts_manage_id,
-            "origin_id": script_instance.origin_id,
+            "origin_id": script_instance.primary_id,
             "utils_id": script_instance.utils_id
-        }     
+        }
 
     return JsonResponse({
         'status': status,
@@ -3636,17 +3634,15 @@ def processconfig(request, funid):
     all_hosts_manage = HostsManage.objects.exclude(state="9")
 
     # commvault源端客户端
-    all_origins = Origin.objects.exclude(state="9").order_by("utils__name")
-
     # 工具
-    origin_data = []
+    cv_client_data = []
     utils = UtilsManage.objects.exclude(state="9").filter(util_type="Commvault")
     for u in utils:
-        origin_list = u.origin_set.exclude(state="9").values("id", "client_name")
-        origin_data.append({
+        cv_client_list = u.cvclient_set.exclude(state="9").exclude(type=2).values("id", "client_name")
+        cv_client_data.append({
             "utils_id": u.id,
             "utils_name": u.name,
-            "origins": origin_list,
+            "cv_client_list": cv_client_list,
         })
 
     # tree_data
@@ -3676,11 +3672,11 @@ def processconfig(request, funid):
         root["children"] = get_script_tree(root_node, select_id)
         tree_data.append(root)
     tree_data = json.dumps(tree_data, ensure_ascii=False)
-    
+
     return render(request, 'processconfig.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                    "processlist": processlist, "process_id": process_id, "all_hosts_manage": all_hosts_manage,
-                   "all_origins": all_origins,  "tree_data": tree_data, "origin_data": origin_data})
+                   "tree_data": tree_data, "cv_client_data": cv_client_data})
 
 
 def get_params(config):
@@ -3733,7 +3729,7 @@ def display_params(request):
     info = ""
     script_id = request.POST.get("script_id", "")
     process_id = request.POST.get("process_id", "")
-    
+
     try:
         script = Script.objects.get(id=int(script_id))
     except:
@@ -4263,42 +4259,98 @@ def falconstorswitch(request, process_id):
     else:
         return Http404()
 
+    # 1.流程配置中源端ID与名称,以及默认源端关联的终端ID
+    # 2.所有客户端ID与名称
+    # 3.Oracle恢复需要的参数
+    # pri, std, data_path, copy_priority, db_open, log_restore
+    cv_params = {
+        "pri_id": "",
+        "pri_name": "",
+        "std_id": "", 
+        # Oracle
+        "data_path": "",
+        "copy_priority": "",
+        "db_open": "",
+        "log_restore": "",
+        # File System
+        "destPath": "",
+        "overWrite": "",
+        "inPlace": "",
+        "OSRestore": "",
+        "sourcePaths": "",
+        # SQL Server
+        "mssqlOverWrite": "",
+    }
+    agent_type = ""
+    std_id = ""
+    all_steps = Step.objects.exclude(state="9").filter(process_id=process_id)
+    if_break = False
+    for cur_step in all_steps:
+        all_scriptinstances = cur_step.scriptinstance_set.exclude(state="9")
+        for cur_scriptinstance in all_scriptinstances:
+            pri = cur_scriptinstance.primary
+            if pri:
+                agent_type = pri.agentType
+                info = etree.XML(pri.info)
+                params = info.xpath("//param")
+
+                if params:
+                    param = params[0]
+                    std_id = pri.destination.id if pri.destination else ""
+                    cv_params["pri_id"] = pri.id
+                    cv_params["pri_name"] = pri.client_name
+                    cv_params["std_id"] = std_id
+                    # Oracle
+                    cv_params["data_path"] = param.attrib.get("data_path", "")
+                    cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
+                    cv_params["db_open"] = param.attrib.get("db_open", "")
+                    cv_params["log_restore"] = param.attrib.get("log_restore", "")
+                    # File System
+                    cv_params["destPath"] = param.attrib.get("destPath", "")
+                    cv_params["overWrite"] = param.attrib.get("overWrite", "")
+                    cv_params["inPlace"] = param.attrib.get("inPlace", "")
+                    cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
+                    cv_params["sourcePaths"] = eval(param.attrib.get("sourcePaths", "[]"))
+                    
+                    # SQL Server
+                    cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
+                    
+                if_break = True
+                break
+        if if_break:
+            break
+    
+    cv_clients = CvClient.objects.exclude(state="9").exclude(type=1).values("id", "client_name", "utils__name")
+
+    cv_clients_list = []
+    for cc in cv_clients:
+        if cc["id"] == std_id:
+            cv_clients_list.append({
+                "id": cc["id"],
+                "client_name": cc["client_name"],
+                "utils_name": cc["utils__name"],
+                "selected": "selected"
+            })
+        else:
+            cv_clients_list.append({
+                "id": cc["id"],
+                "client_name": cc["client_name"],
+                "utils_name": cc["utils__name"],
+                "selected": ""
+            })
+
     # 预案类型
-    type = ''
+    process_type = ''
     try:
         process = Process.objects.get(id=process_id)
     except Process.DoesNotExist as e:
         print(e)
     else:
-        type = process.type
-
-    # commvault目标客户端
-    all_targets = Target.objects.exclude(state="9")
-
-    # commvault源客户端
-    all_steps = Step.objects.exclude(state="9").filter(process_id=process_id)
-
-    target_id = ""
-    origin = ""
-    data_path = ""
-    copy_priority = ""
-    db_open = ""
-    for cur_step in all_steps:
-        all_scripts = cur_step.scriptinstance_set.exclude(state="9")
-        for cur_script in all_scripts:
-            if cur_script.origin:
-                origin = cur_script.origin
-                target_id = cur_script.origin.target.id
-                data_path = cur_script.origin.data_path
-                copy_priority = cur_script.origin.copy_priority
-                db_open = cur_script.origin.db_open
-                break
+        process_type = process.type
     return render(request, 'falconstorswitch.html',
-                  {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                   "wrapper_step_list": wrapper_step_list, "process_id": process_id, "type": type,
-                   "data_path": data_path,
-                   "plan_process_run_id": plan_process_run_id, "all_targets": all_targets, "origin": origin,
-                   "target_id": target_id, "copy_priority": copy_priority, "db_open": db_open})
+                    {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
+                    "wrapper_step_list": wrapper_step_list, "process_id": process_id,  "plan_process_run_id": plan_process_run_id, 
+                    "cv_params": cv_params, "cv_clients": cv_clients_list, "process_type": process_type, "agent_type": agent_type})
 
 
 @login_required
@@ -4359,14 +4411,24 @@ def falconstorrun(request):
     run_time = request.POST.get('run_time', '')
     run_reason = request.POST.get('run_reason', '')
 
-    target = request.POST.get('target', '')
+    # Commvault
+    pri = request.POST.get('pri', '')
+    std = request.POST.get('std', '')
+    agent_type = request.POST.get('agent_type', '')
     recovery_time = request.POST.get('recovery_time', '')
     browseJobId = request.POST.get('browseJobId', '')
+    # Oracle
     data_path = request.POST.get('data_path', '')
     copy_priority = request.POST.get('copy_priority', '')
     db_open = request.POST.get('db_open', '')
-
-    origin = request.POST.get('origin', '')
+    log_restore = request.POST.get('log_restore', '')
+    # File System
+    mypath = request.POST.get("mypath", "")
+    iscover = request.POST.get("iscover", "")
+    selectedfile = request.POST.get("selectedfile", "")
+    # SQL Server
+    mssql_iscover = request.POST.get("mssql_iscover", "")
+    
     try:
         processid = int(processid)
     except:
@@ -4375,18 +4437,6 @@ def falconstorrun(request):
     if not process.exists():
         result["res"] = '流程启动失败，该流程不存在。'
     else:
-        # Commvault相关
-        if process[0].type.upper() == 'COMMVAULT':
-            try:
-                origin = int(origin)
-            except:
-                return JsonResponse({"res": "流程步骤中未添加Commvault接口，导致源客户端未空。"})
-
-            try:
-                target = int(target)
-            except:
-                return JsonResponse({"res": "目标客户端未选择。"})
-
         running_process = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
         if running_process.exists():
             result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
@@ -4400,25 +4450,80 @@ def falconstorrun(request):
                 myprocessrun.starttime = datetime.datetime.now()
                 myprocessrun.creatuser = request.user.username
                 myprocessrun.run_reason = run_reason
+                myprocessrun.recover_time = datetime.datetime.strptime(
+                    recovery_time, "%Y-%m-%d %H:%M:%S"
+                ) if recovery_time else None
                 myprocessrun.state = "RUN"
 
                 if process[0].type.upper() == 'COMMVAULT':
-                    # 流程恢复 指定恢复选项
-                    # Commvault 相关
-                    myprocessrun.target_id = target
-                    myprocessrun.browse_job_id = browseJobId
-                    myprocessrun.data_path = data_path
-                    myprocessrun.copy_priority = copy_priority
-                    myprocessrun.db_open = db_open
-                    myprocessrun.origin_id = origin
-                    myprocessrun.recover_time = datetime.datetime.strptime(recovery_time,
-                                                                           "%Y-%m-%d %H:%M:%S") if recovery_time else None
-                    # 是否回滚归档日志
-                    log_restore = 1
-                    origin = Origin.objects.filter(id=origin)
-                    if origin:
-                        log_restore = origin[0].log_restore
-                    myprocessrun.log_restore = log_restore
+                    try:
+                        pri = int(pri)
+                    except Exception:
+                        return JsonResponse({"res": "流程步骤中未添加Commvault接口，导致源客户端未空。"})
+
+                    try:
+                        std = int(std)
+                    except:
+                        return JsonResponse({"res": "目标客户端未选择。"})
+                    
+                    if "Oracle" in agent_type:
+                        try:
+                            copy_priority = int(copy_priority)
+                        except ValueError as e:
+                            copy_priority = 1
+                        try:
+                            db_open = int(db_open)
+                        except ValueError as e:
+                            db_open = 1
+                        try:
+                            log_restore = int(log_restore)
+                        except ValueError as e:
+                            log_restore = 1
+                        cv_params = {
+                            "pri_id": str(pri),
+                            "std_id": str(std),
+                            "browse_job_id": str(browseJobId),
+                            
+                            "copy_priority": str(copy_priority),
+                            "db_open": str(db_open),
+                            "log_restore": str(log_restore),
+                            "data_path": data_path
+                        }
+                    elif "File System" in agent_type:
+                        inPlace = True
+                        if mypath != "same":
+                            inPlace = False
+                        overWrite = False
+                        if iscover == "True":
+                            overWrite = True
+                        
+                        sourceItemlist = selectedfile.split("*!-!*")
+                        for sourceItem in sourceItemlist:
+                            if sourceItem == "":
+                                sourceItemlist.remove(sourceItem)
+                        cv_params = {
+                            "pri_id": str(pri),
+                            "std_id": str(std),
+                            "browse_job_id": str(browseJobId),
+                            
+                            "overWrite": overWrite,
+                            "inPlace": inPlace,
+                            "destPath": mypath,
+                            "sourcePaths": sourceItemlist,
+                            "OSRestore": False
+                        }
+                    elif "SQL Server" in agent_type:
+                        mssqlOverWrite = False
+                        if mssql_iscover == "TRUE":
+                            mssqlOverWrite = True
+                        cv_params = {
+                            "mssqlOverWrite": mssqlOverWrite,
+                        }
+                    else:
+                        return JsonResponse({"res": "其他应用正在开发中"})
+                    
+                    config = custom_cv_params(**cv_params)
+                    myprocessrun.info = config
 
                 myprocessrun.save()
                 mystep = process[0].step_set.exclude(state="9").order_by("sort")
@@ -4480,7 +4585,6 @@ def falconstorrun(request):
                     else:
                         prosssigns = ProcessTask.objects.filter(processrun=myprocessrun, state="0")
                         if len(prosssigns) <= 0:
-                            myprocess = myprocessrun.process
                             myprocesstask = ProcessTask()
                             myprocesstask.processrun = myprocessrun
                             myprocesstask.starttime = datetime.datetime.now()
@@ -5546,8 +5650,8 @@ def get_current_scriptinfo(request):
         script = script_instance.script
         steprun = scriptrun.steprun
         processrun = steprun.processrun
-        origin = script_instance.origin
-        
+        pri = script_instance.primary
+
         state_dict = {
             "DONE": "已完成",
             "EDIT": "未执行",
@@ -5561,9 +5665,20 @@ def get_current_scriptinfo(request):
         endtime = '{0:%Y-%m-%d %H:%M:%S}'.format(scriptrun.endtime) if scriptrun.endtime else ""
 
         # 目标客户端
-        target = ""
-        if script.interface_type == "Commvault":
-            target = processrun.target.client_name if processrun.target else ""
+        cur_info = processrun.info
+        std_name = ""
+        try:
+            cur_info = etree.XML(cur_info)
+        except Exception:
+            pass
+        else:
+            std_id = cur_info.xpath("//param")[0].attrib.get("std_id")
+            try:
+                std = CvClient.objects.get(id=int(std_id))
+            except Exception:
+                pass
+            else:
+                std_name = std.client_name
 
         # 状态
         state = ""
@@ -5583,8 +5698,8 @@ def get_current_scriptinfo(request):
             "explain": scriptrun.explain,
             "step_id_from_script": steprun.step_id,
             "show_log_btn": "1" if script_instance.log_address else "0",
-            "origin": origin.client_name if origin else "",
-            "target": target,
+            "pri": pri.client_name if pri else "",
+            "std": std_name,
             "interface_type": script.interface_type,
         }
     except Exception as e:
@@ -5594,7 +5709,7 @@ def get_current_scriptinfo(request):
     return JsonResponse({
         "status": status,
         "data": data,
-        "info": info    
+        "info": info
     })
 
 
@@ -8193,7 +8308,7 @@ def get_backup_content(request):
                 type_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'],
                                            type=wl['type'])
                 subclient_rowspan = get_rowspan(whole_list, clientname=wl['clientname'], idataagent=wl['idataagent'],
-                                           type=wl['type'], subclient=wl['subclient'])
+                                                type=wl['type'], subclient=wl['subclient'])
                 whole_list[num]['clientname_rowspan'] = clientname_rowspan
                 whole_list[num]['idataagent_rowspan'] = idataagent_rowspan
                 whole_list[num]['type_rowspan'] = type_rowspan
@@ -8491,7 +8606,7 @@ def get_disk_space_daily(request):
                         last_month_capacity_avaible = round(dswd["capacity_avaible"] / 1024, 2)
                         last_month_total_space = round(dswd["total_space"] / 1024, 2)
                         break
-                
+
                 # 当月未取数
                 if i == 0 and not has_data:
                     continue
@@ -8632,24 +8747,6 @@ def get_ma_disk_space(request):
         "info": info,
         "data": data
     })
-
-
-@login_required
-def oraclerecoverydata(request):
-    origin_id = request.GET.get('origin_id', '')
-    result = []
-    try:
-        origin_id = int(origin_id)
-        origin = Origin.objects.get(id=origin_id)
-        utils_manage = origin.utils
-        _, sqlserver_credit = get_credit_info(utils_manage.content)
-        dm = SQLApi.CVApi(sqlserver_credit)
-        result = dm.get_oracle_backup_job_list(origin.client_name)
-        dm.close()
-    except Exception as e:
-        print(e)
-
-    return JsonResponse({"data": result})
 
 
 @login_required
@@ -8931,167 +9028,6 @@ def process_schedule_del(request):
         "ret": ret,
         "info": info
     })
-
-
-@login_required
-def manualrecovery(request, funid):
-    result = []
-    all_targets = Target.objects.exclude(state="9")
-    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
-    return render(request, 'manualrecovery.html',
-                  {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                   "all_targets": all_targets, "utils_manage": utils_manage})
-
-
-@login_required
-def manualrecoverydata(request):
-    utils_manage_id = request.GET.get("utils_manage_id", "")
-    result = []
-
-    try:
-        utils_manage_id = int(utils_manage_id)
-    except Exception as e:
-        print(e)
-    else:
-        all_origins = Origin.objects.exclude(state="9").filter(utils_id=utils_manage_id).select_related("target")
-        for origin in all_origins:
-            result.append({
-                "client_manage_id": origin.id,
-                "client_name": origin.client_name,
-                "client_id": origin.client_id,
-                "client_os": origin.os,
-                "model": json.loads(origin.info)["agent"],
-                "data_path": origin.data_path if origin.data_path else "",
-                "copy_priority": origin.copy_priority,
-                "target_client": origin.target.client_name
-            })
-    return JsonResponse({"data": result})
-
-
-@login_required
-def dooraclerecovery(request):
-    if request.method == 'POST':
-        sourceClient = request.POST.get('sourceClient', '')
-        destClient = request.POST.get('destClient', '')
-        restoreTime = request.POST.get('restoreTime', '')
-        browseJobId = request.POST.get('browseJobId', '')
-        agent = request.POST.get('agent', '')
-        data_path = request.POST.get('data_path', '')
-        copy_priority = request.POST.get('copy_priority', '')
-
-        try:
-            copy_priority = int(copy_priority)
-        except:
-            pass
-
-        data_sp = request.POST.get('data_sp', '')
-
-        #################################
-        # sourceClient>> instance_name  #
-        #################################
-        instance = ""
-        try:
-            cur_origin = Origin.objects.exclude(state="9").get(client_name=sourceClient)
-        except Origin.DoesNotExist as e:
-            return HttpResponse("恢复任务启动失败, 源客户端不存在。")
-        else:
-            oracle_info = json.loads(cur_origin.info)
-
-            if oracle_info:
-                try:
-                    instance = oracle_info["instance"]
-                except:
-                    pass
-            if not instance:
-                return HttpResponse("恢复任务启动失败, 数据库实例不存在。")
-
-            utils_content = cur_origin.utils.content if cur_origin.utils else ""
-            commvault_credit, sqlserver_credit = get_credit_info(utils_content)
-
-            # restoreTime对应curSCN号
-            dm = SQLApi.CVApi(sqlserver_credit)
-            oraclecopys = dm.get_oracle_backup_job_list(sourceClient)
-            # print("> %s" % restoreTime)
-            curSCN = ""
-            if restoreTime:
-                for i in oraclecopys:
-                    if i["subclient"] == "default" and i['LastTime'] == restoreTime:
-                        # print('>>>>>1')
-                        print(i['LastTime'])
-                        curSCN = i["cur_SCN"]
-                        break
-            else:
-                for i in oraclecopys:
-                    if i["subclient"] == "default":
-                        # print('>>>>>2')
-                        curSCN = i["cur_SCN"]
-                        break
-
-            if copy_priority == 2:
-                # 辅助拷贝状态
-                auxcopys = dm.get_all_auxcopys()
-                jobs_controller = dm.get_job_controller()
-
-                dm.close()
-
-                # 判断当前存储策略是否有辅助拷贝未完成
-                auxcopy_completed = True
-                for job in jobs_controller:
-                    if job['storagePolicy'] == data_sp and job['operation'] == "Aux Copy":
-                        auxcopy_completed = False
-                        break
-                # 假设未恢复成功
-                # auxcopy_status = 'ERROR'
-                print('当前备份记录对应的辅助拷贝状态 %s' % auxcopy_completed)
-                if not auxcopy_completed:
-                    # 找到成功的辅助拷贝，开始时间在辅助拷贝前的、值对应上的主拷贝备份时间点(最终转化UTC)
-                    for auxcopy in auxcopys:
-                        if auxcopy['storagepolicy'] == data_sp and auxcopy['jobstatus'] in ["Completed", "Success"]:
-                            bytesxferred = auxcopy['bytesxferred']
-
-                            end_tag = False
-                            for orcl_copy in oraclecopys:
-                                try:
-                                    orcl_copy_starttime = datetime.datetime.strptime(orcl_copy['StartTime'],
-                                                                                     "%Y-%m-%d %H:%M:%S")
-                                    aux_copy_starttime = datetime.datetime.strptime(auxcopy['startdate'],
-                                                                                    "%Y-%m-%d %H:%M:%S")
-                                    if orcl_copy[
-                                        'numbytesuncomp'] == bytesxferred and orcl_copy_starttime < aux_copy_starttime and \
-                                            orcl_copy['subclient'] == "default":
-                                        # 获取enddate,转化时间
-                                        curSCN = orcl_copy['cur_SCN']
-                                        end_tag = True
-                                        break
-                                except Exception as e:
-                                    print(e)
-                            if end_tag:
-                                break
-
-            dm.close()
-            # print('Rac %s' % curSCN)
-            oraRestoreOperator = {"curSCN": curSCN, "browseJobId": None, "data_path": data_path,
-                                  "copy_priority": copy_priority, "restoreTime": restoreTime}
-            # print("> %s > %s, %s, %s" % (oraRestoreOperator, sourceClient, destClient, instance))
-
-            cvToken = CV_RestApi_Token()
-            cvToken.login(commvault_credit)
-            cvAPI = CV_API(cvToken)
-            if agent.upper() == "ORACLE DATABASE":
-                if cvAPI.restoreOracleBackupset(sourceClient, destClient, instance, oraRestoreOperator):
-                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
-                else:
-                    return HttpResponse("恢复任务启动失败。" + cvAPI.msg)
-            elif agent.upper() == "ORACLE RAC":
-                oraRestoreOperator["browseJobId"] = browseJobId
-                if cvAPI.restoreOracleRacBackupset(sourceClient, destClient, instance, oraRestoreOperator):
-                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
-                else:
-                    return HttpResponse("恢复任务启动失败。" + cvAPI.msg)
-            else:
-                return HttpResponse("无当前模块，恢复任务启动失败。")
-    else:
-        return HttpResponse("恢复任务启动失败。")
 
 
 @login_required
@@ -9539,3 +9475,1258 @@ def get_process_run_rto(processrun):
 
     delta_time = processrun.rto
     return delta_time
+
+
+######################
+# 客户端管理
+######################
+@login_required
+def client_manage(request, funid):
+    return render(request, 'client_manage.html',
+                  {'username': request.user.userinfo.fullname,
+                   "pagefuns": getpagefuns(funid, request=request)})
+
+
+def get_client_node(parent, select_id, request):
+    nodes = []
+    children = parent.children.order_by("sort").exclude(state="9")
+    for child in children:
+        # 当前用户所在用户组所拥有的 主机访问权限
+        # 如当前用户是管理员 均可访问
+        if not request.user.is_superuser and child.nodetype == "CLIENT":
+            # 能访问当前主机的所有角色
+            # 当前用户所在的所有角色
+            # 只要匹配一个就展示
+            user_in_groups = request.user.userinfo.group.all()
+            host_in_groups = child.group_set.all()
+
+            has_privilege = False
+
+            for uig in user_in_groups:
+                for hig in host_in_groups:
+                    if uig.id == hig.id:
+                        has_privilege = True
+                        break
+            if not has_privilege:
+                continue
+
+        node = dict()
+        node["text"] = child.host_name
+        node["id"] = child.id
+        node["type"] = child.nodetype
+        node["data"] = {
+            "name": child.host_name,
+            "remark": child.remark,
+            "pname": parent.host_name
+        }
+
+        node["children"] = get_client_node(child, select_id, request)
+        if child.id in [1, 2, 3]:
+            node["state"] = {"opened": True}
+        if child.id == 2:
+            node["text"] = "<img src = '/static/pages/images/s.png' height='24px'> " + node["text"]
+        if child.id == 3:
+            node["text"] = "<img src = '/static/pages/images/d.png' height='24px'> " + node["text"]
+        if child.nodetype == "NODE" and child.id not in [1, 2, 3]:
+            node["text"] = "<i class='jstree-icon jstree-themeicon fa fa-folder icon-state-warning icon-lg jstree-themeicon-custom'></i>" + node["text"]
+
+        if child.nodetype == "CLIENT":
+            db_client = DbCopyClient.objects.exclude(state="9").filter(hostsmanage=child)
+            if len(db_client) > 0:
+                if db_client[0].dbtype == "1":
+                    node["text"] = "<img src = '/static/pages/images/oracle.png' height='24px'> " + node["text"]
+            cv_client = CvClient.objects.exclude(state="9").filter(hostsmanage=child)
+            if len(cv_client) > 0:
+                node["text"] = "<img src = '/static/pages/images/cv.png' height='24px'> " + node["text"]
+        try:
+            if int(select_id) == child.id:
+                node["state"] = {"selected": True}
+        except:
+            pass
+        nodes.append(node)
+    return nodes
+
+
+@login_required
+def get_client_tree(request):
+    select_id = request.POST.get('id', '')
+    tree_data = []
+    root_nodes = HostsManage.objects.order_by("sort").exclude(state="9").filter(pnode=None).filter(nodetype="NODE")
+
+    for root_node in root_nodes:
+        root = dict()
+        root["text"] = root_node.host_name
+        root["id"] = root_node.id
+        root["type"] = root_node.nodetype
+        root["data"] = {
+            "name": root_node.host_name,
+            "remark": root_node.remark,
+            "pname": "无"
+        }
+        if root_node.id == 1:
+            root["text"] = "<img src = '/static/pages/images/c.png' height='24px'> " + root["text"]
+        try:
+            if int(select_id) == root_node.id:
+                root["state"] = {"opened": True, "selected": True}
+            else:
+                root["state"] = {"opened": True}
+        except:
+            root["state"] = {"opened": True}
+        root["children"] = get_client_node(root_node, select_id, request)
+        tree_data.append(root)
+    return JsonResponse({
+        "ret": 1,
+        "data": tree_data
+    })
+
+
+@login_required
+def clientdel(request):
+    if 'id' in request.POST:
+        id = request.POST.get('id', '')
+        try:
+            id = int(id)
+        except:
+            return HttpResponse(0)
+        client = HostsManage.objects.get(id=id)
+        client.state = "9"
+        client.save()
+
+        return HttpResponse(1)
+    else:
+        return HttpResponse(0)
+
+
+@login_required
+def client_move(request):
+    id = request.POST.get('id', '')
+    parent = request.POST.get('parent', '')
+    old_parent = request.POST.get('old_parent', '')
+    position = request.POST.get('position', '')
+    old_position = request.POST.get('old_position', '')
+    try:
+        id = int(id)  # 节点 id
+        parent = int(parent)  # 目标位置父节点 pnode_id
+        position = int(position)  # 目标位置
+        old_parent = int(old_parent)  # 起点位置父节点 pnode_id
+        old_position = int(old_position)  # 起点位置
+    except:
+        return HttpResponse("0")
+    # sort = position + 1 sort从1开始
+
+    # 起始节点下方 所有节点  sort -= 1
+    old_client_parent = HostsManage.objects.get(id=old_parent)
+    old_sort = old_position + 1
+    old_clients = HostsManage.objects.exclude(state="9").filter(pnode=old_client_parent).filter(sort__gt=old_sort)
+
+    # 目标节点下方(包括该节点) 所有节点 sort += 1
+    client_parent = HostsManage.objects.get(id=parent)
+    sort = position + 1
+    clients = HostsManage.objects.exclude(state=9).exclude(id=id).filter(pnode=client_parent).filter(sort__gte=sort)
+
+    my_client = HostsManage.objects.get(id=id)
+
+    # 判断目标父节点是否为接口，若为接口无法挪动
+    if client_parent.nodetype == "CLIENT":
+        return HttpResponse("客户端")
+    else:
+        # 目标父节点下所有节点 除了自身 接口名称都不得相同 否则重名
+        client_same = HostsManage.objects.exclude(state="9").exclude(id=id).filter(pnode=client_parent).filter(
+            host_name=my_client.host_name)
+
+        if client_same:
+            return HttpResponse("重名")
+        else:
+            for old_client in old_clients:
+                try:
+                    old_client.sort -= 1
+                    old_client.save()
+                except:
+                    pass
+            for client in clients:
+                try:
+                    client.sort += 1
+                    client.save()
+                except:
+                    pass
+
+            # 该节点位置变动
+            try:
+                my_client.pnode = client_parent
+                my_client.sort = sort
+                my_client.save()
+            except:
+                pass
+
+            # 起始 结束 点不在同一节点下 写入父节点名称与ID ?
+            if parent != old_parent:
+                return HttpResponse(client_parent.host_name + "^" + str(client_parent.id))
+            else:
+                return HttpResponse("0")
+
+
+@login_required
+def client_node_save(request):
+    id = request.POST.get("id", "")
+    pid = request.POST.get("pid", "")
+    node_name = request.POST.get("node_name", "")
+    node_remark = request.POST.get("node_remark", "")
+
+    try:
+        id = int(id)
+    except:
+        ret = 0
+        info = "网络错误。"
+    else:
+        if node_name.strip():
+            if id == 0:
+                try:
+                    cur_host_manage = HostsManage()
+                    cur_host_manage.pnode_id = pid
+                    cur_host_manage.host_name = node_name
+                    cur_host_manage.remark = node_remark
+                    cur_host_manage.nodetype = "NODE"
+                    # 排序
+                    sort = 1
+                    try:
+                        max_sort = HostsManage.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
+                            max_sort=Max('sort', distinct=True))["max_sort"]
+                        sort = max_sort + 1
+                    except:
+                        pass
+                    cur_host_manage.sort = sort
+
+                    cur_host_manage.save()
+                    id = cur_host_manage.id
+                except:
+                    ret = 0
+                    info = "服务器异常。"
+                else:
+                    ret = 1
+                    info = "新增节点成功。"
+            else:
+                # 修改
+                try:
+                    cur_host_manage = HostsManage.objects.get(id=id)
+                    cur_host_manage.host_name = node_name
+                    cur_host_manage.remark = node_remark
+                    cur_host_manage.save()
+
+                    ret = 1
+                    info = "节点信息修改成功。"
+                except:
+                    ret = 0
+                    info = "服务器异常。"
+        else:
+            ret = 0
+            info = "节点名称不能为空。"
+    return JsonResponse({
+        "ret": ret,
+        "info": info,
+        "nodeid": id
+    })
+
+def get_instance_list(um):
+    # 解析出账户信息
+    _, sqlserver_credit = get_credit_info(um.content)
+
+    #############################################
+    # clientid, clientname, agent, instance, os #
+    #############################################
+    dm = SQLApi.CVApi(sqlserver_credit)
+
+    instance_data = dm.get_all_instance()
+
+    dm.close()
+    instance_list = []
+    for od in instance_data:
+        instance_list.append({
+            "clientid": od["clientid"],
+            "clientname": od["clientname"],
+            "agent": od["agent"],
+            "instance": od["instance"],
+        })
+    return {
+        'utils_manage': um.id,
+        'instance_list': instance_list
+    }
+
+
+@login_required
+def get_cvinfo(request):
+    # 工具
+    utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
+    data = []
+
+    try:
+        pool = ThreadPoolExecutor(max_workers=10)
+
+        all_tasks = [pool.submit(get_instance_list, (um)) for um in utils_manage]
+        for future in as_completed(all_tasks):
+            if future.result():
+                data.append(future.result())
+    except Exception as e:
+        print(e)
+    # for um in utils_manage:
+    #     data.append(get_instance_list(um))
+
+    # 所有关联终端
+    destination = CvClient.objects.exclude(state="9").filter(type__in=['2', '3'])
+
+    u_destination = []
+
+    for um in utils_manage:
+        destination_list = []
+        for d in destination:
+            if d.utils.id == um.id:
+                destination_list.append({
+                    'id': d.id,
+                    'name': d.client_name
+                })
+        u_destination.append({
+            'utilid': um.id,
+            'utilname': um.name,
+            'destination_list': destination_list
+        })
+    return JsonResponse({
+        "ret": 1,
+        "info": "查询成功。",
+        "data": data,
+        'u_destination': u_destination,
+    })
+
+
+@login_required
+def get_client_detail(request):
+    hostinfo = {}
+    cvinfo = {}
+    dbcopyinfo = {}
+    id = request.POST.get("id", "")
+    try:
+        id = int(id)
+        host_manage = HostsManage.objects.get(id=id)
+
+    except:
+        ret = 0
+        info = "当前客户端不存在。"
+    else:
+        param_list = []
+        try:
+            config = etree.XML(host_manage.config)
+
+            param_el = config.xpath("//param")
+            for v_param in param_el:
+                param_list.append({
+                    "param_name": v_param.attrib.get("param_name", ""),
+                    "variable_name": v_param.attrib.get("variable_name", ""),
+                    "param_value": v_param.attrib.get("param_value", ""),
+                })
+        except:
+            ret = 0
+            info = "数据格式异常，无法获取。"
+        else:
+            hostinfo = {
+                "host_id": host_manage.id,
+                "host_ip": host_manage.host_ip,
+                "host_name": host_manage.host_name,
+                "os": host_manage.os,
+                "username": host_manage.username,
+                "password": host_manage.password,
+                "remark": host_manage.remark,
+                "variable_param_list": param_list,
+            }
+            ret = 1
+            info = "查询成功。"
+
+            cc = CvClient.objects.exclude(state="9").filter(hostsmanage_id=id)
+            if len(cc) > 0:
+                cvinfo["id"] = cc[0].id
+                cvinfo["type"] = cc[0].type
+                cvinfo["utils_id"] = cc[0].utils_id
+                cvinfo["client_id"] = cc[0].client_id
+                cvinfo["agentType"] = cc[0].agentType
+                cvinfo["instanceName"] = cc[0].instanceName
+                cvinfo["destination_id"] = cc[0].destination_id
+
+                # oracle
+                cvinfo["copy_priority"] = ""
+                cvinfo["db_open"] = ""
+                cvinfo["log_restore"] = ""
+                cvinfo["data_path"] = ""
+                # File System
+                cvinfo["overWrite"] = ""
+                cvinfo["destPath"] = ""
+                cvinfo["sourcePaths"] = ""
+                # SQL Server
+                cvinfo["mssqlOverWrite"] = ""
+
+                try:
+                    config = etree.XML(cc[0].info)
+                    param_el = config.xpath("//param")
+                    if len(param_el) > 0:
+                        cvinfo["copy_priority"] = param_el[0].attrib.get("copy_priority", "")
+                        cvinfo["db_open"] = param_el[0].attrib.get("db_open", "")
+                        cvinfo["log_restore"] = param_el[0].attrib.get("log_restore", "")
+                        cvinfo["data_path"] = param_el[0].attrib.get("data_path", "")
+
+                        cvinfo["overWrite"] = param_el[0].attrib.get("overWrite", "")
+                        cvinfo["destPath"] = param_el[0].attrib.get("destPath", "")
+                        cvinfo["sourcePaths"] = eval(param_el[0].attrib.get("sourcePaths", "[]"))
+
+                        cvinfo["mssqlOverWrite"] = param_el[0].attrib.get("mssqlOverWrite", "")
+                except:
+                    pass
+
+            dc = DbCopyClient.objects.exclude(state="9").filter(hostsmanage_id=id)
+            if len(dc) > 0:
+                dbcopyinfo["id"] = dc[0].id
+                # dbcopyinfo["type"] = dc[0].type
+                dbcopyinfo["dbType"] = dc[0].dbtype
+                dbcopyinfo["std_id"] = dc[0].std_id
+                dbcopyinfo["dbusername"] = ""
+                dbcopyinfo["dbpassowrd"] = ""
+                dbcopyinfo["dbinstance"] = ""
+
+                try:
+                    config = etree.XML(dc[0].info)
+                    param_el = config.xpath("//param")
+                    if len(param_el) > 0:
+                        dbcopyinfo["dbusername"] = param_el[0].attrib.get("dbusername", ""),
+                        dbcopyinfo["dbpassowrd"] = param_el[0].attrib.get("dbpassowrd", ""),
+                        dbcopyinfo["dbinstance"] = param_el[0].attrib.get("dbinstance", ""),
+                except:
+                    pass
+    return JsonResponse({
+        "ret": ret,
+        "info": info,
+        "data": hostinfo,
+        "cvinfo": cvinfo,
+        "dbcopyinfo": dbcopyinfo
+    })
+
+
+@login_required
+def client_client_save(request):
+    id = request.POST.get("id", "")
+    pid = request.POST.get("pid", "")
+    host_ip = request.POST.get("host_ip", "")
+    host_name = request.POST.get("host_name", "")
+    host_os = request.POST.get("os", "")
+    username = request.POST.get("username", "")
+    password = request.POST.get("password", "")
+    config = request.POST.get("config", "")
+    remark = request.POST.get("remark", "")
+
+    try:
+        id = int(id)
+    except:
+        ret = 0
+        info = "网络错误。"
+    else:
+        if host_ip.strip():
+            if host_name.strip():
+                if host_os.strip():
+                    if username.strip():
+                        if password.strip():
+                            # 主机参数
+                            root = etree.Element("root")
+
+                            if config:
+                                config = json.loads(config)
+                                # 动态参数
+                                for c_config in config:
+                                    param_node = etree.SubElement(root, "param")
+                                    param_node.attrib["param_name"] = c_config["param_name"].strip()
+                                    param_node.attrib["variable_name"] = c_config["variable_name"].strip()
+                                    param_node.attrib["param_value"] = c_config["param_value"].strip()
+                            config = etree.tounicode(root)
+
+                            # 新增
+                            if id == 0:
+                                # 判断主机是否已经存在
+                                check_host_manage = HostsManage.objects.exclude(state="9").filter(host_ip=host_ip)
+                                if check_host_manage.exists():
+                                    ret = 0
+                                    info = "主机已经存在，请勿重复添加。"
+                                else:
+                                    try:
+                                        cur_host_manage = HostsManage()
+                                        cur_host_manage.pnode_id = pid
+                                        cur_host_manage.nodetype = "CLIENT"
+                                        cur_host_manage.host_ip = host_ip
+                                        cur_host_manage.host_name = host_name
+                                        cur_host_manage.os = host_os
+                                        cur_host_manage.username = username
+                                        cur_host_manage.password = password
+                                        cur_host_manage.config = config
+                                        cur_host_manage.remark = remark
+                                        # 排序
+                                        sort = 1
+                                        try:
+                                            max_sort = \
+                                                HostsManage.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
+                                                    max_sort=Max('sort', distinct=True))["max_sort"]
+                                            sort = max_sort + 1
+                                        except:
+                                            pass
+                                        cur_host_manage.sort = sort
+
+                                        cur_host_manage.save()
+                                        id = cur_host_manage.id
+                                    except:
+                                        ret = 0
+                                        info = "服务器异常。"
+                                    else:
+                                        ret = 1
+                                        info = "主机信息新增成功。"
+                            else:
+                                # 修改
+                                try:
+                                    cur_host_manage = HostsManage.objects.get(id=id)
+                                    cur_host_manage.host_ip = host_ip
+                                    cur_host_manage.host_name = host_name
+                                    cur_host_manage.os = host_os
+                                    cur_host_manage.username = username
+                                    cur_host_manage.password = password
+                                    cur_host_manage.config = config
+                                    cur_host_manage.remark = remark
+                                    cur_host_manage.save()
+
+                                    ret = 1
+                                    info = "主机信息修改成功。"
+                                except:
+                                    ret = 0
+                                    info = "服务器异常。"
+                        else:
+                            ret = 0
+                            info = "密码未填写。"
+                    else:
+                        ret = 0
+                        info = "用户名未填写。"
+                else:
+                    ret = 0
+                    info = "系统未选择。"
+            else:
+                ret = 0
+                info = "主机名称不能为空。"
+        else:
+            ret = 0
+            info = "主机IP未填写。"
+    return JsonResponse({
+        "ret": ret,
+        "info": info,
+        "nodeid": id
+    })
+
+
+def custom_cv_params(**kwargs):
+    """构造参数xml
+    """
+    root = etree.Element("root")
+    param_node = etree.SubElement(root, "param")
+    for k, v in kwargs.items():
+        param_node.attrib['{0}'.format(k)] = str(v)
+    config = etree.tounicode(root)
+    return config
+
+
+@login_required
+def client_cv_save(request):
+    id = request.POST.get("id", "")
+    cv_id = request.POST.get("cv_id", "")
+    cvclient_type = request.POST.get("cvclient_type", "")
+    cvclient_utils_manage = request.POST.get("cvclient_utils_manage", "")
+    cvclient_source = request.POST.get("cvclient_source", "")
+    cvclient_clientname = request.POST.get("cvclient_clientname", "")
+    cvclient_agentType = request.POST.get("cvclient_agentType", "")
+    cvclient_instance = request.POST.get("cvclient_instance", "")
+    cvclient_destination = request.POST.get("cvclient_destination", "")
+
+    # oracle
+    cvclient_copy_priority = request.POST.get("cvclient_copy_priority", "")
+    cvclient_db_open = request.POST.get("cvclient_db_open", "")
+    cvclient_log_restore = request.POST.get("cvclient_log_restore", "")
+    cvclient_data_path = request.POST.get("cvclient_data_path", "")
+
+    # File System
+    cv_mypath = request.POST.get("cv_mypath", "")
+    cv_iscover = request.POST.get("cv_iscover", "")
+    cv_selectedfile = request.POST.get("cv_selectedfile", "")
+
+    # SQL Server
+    mssql_iscover = request.POST.get("mssql_iscover", "")
+
+    try:
+        id = int(id)
+        cv_id = int(cv_id)
+        cvclient_utils_manage = int(cvclient_utils_manage)
+    except:
+        ret = 0
+        info = "网络错误。"
+    else:
+        if cvclient_type.strip():
+            if cvclient_source.strip():
+                if cvclient_agentType.strip():
+                    cv_params = {}
+                    if "Oracle" in cvclient_agentType:
+                        cv_params = {
+                            "copy_priority": cvclient_copy_priority,
+                            "db_open": cvclient_db_open,
+                            "log_restore": cvclient_log_restore,
+                            "data_path": cvclient_data_path,
+                        }
+                    elif "File System" in cvclient_agentType:
+                        inPlace = True
+                        if cv_mypath != "same":
+                            inPlace = False
+                        overWrite = False
+                        if cv_iscover == "True":
+                            overWrite = True
+
+                        sourceItemlist = cv_selectedfile.split("*!-!*")
+                        for sourceItem in sourceItemlist:
+                            if sourceItem == "":
+                                sourceItemlist.remove(sourceItem)
+                        cv_params = {
+                            "overWrite": overWrite,
+                            "inPlace": inPlace,
+                            "destPath": cv_mypath,
+                            "sourcePaths": sourceItemlist,
+                            "OSRestore": False
+                        }
+                    elif "SQL Server" in cvclient_agentType:
+                        mssqlOverWrite = False
+                        if mssql_iscover == "TRUE":
+                            mssqlOverWrite = True
+                        cv_params = {
+                            "mssqlOverWrite": mssqlOverWrite,
+                        }
+                    # 新增
+                    if cv_id == 0:
+                        try:
+                            cvclient = CvClient()
+                            cvclient.hostsmanage_id = id
+                            cvclient.utils_id = cvclient_utils_manage
+                            cvclient.client_id = cvclient_source
+                            cvclient.client_name = cvclient_clientname
+                            cvclient.type = cvclient_type
+                            cvclient.agentType = cvclient_agentType
+                            cvclient.instanceName = cvclient_instance
+                            if cvclient_type in ("1", "3"):
+                                config = custom_cv_params(**cv_params)
+                                cvclient.info = config
+                                if cvclient_destination != "self":
+                                    try:
+                                        cvclient_destination = int(cvclient_destination)
+                                        cvclient.destination_id = cvclient_destination
+                                    except:
+                                        pass
+                            cvclient.save()
+                            if cvclient_destination == "self":
+                                cvclient.destination_id = cvclient.id
+                                cvclient.save()
+                            cv_id = cvclient.id
+                        except:
+                            ret = 0
+                            info = "服务器异常。"
+                        else:
+                            ret = 1
+                            info = "Commvault保护创建成功。"
+                    else:
+                        # 修改
+                        try:
+                            cvclient = CvClient.objects.get(id=cv_id)
+                            cvclient.hostsmanage_id = id
+                            cvclient.utils_id = cvclient_utils_manage
+                            cvclient.client_id = cvclient_source
+                            cvclient.client_name = cvclient_clientname
+                            cvclient.type = cvclient_type
+                            cvclient.agentType = cvclient_agentType
+                            cvclient.instanceName = cvclient_instance
+                            if cvclient_type in ("1", "3"):
+                                config = custom_cv_params(**cv_params)
+                                cvclient.info = config
+                                if cvclient_destination == "self":
+                                    cvclient.destination_id = cv_id
+                                else:
+                                    try:
+                                        cvclient_destination = int(cvclient_destination)
+                                        cvclient.destination_id = cvclient_destination
+                                    except Exception as e:
+                                        pass
+                            cvclient.save()
+                            ret = 1
+                            info = "Commvault保护修改成功。"
+                        except Exception as e:
+                            ret = 0
+                            info = "服务器异常。"
+                else:
+                    ret = 0
+                    info = "应用类型不能为空。"
+            else:
+                ret = 0
+                info = "源客户端不能为空。"
+        else:
+            ret = 0
+            info = "客户端类型不能为空。"
+    return JsonResponse({
+        "ret": ret,
+        "info": info,
+        "cv_id": cv_id
+    })
+
+
+@login_required
+def client_cv_del(request):
+    if 'id' in request.POST:
+        id = request.POST.get('id', '')
+        try:
+            id = int(id)
+        except:
+            return HttpResponse(0)
+        cv = CvClient.objects.get(id=id)
+        cv.state = "9"
+        cv.save()
+
+        return HttpResponse(1)
+    else:
+        return HttpResponse(0)
+
+
+@login_required
+def client_cv_get_backup_his(request):
+    id = request.GET.get('id', '')
+
+    result = []
+    try:
+        id = int(id)
+        cvclient = CvClient.objects.get(id=id)
+        utils_manage = cvclient.utils
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        dm = SQLApi.CVApi(sqlserver_credit)
+        result = dm.get_all_backup_job_list(cvclient.client_name, cvclient.agentType, cvclient.instanceName)
+        dm.close()
+    except Exception as e:
+        print(e)
+
+    return JsonResponse({"data": result})
+
+
+@login_required
+def client_cv_recovery(request):
+    if request.method == 'POST':
+        cv_id = request.POST.get('cv_id', '')
+        sourceClient = request.POST.get('sourceClient', '')
+        destClient = request.POST.get('destClient', '')
+        restoreTime = request.POST.get('restoreTime', '')
+        browseJobId = request.POST.get('browseJobId', '')
+        agent = request.POST.get('agent', '')
+
+        #################################
+        # sourceClient>> instance_name  #
+        #################################
+        instance = ""
+        try:
+            pri = CvClient.objects.exclude(state="9").get(id=int(cv_id))
+        except Origin.DoesNotExist as e:
+            return HttpResponse("恢复任务启动失败, 源客户端不存在。")
+        else:
+            instance = pri.instanceName
+            if not instance:
+                return HttpResponse("恢复任务启动失败, 实例不存在。")
+
+            # 账户信息
+            utils_content = pri.utils.content if pri.utils else ""
+            commvault_credit, sqlserver_credit = get_credit_info(utils_content)
+
+            # 区分应用
+            if "Oracle" in agent:
+                data_path = request.POST.get('data_path', '')
+                copy_priority = request.POST.get('copy_priority', '')
+                data_sp = request.POST.get('data_sp', '')
+
+                try:
+                    copy_priority = int(copy_priority)
+                except:
+                    pass
+                # restoreTime对应curSCN号
+                dm = SQLApi.CVApi(sqlserver_credit)
+                oraclecopys = dm.get_oracle_backup_job_list(sourceClient)
+                # print("> %s" % restoreTime)
+                curSCN = ""
+                if restoreTime:
+                    for i in oraclecopys:
+                        if i["subclient"] == "default" and i['LastTime'] == restoreTime:
+                            # print('>>>>>1')
+                            print(i['LastTime'])
+                            curSCN = i["cur_SCN"]
+                            break
+                else:
+                    for i in oraclecopys:
+                        if i["subclient"] == "default":
+                            # print('>>>>>2')
+                            curSCN = i["cur_SCN"]
+                            break
+
+                if copy_priority == 2:
+                    # 辅助拷贝状态
+                    auxcopys = dm.get_all_auxcopys()
+                    jobs_controller = dm.get_job_controller()
+
+                    dm.close()
+
+                    # 判断当前存储策略是否有辅助拷贝未完成
+                    auxcopy_completed = True
+                    for job in jobs_controller:
+                        if job['storagePolicy'] == data_sp and job['operation'] == "Aux Copy":
+                            auxcopy_completed = False
+                            break
+                    # 假设未恢复成功
+                    if not auxcopy_completed:
+                        # 找到成功的辅助拷贝，开始时间在辅助拷贝前的、值对应上的主拷贝备份时间点(最终转化UTC)
+                        for auxcopy in auxcopys:
+                            if auxcopy['storagepolicy'] == data_sp and auxcopy['jobstatus'] in ["Completed", "Success"]:
+                                bytesxferred = auxcopy['bytesxferred']
+
+                                end_tag = False
+                                for orcl_copy in oraclecopys:
+                                    try:
+                                        orcl_copy_starttime = datetime.datetime.strptime(orcl_copy['StartTime'],
+                                                                                         "%Y-%m-%d %H:%M:%S")
+                                        aux_copy_starttime = datetime.datetime.strptime(auxcopy['startdate'],
+                                                                                        "%Y-%m-%d %H:%M:%S")
+                                        if orcl_copy[
+                                            'numbytesuncomp'] == bytesxferred and orcl_copy_starttime < aux_copy_starttime and \
+                                                orcl_copy['subclient'] == "default":
+                                            # 获取enddate,转化时间
+                                            curSCN = orcl_copy['cur_SCN']
+                                            end_tag = True
+                                            break
+                                    except Exception as e:
+                                        print(e)
+                                if end_tag:
+                                    break
+
+                dm.close()
+                oraRestoreOperator = {"curSCN": curSCN, "browseJobId": None, "data_path": data_path,
+                                      "copy_priority": copy_priority, "restoreTime": restoreTime}
+
+                cvToken = CV_RestApi_Token()
+                cvToken.login(commvault_credit)
+                cvAPI = CV_API(cvToken)
+                if agent == "Oracle Database":
+                    if cvAPI.restoreOracleBackupset(sourceClient, destClient, instance, oraRestoreOperator):
+                        return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
+                    else:
+                        return HttpResponse("恢复任务启动失败。" + cvAPI.msg)
+                elif agent.upper() == "Oracle RAC":
+                    oraRestoreOperator["browseJobId"] = browseJobId
+                    if cvAPI.restoreOracleRacBackupset(sourceClient, destClient, instance, oraRestoreOperator):
+                        return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
+                    else:
+                        return HttpResponse("恢复任务启动失败。" + cvAPI.msg)
+                else:
+                    return HttpResponse("无当前模块，恢复任务启动失败。")
+            elif "File System" in agent:
+                iscover = request.POST.get('iscover', '')
+                mypath = request.POST.get('mypath', '')
+                selectedfile = request.POST.get('selectedfile')
+                sourceItemlist = selectedfile.split("*!-!*")
+                inPlace = True
+                if mypath != "same":
+                    inPlace = False
+                overWrite = False
+                if iscover == "TRUE":
+                    overWrite = True
+
+                for sourceItem in sourceItemlist:
+                    if sourceItem == "":
+                        sourceItemlist.remove(sourceItem)
+
+                fileRestoreOperator = {"restoreTime": restoreTime, "overWrite": overWrite, "inPlace": inPlace,
+                                       "destPath": mypath, "sourcePaths": sourceItemlist, "OS Restore": False}
+
+                cvToken = CV_RestApi_Token()
+                cvToken.login(commvault_credit)
+                cvAPI = CV_API(cvToken)
+                if cvAPI.restoreFSBackupset(sourceClient, destClient, "defaultBackupSet", fileRestoreOperator):
+                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg.decode('gbk'))
+                else:
+                    return HttpResponse(u"恢复任务启动失败。" + cvAPI.msg.decode('gbk'))
+            elif "SQL Server" in agent:
+                mssql_iscover = request.POST.get('mssql_iscover', '')
+                mssqlOverWrite = False
+                if mssql_iscover == "TRUE":
+                    mssqlOverWrite = True
+
+                mssqlRestoreOperator = {"restoreTime": restoreTime, "overWrite": mssqlOverWrite}
+                cvToken = CV_RestApi_Token()
+                cvToken.login(commvault_credit)
+                cvAPI = CV_API(cvToken)
+                if cvAPI.restoreMssqlBackupset(sourceClient, destClient, instance, mssqlRestoreOperator):
+                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg.decode('gbk'))
+                else:
+                    return HttpResponse(u"恢复任务启动失败。" + cvAPI.msg.decode('gbk'))
+    else:
+        return HttpResponse("恢复任务启动失败。")
+
+
+@login_required
+def client_cv_get_restore_his(request):
+    id = request.GET.get('id', '')
+
+    result = []
+    try:
+        id = int(id)
+        cvclient = CvClient.objects.get(id=id)
+        utils_manage = cvclient.utils
+        _, sqlserver_credit = get_credit_info(utils_manage.content)
+        dm = SQLApi.CVApi(sqlserver_credit)
+        result = dm.get_all_restore_job_list(cvclient.client_name, cvclient.agentType, cvclient.instanceName)
+        dm.close()
+    except Exception as e:
+        print(e)
+    return JsonResponse({"data": result})
+
+
+@login_required
+def get_dbcopyinfo(request):
+    # 所有关联终端
+    stdlist = DbCopyClient.objects.exclude(state="9").filter(hosttype='2')
+
+    u_std = []
+
+    for std in stdlist:
+        u_std.append({
+            'type': std.dbtype,
+            'id': std.id,
+            'name': std.hostsmanage.host_name + "(" + std.hostsmanage.host_ip + ")"
+        })
+    return JsonResponse({
+        "ret": 1,
+        "info": "查询成功。",
+        'u_std': u_std,
+    })
+
+
+@login_required
+def get_adg_status(request):
+    id = request.POST.get('id', "")
+    dbcopy_id = request.POST.get('dbcopy_id', "")
+    dbcopy_std = request.POST.get('dbcopy_std', "")
+    try:
+        dbcopy_id = int(dbcopy_id)
+    except:
+        dbcopy_id = 0
+    try:
+        dbcopy_std = int(dbcopy_std)
+    except:
+        dbcopy_std = 0
+    try:
+        id = int(id)
+    except:
+        id = 0
+
+    host_list = [dbcopy_id, dbcopy_std]
+
+    adg_info_list = []
+    adg_process_list = []
+    for hostid in host_list:
+        if hostid != 0:
+            host = DbCopyClient.objects.filter(id=hostid).exclude(state="9")
+            if len(host) > 0:
+                host = host[0]
+                db_status = ''
+                database_role = ''
+                switchover_status = ''
+                host_status = 1  # 1为连接，0为断开
+                host_name = host.hostsmanage.host_name
+                host_ip = host.hostsmanage.host_ip
+                host_password = host.hostsmanage.password
+                host_username = host.hostsmanage.username
+                host_os = host.hostsmanage.os
+                # oracle用户名/密码
+                oracle_name = ""
+                oracle_password = ""
+                oracle_instance = ""
+
+                try:
+                    config = etree.XML(host.info)
+                    param_el = config.xpath("//param")
+                    if len(param_el) > 0:
+                        oracle_name = param_el[0].attrib.get("dbusername", ""),
+                        oracle_name = oracle_name[0]
+                        oracle_password = param_el[0].attrib.get("dbpassowrd", ""),
+                        oracle_password = oracle_password[0]
+                        oracle_instance = param_el[0].attrib.get("dbinstance", ""),
+                        oracle_instance = oracle_instance[0]
+                except:
+                    pass
+
+                try:
+                    conn = cx_Oracle.connect('{oracle_name}/{oracle_password}@{host_ip}/{oracle_instance}'.format(
+                        oracle_name=oracle_name, oracle_password=oracle_password, host_ip=host_ip,
+                        oracle_instance=oracle_instance))
+                    curs = conn.cursor()
+                    a_db_status_sql = 'select open_mode,switchover_status,database_role from v$database'
+                    curs.execute(a_db_status_sql)
+                    db_status_row = curs.fetchone()
+                    db_status = db_status_row[0] if db_status_row else ""
+                    database_role = db_status_row[1] if db_status_row else ""
+                    switchover_status = db_status_row[2] if db_status_row else ""
+                except Exception as e:
+                    check_host = ServerByPara('cd ..', host_ip, host_username, host_password, host_os)
+                    result = check_host.run("")
+                    if result["exec_tag"] == "1":
+                        host_status = 0
+                else:
+                    curs.close()
+                    conn.close()
+
+                adg_info_list.append({
+                    "db_status": db_status,
+                    "database_role": database_role,
+                    "switchover_status": switchover_status,
+                    "host_status": host_status,
+                    "host_name": host_name,
+                    "host_ip": host_ip
+                })
+
+    if hostid != 0:
+        processlist = Process.objects.filter(primary=id, type='Oracle ADG').exclude(state="9")
+        for process in processlist:
+            adg_process_list.append({
+                "process_id": process.id,
+                "back_id": process.backprocess_id,
+                "process_name": process.name
+            })
+
+    return JsonResponse({
+        "ret": 1,
+        "data": adg_info_list,
+        "process": adg_process_list
+    })
+
+
+@login_required
+def client_dbcopy_get_adg_his(request):
+    result = []
+    id = request.GET.get("id", "")
+    state_dict = {
+        "DONE": "已完成",
+        "EDIT": "未执行",
+        "RUN": "执行中",
+        "ERROR": "执行失败",
+        "IGNORE": "忽略",
+        "STOP": "终止",
+        "PLAN": "计划",
+        "REJECT": "取消",
+        "SIGN": "签到",
+        "": "",
+    }
+
+    allprocess = []
+    frontprocess = []
+    backprocess = []
+    processlist = Process.objects.filter(primary=id, type='Oracle ADG').exclude(state="9")
+    for process in processlist:
+        allprocess.append(process.id)
+        frontprocess.append(process.id)
+        if process.backprocess is not None:
+            allprocess.append(process.backprocess.id)
+            backprocess.append(process.backprocess.id)
+    allprocess_new = [str(x) for x in allprocess]
+    strprocess = ','.join(allprocess_new)
+
+    cursor = connection.cursor()
+
+    exec_sql = """
+    select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from drm_processrun as r 
+    left join drm_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' and p.id in ({0}) order by r.starttime desc;
+    """.format(strprocess)
+
+    cursor.execute(exec_sql)
+    rows = cursor.fetchall()
+    for processrun_obj in rows:
+        create_users = processrun_obj[2] if processrun_obj[2] else ""
+        create_user_objs = User.objects.filter(username=create_users)
+        create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
+        process_type = ""
+        if processrun_obj[4] in frontprocess:
+            process_type = "正切"
+        elif processrun_obj[4] in backprocess:
+            process_type = "回切"
+
+        result.append({
+            "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
+            "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
+            "createuser": create_user_fullname,
+            "state": state_dict["{0}".format(processrun_obj[3])] if processrun_obj[3] else "",
+            "process_id": processrun_obj[4] if processrun_obj[4] else "",
+            "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
+            "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
+            "process_name": processrun_obj[7] if processrun_obj[7] else "",
+            "process_type": process_type,
+            "process_url": processrun_obj[8] if processrun_obj[8] else ""
+        })
+
+    return JsonResponse({"data": result})
+
+
+@login_required
+def client_dbcopy_save(request):
+    id = request.POST.get("id", "")
+    dbcopy_id = request.POST.get("dbcopy_id", "")
+    dbcopy_dbtype = request.POST.get("dbcopy_dbtype", "")
+    dbcopy_hosttype = request.POST.get("dbcopy_hosttype", "")
+    dbcopy_oracleusername = request.POST.get("dbcopy_oracleusername", "")
+    dbcopy_oraclepassword = request.POST.get("dbcopy_oraclepassword", "")
+    dbcopy_oracleinstance = request.POST.get("dbcopy_oracleinstance", "")
+    dbcopy_std = request.POST.get("dbcopy_std", "")
+
+    try:
+        id = int(id)
+        dbcopy_id = int(dbcopy_id)
+    except:
+        ret = 0
+        info = "网络错误。"
+    else:
+        if dbcopy_dbtype.strip():
+            if dbcopy_hosttype.strip():
+                if dbcopy_oracleusername.strip():
+                    if dbcopy_oraclepassword.strip():
+                        if dbcopy_oracleinstance.strip():
+                            # 新增
+                            if dbcopy_id == 0:
+                                try:
+                                    dbcopy = DbCopyClient()
+                                    dbcopy.hostsmanage_id = id
+                                    dbcopy.dbtype = dbcopy_dbtype
+                                    dbcopy.hosttype = dbcopy_hosttype
+                                    if dbcopy_dbtype == "1":
+                                        root = etree.Element("root")
+                                        param_node = etree.SubElement(root, "param")
+                                        param_node.attrib["dbusername"] = dbcopy_oracleusername
+                                        param_node.attrib["dbpassowrd"] = dbcopy_oraclepassword
+                                        param_node.attrib["dbinstance"] = dbcopy_oracleinstance
+                                        config = etree.tounicode(root)
+                                        dbcopy.info = config
+                                        if dbcopy_hosttype == "1":
+                                            if dbcopy_std != "none":
+                                                try:
+                                                    dbcopy_std = int(dbcopy_std)
+                                                    dbcopy.std_id = dbcopy_std
+                                                except:
+                                                    pass
+                                            else:
+                                                dbcopy.std = None
+                                    dbcopy.save()
+                                    dbcopy_id = dbcopy.id
+                                except:
+                                    ret = 0
+                                    info = "服务器异常。"
+                                else:
+                                    ret = 1
+                                    info = "数据库复制保护创建成功。"
+                            else:
+                                # 修改
+                                try:
+                                    dbcopy = DbCopyClient.objects.get(id=dbcopy_id)
+                                    dbcopy.hostsmanage_id = id
+                                    dbcopy.dbtype = dbcopy_dbtype
+                                    dbcopy.hosttype = dbcopy_hosttype
+                                    if dbcopy_dbtype == "1":
+                                        root = etree.Element("root")
+                                        param_node = etree.SubElement(root, "param")
+                                        param_node.attrib["dbusername"] = dbcopy_oracleusername
+                                        param_node.attrib["dbpassowrd"] = dbcopy_oraclepassword
+                                        param_node.attrib["dbinstance"] = dbcopy_oracleinstance
+                                        config = etree.tounicode(root)
+                                        dbcopy.info = config
+                                        if dbcopy_hosttype == "1":
+                                            if dbcopy_std != "none":
+                                                try:
+                                                    dbcopy_std = int(dbcopy_std)
+                                                    dbcopy.std_id = dbcopy_std
+                                                except:
+                                                    pass
+                                            else:
+                                                dbcopy.std = None
+                                    dbcopy.save()
+                                    ret = 1
+                                    info = "数据库复制保护修改成功。"
+                                except:
+                                    ret = 0
+                                    info = "服务器异常。"
+
+                        else:
+                            ret = 0
+                            info = "oracle实例名不能为空。"
+                    else:
+                        ret = 0
+                        info = "oracle密码不能为空。"
+                else:
+                    ret = 0
+                    info = "oracle用户名不能为空。"
+            else:
+                ret = 0
+                info = "主机类型不能为空。"
+        else:
+            ret = 0
+            info = "保护类型不能为空。"
+    return JsonResponse({
+        "ret": ret,
+        "info": info,
+        "dbcopy_id": dbcopy_id
+    })
+
+
+@login_required
+def client_dbcopy_del(request):
+    if 'id' in request.POST:
+        id = request.POST.get('id', '')
+        try:
+            id = int(id)
+        except:
+            return HttpResponse(0)
+        dc = DbCopyClient.objects.get(id=id)
+        dc.state = "9"
+        dc.save()
+
+        return HttpResponse(1)
+    else:
+        return HttpResponse(0)
+
+
+@login_required
+def get_file_tree(request):
+    id = request.POST.get('id', '')
+    cv_id = request.POST.get('cv_id', '')
+    treedata = []
+
+    try:
+        cv_id = int(cv_id)
+        pri = CvClient.objects.exclude(state="9").get(id=int(cv_id))
+    except Exception:
+        pass
+    else:
+        client_id = pri.client_id
+        utils_content = pri.utils.content if pri.utils else ""
+        commvault_credit, _ = get_credit_info(utils_content)
+        cvToken = CV_RestApi_Token()
+        cvToken.login(commvault_credit)
+        cvAPI = CV_API(cvToken)
+        list = cvAPI.browse(client_id, "File System", None, id, False)
+        for node in list:
+            root = {}
+            root["id"] = node["path"]
+            root["pId"] = id
+            root["name"] = node["path"]
+            if node["DorF"] == "D":
+                root["isParent"] = True
+            else:
+                root["isParent"] = False
+            treedata.append(root)
+        treedata = json.dumps(treedata)
+
+    return HttpResponse(treedata)

@@ -84,6 +84,23 @@ class HostsManage(models.Model):
     password = models.CharField("密码", blank=True, null=True, max_length=50)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     config = models.TextField("主机参数", null=True, default="<root></root>")
+    pnode = models.ForeignKey('self', null=True, related_name='children', verbose_name='父节点')
+    nodetype = models.CharField("节点类型", blank=True, null=True, max_length=20)
+    sort = models.IntegerField("排序", blank=True, null=True)
+    remark = models.TextField("节点/客户端说明", null=True, default="")
+    
+
+class CvClient(models.Model):
+    hostsmanage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name="客户端")
+    utils = models.ForeignKey("UtilsManage", null=True, verbose_name="关联工具")
+    client_id = models.IntegerField("源端client_id", blank=True, null=True)
+    client_name = models.CharField("源端client_name", blank=True, null=True, max_length=128)
+    type = models.TextField("客户端类型", blank=True, null=True)
+    agentType = models.TextField("应用类型", blank=True, null=True)
+    instanceName = models.TextField("实例名", blank=True, null=True)
+    info = models.TextField("客户端相关信息", blank=True, null=True)
+    destination = models.ForeignKey('self', blank=True, null=True,related_name='sourceclient', verbose_name="默认关联终端")
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
 class Script(models.Model):
@@ -104,7 +121,7 @@ class Script(models.Model):
 class ScriptInstance(models.Model):
     script = models.ForeignKey(Script, blank=True, null=True, verbose_name='源接口')
     step = models.ForeignKey(Step, blank=True, null=True, verbose_name="步骤")
-    origin = models.ForeignKey("Origin", blank=True, null=True, verbose_name='源端客户端')
+    primary = models.ForeignKey("CvClient", blank=True, null=True, verbose_name='源端客户端')
     utils = models.ForeignKey("UtilsManage", blank=True, null=True, verbose_name='工具')
     name = models.CharField("接口实例名称", blank=True, max_length=500)
     remark = models.CharField("接口实例说明", blank=True, max_length=500)
@@ -136,21 +153,9 @@ class ProcessRun(models.Model):
     run_reason = models.TextField("启动原因", blank=True, null=True)
     note = models.TextField("记录", blank=True, null=True)
     walkthroughstate = models.CharField("状态", blank=True, null=True, max_length=20)
-
-    # Commvault Oracle
-    target = models.ForeignKey("Target", blank=True, null=True, verbose_name="oracle恢复流程指定目标客户端")
-    origin = models.ForeignKey("Origin", blank=True, null=True, verbose_name="源客户端")
-
     recover_time = models.DateTimeField("指定恢复时间点", blank=True, null=True)
-    browse_job_id = models.CharField("指点时间点的备份任务ID", blank=True, null=True, max_length=50)
-    data_path = models.CharField("数据重定向路径", blank=True, null=True, max_length=512)
-    copy_priority = models.IntegerField("优先拷贝顺序", blank=True, default=1, null=True)
-    curSCN = models.BigIntegerField("当前备份nextSCN-1", blank=True, null=True)
-    db_open = models.IntegerField("是否打开数据库", default=1, null=True)
-
     rto = models.IntegerField("流程RTO", default=0, null=True)
-    recover_end_time = models.DateTimeField("恢复结束时间", blank=True, null=True)
-    log_restore = models.IntegerField("是否回滚日志", null=True, default=1)
+    info = models.TextField("恢复所需参数,如：target,origin,browse_job_id,data_path,copy_priority,curSCN,db_open", null=True, default="")
 
 
 class StepRun(models.Model):
@@ -304,3 +309,12 @@ class DiskSpaceWeeklyData(models.Model):
     total_space = models.BigIntegerField("总容量", null=True, default=0)
     extract_time = models.DateTimeField("取数时间", null=True)
     point_tag = models.CharField("用以判断同一记录", null=True, default="", max_length=128)
+
+
+class DbCopyClient(models.Model):
+    hostsmanage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name="客户端")
+    dbtype = models.TextField("数据库类型", blank=True, null=True)
+    hosttype = models.TextField("主机类型", blank=True, null=True)
+    info = models.TextField("数据库相关信息", blank=True, null=True)
+    std = models.ForeignKey('self', blank=True, null=True,related_name='pri', verbose_name="备库")
+    state = models.CharField("状态", blank=True, null=True, max_length=20)

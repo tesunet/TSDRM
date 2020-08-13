@@ -261,7 +261,7 @@
                             <div class="form-group" id="origin_div" hidden>
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
                                 <div class="col-md-10">
-                                    <input type="text" id="origin_data" value="{{origin_data}}" hidden>
+                                    <input type="text" id="origin_data" value="{{cv_client_data}}" hidden>
                                     <select class="form-control" id="origin" name="origin">
                                             <option value=""></option>
                                     </select>
@@ -432,8 +432,8 @@
                 csrfmiddlewaretoken: '{{ csrf_token }}'
             },
         });
-        var treeData = {{tree_data|safe}};
-        var origin_data = {{origin_data|safe}};
+        var tree_data = {{tree_data|safe}};
+        var cv_client_data = {{cv_client_data|safe}};
     </script>
 
     <link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css"/>

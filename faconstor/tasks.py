@@ -1,24 +1,27 @@
 from __future__ import absolute_import
 from logging import log
 from celery import shared_task
-from faconstor.models import *
-from django.db import connection
-from . import remote
-from .models import *
 import datetime
-from django.db.models import Q
 import time
 import paramiko
 import os
 import json
-from TSDRM import settings
 import subprocess
-from .api import SQLApi
-from .CVApi import *
 import logging
-from .api import SQLApi
 import uuid
 import re
+from lxml import etree
+
+from django.db import connection
+from django.db.models import Q
+
+from faconstor.models import *
+from . import remote
+from .models import *
+from TSDRM import settings
+from .api import SQLApi
+from .CVApi import *
+
 logger = logging.getLogger('tasks')
 
 
@@ -262,18 +265,6 @@ def force_exec_script(processrunid):
                             script_run.save()
                             steprun.state = "ERROR"
                             steprun.save()
-
-                            # script_name = script.script.name if script.script.name else ""
-                            # myprocesstask = ProcessTask()
-                            # myprocesstask.processrun = steprun.processrun
-                            # myprocesstask.starttime = datetime.datetime.now()
-                            # myprocesstask.senduser = steprun.processrun.creatuser
-                            # myprocesstask.receiveauth = steprun.step.group
-                            # myprocesstask.type = "ERROR"
-                            # myprocesstask.state = "0"
-                            # myprocesstask.content = "Linux脚本" + script_name + "内容写入失败，请处理。"
-                            # myprocesstask.steprun_id = steprun.id
-                            # myprocesstask.save()
                         else:
                             # 上传Linux服务器
                             try:
@@ -287,18 +278,6 @@ def force_exec_script(processrunid):
                                 script_run.save()
                                 steprun.state = "ERROR"
                                 steprun.save()
-
-                                # script_name = script.script.name if script.script.name else ""
-                                # myprocesstask = ProcessTask()
-                                # myprocesstask.processrun = steprun.processrun
-                                # myprocesstask.starttime = datetime.datetime.now()
-                                # myprocesstask.senduser = steprun.processrun.creatuser
-                                # myprocesstask.receiveauth = steprun.step.group
-                                # myprocesstask.type = "ERROR"
-                                # myprocesstask.state = "0"
-                                # myprocesstask.content = "上传" + script_name + "脚本时，连接服务器失败。"
-                                # myprocesstask.steprun_id = steprun.id
-                                # myprocesstask.save()
                             else:
                                 try:
                                     sftp.put(local_file, linux_temp_script_file)
@@ -309,18 +288,6 @@ def force_exec_script(processrunid):
                                     script_run.save()
                                     steprun.state = "ERROR"
                                     steprun.save()
-                                    #
-                                    # script_name = script.script.name if script.script.name else ""
-                                    # myprocesstask = ProcessTask()
-                                    # myprocesstask.processrun = steprun.processrun
-                                    # myprocesstask.starttime = datetime.datetime.now()
-                                    # myprocesstask.senduser = steprun.processrun.creatuser
-                                    # myprocesstask.receiveauth = steprun.step.group
-                                    # myprocesstask.type = "ERROR"
-                                    # myprocesstask.state = "0"
-                                    # myprocesstask.content = "脚本" + script_name + "上传失败：{0}。".format(e)
-                                    # myprocesstask.steprun_id = steprun.id
-                                    # myprocesstask.save()
                                 else:
                                     sftp.chmod(linux_temp_script_file, int("755", 8))
 
@@ -364,18 +331,6 @@ def force_exec_script(processrunid):
                                 script_run.save()
                                 steprun.state = "ERROR"
                                 steprun.save()
-                                #
-                                # script_name = script.script.name if script.script.name else ""
-                                # myprocesstask = ProcessTask()
-                                # myprocesstask.processrun = steprun.processrun
-                                # myprocesstask.starttime = datetime.datetime.now()
-                                # myprocesstask.senduser = steprun.processrun.creatuser
-                                # myprocesstask.receiveauth = steprun.step.group
-                                # myprocesstask.type = "ERROR"
-                                # myprocesstask.state = "0"
-                                # myprocesstask.content = "脚本" + script_name + "上传windows脚本文件失败，请处理。"
-                                # myprocesstask.steprun_id = steprun.id
-                                # myprocesstask.save()
 
                         exe_cmd = windows_temp_script_file
 
@@ -396,18 +351,6 @@ def force_exec_script(processrunid):
                         script_run.save()
                         steprun.state = "ERROR"
                         steprun.save()
-
-                        # script_name = script.script.name if script.script.name else ""
-                        # myprocesstask = ProcessTask()
-                        # myprocesstask.processrun = steprun.processrun
-                        # myprocesstask.starttime = datetime.datetime.now()
-                        # myprocesstask.senduser = steprun.processrun.creatuser
-                        # myprocesstask.receiveauth = steprun.step.group
-                        # myprocesstask.type = "ERROR"
-                        # myprocesstask.state = "0"
-                        # myprocesstask.content = "脚本" + script_name + "执行错误，请处理。"
-                        # myprocesstask.steprun_id = steprun.id
-                        # myprocesstask.save()
                     else:
                         script_run.endtime = datetime.datetime.now()
                         script_run.state = "DONE"
@@ -424,12 +367,18 @@ def force_exec_script(processrunid):
                         myprocesstask.save()
 
 
-def runstep(steprun, if_repeat=False):
+def runstep(steprun, if_repeat=False, processrun_params={}):
     """
     执行当前步骤下的所有脚本
     返回值0,：错误，1：完成，2：确认，3：流程已结束
     if_repeat用于避免已执行步骤重复执行。
     """
+    pri = processrun_params.get("pri", None)
+    pri_id = processrun_params.get("pri_id", None)
+    std_id = processrun_params.get("std_id", None)
+    utils_content = processrun_params.get("utils_content", "")
+    instance_name = pri.instanceName if pri else ""
+    
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
@@ -463,7 +412,7 @@ def runstep(steprun, if_repeat=False):
                             if_repeat = True
                         else:
                             if_repeat = False
-                        childreturn = runstep(childsteprun, if_repeat)
+                        childreturn = runstep(childsteprun, if_repeat, processrun_params)
                         if childreturn == 0:
                             return 0
                         if childreturn == 2:
@@ -483,20 +432,15 @@ def runstep(steprun, if_repeat=False):
                 script = script_instance.script
                 origin = script_instance.origin
                 script_name = script_instance.name if script_instance.name else ""
+                recover_job_id = ""
                 if script.interface_type in ["Linux", "Windows"]:
                     # HostsManage
                     cur_host_manage = script_instance.hosts_manage
                     ip = cur_host_manage.host_ip
                     username = cur_host_manage.username
                     password = cur_host_manage.password
-                    script_type = cur_host_manage.type
 
-                    system_tag = ""
-                    if script_type == "SSH":
-                        system_tag = "Linux"
-                    if script_type == "BAT":
-                        system_tag = "Windows"
-
+                    system_tag = script.interface_type
                     # linux_temp_script_file = "/tmp/tmp_script.sh"
                     # windows_temp_script_file = "C:/tmp_script.bat"
 
@@ -667,16 +611,7 @@ def runstep(steprun, if_repeat=False):
                     else:
                         ret = ""
 
-                        target_id = processrun.target.id if processrun.target else ""
-                        origin_id = processrun.origin.id if processrun.origin else ""
-
-                        oracle_info = json.loads(origin.info)
-
-                        instance = ""
-                        if oracle_info:
-                            instance = oracle_info["instance"]
-
-                        oracle_param = "{0} {1} {2} {3}".format(origin_id, target_id, instance, processrun.id)
+                        oracle_param = "{0} {1} {2} {3}".format(pri_id, std_id, instance_name, processrun.id)
                         try:
                             ret = subprocess.getstatusoutput(commvault_api_path + " {0}".format(oracle_param))
                             exec_status, recover_job_id = ret
@@ -695,11 +630,10 @@ def runstep(steprun, if_repeat=False):
                                 # Oracle恢复出错                      #
                                 #######################################
                                 recover_error = "无"
-                                from faconstor.views import get_credit_info
+                                from .views import get_credit_info
 
                                 try:
-                                    utils_manage = origin.utils_manage
-                                    _, sqlserver_credit = get_credit_info(utils_manage.content)
+                                    _, sqlserver_credit = get_credit_info(utils_content)
                                     # 查看Oracle恢复错误信息
                                     dm = SQLApi.CVApi(sqlserver_credit)
                                     job_controller = dm.get_job_controller()
@@ -774,9 +708,9 @@ def runstep(steprun, if_repeat=False):
                         if "RMAN Script execution failed  with error [RMAN-03002" in result['data']:
                             # 终止commvault作业
                             if recover_job_id != '':
+                                from .views import get_credit_info
                                 try:
-                                    utils_manage = origin.utils_manage
-                                    commvault_credit, _ = get_credit_info(utils_manage.content)
+                                    commvault_credit, _ = get_credit_info(utils_content)
                                     cvToken = CV_RestApi_Token()
                                     cvToken.login(commvault_credit)
                                     cvOperate = CV_OperatorInterFace(cvToken)
@@ -806,22 +740,6 @@ def runstep(steprun, if_repeat=False):
                 myprocesstask.state = "1"
                 myprocesstask.content = "脚本" + script_name + "完成。"
                 myprocesstask.save()
-
-                # 删除Linux下脚本
-                # if system_tag == "Linux":
-                #     del_cmd = 'if [ ! -f "{0}" ]; then'.format(linux_temp_script_file) + '\n' + \
-                #               '   echo "文件不存在"' + '\n' + \
-                #               'else' + '\n' + \
-                #               '   rm -f {0}'.format(linux_temp_script_file) + '\n' + \
-                #               'fi'
-                #     del_obj = remote.ServerByPara(del_cmd, ip, username, password, system_tag)
-                #     del_result = del_obj.run("")
-                # else:
-                #     if result["exec_tag"] == 0:
-                #         # 删除windows的bat脚本
-                #         del_cmd = 'if exist {0} del "{0}"'.format(windows_temp_script_file)
-                #         del_obj = remote.ServerByPara(del_cmd, ip, username, password, system_tag)
-                #         del_result = del_obj.run("")
 
             if steprun.step.approval == "1" or steprun.verifyitemsrun_set.all():
                 steprun.state = "CONFIRM"
@@ -935,7 +853,7 @@ def runstep(steprun, if_repeat=False):
                 else:
                     if_repeat = False
 
-                nextreturn = runstep(nextsteprun, if_repeat)
+                nextreturn = runstep(nextsteprun, if_repeat, processrun_params)
 
                 if nextreturn == 0:
                     return 0
@@ -955,79 +873,123 @@ def exec_process(processrunid, if_repeat=False):
     end_step_tag = 0
     processrun = ProcessRun.objects.filter(id=processrunid)
     processrun = processrun[0]
-    process = processrun.process
-
+    
+    # processrun_params 流程参数 传递
+    processrun_params = {}
+    
     # Commvault流程恢复 nextSCN选项
     # 流程恢复 ...ProcessRun>>copy_priority
     # 计划流程 ...Origin>>copy_priority
     #   先获取优先级 再获取nextSCN选项(主拷贝、辅助拷贝) 
     if processrun.process.type.upper() == "COMMVAULT":
-        # nextSCN-1
-        # 获取流程客户端
-        origin = processrun.origin
-        utils = origin.utils
-
-        from .views import get_credit_info
-        _, sqlserver_credit = get_credit_info(utils.content if utils else None)
-        dm = SQLApi.CVApi(sqlserver_credit)
-        ret = dm.get_oracle_backup_job_list(origin.client_name)
-
-        # 无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启
-        if not ret:
-            dm.close()
-            end_step_tag = 0
-            myprocesstask = ProcessTask()
-            myprocesstask.processrun = processrun
-            myprocesstask.starttime = datetime.datetime.now()
-            myprocesstask.senduser = processrun.creatuser
-            myprocesstask.receiveuser = processrun.creatuser
-            myprocesstask.type = "ERROR"
-            myprocesstask.state = "0"
-            myprocesstask.content = "无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启。"
-            myprocesstask.save()
+        # 获取流程参数
+        # utils.content copy_priority pri
+        # 工具认证信息，恢复优先级，源客户端名称
+        copy_priority = 1
+        utils_content = ""
+        pri_client_name = ""
+        std_id = None
+        pri = None
+        info = processrun.info
+        agent_type = ""
+        instance_name = ""
+        try:
+            info = etree.XML(info)
+        except Exception:
+            pass
         else:
-            curSCN = None
+            pri_id = info.xpath("//param")[0].attrib.get("pri_id")
+            try:
+                pri = CvClient.objects.get(id=int(pri_id))
+                pri_client_name = pri.client_name
+                std_id = pri.destination_id
+                utils_content = pri.utils.content if pri.utils else None
+                agent_type = pri.agentType
+                instance_name = pri.instanceName
+            except Exception:
+                pass
+            processrun_params["pri_id"] = pri_id
+            processrun_params["pri"] = pri
+            processrun_params["std_id"] = std_id
+            processrun_params["utils_content"] = utils_content
+            
+            if "Oracle" in agent_type:
+                # 辅助拷贝暂时仅用在Oracle
+                copy_priority = info.xpath("//param")[0].attrib.get("copy_priority")
 
-            # ** 获取 主拷贝 辅助拷贝优先级
-            copy_priority = processrun.copy_priority
+                # nextSCN-1
+                from .views import get_credit_info
+                _, sqlserver_credit = get_credit_info(utils_content)
 
-            # ** 获得SCN号
-            # 指定时间 匹配该时间点的SCN
-            # 最新时间 匹配最新的SCN号
-            recover_time = '{:%Y-%m-%d %H:%M:%S}'.format(processrun.recover_time) if processrun.recover_time else ""
-            if recover_time:
-                for i in ret:
-                    if i["subclient"] == "default" and i['LastTime'] == recover_time:
-                        curSCN = i["cur_SCN"]
-                        break
-            else:
-                # 当前时间点，选择最新的SCN号
-                for i in ret:
-                    if i["subclient"] == "default":
-                        curSCN = i["cur_SCN"]
-                        break
+                dm = SQLApi.CVApi(sqlserver_credit)
+                ret = dm.get_all_backup_job_list(pri_client_name, agent_type, instance_name)
+                logger.info("%s %s %s" % (pri_client_name, agent_type, instance_name))
+                logger.info(str(ret))
+                
+                # 无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启
+                if not ret:
+                    dm.close()
+                    end_step_tag = 0
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun = processrun
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.senduser = processrun.creatuser
+                    myprocesstask.receiveuser = processrun.creatuser
+                    myprocesstask.type = "ERROR"
+                    myprocesstask.state = "0"
+                    myprocesstask.content = "无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启。"
+                    myprocesstask.save()
+                else:
+                    curSCN = None
 
-            # 辅助拷贝优先的恢复 最新
-            if copy_priority == 2:
-                if not recover_time:
-                    tmp_tag = 0
-                    for orcl_copy in ret:
-                        if orcl_copy["idataagent"] == "Oracle Database":
-                            if dm.has_auxiliary_job(orcl_copy['jobId']):
-                                orcl_copy_starttime = datetime.datetime.strptime(orcl_copy['StartTime'], "%Y-%m-%d %H:%M:%S")
-                                curSCN = orcl_copy['cur_SCN']
-                                processrun.recover_time = orcl_copy_starttime if orcl_copy_starttime else None
+                    # ** 获得SCN号
+                    # 指定时间 匹配该时间点的SCN
+                    # 最新时间 匹配最新的SCN号
+                    recover_time = '{:%Y-%m-%d %H:%M:%S}'.format(processrun.recover_time) if processrun.recover_time else ""
+                    if recover_time:
+                        for i in ret:
+                            if i["subclient"] == "default" and i['LastTime'] == recover_time:
+                                curSCN = i["cur_SCN"]
+                                break
+                    else:
+                        # 当前时间点，选择最新的SCN号
+                        for i in ret:
+                            if i["subclient"] == "default":
+                                curSCN = i["cur_SCN"]
+                                break
 
-                                if tmp_tag > 0:
+                    # 辅助拷贝优先的恢复 最新
+                    if copy_priority == 2:
+                        if not recover_time:
+                            tmp_tag = 0
+                            for orcl_copy in ret:
+                                if orcl_copy["idataagent"] == "Oracle Database":
+                                    if dm.has_auxiliary_job(orcl_copy['jobId']):
+                                        orcl_copy_starttime = datetime.datetime.strptime(orcl_copy['StartTime'], "%Y-%m-%d %H:%M:%S")
+                                        curSCN = orcl_copy['cur_SCN']
+                                        processrun.recover_time = orcl_copy_starttime if orcl_copy_starttime else None
+
+                                        if tmp_tag > 0:
+                                            break
+                                        tmp_tag += 1
+                                else:
                                     break
-                                tmp_tag += 1
-                        else:
-                            break
 
-            dm.close()
+                    dm.close()
 
-            processrun.curSCN = curSCN
-            processrun.save()
+                    # 保存curSCN号至info
+                    # 修改xml
+                    info = processrun.info
+                    try:
+                        info = etree.XML(info)
+                        node = info.xpath("//param")[0]
+                        node.attrib["curSCN"] = str(curSCN)
+                        content = etree.tounicode(node)
+                    except Exception:
+                        pass
+                    else:
+                        processrun.info = content
+                        processrun.save()
  
     steprunlist = StepRun.objects.exclude(state="9").filter(processrun=processrun, step__last=None, step__pnode=None)
     if len(steprunlist) > 0:
@@ -1098,7 +1060,7 @@ def exec_process(processrunid, if_repeat=False):
                 walkthrough.endtime = datetime.datetime.now()
                 walkthrough.save()
 
-        end_step_tag = runstep(steprunlist[0], if_repeat)
+        end_step_tag = runstep(steprunlist[0], if_repeat, processrun_params)
     else:
         myprocesstask = ProcessTask()
         myprocesstask.processrun = processrun
@@ -1296,7 +1258,7 @@ def create_process_run(*args, **kwargs):
                     exec_process.delay(myprocessrun.id)
 
 
-def cv_oracle_restore_params_save(processrun):
+def cv_restore_params_save(processrun):
     """
     保存 Commvault Oracle 恢复需要的参数
     Args:
@@ -1305,7 +1267,7 @@ def cv_oracle_restore_params_save(processrun):
     # 计划流程用的是默认 恢复选项
     # 计划流程如果是Commvault 在流程中首个 客户端 对应的 恢复选项 写到ProcessRun
     try:
-        origin_id, target_id, data_path, copy_priority, db_open, log_restore = "", None, "", 1, 1, 1
+        pri_id, std_id, cv_client_info = "", "", ""
         process = processrun.process
 
         # 过滤所有脚本
@@ -1313,22 +1275,21 @@ def cv_oracle_restore_params_save(processrun):
         for cur_step in all_steps:
             script_instances = cur_step.scriptinstance_set.exclude(state="9")
             for script_instance in script_instances:
-                if script_instance.origin:
-                    origin_id = script_instance.origin.id
-                    data_path = script_instance.origin.data_path
-                    copy_priority = script_instance.origin.copy_priority
-                    db_open = script_instance.origin.db_open
-                    log_restore = script_instance.origin.log_restore
-                    if script_instance.origin.target:
-                        target_id = script_instance.origin.target.id
+                if script_instance.primary:
+                    pri = script_instance.primary
+                    pri_id = pri.id
+                    std_id = pri.destination.id if pri.destination else ""
+                    cv_client_info = pri.info
                     break
-        
-        processrun.target_id = target_id
-        processrun.data_path = data_path
-        processrun.copy_priority = copy_priority
-        processrun.db_open = db_open
-        processrun.origin_id = origin_id
-        processrun.log_restore = log_restore
-        processrun.save()
-    except:
-        pass
+        try:
+            cv_client_info = etree.XML(cv_client_info)
+            node = cv_client_info.xpath("//param")[0]
+            node.attrib["pri_id"] = str(pri_id)
+            node.attrib["std_id"] = str(std_id)
+            content = etree.tounicode(node)
+            processrun.info = content
+            processrun.save()
+        except Exception as e:
+            logger.info(str(e))
+    except Exception as e:
+        logger.info(str(e))

@@ -81,7 +81,6 @@ urlpatterns = [
     url(r'^falconstor_run_invited/$', falconstor_run_invited),
     url(r'^fill_with_invitation/$', fill_with_invitation),
     url(r'^save_modify_invitation/$', save_modify_invitation),
-    url(r'^oraclerecoverydata/$', oraclerecoverydata),
 
     url(r'^walkthrough/$', walkthrough, {"funid": "69"}),
     url(r'^walkthroughdata/$', walkthroughdata),
@@ -185,15 +184,38 @@ urlpatterns = [
     url(r'^change_periodictask/$', change_periodictask),
     url(r'^process_schedule_del/$', process_schedule_del),
     
-    # 自主恢复
-    url(r'^manualrecovery/$', manualrecovery, {'funid': '83'}),
-    url(r'^manualrecoverydata/$', manualrecoverydata),
+    # # 自主恢复
+    # url(r'^manualrecovery/$', manualrecovery, {'funid': '83'}),
+    # url(r'^manualrecoverydata/$', manualrecoverydata),
 
-    url(r'^dooraclerecovery/$', dooraclerecovery),
-    url(r'^oraclerecoverydata/$', oraclerecoverydata),\
+    # url(r'^dooraclerecovery/$', dooraclerecovery),
+    # url(r'^oraclerecoverydata/$', oraclerecoverydata),\
 
     # 大屏监控
     url(r'^monitor/$', monitor),
     url(r'^get_monitor_data/$', get_monitor_data),
     url(r'^get_clients_status/$', get_clients_status),
+    
+    # 客户端管理
+    url(r'^client_manage/$', client_manage, {'funid': '71'}),
+    url(r'^get_client_tree/$', get_client_tree),
+    url(r'^clientdel/$', clientdel),
+    url(r'^client_move/$', client_move),
+    url(r'^client_node_save/$', client_node_save),
+    url(r'^get_client_detail/$', get_client_detail),
+    url(r'^client_client_save/$', client_client_save),
+    url(r'^get_cvinfo/$', get_cvinfo),
+    url(r'^client_cv_save/$', client_cv_save),
+    url(r'^client_cv_del/$', client_cv_del),
+    url(r'^client_cv_get_backup_his/$', client_cv_get_backup_his),
+    url(r'^client_cv_recovery/$', client_cv_recovery),
+    url(r'^client_cv_get_restore_his/$', client_cv_get_restore_his),
+    url(r'^get_dbcopyinfo/$', get_dbcopyinfo),
+    url(r'^client_dbcopy_save/$', client_dbcopy_save),
+    url(r'^client_dbcopy_del/$', client_dbcopy_del),
+    url(r'^get_adg_status/$', get_adg_status),
+    url(r'^client_dbcopy_get_adg_his/$', client_dbcopy_get_adg_his),
+
+    url(r'^get_file_tree/$', get_file_tree),
+
 ]

@@ -6,7 +6,7 @@ function displayScriptTree() {
             "themes": {
                 "responsive": false,
             },
-            'data': treeData,
+            'data': tree_data,
             'multiple': false,  // 单选
         },
 
@@ -103,20 +103,20 @@ function displayParams() {
 
 // 根据工具加载源客户端
 $("#utils").empty()
-for (var i=0; i<origin_data.length; i++){
-    $("#utils").append('<option value="' + origin_data[i].utils_id + '">' + origin_data[i].utils_name + '</option>');
+for (var i=0; i<cv_client_data.length; i++){
+    $("#utils").append('<option value="' + cv_client_data[i].utils_id + '">' + cv_client_data[i].utils_name + '</option>');
     if (i==0){
-        loadOrigins(origin_data[i].utils_id);
+        loadOrigins(cv_client_data[i].utils_id);
     }
 }
 
 function loadOrigins(utils_id){
     $('#origin').empty();
-    for (var i=0; i<origin_data.length; i++){
-        if (origin_data[i]["utils_id"] == utils_id){
-            var origins = origin_data[i]["origins"];
+    for (var i=0; i<cv_client_data.length; i++){
+        if (cv_client_data[i]["utils_id"] == utils_id){
+            var origins = cv_client_data[i]["cv_client_list"];
             for (var j=0; j< origins.length; j++){
-                $("#origin").append('<option value="' + origins[j].id + '">' + origins[j].client_name + '</option>')
+                $("#origin").append('<option value="' + origins[j].id + '">' + origins[j].client_name + '(' + cv_client_data[i]["utils_name"] + ')</option>')
             }
             break;
         }

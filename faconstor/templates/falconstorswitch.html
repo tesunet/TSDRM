@@ -119,7 +119,7 @@
                     <input hidden id="id" type="text" name="id">
                     <input hidden id="processid" type="text" name="processid">
                     <input hidden id="planprocessrunid" type="text" name="planprocessrunid">
-
+                    <input hidden id="browseJobId" type="text" name="browseJobId">
                 </div>
                 <div class="panel-body">
 
@@ -147,89 +147,141 @@
 
                                 </div>
                             </div>
-                            {% if type == 'Commvault' %}
+                            {% if process_type == 'Commvault' %}
                             <div id="Commvault">
-                                <!-- 选择时间点/选择恢复终端 -->
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; ">*</span>恢复时间点</label>
-                                    <div class="col-md-10">
-                                        <div class="input-group" id="recovery_time_redio_group">
-                                    <span class="input-group-addon">
-                                        <input type="radio" name="recovery_time_redio" value="1" checked> 最新时间点
-                                        <input type="radio" name="recovery_time_redio" value="2">选择时间
-                                    </span>
-                                            <input id="recovery_time" autocomplete="off" type="datetime"
-                                                   name="recovery_time"
-                                                   class="form-control">
-                                        </div>
+                            <!-- 选择时间点/选择恢复终端 -->
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>恢复时间点</label>
+                                <div class="col-md-10">
+                                    <div class="input-group" id="recovery_time_redio_group">
+                                        <span class="input-group-addon">
+                                            <input type="radio" name="recovery_time_redio" value="1" checked> 最新时间点
+                                            <input type="radio" name="recovery_time_redio" value="2">选择时间
+                                        </span>
+                                        <input id="recovery_time" autocomplete="off" type="datetime"
+                                            name="recovery_time" class="form-control">
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>数据重定向路径</label>
-                                    <div class="col-md-10">
-                                        <input id="data_path" type="text" name="data_path" class="form-control"
-                                               value="{{ data_path }}" placeholder="">
-                                        <div class="form-control-focus"></div>
+                            </div>
+                            <!-- Oracle -->
+                            {% if "Oracle" in agent_type  %}
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>数据重定向路径</label>
+                                <div class="col-md-10">
+                                    <input id="data_path" type="text" name="data_path" class="form-control"
+                                        value="{{ cv_params.data_path }}">
+                                    <div class="form-control-focus"></div>
 
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>选择拷贝优先级</label>
+                                <div class="col-md-10">
+                                    <input type="text" id="copy_priority_hidden" name="copy_priority_hidden"
+                                        value="{{ cv_params.copy_priority }}" hidden>
+                                    <select name="copy_priority" id="copy_priority" class="form-control">
+                                        <option value="1">主拷贝</option>
+                                        <option value="2">辅助拷贝</option>
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>是否开启数据库</label>
+                                <div class="col-md-10">
+                                    <input type="text" id="db_open_hidden" name="db_open_hidden"
+                                        value="{{ cv_params.db_open }}" hidden>
+                                    <select name="db_open" id="db_open" class="form-control">
+                                        <option value="1">是</option>
+                                        <option value="2">否</option>
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; "></span>是否回滚日志</label>
+                                <div class="col-md-10">
+                                    <input type="text" id="log_restore_hidden" name="log_restore_hidden"
+                                        value="{{ cv_params.log_restore }}" hidden>
+                                    <select name="log_restore" id="log_restore" class="form-control">
+                                        <option value="1">是</option>
+                                        <option value="2">否</option>
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <!-- File System -->
+                            {% if "File System" in agent_type %}
+                            <div class="form-group">
+                                <label class="col-md-2 control-label">文件改写</label>
+                                <div class="col-md-10" style="padding-top:6px">
+                                    <div class="input-group">
+                                        <span>
+                                            <input type="radio" name="overwrite" value="FALSE" {% if cv_params.overWrite == 'True' %}checked{% endif %}>
+                                            如果介质上文件较新则改写
+                                            <input type="radio" name="overwrite" value="TRUE" {% if cv_params.overWrite == 'False' %}checked{% endif %}>无条件改写
+                                        </span>
                                     </div>
                                 </div>
-                                <div class="form-body">
-                                    <div class="form-group">
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; "></span>选择拷贝优先级</label>
-                                        <div class="col-md-10">
-                                            <input type="text" id="copy_priority_hidden" name="copy_priority_hidden"
-                                                   value="{{ copy_priority }}" hidden>
-                                            <select name="copy_priority" id="copy_priority" class="form-control">
-                                                <option value="1">主拷贝</option>
-                                                <option value="2">辅助拷贝</option>
-                                            </select>
-                                            <div class="form-control-focus"></div>
-                                        </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label">恢复到</label>
+                                <div class="col-md-10">
+                                    <div class="input-group">
+                                        <span class="input-group-addon">
+                                            <input type="radio" name="path" value="1" {% if cv_params.destPath == 'same' %}checked{% endif %}> 相同文件夹
+                                            <input type="radio" name="path" value="2" {% if cv_params.destPath != 'same' %}checked{% endif %}>指定路径
+                                        </span>
+                                        <input id="mypath" autocomplete="off" type="path" name="mypath" value="{% if cv_params.destPath != 'same' %}{{cv_params.destPath}}{% else %}{% endif %}"
+                                            class="form-control">
                                     </div>
                                 </div>
-                                <div class="form-body">
-                                    <div class="form-group">
-                                        <label class="col-md-2 control-label"><span
-                                                style="color:red; "></span>是否开启数据库</label>
-                                        <div class="col-md-10">
-                                            <input type="text" id="db_open_hidden" name="db_open_hidden"
-                                                   value="{{ db_open }}" hidden>
-                                            <select name="db_open" id="db_open" class="form-control">
-                                                <option value="1">是</option>
-                                                <option value="2">否</option>
-                                            </select>
-                                            <div class="form-control-focus"></div>
-                                        </div>
-                                    </div>
+                            </div>
+                            <div class="form-group" style="padding-top:20px">
+                                <label class="col-md-2 control-label">恢复目录</label>
+                                <div class="col-md-10">
+                                    <select multiple="multiple" id="fs_se_1" size="10" class="form-control"
+                                        style="overflow-y:auto;">
+                                        {% for path in cv_params.sourcePaths %}
+                                        <option value='{{ path }}'>{{ path }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span style="color:red; ">*</span>源客户端</label>
-                                    <div class="col-md-10">
-                                        <input type="text" id="origin_id" name="origin_id" value="{{ origin.id }}" hidden>
-                                        <input id="origin" autocomplete="off" type="text" readonly name="origin"
-                                               class="form-control" value="{{ origin.client_name }}">
-                                        <div class="form-control-focus"></div>
-                                    </div>
+                            </div>
+                            {% endif %}
+                            <!-- SQL Server -->
+                            {% if "SQL Server" in agent_type %}
+                            <div class="form-group form-md-line-input">
+                                <label class="col-md-2 control-label" >无条件改写</label>
+                                <div class="col-md-10">
+                                    <input id="isoverwrite" name="isoverwrite" type="checkbox" value="True" style="width: 20px; height: 20px;" {% if cv_params.mssqlOverWrite == "False" %}checked{% else %}{% endif %}/>
                                 </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; ">*</span>选择目标客户端</label>
-                                    <div class="col-md-10">
-                                        <input type="text" id="target_selected" name="target_selected"
-                                               value="{{ target_id }}"
-                                               hidden>
-
-                                        <select name="target" id="target" class="form-control">
-                                            {% for target in all_targets %}
-                                                <option value="{{ target.id }}">{{ target.client_name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <div class="form-control-focus"></div>
-                                    </div>
+                            </div>
+                            {% endif %}
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>源客户端</label>
+                                <div class="col-md-10">
+                                    <input id="pri" type="text" hidden name="pri" value="{{ cv_params.pri_id }}">
+                                    <input id="pri_name" autocomplete="off" type="text" readonly name="pri_name"
+                                        class="form-control" value="{{ cv_params.pri_name }}">
+                                    <div class="form-control-focus"></div>
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择目标客户端</label>
+                                <div class="col-md-10">
+                                    <input type="text" id="std_selected" name="std_selected"
+                                        value="{{ cv_params.std_id }}" hidden>
+                                    <select name="std" id="std" class="form-control">
+                                        {% for std in cv_clients %}
+                                        <option value="{{ std.id }}" {{std.selected}}>
+                                            {{ std.client_name }}({{std.utils_name}})</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
                             </div>
                             {% endif %}
                             <div class="form-group">

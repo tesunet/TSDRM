@@ -642,17 +642,17 @@ if (App.isAngularJsApp() === false) {
                                         if (data.status==1){
                                             if (data.data.interface_type == "Commvault") {
                                                 $("#script_ip_div").hide();
-                                                $("#origin_div").show();
-                                                $("#target_div").show();
+                                                $("#pri_div").show();
+                                                $("#std_div").show();
                                             } else {
                                                 $("#script_ip_div").show();
-                                                $("#origin_div").hide();
-                                                $("#target_div").hide();
+                                                $("#pri_div").hide();
+                                                $("#std_div").hide();
                                             }
                                             $("#interface_type").val(data.data.interface_type);
     
-                                            $("#origin").val(data.data.origin);
-                                            $("#target").val(data.data.target);
+                                            $("#pri").val(data.data.pri);
+                                            $("#std").val(data.data.std);
     
                                             $("#steprunid").val(scriptid);
                                             $("#code").val(data.data["code"]);

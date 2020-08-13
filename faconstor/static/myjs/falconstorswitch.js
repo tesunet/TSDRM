@@ -1,11 +1,13 @@
 $(document).ready(function () {
-    $("#target").val("");
+    $("#std").val("");
     var copy_priority_hidden = $("#copy_priority_hidden").val();
     $("#copy_priority").val(copy_priority_hidden);
 
     var db_open_hidden = $("#db_open_hidden").val();
     $("#db_open").val(db_open_hidden);
 
+    var log_restore_hidden = $("#log_restore_hidden").val();
+    $("#log_restore").val(log_restore_hidden);
 
     function customProcessDataTable() {
         $('#sample_1').dataTable({
@@ -100,7 +102,22 @@ $(document).ready(function () {
 
     $("#confirm").click(function () {
         var process_id = $("#process_id").val();
-
+        // File System
+        var iscover = $("input[name='overwrite']:checked").val();
+        var mypath = "same"
+        if ($("input[name='path']:checked").val() == "2"){
+            mypath = $('#mypath').val()
+        }
+        var selectedfile = ""
+        $("#fs_se_1 option").each(function () {
+            var txt = $(this).val();
+            selectedfile = selectedfile + txt + "*!-!*"
+        });
+        // SQL Server
+        var mssql_iscover = "FALSE"
+        if ($('#isoverwrite').is(':checked')){
+            mssql_iscover = "TRUE"
+        }
         // 非邀请流程启动
         $.ajax({
             type: "POST",
@@ -113,14 +130,24 @@ $(document).ready(function () {
                     run_time: $("#run_time").val(),
                     run_reason: $("#run_reason").val(),
 
-                    target: $("#target").val(),
+                    pri: $("#pri").val(),
+                    std: $("#std").val(),
+                    agent_type: $("#agent_type").val(),
                     recovery_time: $("#recovery_time").val(),
                     browseJobId: $("#browseJobId").val(),
-                    data_path: $("#data_path").val(),
 
-                    origin: $("#origin_id").val(),
+                    data_path: $("#data_path").val(),
                     copy_priority: $("#copy_priority").val(),
                     db_open: $("#db_open").val(),
+                    log_restore: $("#log_restore").val(),
+
+                    // SQL Server
+                    mssql_iscover: mssql_iscover,
+
+                    // File System
+                    iscover: iscover,
+                    mypath: mypath,
+                    selectedfile: selectedfile,
                 },
             success: function (data) {
                 if (data["res"] == "新增成功。") {
@@ -144,13 +171,13 @@ $(document).ready(function () {
         // 写入当前时间
         var myDate = new Date();
         $("#run_time").val(myDate.toLocaleString());
-        $("#target").val("");
+        $("#std").val("");
     });
 
     $("#recovery_time_redio_group").click(function () {
         if ($("input[name='recovery_time_redio']:checked").val() == 2) {
             $("#static04").modal({backdrop: "static"});
-            var origin_id = $("#origin_id").val();
+            var pri_name = $("#pri_name").val();
             var datatable = $("#backup_point").dataTable();
             datatable.fnClearTable(); //清空数据
             datatable.fnDestroy();
@@ -207,7 +234,7 @@ $(document).ready(function () {
 
     // modal.show事件
     $("#static").on("shown.bs.modal", function (event) {
-        $("#target").val($("#target_selected").val());
+        $("#std").val($("#std_selected").val());
         $("#run_reason").val("");
         $("#recovery_time").val("");
 
@@ -217,4 +244,51 @@ $(document).ready(function () {
         $("input[name='recovery_time_redio'][value='1']").prop("checked", true);
         $("input[name='recovery_time_redio'][value='2']").prop("checked", false);
     });
+
+    // File System加载目录树
+    // params: client_id agent_type
+    var agent_type = $('#agent_type').val(),
+        cv_id = $('#cv_id').val();
+    if (agent_type.indexOf("File System") != -1){
+        var setting = {
+            async: {
+                enable: true,
+                url:'../get_file_tree/',
+                autoParam:["id"],
+                otherParam:{"cv_id":cv_id},
+                dataFilter: filter
+            },
+            check: {
+                enable: true,
+                chkStyle: "checkbox",               //多选
+                chkboxType: { "Y": "s", "N": "ps" }  //不级联父节点选择
+            },
+            view:{
+                showLine:false
+            },
+    
+        };
+        function filter(treeId, parentNode, childNodes) {
+            if (!childNodes) return null;
+            for (var i=0, l=childNodes.length; i<l; i++) {
+                childNodes[i].name = childNodes[i].name.replace(/\.n/g, '.');
+            }
+            return childNodes;
+        }
+        $.fn.zTree.init($("#fs_tree"), setting);
+    }
+    // 选中文件
+    $('#selectpath').click(function(){
+        $('#fs_se_1').empty();
+        var fs_tree = $.fn.zTree.getZTreeObj("fs_tree");
+        var nodes = fs_tree.getCheckedNodes(true);
+        for (var k = 0, length = nodes.length; k < length; k++) {
+            var halfCheck = nodes[k].getCheckStatus();
+            if (!halfCheck.half){
+                $("#fs_se_1").append("<option value='\\" + nodes[k].id + "\\'>\\" + nodes[k].id + "\\</option>");
+            }
+        }
+        if (nodes.length==0)
+            $("#fs_se_1").append("<option value='\\'>\\</option>");
+     })
 });
