@@ -1,4 +1,10 @@
-﻿﻿var csrfToken = $("[name='csrfmiddlewaretoken']").val();
+﻿function isEmptyObject(obj) {
+  for (var key in obj) {
+    return false;
+  }
+  return true;
+}﻿
+var csrfToken = $("[name='csrfmiddlewaretoken']").val();
 var walkthrough_state = "",
     refresh = true,
     soundrefresh = true,
@@ -8,6 +14,8 @@ var walkthrough_state = "",
     headerTitle = '',
     end = false;
 var allState = ['run', 'done', 'error', 'stop', 'confirm', 'edit'];
+
+var oldwalkthroughinfo ={}
 
 // add...
 // var audioSecurePlay = function (audio) {
@@ -45,6 +53,7 @@ var util = {
                         console.log("run...")
                         util.makeHtml(data);
                         util.playsound(data);
+                        oldwalkthroughinfo=data;
                     },
                     // error: function(xhr) {
                     //     alert('网络错误')
@@ -56,7 +65,11 @@ var util = {
     makeHtml: function (walkthroughindexdata) {
         walkthrough_state = walkthroughindexdata.walkthrough_state;
         var sTag = $("#s_tag").val()
-        util.makeCommand(walkthroughindexdata.showtasks, walkthroughindexdata.oldwalkthroughinfo.showtasks);
+        var oldshowtasks = []
+        if (!isEmptyObject(oldwalkthroughinfo)) {
+            oldshowtasks = oldwalkthroughinfo.showtasks;
+        }
+        util.makeCommand(walkthroughindexdata.showtasks,oldshowtasks);
         // 判断是否为计划
         var myAudio = document.getElementById('audio2');
         if (walkthrough_state === "PLAN") {
@@ -96,11 +109,13 @@ var util = {
         for (var processnum = 0; processnum < walkthroughindexdata.processruns.length; processnum++) {
             data = walkthroughindexdata.processruns[processnum]
             olddata = null
-            if (walkthroughindexdata.oldwalkthroughinfo.processruns) {
-                for (var oldprocessnum = 0; oldprocessnum < walkthroughindexdata.oldwalkthroughinfo.processruns.length; oldprocessnum++) {
-                    if (data.processrun_id == walkthroughindexdata.oldwalkthroughinfo.processruns[oldprocessnum].processrun_id) {
-                        olddata = walkthroughindexdata.oldwalkthroughinfo.processruns[oldprocessnum]
-                        break
+            if (!isEmptyObject(oldwalkthroughinfo)) {
+                if (oldwalkthroughinfo.processruns) {
+                    for (var oldprocessnum = 0; oldprocessnum < oldwalkthroughinfo.processruns.length; oldprocessnum++) {
+                        if (data.processrun_id == oldwalkthroughinfo.processruns[oldprocessnum].processrun_id) {
+                            olddata = oldwalkthroughinfo.processruns[oldprocessnum]
+                            break
+                        }
                     }
                 }
             }
@@ -315,7 +330,7 @@ var util = {
     makeCommand: function (showtasks, oldshowtasks) {
         var console = $(".console");
         console.html("")
-        if (oldshowtasks) {
+        if (oldshowtasks.length>0) {
             var showtext = ""
             for (var i = 0; i < showtasks.length; i++) {
                 var isshow = false;
@@ -503,79 +518,79 @@ var util = {
     },
     playsound: function (walkthroughindexdata) {
         var sounds = []
-        oldwalkthroughindexdata = walkthroughindexdata.oldwalkthroughinfo;
-        for (var processnum = 0; processnum < walkthroughindexdata.processruns.length; processnum++) {
-            //流程播报
-            curprocess = walkthroughindexdata.processruns[processnum];
-            curprocessstate = curprocess.walkthroughstate;
-            oldprocessstate = "";
-            oldprocess = null;
-            if (oldwalkthroughindexdata) {
-                try {
-                    for (var oldprocessnum = 0; oldprocessnum < oldwalkthroughindexdata.processruns.length; oldprocessnum++) {
-                        if (curprocess.processrun_id == oldwalkthroughindexdata.processruns[oldprocessnum].processrun_id) {
-                            oldprocess = oldwalkthroughindexdata.processruns[oldprocessnum];
-                            break;
-                        }
-                    }
-                } catch {
-                    // ...
-                }
-
-            }
-            if (oldprocess) {
-                oldprocessstate = oldprocess.walkthroughstate;
-            }
-            //流程开始
-            if (curprocessstate == "RUN" && (oldprocessstate == "PLAN" || oldprocessstate == "" || oldprocessstate == null)) {
-                sounds.push("processstart_" + curprocess.process_id);
-            }
-            //步骤播报
-            if(walkthroughindexdata.walkthrough_state!='PLAN') {
-                for (var i = 0; i < curprocess.steps.length; i++) {
-                    curStep = curprocess.steps[i];
-                    curStepstate = curStep.state;
-                    oldStepstate = "";
-                    oldStep = null;
-                    if (oldprocess) {
-                        for (var j = 0; j < oldprocess.steps.length; j++) {
-                            if (curStep.name == oldprocess.steps[j].name) {
-                                oldStep = oldprocess.steps[j];
+        oldwalkthroughindexdata = oldwalkthroughinfo;
+        if (!isEmptyObject(oldwalkthroughindexdata)){
+            for (var processnum = 0; processnum < walkthroughindexdata.processruns.length; processnum++) {
+                //流程播报
+                curprocess = walkthroughindexdata.processruns[processnum];
+                curprocessstate = curprocess.walkthroughstate;
+                oldprocessstate = "";
+                oldprocess = null;
+                if (oldwalkthroughindexdata) {
+                    try {
+                        for (var oldprocessnum = 0; oldprocessnum < oldwalkthroughindexdata.processruns.length; oldprocessnum++) {
+                            if (curprocess.processrun_id == oldwalkthroughindexdata.processruns[oldprocessnum].processrun_id) {
+                                oldprocess = oldwalkthroughindexdata.processruns[oldprocessnum];
                                 break;
                             }
                         }
-                    }
-                    if (oldStep) {
-                        oldStepstate = oldStep.state;
-                    }
-                    //步骤开始
-                    if ((oldStepstate == "EDIT" || oldStepstate == "") && oldStepstate != curStepstate) {
-                        if (curStep.name == "环境初始化")
-                            sounds.push("step_1");
-                        if (curStep.name == "数据库启动")
-                            sounds.push("step_2");
-                        if (curStep.name == "应用启动")
-                            sounds.push("step_3");
-                        if (curStep.name == "环境验证")
-                            sounds.push("step_4");
+                    } catch (err) {
                     }
                 }
-                //流程结束
-                if (curprocessstate == "DONE" && curprocessstate != oldprocessstate) {
-                    sounds.push("processend_" + curprocess.process_id);
+                if (oldprocess) {
+                    oldprocessstate = oldprocess.walkthroughstate;
+                }
+                //流程开始
+                if (curprocessstate == "RUN" && (oldprocessstate == "PLAN" || oldprocessstate == "" || oldprocessstate == null)) {
+                    sounds.push("processstart_" + curprocess.process_id);
+                }
+                //步骤播报
+                if (walkthroughindexdata.walkthrough_state != 'PLAN') {
+                    for (var i = 0; i < curprocess.steps.length; i++) {
+                        curStep = curprocess.steps[i];
+                        curStepstate = curStep.state;
+                        oldStepstate = "";
+                        oldStep = null;
+                        if (oldprocess) {
+                            for (var j = 0; j < oldprocess.steps.length; j++) {
+                                if (curStep.name == oldprocess.steps[j].name) {
+                                    oldStep = oldprocess.steps[j];
+                                    break;
+                                }
+                            }
+                        }
+                        if (oldStep) {
+                            oldStepstate = oldStep.state;
+                        }
+                        //步骤开始
+                        if ((oldStepstate == "EDIT" || oldStepstate == "") && oldStepstate != curStepstate) {
+                            if (curStep.name == "环境初始化")
+                                sounds.push("step_1");
+                            if (curStep.name == "数据库启动")
+                                sounds.push("step_2");
+                            if (curStep.name == "应用启动")
+                                sounds.push("step_3");
+                            if (curStep.name == "环境验证")
+                                sounds.push("step_4");
+                        }
+                    }
+                    //流程结束
+                    if (curprocessstate == "DONE" && curprocessstate != oldprocessstate) {
+                        sounds.push("processend_" + curprocess.process_id);
+                    }
                 }
             }
-        }
 
-        //演练播报
-        curwalkthroughstate = walkthroughindexdata.walkthrough_state;
-        oldwalkthroughstate = "";
-        if (oldwalkthroughindexdata)
-            oldwalkthroughstate = oldwalkthroughindexdata.walkthrough_state;
-        if (curwalkthroughstate == "DONE" && curwalkthroughstate != oldwalkthroughstate) {
-            sounds.push("walkthroughend");
+            //演练播报
+            curwalkthroughstate = walkthroughindexdata.walkthrough_state;
+            oldwalkthroughstate = "";
+            if (oldwalkthroughindexdata)
+                oldwalkthroughstate = oldwalkthroughindexdata.walkthrough_state;
+            if (curwalkthroughstate == "DONE" && curwalkthroughstate != oldwalkthroughstate) {
+                sounds.push("walkthroughend");
+            }
+            util.playmp3(sounds);
         }
-        util.playmp3(sounds);
     },
     playmp3: function (soundslist) {
         soundrefresh = false;

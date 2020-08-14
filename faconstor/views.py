@@ -50,7 +50,7 @@ funlist = []
 info = {"webaddr": "cv-server", "port": "81", "username": "admin", "passwd": "Admin@2017", "token": "",
         "lastlogin": 0}
 
-walkthroughinfo = {}
+#walkthroughinfo = {}
 
 
 def file_iterator(file_name, chunk_size=512):
@@ -271,7 +271,7 @@ def walkthroughindex(request, walkthrough_id):
     # processrun_id = request.GET.get("p_run_id", "")
     s_tag = request.GET.get("s", "")
     # exclude
-    global walkthroughinfo
+    #global walkthroughinfo
     walkthroughinfo = {}
     walkthrough = Walkthrough.objects.filter(id=walkthrough_id)
     if walkthrough.exists():
@@ -707,10 +707,10 @@ def get_walkthrough_index_data(request):
             "processruns": cur_processruns,
             "showtasks": showtasks,
         }
-        global walkthroughinfo
-        oldwalkthroughinfo = walkthroughinfo
-        walkthroughinfo = c_walkthrough_run_data
-        c_walkthrough_run_data["oldwalkthroughinfo"] = oldwalkthroughinfo
+        #global walkthroughinfo
+        #oldwalkthroughinfo = walkthroughinfo
+        #walkthroughinfo = c_walkthrough_run_data
+        #c_walkthrough_run_data["oldwalkthroughinfo"] = oldwalkthroughinfo
     else:
         c_walkthrough_run_data = {}
     return JsonResponse(c_walkthrough_run_data)
