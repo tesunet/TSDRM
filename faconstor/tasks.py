@@ -1006,7 +1006,7 @@ def exec_process(processrunid, if_repeat=False):
                 
                 process_type = current_process_run.process.type
                 if process_type.upper() == "COMMVAULT":
-                    cv_oracle_restore_params_save(current_process_run)
+                    cv_restore_params_save(current_process_run)
                 
                 current_process_run.save()
 
@@ -1216,7 +1216,7 @@ def create_process_run(*args, **kwargs):
                 myprocessrun.state = "RUN"
                 process_type = myprocessrun.process.type
                 if process_type.upper() == "COMMVAULT":
-                    cv_oracle_restore_params_save(myprocessrun)
+                    cv_restore_params_save(myprocessrun)
 
                 myprocessrun.save()
                 mystep = cur_process.step_set.exclude(state="9")
