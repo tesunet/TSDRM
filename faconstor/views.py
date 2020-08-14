@@ -739,7 +739,7 @@ def walkthrough_run_invited(request):
 
                 process_type = current_process_run.process.type
                 if process_type.upper() == "COMMVAULT":
-                    cv_oracle_restore_params_save(current_process_run)
+                    cv_restore_params_save(current_process_run)
 
                 current_process_run.save()
 
