@@ -430,7 +430,6 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
 
                 script_instance = scriptrun.script
                 script = script_instance.script
-                origin = script_instance.origin
                 script_name = script_instance.name if script_instance.name else ""
                 recover_job_id = ""
                 if script.interface_type in ["Linux", "Windows"]:
