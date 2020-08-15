@@ -1216,7 +1216,7 @@ $(document).ready(function () {
                         }
                     });
                 } else if (agent.indexOf('File System') != -1) {
-                    if ($("input[name='cv_path']:checked").val() == "2" && $('#cv_mypath').val() == "")
+                    if ($("input[name='cv_r_path']:checked").val() == "2" && $('#cv_r_mypath').val() == "")
                         alert("请输入指定路径。");
                     else {
                         var iscover = $("input[name='cv_r_overwrite']:checked").val();

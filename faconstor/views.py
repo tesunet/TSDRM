@@ -10716,17 +10716,22 @@ def get_file_tree(request):
         cvToken = CV_RestApi_Token()
         cvToken.login(commvault_credit)
         cvAPI = CV_API(cvToken)
-        list = cvAPI.browse(client_id, "File System", None, id, False)
-        for node in list:
-            root = {}
-            root["id"] = node["path"]
-            root["pId"] = id
-            root["name"] = node["path"]
-            if node["DorF"] == "D":
-                root["isParent"] = True
-            else:
-                root["isParent"] = False
-            treedata.append(root)
+        file_list = []
+        try:
+            file_list = cvAPI.browse(client_id, "File System", None, id, False)
+            for node in file_list:
+                root = {}
+                root["id"] = node["path"]
+                root["pId"] = id
+                root["name"] = node["path"]
+                if node["DorF"] == "D":
+                    root["isParent"] = True
+                else:
+                    root["isParent"] = False
+                treedata.append(root)
+        except Exception:
+            pass
+
         treedata = json.dumps(treedata)
 
     return HttpResponse(treedata)
