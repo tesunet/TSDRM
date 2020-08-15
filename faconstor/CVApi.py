@@ -3862,8 +3862,8 @@ if __name__ == "__main__":
     # cvAPI = CV_OperatorInterFace(cvToken)
 
     # ret = cvAPI.getClient("10.64.7.43")  # backup status
-    # ret = cvAPI.getClientInfo(3)
-    ret = cvAPI.getJobList('getJobList', type='backup')
+    ret = cvAPI.getClientInfo(3)
+    # ret = cvAPI.getJobList('getJobList', type='backup')
     print(ret)
     # tmp = []
     # for i in ret:

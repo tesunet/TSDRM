@@ -4041,7 +4041,7 @@ class DoMysql(object):
             self.conn.close()
 
 
-def run(origin, target, instance, processrun_id):
+def run(pri, std, instance, processrun_id):
     # 从ProcessRun表中读取 recover_time, browse_job_id, data_path, copy_priority, curSCN, db_open, log_restore
     # 从UtilsManage表中读取，Commvault认证信息
     def get_credit_info(content):
@@ -4083,22 +4083,22 @@ def run(origin, target, instance, processrun_id):
         print("流程不存在，{0}。".format(e))
         exit(1)
     else:
-        origin_name, target_name = '', ''
+        pri_name, std_name = '', ''
         # 从源客户端表获取工具
         try:
-            origin = Origin.objects.get(id=int(origin))
-            origin_name = origin.client_name
+            pri = CvClient.objects.get(id=int(pri))
+            pri_name = pri.client_name
         except Exception as e:
             print('源客户端不存在，{0}。'.format(e))
             exit(1)
         try:
-            target = Target.objects.get(id=int(target))
-            target_name = target.client_name
+            std = CvClient.objects.get(id=int(std))
+            std_name = std.client_name
         except Exception as e:
             print('目标客户端不存在，{0}。'.format(e))
             exit(1)
 
-        utils_manage = origin.utils
+        utils_manage = pri.utils
 
         commvault_credit, _ = get_credit_info(utils_manage.content)
         info = {
@@ -4114,11 +4114,26 @@ def run(origin, target, instance, processrun_id):
         cvToken.login(info)
         cvAPI = CV_API(cvToken)
 
-        jobId = cvAPI.restoreOracleBackupset(origin_name, target_name, instance,
-                                             {'browseJobId': processrun.browse_job_id, 'data_path': processrun.data_path,
-                                              "copy_priority": processrun.copy_priority, "curSCN": processrun.curSCN,
-                                              "db_open": processrun.db_open, "restoreTime": processrun.recover_time,
-                                              "log_restore": processrun.log_restore})
+        # oracle恢复流程参数
+        info = processrun.info
+
+        browse_job_id, data_path, copy_priority, curSCN, db_open, log_restore = ["" for _ in range(6)]
+        try:
+            info = etree.XML(info)
+        except Exception:
+            pass
+        else:
+            browse_job_id = info.xpath("//param")[0].attrib.get("browse_job_id")
+            data_path = info.xpath("//param")[0].attrib.get("data_path")
+            copy_priority = info.xpath("//param")[0].attrib.get("copy_priority")
+            curSCN = info.xpath("//param")[0].attrib.get("curSCN")
+            db_open = info.xpath("//param")[0].attrib.get("db_open")
+            log_restore = info.xpath("//param")[0].attrib.get("log_restore")
+        jobId = cvAPI.restoreOracleBackupset(pri_name, std_name, instance,
+                                             {'browseJobId': browse_job_id, 'data_path': data_path,
+                                              "copy_priority": copy_priority, "curSCN": curSCN,
+                                              "db_open": db_open, "restoreTime": processrun.recover_time,
+                                              "log_restore": log_restore})
         # jobId = 4553295
         if jobId == -1:
             print("oracle恢复接口调用失败，{0}。".format(cvAPI.msg))
@@ -4129,7 +4144,7 @@ def run(origin, target, instance, processrun_id):
             while True:
                 ret = []
                 try:
-                    ret = cvAPI.getJobList(origin_name, type="restore")
+                    ret = cvAPI.getJobList(pri_name, type="restore")
                 except:
                     temp_tag += 1
                 for i in ret:

@@ -28,7 +28,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.extend([r'%s' % BASE_DIR, ])
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "TSDRM.settings")
 application = get_wsgi_application()
-from drm.models import *
+from faconstor.models import *
 import logging
 
 logger = logging.getLogger('oracle_recover')
