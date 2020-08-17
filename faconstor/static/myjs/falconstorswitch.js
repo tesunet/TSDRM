@@ -249,6 +249,7 @@ $(document).ready(function () {
     // params: client_id agent_type
     var agent_type = $('#agent_type').val(),
         cv_id = $('#cv_id').val();
+    console.log(agent_type)
     if (agent_type.indexOf("File System") != -1) {
         var setting = {
             async: {

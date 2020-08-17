@@ -296,6 +296,9 @@
                         </div>
                         <div class="form-actions ">
                             <div class="modal-footer">
+                                {% if "File System" in agent_type and process_type == "Commvault" %}
+                                <button type="button" data-toggle="modal" data-target="#fs_model" class="btn green uppercase">重选目录</button>
+                                {% endif %}
                                 <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
                                 </button>
                                 <button type="button" id="confirm" name="confirm" class="btn green">确认</button>
@@ -341,6 +344,30 @@
             </div>
         </div>
     </div>
+    <div id="fs_model" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">选择目录</h4>
+                </div>
+                <div style="height:400px;overflow:auto; ">
+                    <div>
+                        <ul id="fs_tree" class="ztree"></ul>
+                    </div>
+    
+                    <p>
+                    <p>
+                    <p>
+                </div>
+                <div class="modal-footer">
+                    <button id="selectpath" type="button" data-dismiss="modal"
+                        class="btn green uppercase">确定</button>
+    
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block script %}
@@ -378,7 +405,11 @@
             type="text/javascript"></script>
     <script src="/static/assets/global/plugins/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js"
             type="text/javascript"></script>
-
+    <!-- ztree -->
+    <link href="/static/assets/global/plugins/ztree/css/zTreeStyle/zTreeStyle.css" rel="stylesheet"
+    type="text/css" />
+    <script src="/static/assets/global/plugins/ztree/js/jquery.ztree.core.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/ztree/js/jquery.ztree.excheck.js" type="text/javascript"></script>
 
 
 {% endblock %}
