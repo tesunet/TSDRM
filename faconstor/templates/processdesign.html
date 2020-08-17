@@ -3,186 +3,140 @@
 {% block content %}
 
     <div style="height:10px"></div>
-    <div class="table-toolbar">
-        <div id="error">
-            {% if errors %}
-                {% for error in errors %}
-                    <div class="alert alert-danger ">{{ error }}</div>
-                    <span> {% endfor %}</span>
-
-            {% endif %}</div>
+    <div class="portlet-body">
         <div class="row">
-            <div class="col-md-6">
-                <div>
-                    <button id="new" type="button" data-toggle="modal" data-target="#static" class="btn  green">
-                        新增
-                        <i class="fa fa-plus"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <table class="table table-striped table-bordered table-hover table-checkable order-column" id="sample_1">
-        <thead>
-        <tr>
-            <th style="width:40px;"> 序号</th>
-            <th> 预案编号</th>
-            <th> 预案名称</th>
-            <th> 预案类型</th>
-            <th> 预案描述</th>
-            <th> 是否签到</th>
-            <th> RTO</th>
-            <th> RPO</th>
-            <th> 排序</th>
-            <th> 颜色</th>
-            <th style="width:50px;"> 操作</th>
-        </tr>
-        </thead>
-
-        <tbody>
-
-        </tbody>
-    </table>
-    <div id="static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                    <h4 class="modal-title">预案管理</h4>
-                    <input hidden id="id" type="text" name="id">
-                </div>
-                <div class="panel-body">
-
-                    <form class="bs-example form-horizontal activate-form">{% csrf_token %}
-
-                        <div class="form-body">
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>预案编号</label>
-                                <div class="col-md-10">
-                                    <input id="code" type="text" name="code" class="form-control "
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>预案名称</label>
-                                <div class="col-md-10">
-                                    <input id="name" type="text" name="name" class="form-control "
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>预案类型</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="type" name="type">
-                                        <option value="Commvault">Commvault</option>
-                                        <option value="Falconstor">Falconstor</option>
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; "></span>预案描述</label>
-                                <div class="col-md-10">
-                                    <input id="remark" type="text" name="remark" class="form-control "
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; ">*</span>是否签到</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="sign" name="sign">
-                                        <option value="1">是</option>
-                                        <option value="0">否</option>
-                                    </select>
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-
-
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; "></span>RTO</label>
-                                <div class="col-md-10">
-                                    <input id="rto" type="number" name="rto" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; "></span>RPO</label>
-                                <div class="col-md-10">
-                                    <input id="rpo" type="number" name="rpo" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; "></span>排序</label>
-                                <div class="col-md-10">
-                                    <input id="sort" type="number" name="sort" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span
-                                        style="color:red; "></span>图表颜色</label>
-                                <div class="col-md-10">
-                                    <input id="process_color" type="text" name="process_color" class="form-control"
-                                           placeholder="">
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group ">
-                                <label class="col-md-2 control-label">流程参数</label>
-                                <div class="col-md-10">
-                                    <div id="context-menu2">
-                                        <ul class="dropdown-menu" role="menu">
-                                            <li><a tabindex="-1" data-toggle="modal" data-target="#static01">新增</a></li>
-                                            <li><a tabindex="-1" data-toggle="modal" data-target="#static01">修改</a></li>
-                                            <li><a tabindex="-1">删除</a></li>
-                                        </ul>
+            <div id="p_tree" class="col-md-4 tree-demo"></div>
+            <div class="col-md-8">
+                <div id="form_div" class="portlet light bordered" {{ table.right_info_hidden }}>
+                    <div class="portlet-title">
+                        <div class="caption font-green-sharp">
+                            <label id="title" class="caption-subject bold uppercase">{{ table.name }}</label>
+                        </div>
+                    </div>
+                    <div class="portlet-body form">
+                        <form action="#" class="form-horizontal" method="post">{% csrf_token %}
+                            <input type="text" hidden id="id" name="id" value="{{ table.id }}">
+                            <input type="text" hidden id="pid" name="pid" value="{{ table.pid }}">
+                            <div class="form-body">
+                                <div class="form-group" style="margin-top:-20px">
+                                    <label class="col-md-2 control-label">所属节点</label>
+                                    <div class="col-md-10">
+                                        <input readonly type="text" class="form-control" id="pname" name="pname"
+                                               placeholder="所属节点" value="{{ table.pname }}">
+                                        <div class="form-control-focus"></div>
                                     </div>
-                                    <button hidden id="param_edit" tabindex="-1" data-toggle="modal"
-                                            data-target="#static01"></button>
-                                    <select id="param_se" size="7" class="form-control" style="overflow-y:auto;">
-
-                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span style="color:red; ">*</span>预案编号</label>
+                                    <div class="col-md-10">
+                                        <input id="code" type="text" name="code" class="form-control" value="{{ table.code }}">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; ">*</span>预案名称</label>
+                                    <div class="col-md-10">
+                                        <input id="name" type="text" name="name" class="form-control" value="{{ table.name }}">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; ">*</span>预案类型</label>
+                                    <div class="col-md-10">
+                                        <select class="form-control" id="type" name="type">
+                                            <option value="Commvault" {% if table.type == "Commvault" %}selected{% endif %}>Commvault</option>
+                                            <option value="Falconstor" {% if table.type == "Falconstor" %}selected{% endif %}>Falconstor</option>
+                                        </select>
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>预案描述</label>
+                                    <div class="col-md-10">
+                                        <input id="remark" type="text" name="remark" class="form-control" value="{{ table.remark }}">
+                                        <div class="form-control-focus"></div>
+    
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; ">*</span>是否签到</label>
+                                    <div class="col-md-10">
+                                        <select class="form-control" id="sign" name="sign">
+                                            <option value="1" {% if table.sign == "1" %}selected{% endif %}>是</option>
+                                            <option value="0" {% if table.sign == "0" %}selected{% endif %}>否</option>
+                                        </select>
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>RTO</label>
+                                    <div class="col-md-10">
+                                        <input id="rto" type="number" name="rto" class="form-control" value="{{ table.rto }}">
+                                        <div class="form-control-focus"></div>
+    
+                                    </div>
+                                </div>
+    
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span style="color:red; "></span>RPO</label>
+                                    <div class="col-md-10">
+                                        <input id="rpo" type="number" name="rpo" class="form-control" value="{{ table.rpo }}">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>排序</label>
+                                    <div class="col-md-10">
+                                        <input id="sort" type="number" name="sort" class="form-control" value="{{ table.sort }}">
+                                        <div class="form-control-focus"></div>
+    
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span
+                                            style="color:red; "></span>图表颜色</label>
+                                    <div class="col-md-10">
+                                        <input id="process_color" type="text" name="process_color" class="form-control" value="{{ table.color }}">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
+                                    <label class="col-md-2 control-label">流程参数</label>
+                                    <div class="col-md-10">
+                                        <div id="context-menu2">
+                                            <ul class="dropdown-menu" role="menu">
+                                                <li><a tabindex="-1" data-toggle="modal" data-target="#static01">新增</a></li>
+                                                <li><a tabindex="-1" data-toggle="modal" data-target="#static01">修改</a></li>
+                                                <li><a tabindex="-1">删除</a></li>
+                                            </ul>
+                                        </div>
+                                        <button hidden id="param_edit" tabindex="-1" data-toggle="modal"
+                                                data-target="#static01"></button>
+                                        <select id="param_se" size="7" class="form-control" style="overflow-y:auto;">
+                                            {% for p in table.config %}
+                                            <option value="{{ p.variable_name }}">{{ p.param_name }}:{{ p.variable_name }}:{{ p.param_value }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <input type="text" id="config" name="config" hidden>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-actions ">
-                            <div class="modal-footer">
-                                <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
+                            <div class="form-actions noborder" style="margin-top:-30px;text-align:center">
+                                <button type="submit" id="interface_save" name="interface_save" class="btn blue">
+                                    保存
                                 </button>
-                                <button type="button" id="save" name="save" class="btn green">保存</button>
                             </div>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
+
         </div>
     </div>
     <div id="static01" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
@@ -215,6 +169,7 @@
 
 {% block script %}
     <script>
+        var treeData = {{ tree_data|safe }}
         $.ajaxSetup({
             data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
         });
@@ -232,5 +187,9 @@
     // context-munu
     <script src="/static/assets/global/plugins/bootstrap-contextmenu/bootstrap-contextmenu.js"
             type="text/javascript"></script>
+
+    <!-- jstree -->
+    <link href="/static/assets/global/plugins/jstree/dist/themes/default/style.min.css" rel="stylesheet" type="text/css"/>
+    <script src="/static/assets/global/plugins/jstree/dist/jstree.min.js" type="text/javascript"></script>
 {% endblock %}
 

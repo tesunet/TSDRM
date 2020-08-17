@@ -66,6 +66,7 @@ urlpatterns = [
     url(r'^process_data/$', process_data),
     url(r'^process_save/$', process_save),
     url(r'^process_del/$', process_del),
+    url(r'^process_move/$', process_move),
     url(r'^verify_items_save/$', verify_items_save),
     url(r'^get_verify_items_data/$', get_verify_items_data),
     url(r'^remove_verify_item/$', remove_verify_item),
