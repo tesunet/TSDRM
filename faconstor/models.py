@@ -40,6 +40,7 @@ class UserInfo(models.Model):
 
 
 class Process(models.Model):
+    pnode = models.ForeignKey('self', blank=True, null=True, related_name='children', verbose_name='父节点')
     code = models.CharField("预案编号", blank=True, max_length=50)
     name = models.CharField("预案名称", blank=True, max_length=50)
     remark = models.TextField("预案描述", blank=True, null=True)
