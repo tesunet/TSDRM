@@ -23,22 +23,20 @@ $('#p_tree').jstree({
                 "action": function (data) {
                     var inst = jQuery.jstree.reference(data.reference),
                         obj = inst.get_node(data.reference);
-                    // 判断无法添加第三级
-                    if (obj.type == "INTERFACE") {
-                        alert("无法在接口下新建节点。");
-                    } else {
-                        $("#title").text("新建");
-                        $("#id").val("0");
-                        $("#pid").val(obj.id);
-                        $("#my_type").val("NODE");
-                        $("#node_name").val("");
-                        $("#node_pname").val(obj.text);
-                        $("#remark").val("");
-
-                        $("#interface").hide();
-                        $("#node").show();
-                        $("#node_save").show();
-                    }
+                    $("#title").text("新建");
+                    $("#id").val("0");
+                    $("#pid").val(obj.id);
+                    $("#pname").val(obj.text);
+                    $("#code").val("");
+                    $("#name").val("");
+                    $("#remark").val("");
+                    $("#sign").val("");
+                    $("#rto").val("");
+                    $("#rpo").val("");
+                    $("#sort").val("");
+                    $("#process_color").val("");
+                    $("#type").val("");
+                    $('#param_se').empty();
                 }
             },
             "删除": {

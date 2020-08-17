@@ -4025,6 +4025,7 @@ def process_design(request, funid):
     if request.method == "POST":
         right_info_hidden = ""
         id = request.POST.get('id', '')
+        pid = request.POST.get('pid', '')
         code = request.POST.get('code', '')
         name = request.POST.get('name', '')
         remark = request.POST.get('remark', '')
@@ -4082,6 +4083,18 @@ def process_design(request, funid):
                         processsave.color = color
                         processsave.type = type
                         processsave.config = xml_config
+                        processsave.pnode_id = pid
+
+                        # 排序
+                        sort = 1
+                        try:
+                            max_sort = Script.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
+                                max_sort=Max('sort', distinct=True))["max_sort"]
+                            sort = max_sort + 1
+                        except:
+                            pass
+                        processsave.sort = sort
+
                         processsave.save()
                         select_id = processsave.id
                     except Exception as e:
