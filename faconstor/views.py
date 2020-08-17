@@ -9524,9 +9524,9 @@ def get_client_node(parent, select_id, request):
         if child.id in [1, 2, 3]:
             node["state"] = {"opened": True}
         if child.id == 2:
-            node["text"] = "<img src = '/static/pages/images/s.png' height='24px'> " + node["text"]
+            node["text"] = "<img src = '/static/assets/pages/img/cv/s.png' height='24px'> " + node["text"]
         if child.id == 3:
-            node["text"] = "<img src = '/static/pages/images/d.png' height='24px'> " + node["text"]
+            node["text"] = "<img src = '/static/assets/pages/img/cv/d.png' height='24px'> " + node["text"]
         if child.nodetype == "NODE" and child.id not in [1, 2, 3]:
             node["text"] = "<i class='jstree-icon jstree-themeicon fa fa-folder icon-state-warning icon-lg jstree-themeicon-custom'></i>" + node["text"]
 
@@ -9534,10 +9534,10 @@ def get_client_node(parent, select_id, request):
             db_client = DbCopyClient.objects.exclude(state="9").filter(hostsmanage=child)
             if len(db_client) > 0:
                 if db_client[0].dbtype == "1":
-                    node["text"] = "<img src = '/static/pages/images/oracle.png' height='24px'> " + node["text"]
+                    node["text"] = "<img src = '/static/assets/pages/img/cv/oracle.png' height='24px'> " + node["text"]
             cv_client = CvClient.objects.exclude(state="9").filter(hostsmanage=child)
             if len(cv_client) > 0:
-                node["text"] = "<img src = '/static/pages/images/cv.png' height='24px'> " + node["text"]
+                node["text"] = "<img src = '/static/assets/pages/img/cv/cv.png' height='24px'> " + node["text"]
         try:
             if int(select_id) == child.id:
                 node["state"] = {"selected": True}
