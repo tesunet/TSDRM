@@ -2529,7 +2529,6 @@ def script(request, funid):
     name = ""
     script_text = ""
     success_text = ""
-    log_address = ""
     interface_type = ""
     commv_interface = ""
     pid = ""
@@ -2558,7 +2557,6 @@ def script(request, funid):
         script_text = request.POST.get('script_text', '')
 
         success_text = request.POST.get('success_text', '')
-        log_address = request.POST.get('log_address', '')
 
         # commvault接口
         interface_type = request.POST.get('interface_type', '')
@@ -3105,6 +3103,7 @@ def processscriptsave(request):
     script_instance_id = request.POST.get('script_instance_id', '')
     config = request.POST.get('config', '')
     interface_type = request.POST.get('interface_type', '')  # 接口类型：Commvault Linux Windows
+    error_solved = request.POST.get('error_solved', '')
 
     # add
     script_instance_name = request.POST.get('script_instance_name', '')  # 必填
@@ -3143,6 +3142,10 @@ def processscriptsave(request):
         sort = int(sort)
     except:
         sort = None
+    try:
+        error_solved = int(error_solved)
+    except:
+        error_solved = None
         # 初始化
     if not script_instance_name:
         result["status"] = 0
@@ -3168,6 +3171,7 @@ def processscriptsave(request):
                 "primary_id": origin_id,
                 "log_address": log_address,
                 "sort": sort,
+                "process_id": error_solved,
                 "remark": script_instance_remark,
                 "hosts_manage_id": None,
             }
@@ -3185,12 +3189,12 @@ def processscriptsave(request):
                 "name": script_instance_name,
                 "log_address": log_address,
                 "sort": sort,
+                "process_id": error_solved,
                 "remark": script_instance_remark,
 
                 "utils_id": None,
                 "primary_id": None,
             }
-        print(create_data)
         try:
             step = Step.objects.get(id=int(step_id))
             script_id = int(script_id)
@@ -3340,6 +3344,7 @@ def get_script_data(request):
             "script_instance_name": script_instance.name,
             "script_instance_remark": script_instance.remark,
             "script_instance_sort": script_instance.sort,
+            "script_instance_error_solved": script_instance.process_id,
             "params": "",
             "log_address": script_instance.log_address,
             "host_id": script_instance.hosts_manage_id,
@@ -3819,6 +3824,31 @@ def load_hosts_params(request):
         "status": status,
         "data": data,
         "info": info
+    })
+
+
+@login_required
+def get_error_solved_process(request):
+    """
+    @params process_id
+    """
+    p_id = request.POST.get("process_id", "")
+
+    status = 1
+    info = "获取排错流程成功。"
+    data = []
+    try:
+        p_id = int(p_id)
+    except Exception as e:
+        info = "获取排错流程失败。"
+        status = 0
+    else:
+        data = Process.objects.exclude(state="9").filter(pnode_id=p_id).values("id", "name")
+
+    return JsonResponse({
+        "status": status,
+        "info": info,
+        "data": str(data)
     })
 
 

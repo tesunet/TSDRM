@@ -166,7 +166,7 @@ $('#host_id').change(function(){
 
 $("#load_script").click(function () {
     var script_tree = $('#script_tree').jstree(true).get_selected(true);
-    $("#sort_div").show();
+
     try {
         if (script_tree[0].type == "INTERFACE") {
             var data = script_tree[0].data;
@@ -188,6 +188,8 @@ $("#load_script").click(function () {
             // 判断是否为commvault
             $('#script_instance_name_div').show();
             $('#script_instance_remark_div').show();
+            $('#sort_div').show();
+            $('#error_solved_div').show();
             if (data.interface_type == "Commvault") {
                 $("#host_id_div").hide();
                 $("#script_text_div").hide();
@@ -236,6 +238,33 @@ function hideParamsDiv() {
     $('#process_div').hide();
     $('#script_div').hide();
     $('#host_div').hide();
+}
+
+function get_error_solved_process(process_id){
+    /**
+     * 排错流程
+     */
+    $('#error_solved').empty();
+    $('#error_solved').append('<option value="">无</option>')
+    $.ajax({
+        type: "POST",
+        dataType: "JSON",
+        url: "../get_error_solved_process/",
+        data: {
+            process_id: process_id
+        },
+        success: function(data){
+            var status = data.status;
+            if (status == 1){
+                var data = eval(data.data)
+                for(var i=0; i< data.length; i++){
+                    $('#error_solved').append('<option value="' + data[i].id + '">' + data[i].name + '</option>');
+                }
+            } else {
+                alert(data.info)
+            }
+        }
+    })
 }
 
 var treedata = "";
@@ -463,6 +492,7 @@ function customTree() {
                         $("#commv_interface").val("");
                         $("#interface_type").val("");
                         $("#sort").val('');
+                        $("#error_solved").val('');
                         $('#script_instance_name').val('');
                         $('#script_instance_remark').val('');
                         $('#utils').val('')
@@ -477,6 +507,8 @@ function customTree() {
                         $('#utils_id_div').hide();
                         $('#script_instance_name_div').hide();
                         $('#script_instance_remark_div').hide();
+                        $('#sort_div').hide();
+                        $('#error_solved_div').hide();
 
                         document.getElementById("edit").click();
                     }
@@ -510,6 +542,7 @@ function customTree() {
                                             // script_instance
                                             $('#script_instance_id').val(data.data.script_instance_id);
                                             $("#sort").val(data.data.script_instance_sort);
+                                            $("#error_solved").val(data.data.script_instance_error_solved);
                                             $("#log_address").val(data.data.log_address);
                                             $('#script_instance_name').val(data.data.script_instance_name);
                                             $('#script_instance_remark').val(data.data.script_instance_remark);
@@ -521,6 +554,8 @@ function customTree() {
                                             $("#commv_interface").val(data.data.commv_interface);
                                             $('#script_instance_name_div').show();
                                             $('#script_instance_remark_div').show();
+                                            $('#sort_div').show();
+                                            $('#error_solved_div').show();
                                             // 判断是否为commvault
                                             if (data.data.interface_type == "Commvault") {
                                                 $("#host_id_div").hide();
@@ -728,10 +763,14 @@ $('#sample_1 tbody').on('click', 'button#select', function () {
     $('#static03').modal('hide');
 });
 
+get_error_solved_process($("#process").val());
 $("#process").change(function () {
     $("#formdiv").hide();
     $('#tree_2').jstree("destroy");
     customTree();
+
+    // 排错流程
+    get_error_solved_process($(this).val());
 });
 
 
@@ -771,14 +810,15 @@ $('#scriptsave').click(function () {
             script_id: $("#scriptid").val(),
             config: JSON.stringify(config),
             interface_type: $('#interface_type').val(),  // 接口类型
-            /*
-            接口实例名称
-            选择工具
-            选择主机
-            选择客户端
-            填写类名
-            日志地址
-            接口实例说明
+            error_solved: $('#error_solved').val(),  // 排错流程
+            /**
+             * 接口实例名称
+             * 选择工具
+             * 选择客户端
+             * 选择主机
+             * 填写类名
+             * 日志地址
+             * 接口实例说明
              */
             script_instance_id: $('#script_instance_id').val(),
             script_instance_name: $('#script_instance_name').val(),
