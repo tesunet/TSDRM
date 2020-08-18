@@ -4039,6 +4039,7 @@ def process_design(request, funid):
 
         try:
             id = int(id)
+            pid = int(pid)
         except Exception as e:
             pass
 
@@ -4088,7 +4089,7 @@ def process_design(request, funid):
                         # 排序
                         sort = 1
                         try:
-                            max_sort = Script.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
+                            max_sort = Process.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
                                 max_sort=Max('sort', distinct=True))["max_sort"]
                             sort = max_sort + 1
                         except:
@@ -4100,7 +4101,7 @@ def process_design(request, funid):
                     except Exception as e:
                         errors.append("保存失败：{0}".format(e))
             else:
-                all_process = Script.objects.filter(code=code).exclude(
+                all_process = Process.objects.filter(code=code).exclude(
                     id=id).exclude(state="9")
                 if (len(all_process) > 0):
                     errors.append('预案编码:' + code + '已存在。')
