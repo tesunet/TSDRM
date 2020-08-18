@@ -803,7 +803,6 @@ if (App.isAngularJsApp() === false) {
 
         // 重试
         $('#exec').click(function () {
-            console.log("重试...")
             $("#confirmbtn").parent().empty();
             $("#continuebtn").parent().empty()
             $.ajax({
@@ -818,6 +817,7 @@ if (App.isAngularJsApp() === false) {
                     if (data["res"] == "执行成功。") {
                         $("#exec").hide();
                         $("#ignore").hide();
+                        $('#solve_error').hide();
                         $('#static').modal('hide');
                         getstep();
 

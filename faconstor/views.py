@@ -3731,7 +3731,7 @@ def processconfig(request, funid):
     if process_id:
         process_id = int(process_id)
 
-    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type=""))
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
