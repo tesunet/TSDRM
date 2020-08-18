@@ -216,6 +216,61 @@ $(function() {
 
     })
 
+    $('#host').click(function () {
+        $.ajax({
+            type: "POST",
+            dataType: 'json',
+            url: "../get_all_client_tree/",
+            data:
+            {
+                id: $("#id").val(),
+            },
+            success: function (data) {
+                $('#tree_4').data('jstree', false).empty();
+
+                $('#tree_4').jstree({
+                    'core': {
+                        "themes": {
+                            "responsive": false
+                        },
+                        "check_callback": true,
+                        'data': data.data
+                    },
+                    "types": {
+                        "NODE": {
+                            "icon": false
+                        },
+                        "CLIENT": {
+                            "icon": false
+                        }
+                    },
+                    "plugins": ["types", "checkbox"]
+                })
+            },
+            error: function (e) {
+                alert("页面出现错误，请于管理员联系。");
+            }
+        });
+    });
+    $('#save_host').click(function () {
+        $.ajax({
+            type: "POST",
+            url: "../group_save_host_tree/",
+            data: {
+                id: $("#id").val(),
+                selected_hosts: $("#tree_4").jstree("get_checked", null, true).toString(),
+            },
+            success: function (data) {
+                if (data.status == 1){
+                    $('#static3').modal('hide');
+                } 
+                alert(data.info);
+            },
+            error: function (e) {
+                alert("页面出现错误，请于管理员联系。");
+            }
+        });
+    });
 })
 
 

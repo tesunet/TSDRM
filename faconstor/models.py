@@ -18,6 +18,7 @@ class Fun(models.Model):
 class Group(models.Model):
     name = models.CharField("组名", blank=True, null=True, max_length=50)
     fun = models.ManyToManyField(Fun)
+    host = models.ManyToManyField("HostsManage", verbose_name="主机权限")
     remark = models.TextField("说明", blank=True, null=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     sort = models.IntegerField("排序", blank=True, null=True)
