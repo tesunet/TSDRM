@@ -1182,9 +1182,9 @@ def exec_process(processrunid, if_repeat=False):
 @shared_task
 def create_process_run(*args, **kwargs):
     """
-    创建计划流程
-    :param process:
-    :return:
+    创建计划流程 或者排错流程
+    @param process_id:  流程ID
+    @param creatuser: 流程创建人
     """
     # exec_process.delay(processrunid)
     # data_path/target/origin/
@@ -1237,7 +1237,7 @@ def create_process_run(*args, **kwargs):
                         mysteprun.state = "EDIT"
                         mysteprun.save()
 
-                        myscript = step.script_set.exclude(state="9")
+                        myscript = step.scriptinstance_set.exclude(state="9")
                         for script in myscript:
                             myscriptrun = ScriptRun()
                             myscriptrun.script = script

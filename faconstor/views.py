@@ -3853,6 +3853,121 @@ def get_error_solved_process(request):
 
 
 @login_required
+def solve_error(request):
+    status = 1
+    info = "启动排错流程成功。"
+    data = ""
+    sr_id = request.POST.get("script_run_id", "")
+    try:
+        sr_id = int(sr_id)
+        sr = ScriptRun.objects.get(id=sr_id)
+    except Exception as e:
+        status = 0
+        info = "启动排错流程失败：{e}。".format(e)
+    else:
+        si = sr.script
+        error_solved = si.process if si else None
+        if error_solved:
+            # 启动排错流程
+            # 返回排错流程ID
+            # 前端定时获取该进程状态
+            running_process = ProcessRun.objects.filter(process=error_solved, state__in=["RUN"])
+            if running_process.exists():
+                myprocesstask = ProcessTask()
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "END"
+                myprocesstask.state = "0"
+                myprocesstask.processrun = running_process[0]
+                myprocesstask.content = "排错流程({0})已运行。".format(running_process[0].process.name)
+                myprocesstask.save()
+            else:
+                myprocessrun = ProcessRun()
+                myprocessrun.creatuser = request.user.username
+                myprocessrun.process = error_solved
+                myprocessrun.starttime = datetime.datetime.now()
+                myprocessrun.state = "RUN"
+                process_type = error_solved.type
+                if process_type.upper() == "COMMVAULT":
+                    cv_restore_params_save(myprocessrun)
+
+                myprocessrun.save()
+                mystep = error_solved.step_set.exclude(state="9")
+                if not mystep.exists():
+                    myprocesstask = ProcessTask()
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "END"
+                    myprocesstask.state = "0"
+                    myprocesstask.processrun = myprocessrun
+                    myprocesstask.content = "排错流程({0})不存在可运行步骤。".format(error_solved.name)
+                    myprocesstask.save()
+                else:
+                    for step in mystep:
+                        mysteprun = StepRun()
+                        mysteprun.step = step
+                        mysteprun.processrun = myprocessrun
+                        mysteprun.state = "EDIT"
+                        mysteprun.save()
+
+                        myscript = step.scriptinstance_set.exclude(state="9")
+                        for script in myscript:
+                            myscriptrun = ScriptRun()
+                            myscriptrun.script = script
+                            myscriptrun.steprun = mysteprun
+                            myscriptrun.state = "EDIT"
+                            myscriptrun.save()
+
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun = myprocessrun
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "START"
+                    myprocesstask.state = "1"
+                    myprocesstask.content = "排错流程({0})已启动。".format(error_solved.name)
+                    myprocesstask.save()
+
+                    exec_process.delay(myprocessrun.id)
+                    data = myprocessrun.id
+        else:
+            status = 0
+            info = "启动排错流程失败：无排错流程。"
+
+    return JsonResponse({
+        "status": status,
+        "info": info,
+        "data": data,
+    })
+
+
+@login_required
+def get_error_sovled_status(request):
+    """
+    @param pr_id:
+    @return status: 1 成功 0 未完成 2出错
+    """
+    pr_id = request.POST.get("pr_id", "")
+    status = 0
+    try:
+        pr_id = int(pr_id)
+        c_pr = ProcessRun.objects.get(id=pr_id)
+        state = c_pr.state
+        if state == "DONE":
+            status = 1
+        elif state == "ERROR":
+            # 排错流程错误的处理(待补充)
+            status = 2
+        else:
+            status = 0
+    except Exception as e:
+        pass
+
+    return JsonResponse({
+        "status": status
+    })
+
+
+@login_required
 def del_step(request):
     if 'id' in request.POST:
         id = request.POST.get('id', '')
@@ -6011,6 +6126,7 @@ def get_current_scriptinfo(request):
             "pri": pri.client_name if pri else "",
             "std": std_name,
             "interface_type": script.interface_type,
+            "error_solved": script_instance.process_id,
         }
     except Exception as e:
         status = 0
@@ -9165,7 +9281,7 @@ def process_schedule_save(request):
                 # cur_periodictask.args = [cur_process.id, request]
                 cur_periodictask.kwargs = json.dumps({
                     'cur_process': cur_process.id,
-                    'creatuser': request.user.username
+                    'creatuser': request.user.username,
                 })
                 cur_periodictask.save()
                 cur_periodictask_id = cur_periodictask.id
@@ -9206,7 +9322,7 @@ def process_schedule_save(request):
                         cur_periodictask.task = "faconstor.tasks.create_process_run"
                         cur_periodictask.kwargs = json.dumps({
                             'cur_process': cur_process.id,
-                            'creatuser': request.user.username
+                            'creatuser': request.user.username,
                         })
                         cur_periodictask_status = cur_periodictask.enabled
                         cur_periodictask.enabled = cur_periodictask_status

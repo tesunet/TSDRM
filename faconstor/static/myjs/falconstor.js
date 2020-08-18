@@ -628,6 +628,7 @@ if (App.isAngularJsApp() === false) {
                             } else {
                                 $("#exec").hide();
                                 $("#ignore").hide();
+                                $("#solve_error").hide();
 
                                 $("#static").modal({backdrop: "static"});
                                 $("#script_button").val($(this).find('option:selected').val());
@@ -664,6 +665,13 @@ if (App.isAngularJsApp() === false) {
                                             $("#ontime").val(data.data["starttime"]);
                                             $("#offtime").val(data.data["endtime"]);
                                             $("#errorinfo").val(data.data["explain"]);
+                                            
+                                            // 排错流程
+                                            if(data.data["error_solved"]){
+                                                $("#solve_error").show();
+                                            } else {
+                                                $("#solve_error").hide();
+                                            }
                                             if (data.data["state"] == "执行失败" && data.data["processrunstate"] == "ERROR") {
                                                 $("#exec").show();
                                                 $("#ignore").show();
@@ -795,6 +803,7 @@ if (App.isAngularJsApp() === false) {
 
         // 重试
         $('#exec').click(function () {
+            console.log("重试...")
             $("#confirmbtn").parent().empty();
             $("#continuebtn").parent().empty()
             $.ajax({
@@ -844,6 +853,72 @@ if (App.isAngularJsApp() === false) {
             });
         });
 
+        /**
+         * 排错流程
+         *   流程成功 -> 重试
+         */
+        $('#solve_error').click(function(){
+            $("#confirmbtn").parent().empty();
+            $("#continuebtn").parent().empty();
+            // 重试 跳过 排错 按钮都隐藏
+            $('#exec').hide();
+            $('#ignore').hide();
+            $('#solve_error').hide();
+
+            $.ajax({
+                type: "POST",
+                dataType: 'json',
+                url: "../../solve_error/",
+                data:
+                    {
+                        process: $('#process').val(),
+                        script_run_id: $('#script_button').val(),
+                    },
+                success: function (data) {
+                    if (data["status"] == 1) {
+                        /**
+                         * 启动3秒定时任务，获取排错流程状态
+                         */
+                        var pr_id = data.data;
+                        var ERROR_SOLVED = false;
+                        setTimeout(function () {
+                            if (!ERROR_SOLVED) {
+                                if (curHref.indexOf("falconstor") != -1) {
+                                    console.log('sovle error')
+                                    $.ajax({
+                                        type: "POST",
+                                        dataType: 'json',
+                                        url: "../../get_error_sovled_status/",
+                                        data:{
+                                            pr_id: pr_id,
+                                        },
+                                        success: function(data){
+                                            if (data.status == 1){
+                                                ERROR_SOLVED = true;
+                                                $('#exec').show().click();
+                                            } else if (data.status == 2){
+                                                $('#exec').show();
+                                                $('#ignore').show();
+                                                $('#solve_error').show();
+                                            } else {
+                                                // ...
+                                            }
+                                        }
+                                    });
+                                };
+                                setTimeout(arguments.callee, 3000);
+                            } else {
+                                ERROR_SOLVED = false;
+                            }
+                        }, 3000);
+                    } else
+                        alert(data["res"]);
+                },
+                error: function (e) {
+                    alert("执行失败，请于管理员联系。");
+                }
+            });
+        });
 
         // 展示错误日志
         $("#show_log").click(function () {
