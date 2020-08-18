@@ -417,7 +417,7 @@ $(document).ready(function () {
 
     $("#utils").change(function () {
         getClientsStatus();
-    })
+    });
 });
 
 

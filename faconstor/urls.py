@@ -63,7 +63,6 @@ urlpatterns = [
     url(r'^move_step/$', move_step),
     url(r'^get_all_groups/$', get_all_groups),
     url(r'^processdesign/$', process_design, {"funid": "33"}),
-    url(r'^process_data/$', process_data),
     url(r'^process_save/$', process_save),
     url(r'^process_del/$', process_del),
     url(r'^process_move/$', process_move),

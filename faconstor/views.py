@@ -1362,7 +1362,7 @@ def index(request, funid):
             curren_processrun_info_list.append(current_processrun_dict)
 
     # 系统切换成功率
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     process_success_rate_list = []
     if all_processes:
         for process in all_processes:
@@ -1391,7 +1391,7 @@ def index(request, funid):
 @login_required
 def get_process_rto(request):
     # 不同流程最近的12次切换RTO
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     process_rto_list = []
     if all_processes:
         for process in all_processes:
@@ -1442,7 +1442,7 @@ def get_process_rto(request):
 
 @login_required
 def get_daily_processrun(request):
-    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).select_related("process")
+    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).select_related("process").filter(process__pnode__pnode=None)
     process_success_rate_list = []
     if all_processrun_objs:
         for process_run in all_processrun_objs:
@@ -3630,7 +3630,7 @@ def processconfig(request, funid):
     if process_id:
         process_id = int(process_id)
 
-    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type=""))
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -4211,8 +4211,7 @@ def process_design(request, funid):
             xml_config = etree.tounicode(root)
 
             if id == 0:
-                all_process = Process.objects.filter(code=code).exclude(
-                    state="9").exclude(Q(type=None) | Q(type=""))
+                all_process = Process.objects.filter(code=code).exclude(state="9").exclude(Q(type=None) | Q(type=""))
                 if (len(all_process) > 0):
                     errors.append('预案编码:' + code + '已存在。')
                 else:
@@ -4428,40 +4427,6 @@ def get_process_tree(parent, select_id):
             pass
         nodes.append(node)
     return nodes
-
-
-@login_required
-def process_data(request):
-    result = []
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").values()
-    for process in all_process:
-        param_list = []
-        try:
-            config = etree.XML(process['config'])
-
-            param_el = config.xpath("//param")
-            for v_param in param_el:
-                param_list.append({
-                    "param_name": v_param.attrib.get("param_name", ""),
-                    "variable_name": v_param.attrib.get("variable_name", ""),
-                    "param_value": v_param.attrib.get("param_value", ""),
-                })
-        except Exception as e:
-            print(e)
-        result.append({
-            "process_id": process["id"],
-            "process_code": process["code"],
-            "process_name": process["name"],
-            "process_remark": process["remark"],
-            "process_sign": process["sign"],
-            "process_rto": process["rto"],
-            "process_rpo": process["rpo"],
-            "process_sort": process["sort"],
-            "process_color": process["color"],
-            "type": process["type"],
-            "variable_param_list": param_list,
-        })
-    return JsonResponse({"data": result})
 
 
 @login_required
@@ -5105,7 +5070,7 @@ def falconstor_run_invited(request):
 
 @login_required
 def walkthrough(request, funid):
-    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type=""))
+    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     processlist = []
     for process in processes:
         processlist.append({"id": process.id, "code": process.code, "name": process.name})
@@ -7008,7 +6973,7 @@ def falconstorsearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by('-id')
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None).order_by('-id')
     processname_list = []
     for process in all_processes:
         processname_list.append(process.name)
@@ -7142,7 +7107,7 @@ def tasksearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     processname_list = []
     for process in all_processes:
         processname_list.append(process.name)
@@ -9177,7 +9142,7 @@ def get_ma_disk_space(request):
 
 @login_required
 def process_schedule(request, funid):
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).order_by("sort").only("id",
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None).order_by("sort").only("id",
                                                                                                               "name")
 
     return render(request, 'process_schedule.html', {'username': request.user.userinfo.fullname,
@@ -9573,22 +9538,7 @@ def monitor(request):
 
             curren_processrun_info_list.append(current_processrun_dict)
 
-    ##################################
-    # 今日演练：                      #
-    #   今天演练过的系统个数/总系统数  #
-    ##################################
-    today_process_run_length = 0
-    today_date = datetime.datetime.now().date()
-    pre_client = ""
-    for processrun_obj in all_processrun_objs:
-        if today_date == processrun_obj.starttime.date():
-            if pre_client == processrun_obj.origin:
-                continue
-            today_process_run_length += 1
-
-            pre_client = processrun_obj.origin
-
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
 
     utils_manage = UtilsManage.objects.exclude(state='9').filter(util_type='Commvault')
     # 右上角消息任务
@@ -9596,8 +9546,7 @@ def monitor(request):
                   {'username': request.user.userinfo.fullname, "alltask": alltask, "homepage": True,
                    "success_rate": success_rate, "utils_manage": utils_manage,
                    "all_processruns": all_processruns, "last_processrun_time": last_processrun_time,
-                   "curren_processrun_info_list": curren_processrun_info_list,
-                   "today_process_run_length": today_process_run_length, "all_process": all_process})
+                   "curren_processrun_info_list": curren_processrun_info_list, "all_process": all_process})
 
 
 @login_required
@@ -9650,7 +9599,7 @@ def get_monitor_data(request):
     }
 
     # 系统演练次数TOP5
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
+    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     drill_name = []
     drill_time = []
     for process in all_process:
@@ -9704,7 +9653,7 @@ def get_monitor_data(request):
         })
     # 今日作业
     running_job, success_job, error_job, stop_job = 0, 0, 0, 0
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type=""))
+    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     has_run_process = 0
     for process in all_processes:
         process_run = process.processrun_set.exclude(state__in=["9", "REJECT"]).filter(
@@ -9848,7 +9797,7 @@ def get_clients_status(request):
             net_status = "正常"
 
         # 客户端列表
-        client_list = Origin.objects.exclude(state=9).values_list("client_name")
+        client_list = CvClient.objects.exclude(state=9).values_list("client_name")
         client_name_list = [client_name[0] for client_name in client_list]
         # 报警客户端
         whole_backup_list = dm.get_backup_status(client_name_list)
@@ -10654,7 +10603,7 @@ def client_cv_recovery(request):
         instance = ""
         try:
             pri = CvClient.objects.exclude(state="9").get(id=int(cv_id))
-        except Origin.DoesNotExist as e:
+        except CvClient.DoesNotExist as e:
             return HttpResponse("恢复任务启动失败, 源客户端不存在。")
         else:
             instance = pri.instanceName
