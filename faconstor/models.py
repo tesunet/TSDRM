@@ -131,6 +131,7 @@ class ScriptInstance(models.Model):
     log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
     hosts_manage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='选择主机')
     state = models.CharField("状态", blank=True, null=True, max_length=20)
+    process = models.ForeignKey(Process, null=True, verbose_name="子流程")
 
 
 class Walkthrough(models.Model):
