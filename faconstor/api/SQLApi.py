@@ -582,52 +582,77 @@ class CVApi(DataMonitor):
 
 
     def get_all_backup_job_list(self, client_name, agentType, instanceName):
-        backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[instance], [nextSCN], [idataagent], [subclient]
-                            FROM [CommServ].[dbo].[CommCellOracleBackupInfo] 
-                            WHERE [jobstatus]='Success' AND [clientname]='{0}'  AND [idataagent]='{1}'  AND [instance]='{2}' ORDER BY [startdate] DESC;""".format(
-            client_name, agentType, instanceName)
-        content = self.fetch_all(backup_sql)
         backuplist = []
-        for i in content:
-            next_SCN = i[5]
-            idataagent = i[6]
-            cur_SCN = ""
-            if next_SCN:
-                if idataagent == "Oracle RAC":
-                    com = re.compile(" \d+")
-                    all_next_SCN = com.findall(next_SCN)
-                    if all_next_SCN:
-                        try:
-                            first_rac_SCN = int(all_next_SCN[0].strip())
-                            second_rac_SCN = int(all_next_SCN[1].strip())
-                        except Exception as e:
-                            print("SCN:", e)
-                        else:
-                            if first_rac_SCN > second_rac_SCN:
-                                cur_SCN = first_rac_SCN - 1
+        if "Oracle" in agentType:
+            backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[instance], [nextSCN], [idataagent], [subclient]
+            FROM [CommServ].[dbo].[CommCellOracleBackupInfo] 
+            WHERE [jobstatus]='Success' AND [clientname]='{0}'  AND [idataagent]='{1}'  AND [instance]='{2}' ORDER BY [startdate] DESC;""".format(
+                client_name, agentType, instanceName
+            )
+            content = self.fetch_all(backup_sql)
+            for i in content:
+                next_SCN = i[5]
+                idataagent = i[6]
+                cur_SCN = ""
+                if next_SCN:
+                    if idataagent == "Oracle RAC":
+                        com = re.compile(" \d+")
+                        all_next_SCN = com.findall(next_SCN)
+                        if all_next_SCN:
+                            try:
+                                first_rac_SCN = int(all_next_SCN[0].strip())
+                                second_rac_SCN = int(all_next_SCN[1].strip())
+                            except Exception as e:
+                                print("SCN:", e)
                             else:
-                                cur_SCN = second_rac_SCN - 1
-                if idataagent == "Oracle Database":
-                    try:
-                        cur_SCN = int(next_SCN) - 1
-                    except:
-                        pass
+                                if first_rac_SCN > second_rac_SCN:
+                                    cur_SCN = first_rac_SCN - 1
+                                else:
+                                    cur_SCN = second_rac_SCN - 1
+                    if idataagent == "Oracle Database":
+                        try:
+                            cur_SCN = int(next_SCN) - 1
+                        except:
+                            pass
 
-            start_time = "{:%Y-%m-%d %H:%M:%S}".format(i[2].replace(tzinfo=datetime.timezone.utc).astimezone(
-                datetime.timezone(datetime.timedelta(hours=8)))) if i[2] else ""
-            last_time = "{:%Y-%m-%d %H:%M:%S}".format(i[3].replace(tzinfo=datetime.timezone.utc).astimezone(
-                datetime.timezone(datetime.timedelta(hours=8)))) if i[3] else ""
+                start_time = "{:%Y-%m-%d %H:%M:%S}".format(i[2].replace(tzinfo=datetime.timezone.utc).astimezone(
+                    datetime.timezone(datetime.timedelta(hours=8)))) if i[2] else ""
+                last_time = "{:%Y-%m-%d %H:%M:%S}".format(i[3].replace(tzinfo=datetime.timezone.utc).astimezone(
+                    datetime.timezone(datetime.timedelta(hours=8)))) if i[3] else ""
 
-            backuplist.append({
-                "jobId": i[0],
-                "jobType": "Backup",
-                "Level": i[1],
-                "StartTime": start_time,
-                "LastTime": last_time,
-                "instance": i[4],
-                "cur_SCN": cur_SCN,
-                "subclient": i[7]
-            })
+                backuplist.append({
+                    "jobId": i[0],
+                    "jobType": "Backup",
+                    "Level": i[1],
+                    "StartTime": start_time,
+                    "LastTime": last_time,
+                    "instance": i[4],
+                    "cur_SCN": cur_SCN,
+                    "subclient": i[7]
+                })
+        else:
+            backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[backupset], [idataagent], [subclient]
+            FROM [CommServ].[dbo].[CommCellBackupInfo] 
+            WHERE [jobstatus]='Success' AND [clientname]='{0}'  AND [idataagent]='{1}'  AND [backupset]='{2}' ORDER BY [startdate] DESC;""".format(
+                client_name, agentType, instanceName
+            )
+            content = self.fetch_all(backup_sql)
+            for i in content:
+                idataagent = i[6]
+                start_time = "{:%Y-%m-%d %H:%M:%S}".format(i[2].replace(tzinfo=datetime.timezone.utc).astimezone(
+                    datetime.timezone(datetime.timedelta(hours=8)))) if i[2] else ""
+                last_time = "{:%Y-%m-%d %H:%M:%S}".format(i[3].replace(tzinfo=datetime.timezone.utc).astimezone(
+                    datetime.timezone(datetime.timedelta(hours=8)))) if i[3] else ""
+
+                backuplist.append({
+                    "jobId": i[0],
+                    "jobType": "Backup",
+                    "Level": i[1],
+                    "StartTime": start_time,
+                    "LastTime": last_time,
+                    "instance": i[4],
+                    "subclient": i[6]
+                })
         return backuplist
 
 
