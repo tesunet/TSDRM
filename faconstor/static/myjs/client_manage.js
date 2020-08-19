@@ -1183,7 +1183,7 @@ $(document).ready(function () {
                 if ($("input[name='optionsRadios']:checked").val() == "2" && $('#cv_r_datetimepicker').val() != "") {
                     myrestoreTime = $('#cv_r_datetimepicker').val();
                 }
-                var destClient = $('#cv_r_destClient').val()
+                var destClient = $('#cv_r_destClient').text().trim();
                 if (destClient == "self") {
                     destClient = $('#cv_r_sourceClient').val()
                 }
@@ -1353,11 +1353,11 @@ $(document).ready(function () {
         for (var k = 0, length = nodes.length; k < length; k++) {
             var halfCheck = nodes[k].getCheckStatus();
             if (!halfCheck.half) {
-                $("#cv_fs_se_1").append("<option value='\\" + nodes[k].id + "\\'>\\" + nodes[k].id + "\\</option>");
+                $("#cv_fs_se_1").append("<option value='" + nodes[k].id + "'>" + nodes[k].id + "</option>");
             }
         }
         if (nodes.length == 0)
-            $("#cv_fs_se_1").append("<option value='\\'>\\</option>");
+            $("#cv_fs_se_1").append("<option value=''></option>");
     })
     // SQL Server
 

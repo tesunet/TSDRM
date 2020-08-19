@@ -631,11 +631,18 @@ class CVApi(DataMonitor):
                     "subclient": i[7]
                 })
         else:
-            backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[backupset], [idataagent], [subclient]
-            FROM [CommServ].[dbo].[CommCellBackupInfo] 
-            WHERE [jobstatus]='Success' AND [clientname]='{0}'  AND [idataagent]='{1}'  AND [backupset]='{2}' ORDER BY [startdate] DESC;""".format(
-                client_name, agentType, instanceName
-            )
+            if "SQL Server" in agentType:
+                backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[backupset], [idataagent], [subclient]
+                FROM [CommServ].[dbo].[CommCellBackupInfo] 
+                WHERE [jobstatus]='Success' AND [clientname]='{0}'  AND [idataagent]='{1}'  AND [instance]='{2}' ORDER BY [startdate] DESC;""".format(
+                    client_name, agentType, instanceName
+                )
+            else:
+                backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[backupset], [idataagent], [subclient]
+                FROM [CommServ].[dbo].[CommCellBackupInfo] 
+                WHERE [jobstatus]='Success' AND [clientname]='{0}'  AND [idataagent]='{1}'  AND [backupset]='{2}' ORDER BY [startdate] DESC;""".format(
+                    client_name, agentType, instanceName
+                )
             content = self.fetch_all(backup_sql)
             for i in content:
                 idataagent = i[6]
@@ -657,10 +664,18 @@ class CVApi(DataMonitor):
 
 
     def get_all_restore_job_list(self, client_name,agentType,instanceName):
-        restore_sql = """SELECT DISTINCT [jobid],[starttime],[endtime],[jobstatus]     
-                            FROM [CommServ].[dbo].[CommCellRestoreInfo]
-                            WHERE [destclientname]='{0}'  AND [idataagent]='{1}'  AND [instance]='{2}' ORDER BY [starttime] DESC;""".format(
-            client_name,agentType,instanceName)
+        if "Oracle" in agentType or "SQL Server" in agentType:
+            restore_sql = """SELECT DISTINCT [jobid],[starttime],[endtime],[jobstatus]     
+            FROM [CommServ].[dbo].[CommCellRestoreInfo]
+            WHERE [destclientname]='{0}'  AND [idataagent]='{1}'  AND [instance]='{2}' ORDER BY [starttime] DESC;""".format(
+                client_name,agentType,instanceName
+            )
+        else:
+            restore_sql = """SELECT DISTINCT [jobid],[starttime],[endtime],[jobstatus]     
+            FROM [CommServ].[dbo].[CommCellRestoreInfo]
+            WHERE [destclientname]='{0}'  AND [idataagent]='{1}'  AND [backupset]='{2}' ORDER BY [starttime] DESC;""".format(
+                client_name,agentType,instanceName
+            )
         content = self.fetch_all(restore_sql)
 
         restorelist = []

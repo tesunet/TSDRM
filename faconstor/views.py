@@ -10826,9 +10826,9 @@ def client_cv_recovery(request):
                 cvToken.login(commvault_credit)
                 cvAPI = CV_API(cvToken)
                 if cvAPI.restoreFSBackupset(sourceClient, destClient, "defaultBackupSet", fileRestoreOperator):
-                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg.decode('gbk'))
+                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
                 else:
-                    return HttpResponse(u"恢复任务启动失败。" + cvAPI.msg.decode('gbk'))
+                    return HttpResponse(u"恢复任务启动失败。" + cvAPI.msg)
             elif "SQL Server" in agent:
                 mssql_iscover = request.POST.get('mssql_iscover', '')
                 mssqlOverWrite = False
@@ -10840,9 +10840,9 @@ def client_cv_recovery(request):
                 cvToken.login(commvault_credit)
                 cvAPI = CV_API(cvToken)
                 if cvAPI.restoreMssqlBackupset(sourceClient, destClient, instance, mssqlRestoreOperator):
-                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg.decode('gbk'))
+                    return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
                 else:
-                    return HttpResponse(u"恢复任务启动失败。" + cvAPI.msg.decode('gbk'))
+                    return HttpResponse(u"恢复任务启动失败。" + cvAPI.msg)
     else:
         return HttpResponse("恢复任务启动失败。")
 
