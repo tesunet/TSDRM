@@ -281,9 +281,9 @@ function getClientree() {
                                             var destPath = data.cvinfo.destPath;
                                             var sourcePaths = data.cvinfo.sourcePaths;
                                             if (overWrite == "True") {
-                                                $('input[name="cv_overwrite"]:first').prop("checked", true);
-                                            } else {
                                                 $('input[name="cv_overwrite"]:last').prop("checked", true);
+                                            } else {
+                                                $('input[name="cv_overwrite"]:first').prop("checked", true);
                                             }
 
                                             if (destPath == "same") {
@@ -1183,8 +1183,8 @@ $(document).ready(function () {
                 if ($("input[name='optionsRadios']:checked").val() == "2" && $('#cv_r_datetimepicker').val() != "") {
                     myrestoreTime = $('#cv_r_datetimepicker').val();
                 }
-                var destClient = $('#cv_r_destClient').text().trim();
-                if (destClient == "self") {
+                var destClient = $('#cv_r_destClient option:selected').text().trim();
+                if ($('#cv_r_destClient').val() == "self") {
                     destClient = $('#cv_r_sourceClient').val()
                 }
 

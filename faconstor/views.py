@@ -10556,7 +10556,7 @@ def client_cv_save(request):
                         if cv_mypath != "same":
                             inPlace = False
                         overWrite = False
-                        if cv_iscover == "True":
+                        if cv_iscover == "TRUE":
                             overWrite = True
 
                         sourceItemlist = cv_selectedfile.split("*!-!*")
