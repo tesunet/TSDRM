@@ -601,6 +601,7 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                     commvault_api_path = os.path.join(os.path.join(settings.BASE_DIR, "faconstor"),
                                                       "commvault_api") + os.sep + "{0}.py".format(script.commv_interface)
 
+                    logger.info(str(commvault_api_path))
                     # 判断接口文件是否存在
                     interface_existed = os.path.exists(commvault_api_path)
                     if not interface_existed:
@@ -610,9 +611,10 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                     else:
                         ret = ""
 
-                        oracle_param = "{0} {1} {2} {3}".format(pri_id, std_id, instance_name, processrun.id)
+                        restore_param = "{0} {1} {2} {3}".format(pri_id, std_id, instance_name, processrun.id)
+                        logger.info(str(restore_param))
                         try:
-                            ret = subprocess.getstatusoutput(commvault_api_path + " {0}".format(oracle_param))
+                            ret = subprocess.getstatusoutput(commvault_api_path + " {0}".format(restore_param))
                             exec_status, recover_job_id = ret
                         except Exception as e:
                             result["exec_tag"] = 1

@@ -9,15 +9,18 @@
             background-position: center;
         }
     </style>
-    <div style="height:10px"></div>
-    <div class="portlet-body">
-        <div class="col-md-2" style="padding-left: 20px;">
-            <select name="utils_manage" id="utils_manage" class="form-control">
+    <div class="row" style="margin-top: -38px">
+        <div class="col-md-2 col-lg-2" style="margin-top: 5px"></div>
+        <div class="col-md-10 col-lg-10">
+            <select class="form-control" id="utils_manage" name="utils_manage" style="width:250px; float:right;">
                 {% for um in utils_manage %}
                     <option value="{{ um.id }}">{{ um.name }}</option>
                 {% endfor %}
             </select>
         </div>
+    </div>
+    <div style="height:10px"></div>
+    <div class="portlet-body">
         <div class="portlet light portlet-fit  calendar">
             <div class="portlet-body">
                 <div class="table-scrollable" style="overflow-x:scroll;">

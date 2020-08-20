@@ -2397,6 +2397,11 @@ class CV_Backupset(CV_Client):
 
         xmlString = ""
         xmlString = ET.tostring(root, encoding='utf-8', method='xml')
+
+        # with open("kela1.xml", "w") as f:
+        #     f.write(str(xmlString))
+        # return
+
         if self.qCmd("QCommand/qoperation execute", xmlString):
             try:
                 root = ET.fromstring(self.receiveText)

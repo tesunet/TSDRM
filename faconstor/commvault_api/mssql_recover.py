@@ -31,7 +31,7 @@ application = get_wsgi_application()
 from faconstor.models import *
 import logging
 
-logger = logging.getLogger('oracle_recover')
+logger = logging.getLogger('FS_recover')
 
 
 class CV_RestApi_Token(object):
@@ -3584,7 +3584,7 @@ class CV_Backupset(CV_Client):
         sourceClient = source
         destClient = dest
         # instance = operator["instanceName"]
-        restoreTime = operator["restoreTime"]
+        restoreTime = "{0:%Y-%m-%d %H:%M:%S}".format(operator["restoreTime"] if operator["restoreTime"] else datetime.datetime.now())
         overWrite = operator["overWrite"]
         try:
             sourceclients = root.findall(".//associations/clientName")
@@ -3987,58 +3987,6 @@ class CV_API(object):
         list = info.discoverVCInfo(clientId)
         self.msg = info.msg
         return list
-
-
-class DoMysql(object):
-    # 初始化
-    def __init__(self, host, user, password, db):
-        # 创建连接
-        self.conn = pymysql.Connect(
-            host=host,
-            port=3306,
-            user=user,
-            password=password,
-            db=db,
-            charset='utf8',
-            cursorclass=pymysql.cursors.DictCursor  # 以字典的形式返回数据
-        )
-        # 获取游标
-        self.cursor = self.conn.cursor()
-
-    # 返回多条数据
-    def fetchAll(self, sql):
-        self.cursor.execute(sql)
-        return self.cursor.fetchall()
-
-    # 返回一条数据
-    def fetchOne(self, sql):
-        self.cursor.execute(sql)
-        return self.cursor.fetchone()
-
-    # 插入一条数据
-    def insert_one(self, sql):
-        result = self.cursor.execute(sql)
-        self.conn.commit()
-        return result
-
-    # 插入多条数据
-    def insert_many(self, sql, datas):
-        result = self.cursor.executemany(sql, datas)
-        self.conn.commit()
-        return result
-
-    # 更新数据
-    def update(self, sql):
-        result = self.cursor.execute(sql)
-        self.conn.commit()
-        return result
-
-    # 关闭连接
-    def close(self):
-        if self.cursor:
-            self.cursor.close()
-        if self.conn:
-            self.conn.close()
 
 
 def run(pri, std, instance, processrun_id):

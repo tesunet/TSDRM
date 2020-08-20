@@ -118,7 +118,6 @@ $(document).ready(function () {
         if ($('#isoverwrite').is(':checked')) {
             mssql_iscover = "TRUE"
         }
-        console.log($('#pri').val())
         // 非邀请流程启动
         $.ajax({
             type: "POST",
@@ -177,7 +176,7 @@ $(document).ready(function () {
     $("#recovery_time_redio_group").click(function () {
         if ($("input[name='recovery_time_redio']:checked").val() == 2) {
             $("#static04").modal({ backdrop: "static" });
-            var pri_name = $("#pri_name").val();
+            var pri = $("#pri").val();
             var datatable = $("#backup_point").dataTable();
             datatable.fnClearTable(); //清空数据
             datatable.fnDestroy();
@@ -185,7 +184,7 @@ $(document).ready(function () {
                 "bAutoWidth": true,
                 "bProcessing": true,
                 "bSort": false,
-                "ajax": "../../oraclerecoverydata?origin_id=" + origin_id,
+                "ajax": "../../client_cv_get_backup_his?id=" + pri,
                 "columns": [
                     { "data": "jobId" },
                     { "data": "jobType" },

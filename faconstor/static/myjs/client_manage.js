@@ -305,9 +305,9 @@ function getClientree() {
                                             // SQL Server
                                             var mssqlOverWrite = data.cvinfo.mssqlOverWrite;
                                             if (mssqlOverWrite == "False") {
-                                                $('#cv_isoverwrite').prop("checked", true);
-                                            } else {
                                                 $('#cv_isoverwrite').prop("checked", false);
+                                            } else {
+                                                $('#cv_isoverwrite').prop("checked", true);
                                             }
 
                                             get_cv_detail();
@@ -1003,7 +1003,7 @@ $(document).ready(function () {
             cv_selectedfile = cv_selectedfile + txt + "*!-!*"
         });
         var mssql_iscover = "FALSE"
-        if ($('#isoverwrite').is(':checked')) {
+        if ($('#cv_isoverwrite').is(':checked')) {
             mssql_iscover = "TRUE"
         }
         $.ajax({

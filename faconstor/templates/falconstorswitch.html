@@ -256,7 +256,7 @@
                             <div class="form-group form-md-line-input">
                                 <label class="col-md-2 control-label" >无条件改写</label>
                                 <div class="col-md-10">
-                                    <input id="isoverwrite" name="isoverwrite" type="checkbox" value="True" style="width: 20px; height: 20px;" {% if cv_params.mssqlOverWrite == "False" %}checked{% else %}{% endif %}/>
+                                    <input id="isoverwrite" name="isoverwrite" type="checkbox" value="True" style="width: 20px; height: 20px;" {% if cv_params.mssqlOverWrite == "True" %}checked{% else %}{% endif %}/>
                                 </div>
                             </div>
                             {% endif %}
