@@ -426,7 +426,12 @@ function get_cv_detail() {
     table.ajax.url("../client_cv_get_backup_his?id=" + $('#cv_id').val()
     ).load();
     var table1 = $('#cv_restore_his').DataTable();
-    table1.ajax.url("../client_cv_get_restore_his?id=" + $('#cv_id').val()
+    // 目标客户端
+    var dest_client = $('#cvclient_destination').val();
+    if (dest_client == "self"){
+        dest_client == $('#cv_id').val();
+    }
+    table1.ajax.url("../client_cv_get_restore_his?id=" + dest_client
     ).load();
 
     $('#cv_r_sourceClient').val($("#cvclient_source").find("option:selected").text());
