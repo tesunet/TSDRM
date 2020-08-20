@@ -219,9 +219,9 @@
                                 <div class="col-md-10" style="padding-top:6px">
                                     <div class="input-group">
                                         <span>
-                                            <input type="radio" name="overwrite" value="FALSE" {% if cv_params.overWrite == 'True' %}checked{% endif %}>
+                                            <input type="radio" name="overwrite" value="FALSE" {% if cv_params.overWrite == 'False' %}checked{% endif %}>
                                             如果介质上文件较新则改写
-                                            <input type="radio" name="overwrite" value="TRUE" {% if cv_params.overWrite == 'False' %}checked{% endif %}>无条件改写
+                                            <input type="radio" name="overwrite" value="TRUE" {% if cv_params.overWrite == 'True' %}checked{% endif %}>无条件改写
                                         </span>
                                     </div>
                                 </div>

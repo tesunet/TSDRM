@@ -297,6 +297,11 @@ function getClientree() {
                                             for (var i = 0; i < sourcePaths.length; i++) {
                                                 $('#cv_fs_se_1').append("<option value='" + sourcePaths[i] + "'>" + sourcePaths[i] + "</option>");
                                             }
+
+                                            // 加载tree
+                                            if ($('#cvclient_agentType').val().indexOf("File System") != -1){
+                                                getFileTree()
+                                            }
                                             // SQL Server
                                             var mssqlOverWrite = data.cvinfo.mssqlOverWrite;
                                             if (mssqlOverWrite == "False") {
@@ -560,6 +565,38 @@ function getCvinfo() {
         }
     });
 
+}
+
+// File System
+function getFileTree(){
+    var setting = {
+        async: {
+            enable: true,
+            url: '../get_file_tree/',
+            autoParam: ["id"],
+            otherParam: {"cv_id": $('#cv_id').val()},
+            dataFilter: filter
+        },
+        check: {
+            enable: true,
+            chkStyle: "checkbox",               //多选
+            chkboxType: {"Y": "s", "N": "ps"}  //不级联父节点选择
+        },
+        view: {
+            showLine: false
+        },
+
+    };
+
+    function filter(treeId, parentNode, childNodes) {
+        if (!childNodes) return null;
+        for (var i = 0, l = childNodes.length; i < l; i++) {
+            childNodes[i].name = childNodes[i].name.replace(/\.n/g, '.');
+        }
+        return childNodes;
+    }
+
+    $.fn.zTree.init($("#cv_fs_tree"), setting);
 }
 
 //数据库复制
@@ -1032,6 +1069,10 @@ $(document).ready(function () {
                         }
                     }
                     get_cv_detail();
+                    // 加载tree
+                    if ($('#cvclient_agentType').val().indexOf("File System") != -1){
+                        getFileTree()
+                    }
                 }
                 alert(data.info);
             },
@@ -1127,8 +1168,13 @@ $(document).ready(function () {
         $('#tabcheck2_3').click();
         var table = $('#cv_backup_his').DataTable();
         var data = table.row($(this).parents('tr')).data();
-        var pre_data = table.row($(this).parents('tr').next()).data();
-        $('#cv_r_pre_restore_time').val(pre_data.LastTime);
+        var pre_last_time = "";
+        try {
+            pre_last_time = table.row($(this).parents('tr').next()).data().LastTime;
+        }catch(e){
+            //..
+        }
+        $('#cv_r_pre_restore_time').val(pre_last_time);
         $("#cv_r_datetimepicker").val(data.LastTime);
         $("input[name='optionsRadios'][value='1']").prop("checked", false);
         $("input[name='optionsRadios'][value='2']").prop("checked", true);
@@ -1315,37 +1361,6 @@ $(document).ready(function () {
         }
     });
 
-    // File System
-    $('#cv_fs_model').on('show.bs.modal', function () {
-        var setting = {
-            async: {
-                enable: true,
-                url: '../get_file_tree/',
-                autoParam: ["id"],
-                otherParam: {"cv_id": $('#cv_id').val()},
-                dataFilter: filter
-            },
-            check: {
-                enable: true,
-                chkStyle: "checkbox",               //多选
-                chkboxType: {"Y": "s", "N": "ps"}  //不级联父节点选择
-            },
-            view: {
-                showLine: false
-            },
-
-        };
-
-        function filter(treeId, parentNode, childNodes) {
-            if (!childNodes) return null;
-            for (var i = 0, l = childNodes.length; i < l; i++) {
-                childNodes[i].name = childNodes[i].name.replace(/\.n/g, '.');
-            }
-            return childNodes;
-        }
-
-        $.fn.zTree.init($("#cv_fs_tree"), setting);
-    });
     $('#cv_selectpath').click(function () {
         $('#cv_fs_se_1').empty();
         var cv_fs_tree = $.fn.zTree.getZTreeObj("cv_fs_tree");

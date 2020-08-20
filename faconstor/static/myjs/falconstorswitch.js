@@ -286,10 +286,10 @@ $(document).ready(function () {
         for (var k = 0, length = nodes.length; k < length; k++) {
             var halfCheck = nodes[k].getCheckStatus();
             if (!halfCheck.half) {
-                $("#fs_se_1").append("<option value='\\" + nodes[k].id + "\\'>\\" + nodes[k].id + "\\</option>");
+                $("#fs_se_1").append("<option value='" + nodes[k].id + "'>" + nodes[k].id + "</option>");
             }
         }
         if (nodes.length == 0)
-            $("#fs_se_1").append("<option value='\\'>\\</option>");
+            $("#fs_se_1").append("<option value=''></option>");
     })
 });
