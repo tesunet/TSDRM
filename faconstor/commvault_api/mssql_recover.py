@@ -4073,7 +4073,7 @@ def run(pri, std, instance, processrun_id):
         else:
             mssqlOverWrite = info.xpath("//param")[0].attrib.get("mssqlOverWrite")
             
-            if mssqlOverWrite == "TRUE":
+            if mssqlOverWrite == "True":
                 overWrite = True
 
         jobId = cvAPI.restoreMssqlBackupset(pri_name, std_name, instance, {
