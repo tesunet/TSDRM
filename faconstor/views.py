@@ -10838,11 +10838,11 @@ def client_cv_recovery(request):
                 mssqlOverWrite = False
                 if mssql_iscover == "TRUE":
                     mssqlOverWrite = True
-
-                mssqlRestoreOperator = {"restoreTime": restoreTime, "overWrite": mssqlOverWrite}
                 cvToken = CV_RestApi_Token()
                 cvToken.login(commvault_credit)
                 cvAPI = CV_API(cvToken)
+                mssql_dbs = cvAPI.get_mssql_db(pri.client_id, instance)
+                mssqlRestoreOperator = {"restoreTime": restoreTime, "overWrite": mssqlOverWrite, "mssql_dbs": mssql_dbs}
                 if cvAPI.restoreMssqlBackupset(sourceClient, destClient, instance, mssqlRestoreOperator):
                     return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
                 else:

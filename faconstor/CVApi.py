@@ -354,6 +354,48 @@ class CV_GetAllInformation(CV_RestApi):
         self.vmDataStore = []
         self.vmList = []
 
+    def browse_mssql_instance(self, client_id, instance_id, from_time="", to_time=""):
+        cmd = "/Client/{clientId}/SQL/Instance/{instanceId}/Browse?fromTime={fromTime}&toTime={toTime}".format(**{
+            "clientId": client_id,
+            "instanceId": instance_id,
+            "fromTime": from_time,
+            "toTime": to_time
+        })
+
+        res = self.getCmd(cmd)
+        mssql_instances = []
+        sql_databases = res.findall(".//sqlDatabase")
+        for sd in sql_databases:
+            db_info = sd.attrib
+            mssql_instances.append({
+                "database_id": db_info.get("databaseId"),
+                "database_name": db_info.get("databaseName"),
+            })
+
+        return mssql_instances
+
+    def get_instances(self, client_id):
+        cmd = "/instance?clientId={clientId}".format(**{
+            "clientId": client_id
+        })
+        instance_list = []
+        res = self.getCmd(cmd)
+        instance_nodes = res.findall(".//instance")
+        for ins in instance_nodes:
+            ins_info = ins.attrib
+            instance_list.append({
+                "app_name": ins_info.get("appName", ""),
+                "clieng_id": ins_info.get("clientId", ""),
+                "client_name": ins_info.get("clientName", ""),
+                "application_id": ins_info.get("applicationId", ""),
+                "display_name": ins_info.get("displayName", ""),
+                "instance_guid": ins_info.get("instanceGUID", ""),
+                "instance_id": ins_info.get("instanceId", ""),
+                "instance_name": ins_info.get("instanceName", ""),
+            })
+
+        return instance_list
+
     def getSPList(self):
         del self.SPList[:]
         client = self.getCmd('StoragePolicy')
@@ -3327,131 +3369,186 @@ class CV_Backupset(CV_Client):
             if "overWrite" not in keys:
                 self.msg = "operator - no overWrite"
                 return jobId
+            if "mssql_dbs" not in keys:
+                self.msg = "operator - no mssql_dbs"
+                return jobId
         else:
             self.msg = "param not set"
             return jobId
 
-        restoremssqlXML = '''
-            <TMMsg_CreateTaskReq>
-              <taskInfo>
-                <associations>
-                  <appName>SQL Server</appName>
-                  <backupsetName>defaultBackupSet</backupsetName>
-                  <clientName></clientName>
-                  <clientSidePackage>true</clientSidePackage>
-                  <consumeLicense>true</consumeLicense>
-                  <instanceName></instanceName>
-                  <subclientName></subclientName>
-                  <type>GALAXY</type>
-                </associations>
-                <subTasks>
-                  <options>
-                    <adminOpts>
-                      <contentIndexingOption>
-                        <subClientBasedAnalytics>false</subClientBasedAnalytics>
-                      </contentIndexingOption>
-                    </adminOpts>
-                    <restoreOptions>
-                      <browseOption>
-                        <backupset>
-                          <backupsetName>defaultBackupSet</backupsetName>
-                          <clientName></clientName>
-                        </backupset>
-                        <commCellId>2</commCellId>
-                        <listMedia>false</listMedia>
-                        <mediaOption>
-                          <copyPrecedence>
-                            <copyPrecedenceApplicable>false</copyPrecedenceApplicable>
-                          </copyPrecedence>
-                          <drivePool/>
-                          <library/>
-                          <mediaAgent/>
-                        </mediaOption>
-                        <noImage>false</noImage>
-                        <timeRange/>
-                        <timeZone>
-                          <TimeZoneName>(GMT+08:00) &#x5317;&#x4eAC;&#xFF0C;&#x91CD;&#x5e86;&#xFF0C;&#x9999;&#x6e2F;&#x7279;&#x522B;&#x884C;&#x653F;&#x533A;&#xFF0C;&#x4e4C;&#x9C81;&#x6728;&#x9F50;</TimeZoneName>
-                        </timeZone>
-                        <useExactIndex>false</useExactIndex>
-                      </browseOption>
-                      <commonOptions>
-                        <clusterDBBackedup>false</clusterDBBackedup>
-                        <isDBArchiveRestore>false</isDBArchiveRestore>
-                        <onePassRestore>false</onePassRestore>
-                        <restoreToDisk>false</restoreToDisk>
-                      </commonOptions>
-                      <destination>
-                        <destClient>
-                          <clientName></clientName>
-                        </destClient>
-                        <destinationInstance>
-                          <appName>SQL Server</appName>
-                          <clientName></clientName>
-                          <instanceName></instanceName>
-                        </destinationInstance>
-                      </destination>
-                      <fileOption/>
-                      <sharePointRstOption>
-                        <fetchSqlDatabases>false</fetchSqlDatabases>
-                      </sharePointRstOption>
-                      <sqlServerRstOption>
-                        <attachToSQLServer>false</attachToSQLServer>
-                        <checksum>false</checksum>
-                        <commonMountPath></commonMountPath>
-                        <continueaftererror>false</continueaftererror>
-                        <restoreSource>master</restoreSource>
-                        <restoreSource>cvtest</restoreSource>
-                        <restoreSource>msdb</restoreSource>
-                        <restoreSource>model</restoreSource>
-                        <database>master</database>
-                        <database>cvtest</database>
-                        <database>msdb</database>
-                        <database>model</database>
-                        <dbOnly>false</dbOnly>
-                        <dropConnectionsToDatabase>false</dropConnectionsToDatabase>
-                        <ffgRestore>false</ffgRestore>
-                        <ignoreFullBackup>false</ignoreFullBackup>
-                        <keepDataCapture>false</keepDataCapture>
-                        <logShippingOnly>false</logShippingOnly>
-                        <overWrite></overWrite>
-                        <partialRestore>false</partialRestore>
-                        <pointOfTimeRst>false</pointOfTimeRst>
-                        <preserveReplicationSettings>false</preserveReplicationSettings>
-                        <restoreToDisk>false</restoreToDisk>
-                        <restoreToDiskPath></restoreToDiskPath>
-                        <snapOopStageFolder></snapOopStageFolder>
-                        <sqlRecoverType>STATE_RECOVER</sqlRecoverType>
-                        <sqlRestoreType>DATABASE_RESTORE</sqlRestoreType>
-                        <sqlVerifyOnly>false</sqlVerifyOnly>
-                        <stopBeforeMarkRestore>false</stopBeforeMarkRestore>
-                        <stopMarkRestore>false</stopMarkRestore>
-                        <stopStartSSA>false</stopStartSSA>
-                        <timeZone>
-                          <TimeZoneName>(GMT+08:00) &#x5317;&#x4eAC;&#xFF0C;&#x91CD;&#x5e86;&#xFF0C;&#x9999;&#x6e2F;&#x7279;&#x522B;&#x884C;&#x653F;&#x533A;&#xFF0C;&#x4e4C;&#x9C81;&#x6728;&#x9F50;</TimeZoneName>
-                        </timeZone>
-                        <vSSBackup>true</vSSBackup>
-                      </sqlServerRstOption>
-                      <virtualServerRstOption>
-                        <isBlockLevelReplication>false</isBlockLevelReplication>
-                      </virtualServerRstOption>
-                    </restoreOptions>
-                  </options>
-                  <subTask>
-                    <operationType>RESTORE</operationType>
-                    <subTaskType>RESTORE</subTaskType>
-                  </subTask>
-                </subTasks>
-                <task>
-                  <initiatedFrom>COMMANDLINE</initiatedFrom>
-                  <policyType>DATA_PROTECTION</policyType>
-                  <taskFlags>
-                    <disabled>false</disabled>
-                  </taskFlags>
-                  <taskType>IMMEDIATE</taskType>
-                </task>
-              </taskInfo>
+        restoremssqlXML = """
+        <TMMsg_CreateTaskReq>
+        <processinginstructioninfo/>
+        <taskInfo>
+            <task>
+            <taskFlags>
+                <disabled>false</disabled>
+            </taskFlags>
+            <policyType>DATA_PROTECTION</policyType>
+            <taskType>IMMEDIATE</taskType>
+            <initiatedFrom>COMMANDLINE</initiatedFrom>
+            <alert>
+                <alertName></alertName>
+            </alert>
+            </task>
+            <associations>
+            <subclientName></subclientName>
+            <backupsetName>defaultBackupSet</backupsetName>
+            <instanceName></instanceName>
+            <appName>SQL Server</appName>
+            <clientName></clientName>
+            </associations>
+            <subTasks>
+            <subTask>
+                <subTaskType>RESTORE</subTaskType>
+                <operationType>RESTORE</operationType>
+            </subTask>
+            <options>
+                <backupOpts>
+                <vsaBackupOptions/>
+                </backupOpts>
+                <restoreOptions>
+                <browseOption>
+                    <commCellId>2</commCellId>
+                    <backupset>
+                    <backupsetName>defaultBackupSet</backupsetName>
+                    <clientName></clientName>
+                    </backupset>
+                    <timeRange/> 
+                    <noImage>true</noImage>
+                    <useExactIndex>false</useExactIndex>
+                    <mediaOption>
+                    <library/>
+                    <mediaAgent/>
+                    <drivePool/>
+                    <drive/>
+                    <copyPrecedence>
+                        <copyPrecedenceApplicable>false</copyPrecedenceApplicable>
+                        <synchronousCopyPrecedence>1</synchronousCopyPrecedence>
+                        <copyPrecedence>0</copyPrecedence>
+                    </copyPrecedence>
+                    <proxyForSnapClients>
+                        <clientName></clientName>
+                    </proxyForSnapClients>
+                    <useISCSIMount>false</useISCSIMount>
+                    </mediaOption>
+                    <timeZone>
+                    <TimeZoneName>(UTC+08:00)&#x5317;&#x4eAC;&#xFF0C;&#x91CD;&#x5e86;&#xFF0C;&#x9999;&#x6e2F;&#x7279;&#x522B;&#x884C;&#x653F;&#x533A;&#xFF0C;&#x4e4C;&#x9C81;&#x6728;&#x9F50;</TimeZoneName>
+                    </timeZone>
+                    <listMedia>false</listMedia>
+                    <browseJobId>0</browseJobId>
+                </browseOption>
+                <destination>
+                    <destClient>
+                    <clientName></clientName>
+                    </destClient>
+                    <destinationInstance>
+                    <instanceName></instanceName>
+                    <appName>SQL Server</appName>
+                    <clientName></clientName>
+                    </destinationInstance>
+                </destination>
+                <oracleOpt>
+                    <tableViewRestore>false</tableViewRestore>
+                </oracleOpt>
+                <sharePointRstOption>
+                    <fetchSqlDatabases>false</fetchSqlDatabases>
+                </sharePointRstOption>
+                <sqlServerRstOption>
+                    <dbOnly>false</dbOnly>
+                    <overWrite>true</overWrite>
+                    <pointOfTimeRst>false</pointOfTimeRst>
+                    <sqlRestoreType>DATABASE_RESTORE</sqlRestoreType>
+                    <sqlRecoverType>STATE_RECOVER</sqlRecoverType>
+                    <stopStartSSA>false</stopStartSSA>
+                    <preserveReplicationSettings>false</preserveReplicationSettings>
+                    <stopMarkRestore>false</stopMarkRestore>
+                    <stopBeforeMarkRestore>false</stopBeforeMarkRestore>
+                    <partialRestore>false</partialRestore>
+                    <logShippingOnly>false</logShippingOnly>
+                    <ffgRestore>false</ffgRestore>
+                    <ignoreFullBackup>false</ignoreFullBackup>
+                    <vSSBackup>false</vSSBackup>
+                    <pointInTime/>
 
-            </TMMsg_CreateTaskReq>'''
+                    <timeZone>
+                    <TimeZoneName>(UTC+08:00)&#x5317;&#x4eAC;&#xFF0C;&#x91CD;&#x5e86;&#xFF0C;&#x9999;&#x6e2F;&#x7279;&#x522B;&#x884C;&#x653F;&#x533A;&#xFF0C;&#x4e4C;&#x9C81;&#x6728;&#x9F50;</TimeZoneName>
+                    </timeZone>
+                    <keepDataCapture>false</keepDataCapture>
+                    <cloneEnv>false</cloneEnv>
+                    <cloneResrvTimePeriod>0</cloneResrvTimePeriod>
+                    <commonMountPath></commonMountPath>
+                    <dropConnectionsToDatabase>true</dropConnectionsToDatabase>
+                    <sqlVerifyOnly>false</sqlVerifyOnly>
+                    <restoreToDisk>false</restoreToDisk>
+                    <restoreToDiskPath></restoreToDiskPath>
+                    <attachToSQLServer>false</attachToSQLServer>
+                    <checksum>false</checksum>
+                    <continueaftererror>false</continueaftererror>
+                    <snapOopStageFolder></snapOopStageFolder>
+                    <restoreOnlyFullBackup>false</restoreOnlyFullBackup>
+                    <stagingInstance/>
+                </sqlServerRstOption>
+                <volumeRstOption>
+                    <volumeLeveRestore>false</volumeLeveRestore>
+                </volumeRstOption>
+                <virtualServerRstOption>
+                    <isBlockLevelReplication>false</isBlockLevelReplication>
+                </virtualServerRstOption>
+                <fileOption/>
+                <commonOptions>
+                    <detectRegularExpression>true</detectRegularExpression>
+                    <restoreDeviceFilesAsRegularFiles>false</restoreDeviceFilesAsRegularFiles>
+                    <restoreSpaceRestrictions>false</restoreSpaceRestrictions>
+                    <ignoreNamespaceRequirements>false</ignoreNamespaceRequirements>
+                    <skipErrorsAndContinue>false</skipErrorsAndContinue>
+                    <onePassRestore>false</onePassRestore>
+                    <revert>false</revert>
+                    <recoverAllProtectedMails>false</recoverAllProtectedMails>
+                    <isFromBrowseBackup>false</isFromBrowseBackup>
+                    <clusterDBBackedup>false</clusterDBBackedup>
+                    <restoreToDisk>false</restoreToDisk>
+                    <isDBArchiveRestore>false</isDBArchiveRestore>
+                    <syncRestore>false</syncRestore>
+                    <validateOnly>false</validateOnly>
+                    <copyToObjectStore>false</copyToObjectStore>
+                </commonOptions>
+                <dbDataMaskingOptions>
+                    <isStandalone>false</isStandalone>
+                </dbDataMaskingOptions>
+                </restoreOptions>
+                <adminOpts>
+                <contentIndexingOption>
+                    <subClientBasedAnalytics>false</subClientBasedAnalytics>
+                </contentIndexingOption>
+                </adminOpts>
+                <commonOpts>
+                <startUpOpts>
+                    <startInSuspendedState>false</startInSuspendedState>
+                    <priority>66</priority>
+                    <useDefaultPriority>true</useDefaultPriority>
+                    <forceRunOnDisabledActivity>false</forceRunOnDisabledActivity>
+                </startUpOpts>
+                <prePostOpts>
+                    <preRecoveryCommand></preRecoveryCommand>
+                    <postRecoveryCommand></postRecoveryCommand>
+                    <impersonation>
+                    <level>NO_SELECTION</level>
+                    <user>
+                        <userName></userName>
+                    </user>
+                    </impersonation>
+                    <runPostWhenFail>false</runPostWhenFail>
+                </prePostOpts>
+                <jobDescription></jobDescription>
+                <notifyUserOnJobCompletion>false</notifyUserOnJobCompletion>
+                </commonOpts>
+            </options>
+            <subTaskOperation>OVERWRITE</subTaskOperation>
+            </subTasks>
+        </taskInfo>
+        </TMMsg_CreateTaskReq>
+        """
 
         try:
             root = ET.fromstring(restoremssqlXML)
@@ -3461,10 +3558,21 @@ class CV_Backupset(CV_Client):
 
         sourceClient = source
         destClient = dest
-        # instance = operator["instanceName"]
         restoreTime = operator["restoreTime"]
         overWrite = operator["overWrite"]
+        mssql_dbs = operator["mssql_dbs"]
         try:
+            # dbs
+            sqlServerRstOption = root.findall(".//sqlServerRstOption")
+            for node in sqlServerRstOption:
+                for mssql_db in mssql_dbs:
+                    restoreSource = ET.Element('restoreSource')
+                    database = ET.Element('database')
+                    restoreSource.text = mssql_db["database_name"]
+                    database.text = mssql_db["database_name"]
+                    node.append(restoreSource)
+                    node.append(database)
+                break
             sourceclients = root.findall(".//associations/clientName")
             for node in sourceclients:
                 node.text = sourceClient
@@ -3497,17 +3605,35 @@ class CV_Backupset(CV_Client):
                 node.text = instance
                 break
             if "Last" not in restoreTime and restoreTime != None and restoreTime != "":
+                # 指定时间点恢复
+                # pointOfTimeRst = false
+                # <timeRange>
+                #   <toTimeValue>2020-08-19 12:03:02</toTimeValue>
+                # </timeRange>
+                # <pointInTime>
+                #   <timeValue>2020-08-19 12:03:02</timeValue>
+                # </pointInTime>
                 timeRange = root.findall(".//timeRange")
                 for node in timeRange:
                     toTimeValue = ET.Element('toTimeValue')
                     toTimeValue.text = restoreTime
                     node.append(toTimeValue)
+                pointInTime = root.findall(".//pointInTime")
+                for node in pointInTime:
+                    timeValue = ET.Element('timeValue')
+                    timeValue.text = restoreTime
+                    node.append(timeValue)
+                pointOfTimeRst = root.findall(".//pointOfTimeRst")
+                for node in pointOfTimeRst:
+                    node.text = "true"
+                    break
         except:
             self.msg = "the file format is wrong"
             return jobId
 
         xmlString = ""
         xmlString = ET.tostring(root, encoding='utf-8', method='xml')
+
         if self.qCmd("QCommand/qoperation execute", xmlString):
             try:
                 root = ET.fromstring(self.receiveText)
@@ -3532,6 +3658,17 @@ class CV_API(object):
         super(CV_API, self).__init__()
         self.token = cvToken
         self.msg = None
+
+    def get_mssql_db(self, client_id, instance_name, from_time="", to_time=""):
+        info = CV_GetAllInformation(self.token)
+        instance_list = info.get_instances(client_id)
+        ins_id = ""
+        for ins in instance_list:
+            if "SQL Server" in ins["app_name"] and instance_name == ins["instance_name"]:
+                ins_id = ins["instance_id"]
+                break
+        mssql_dbs = info.browse_mssql_instance(client_id, ins_id, from_time, to_time)
+        return mssql_dbs
 
     def free(self):
         return
@@ -3856,18 +3993,20 @@ if __name__ == "__main__":
     # commvault-10
     # info = {"webaddr": "192.168.1.121", "port": "81", "username": "admin", "passwd": "admin", "token": "",
     #         "lastlogin": 0}
-    info = {"webaddr": "192.168.100.222", "port": "81", "username": "admin", "passwd": "1qaz@WSX", "token": "",
+    info = {"webaddr": "192.168.1.20", "port": "81", "username": "admin", "passwd": "1qaz@WSX", "token": "",
             "lastlogin": 0}
     # info = {"webaddr": "cv-server", "port": "81", "username": "cvadmin", "passwd": "1qaz@WSX", "token": "",
     #         "lastlogin": 0}
     cvToken = CV_RestApi_Token()
 
     cvToken.login(info)
+    # cvAPI = CV_GetAllInformation(cvToken)
     cvAPI = CV_API(cvToken)
-    # cvAPI = CV_OperatorInterFace(cvToken)
-
+    # ret = cvAPI.browse("win-SQL-192.168.1.150", "SQL Server", "defaultBackupSet", None, False)
+    ret = cvAPI.get_mssql_db(7, "WIN-7G6GN69ISV4")
+    # ret = cvAPI.get_instances(7)
     # ret = cvAPI.getClient("10.64.7.43")  # backup status
-    ret = cvAPI.getClientInfo(3)
+    # ret = cvAPI.getClientInfo(3)
     # ret = cvAPI.getJobList('getJobList', type='backup')
     print(ret)
     # tmp = []
