@@ -432,7 +432,7 @@ function get_cv_detail() {
     // 目标客户端
     var dest_client = $('#cvclient_destination').val();
     if (dest_client == "self"){
-        dest_client == $('#cv_id').val();
+        dest_client = $('#cv_id').val();
     }
     table1.ajax.url("../client_cv_get_restore_his?id=" + dest_client
     ).load();
