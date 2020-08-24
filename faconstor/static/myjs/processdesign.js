@@ -23,6 +23,7 @@ $('#p_tree').jstree({
                 "action": function (data) {
                     var inst = jQuery.jstree.reference(data.reference),
                         obj = inst.get_node(data.reference);
+                    $("#form_div").show();
                     $("#title").text("新建");
                     $("#id").val("0");
                     $("#pid").val(obj.id);
@@ -74,15 +75,18 @@ $('#p_tree').jstree({
     },
     "plugins": ["contextmenu", "dnd", "types", "role"]
 }).bind('select_node.jstree', function (event, data) {
-    $("#form_div").show();
+    if (data.node.parent == "#"){
+        $("#form_div").hide();
+    } else {
+        $("#form_div").show();
+    }
     var node = data.node;
     var data = node.data;
 
     $("#id").val(node.id);
     $("#pid").val(node.parent);
     $("#pname").val(data.pname);
-    $("#title").text(data.text);
-
+    $("#title").text(node.text);
     $("#code").val(data.process_code);
     $("#name").val(data.process_name);
     $("#remark").val(data.process_remark);

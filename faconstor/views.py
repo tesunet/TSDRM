@@ -10424,7 +10424,7 @@ def client_client_save(request):
                             # 新增
                             if id == 0:
                                 # 判断主机是否已经存在
-                                check_host_manage = HostsManage.objects.exclude(state="9").filter(host_ip=host_ip)
+                                check_host_manage = HostsManage.objects.exclude(state="9").filter(host_name=host_name)
                                 if check_host_manage.exists():
                                     ret = 0
                                     info = "主机已经存在，请勿重复添加。"
