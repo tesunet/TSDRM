@@ -301,8 +301,13 @@ function getClientree() {
                                             // 加载tree
                                             try {
                                                 if ($('#cvclient_agentType').val().indexOf("File System") != -1){
-                                                    getFileTree()
-                                                }
+                                                    getFileTree();
+                                                    if ($('#cvclient_type').val()==2){ // 目标端
+                                                        $('#cv_select_file').hide();
+                                                    } else {
+                                                        $('#cv_select_file').show();
+                                                    }
+                                                } 
                                             } catch (e){}
 
                                             // SQL Server
@@ -1080,7 +1085,12 @@ $(document).ready(function () {
                     // 加载tree
                     try {
                         if ($('#cvclient_agentType').val().indexOf("File System") != -1){
-                            getFileTree()
+                            getFileTree();
+                            if ($('#cvclient_type').val()==2){ // 目标端
+                                $('#cv_select_file').hide();
+                            } else {
+                                $('#cv_select_file').show();
+                            }
                         }
                     } catch(e){}
                 }
