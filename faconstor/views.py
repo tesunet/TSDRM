@@ -1933,7 +1933,7 @@ def group_save_host_tree(request):
         info = "节点不存在。"
     else:
         groupsave.host.clear()
-
+        selected_hosts = [int(x) for x in filter(lambda i: True if i else False, selected_hosts)] 
         hosts = HostsManage.objects.filter(id__in=selected_hosts).filter(nodetype="CLIENT")
 
         try:
@@ -1946,6 +1946,112 @@ def group_save_host_tree(request):
         "status": status,
         "info": info
     })
+
+
+def get_process_node(parent, select_process):
+    nodes = []
+    children = parent.children.order_by("sort").exclude(state="9").exclude(Q(type=None) | Q(type=""))
+    for child in children:
+        node = dict()
+        node["text"] = child.name
+        node["id"] = child.id
+        node["children"] = get_process_node(child, select_process)
+        node["type"] = "NODE"
+        param_list = []
+        try:
+            config = etree.XML(child.config)
+
+            param_el = config.xpath("//param")
+            for v_param in param_el:
+                param_list.append({
+                    "param_name": v_param.attrib.get("param_name", ""),
+                    "variable_name": v_param.attrib.get("variable_name", ""),
+                    "param_value": v_param.attrib.get("param_value", ""),
+                })
+        except Exception as e:
+            print(e)
+
+        node["data"] = {
+            "pname": parent.name,
+            "process_id": child.id,
+            "process_code": child.code,
+            "process_name": child.name,
+            "process_remark": child.remark,
+            "process_sign": child.sign,
+            "process_rto": child.rto,
+            "process_rpo": child.rpo,
+            "process_sort": child.sort,
+            "process_color": child.color,
+            "type": child.type,
+            "variable_param_list": param_list,
+        }
+        if child in select_process:
+            node["state"] = {"selected": True}
+
+        nodes.append(node)
+    return nodes
+
+
+@login_required
+def get_all_process_tree(request):
+    id = request.POST.get('id', '')
+    tree_data = []
+    status = 1
+    try:
+        groupsave = Group.objects.get(id=int(id))
+        select_process = groupsave.process.all()
+    except Exception:
+        status = 0
+        tree_data = []
+    else:
+        root_nodes = Process.objects.order_by("sort").exclude(state="9").filter(pnode=None)
+        for root_node in root_nodes:
+            root = dict()
+            root["text"] = root_node.name
+            root["id"] = root_node.id
+            root["data"] = {
+                "pname": "无"
+            }
+            root["type"] = "NODE"
+            root["state"] = {"opened": True}
+            root["children"] = get_process_node(root_node, select_process)
+            tree_data.append(root)
+
+    return JsonResponse({
+        "ret": status,
+        "data": tree_data
+    })
+
+
+@login_required
+def group_save_process_tree(request):
+    status = 1
+    info = "流程权限权限配置成功。"
+    id = request.POST.get('id', '')
+    selected_process = request.POST.get('selected_process', '')
+    selected_process = selected_process.split(',')
+
+    try:
+        groupsave = Group.objects.get(id=int(id))
+    except Exception:
+        status = 0
+        info = "节点不存在。"
+    else:
+        groupsave.process.clear()
+        selected_process = [int(x) for x in filter(lambda i: True if i else False, selected_process)] 
+        process = Process.objects.filter(id__in=selected_process).exclude(Q(type=None) | Q(type=""))
+
+        try:
+            groupsave.process.add(*process)
+        except Exception:
+            status = 0
+            info = "关联主机失败。"
+
+    return JsonResponse({
+        "status": status,
+        "info": info
+    })
+
 
 
 def get_org_tree(parent, selectid, allgroup):
