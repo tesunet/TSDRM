@@ -10938,7 +10938,7 @@ def client_cv_recovery(request):
                 if cvAPI.restoreFSBackupset(sourceClient, destClient, "defaultBackupSet", fileRestoreOperator):
                     return HttpResponse("恢复任务已经启动。" + cvAPI.msg)
                 else:
-                    return HttpResponse(u"恢复任务启动失败。" + cvAPI.msg)
+                    return HttpResponse("恢复任务启动失败。" + cvAPI.msg)
             elif "SQL Server" in agent:
                 mssql_iscover = request.POST.get('mssql_iscover', '')
                 mssqlOverWrite = False
