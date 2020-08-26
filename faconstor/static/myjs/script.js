@@ -92,6 +92,7 @@ $('#tree_2').jstree({
                                 success: function (data) {
                                     if (data == 1) {
                                         inst.delete_node(obj);
+                                        $('#form_div').hide();
                                         alert("删除成功！");
                                     } else
                                         alert("删除失败，请于管理员联系。");

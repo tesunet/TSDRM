@@ -924,8 +924,6 @@ def exec_process(processrunid, if_repeat=False):
 
                 dm = SQLApi.CVApi(sqlserver_credit)
                 ret = dm.get_all_backup_job_list(pri_client_name, agent_type, instance_name)
-                logger.info("%s %s %s" % (pri_client_name, agent_type, instance_name))
-                logger.info(str(ret))
                 
                 # 无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启
                 if not ret:

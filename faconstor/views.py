@@ -2910,6 +2910,8 @@ def script(request, funid):
         except ValueError as e:
             errors.append('网络连接异常。')
         else:
+            error = ""
+            status = ""
             # NODE/INTERFACE
             if my_type == "NODE":
                 node_hidden = ""
@@ -2926,8 +2928,6 @@ def script(request, funid):
                     "type": my_type,
                 }
                 status, error, select_id = node_save(save_data)
-                if not status:
-                    errors.append(error)
             else:
                 interface_hidden = ""
 
@@ -2976,8 +2976,6 @@ def script(request, funid):
                                         "commv_interface_div": "",
                                     }
                                     status, error, select_id = interface_save(save_data)
-                                    if not status:
-                                        errors.append(error)
                             else:
                                 interface_divs = {
                                     "script_text_div": "",
@@ -2988,9 +2986,11 @@ def script(request, funid):
                                     errors.append('脚本内容不能为空。')
                                 else:
                                     status, error, select_id = interface_save(save_data)
-                                    if not status:
-                                        errors.append(error)
 
+            if not status:
+                errors.append(error)
+            else:
+                id = select_id
     tree_data = []
     root_nodes = Script.objects.order_by("sort").exclude(state="9").filter(pnode=None).filter(type="NODE")
 
@@ -3940,6 +3940,8 @@ def display_params(request):
     data = []
     info = ""
     script_id = request.POST.get("script_id", "")
+    script_instance_id = request.POST.get("script_instance_id", "")
+    if_instance = request.POST.get("if_instance", "")
     process_id = request.POST.get("process_id", "")
 
     try:
@@ -3949,38 +3951,52 @@ def display_params(request):
     else:
         script_text = script.script_text
 
-        # 流程参数
-        try:
-            process = Process.objects.get(id=int(process_id))
-        except:
-            pass
+        if if_instance == "1":
+            try:
+                script_instance = ScriptInstance.objects.get(id=int(script_instance_id))
+                cur_params = eval(script_instance.params)
+            except Exception as e:
+                print(e)
+            else:
+                data = [{
+                    "param_name": x["param_name"],
+                    "variable_name": x["variable_name"],
+                    "param_value": x["param_value"],
+                    "type": x["type"]
+                } for x in cur_params]
         else:
-            process_param_list = get_params(process.config)
-            process_variable_list = get_variable_name(script_text, "PROCESS")
-            for pv in process_variable_list:
-                for pp in process_param_list:
-                    if pv.strip() == pp["variable_name"]:
+            # 流程参数
+            try:
+                process = Process.objects.get(id=int(process_id))
+            except:
+                pass
+            else:
+                process_param_list = get_params(process.config)
+                process_variable_list = get_variable_name(script_text, "PROCESS")
+                for pv in process_variable_list:
+                    for pp in process_param_list:
+                        if pv.strip() == pp["variable_name"]:
+                            data.append({
+                                "param_name": pp["param_name"],
+                                "variable_name": pp["variable_name"],
+                                "param_value": pp["param_value"],
+                                "type": "PROCESS"
+                            })
+                            break
+
+            # 脚本参数
+            script_param_list = get_params(script.config)
+            script_variable_list = get_variable_name(script_text, "SCRIPT")
+            for sv in script_variable_list:
+                for sp in script_param_list:
+                    if sv.strip() == sp["variable_name"]:
                         data.append({
-                            "param_name": pp["param_name"],
-                            "variable_name": pp["variable_name"],
-                            "param_value": pp["param_value"],
-                            "type": "PROCESS"
+                            "param_name": sp["param_name"],
+                            "variable_name": sp["variable_name"],
+                            "param_value": sp["param_value"],
+                            "type": "SCRIPT"
                         })
                         break
-
-        # 脚本参数
-        script_param_list = get_params(script.config)
-        script_variable_list = get_variable_name(script_text, "SCRIPT")
-        for sv in script_variable_list:
-            for sp in script_param_list:
-                if sv.strip() == sp["variable_name"]:
-                    data.append({
-                        "param_name": sp["param_name"],
-                        "variable_name": sp["variable_name"],
-                        "param_value": sp["param_value"],
-                        "type": "SCRIPT"
-                    })
-                    break
 
     return JsonResponse({
         "status": status,
