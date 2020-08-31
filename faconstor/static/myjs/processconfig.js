@@ -25,7 +25,7 @@ function displayScriptTree() {
     });
 }
 
-function displayParams() {
+function displayParams(if_instance) {
     /*
         参数： if_instance: 区分脚本实例1、脚本0
         响应： 
