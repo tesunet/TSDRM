@@ -1,10 +1,10 @@
 import datetime
+from datetime import timedelta
 import copy
 # from TSDRM import settings
 # from faconstor.CVApi_bak import *
 import re
-# import pyodbc
-import pymssql
+import pyodbc
 
 
 class DataMonitor(object):
@@ -19,13 +19,12 @@ class DataMonitor(object):
     @property
     def _connection(self):
         try:
-            # connection = pyodbc.connect('DRIVER={SQL Server};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s' % (
-            #     self.host, self.database, self.user, self.password))
-            # print(self.host, self.database, self.user, self.password)
-            connection = pymssql.connect(host=self.host, user=self.user, password=self.password, database=self.database)
+            connection = pyodbc.connect('DRIVER={SQL Server};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s' % (
+                self.host, self.database, self.user, self.password))
+
+            # connection = pymssql.connect(host=self.host, user=self.user, password=self.password, database=self.database)
         except Exception as e:
             self.msg = "链接数据库失败。"
-            print(self.msg)
             return None
         else:
             return connection
@@ -56,6 +55,10 @@ class DataMonitor(object):
     def close(self):
         if self._conn:
             self._conn.close()
+
+    def isconnected(self):
+        return self._conn
+
 
 class CVApi(DataMonitor):
     def get_all_install_clients(self):
@@ -421,21 +424,16 @@ class CVApi(DataMonitor):
         return backup_jobs
 
     def get_all_auxcopys(self):
-        auxcopy_sql = """SELECT [storagepolicy], [jobstatus], [sourcecopyid], [destcopyid], [bytesxferred], [startdate] FROM [commserv].[dbo].[CommCellAuxCopyInfo] 
-                        WHERE [destcopyid] != '' ORDER BY [startdate] DESC"""
+        auxcopy_sql = """SELECT [storagepolicy], [jobstatus], [sourcecopyid], [destcopyid] FROM [commserv].[dbo].[CommCellAuxCopyInfo] 
+        WHERE [destcopyid] != '' ORDER BY [startdate] DESC"""
         content = self.fetch_all(auxcopy_sql)
         auxcopys = []
         for i in content:
-            start_time = "{:%Y-%m-%d %H:%M:%S}".format(i[5].replace(tzinfo=datetime.timezone.utc).astimezone(
-                datetime.timezone(datetime.timedelta(hours=8)))) if i[5] else ""
-
             auxcopys.append({
                 "storagepolicy": i[0],
                 "jobstatus": i[1],
                 "sourcecopyid": i[2],
                 "destcopyid": i[3],
-                "bytesxferred": i[4],
-                "startdate": start_time,
             })
         return auxcopys
 
@@ -487,6 +485,20 @@ class CVApi(DataMonitor):
                 automatic_clients.append(i)
         return automatic_clients
 
+    # def get_library_space_info(self):
+    #     library_space_sql = """select ma.DisplayName, ls.LibraryName, ls.TotalSpaceMB, ls.TotalFreeSpaceMB from CommServ.dbo.CNMMMediaInfoView as ls
+    #                             inner join CommServ.dbo.CNMMMALibraryView as mc on mc.LibraryID = ls.LibraryID
+    #                             inner join CommServ.dbo.CNMMMAInfoView as ma on mc.MediaAgentID = ma.MediaAgentID;"""
+    #     content = self.fetch_all(library_space_sql)
+    #     library_space_info = []
+    #     for i in content:
+    #         library_space_info.append({
+    #             "MAName": i[0],
+    #             "LibraryName": i[1],
+    #             "TotalSpaceMB": i[2],
+    #             "TotalFreeSpaceMB": i[3],
+    #         })
+    #     return library_space_info
     def get_library_space_info(self):
         library_space_sql = """SELECT cmaiv.DisplayName, cmiv.LibraryName, cmpv.MountPathName, cmpv.CapacityAvailable, cmpv.SpaceReserved, cmiv.TotalSpaceMB, cmiv.LastBackupTime, cmpv.Offline, cmiv.MediaID, cmiv.LibraryID
         FROM CommServ.dbo.CNMMMountPathView AS cmpv
@@ -517,21 +529,45 @@ class CVApi(DataMonitor):
             })
         return library_space_info
 
+    def get_ma_info(self):
+        library_space_sql = """select ma.MediaAgentID,ma.DisplayName,ma.InterfaceName,ma.OSName,ma.SWVersion,ma.ServicePack,ma.Offline,ma.TotalLibraries,ma.OfflineLibraries,t.TotalSpaceMB,t.TotalFreeSpaceMB,t.SpaceReserved from CommServ.dbo.CNMMMAInfoView ma left join 
+		(select cmalv.MediaAgentID MediaAgentID,sum(cmpv.CapacityAvailable) CapacityAvailable, sum(cmpv.SpaceReserved) SpaceReserved, sum(cmiv.TotalSpaceMB) TotalSpaceMB, sum(cmiv.TotalFreeSpaceMB) TotalFreeSpaceMB
+				from CommServ.dbo.CNMMMALibraryView AS cmalv
+				LEFT JOIN (select sum(TotalFreeSpaceMB) TotalFreeSpaceMB,sum(TotalSpaceMB) TotalSpaceMB,LibraryID,LibraryName from CommServ.dbo.CNMMMediaInfoView group by LibraryID,LibraryName) cmiv on  cmiv.LibraryID= cmalv.LibraryID
+				LEFT JOIN (select sum(CapacityAvailable) CapacityAvailable,sum(SpaceReserved) SpaceReserved,LibraryID  from CommServ.dbo.CNMMMountPathView group by LibraryID )AS cmpv on  cmpv.LibraryID= cmalv.LibraryID
+				group by cmalv.MediaAgentID) t on  ma.MediaAgentID=t.MediaAgentID;"""
+        content = self.fetch_all(library_space_sql)
+        library_space_info = []
+        for i in content:
+            library_space_info.append({
+                "MediaAgentID": i[0],
+                "DisplayName": i[1],
+                "InterfaceName": i[2],
+                "OSName": i[3],
+                "SWVersion": i[4],
+                "ServicePack": i[5],
+                "Offline": i[6],
+                "TotalLibraries": i[7],
+                "OfflineLibraries": i[8],
+                "TotalSpaceMB": i[9],
+                "TotalFreeSpaceMB": i[10],
+                "SpaceReserved": i[11],
+            })
+        return library_space_info
+
     def get_commserv_info(self):
-        commserv_info_sql = """SELECT cn.SWVersion, cn.ServicePack, cn.OSName, ac.CCHostName FROM CommServ.dbo.CNCommCellInfoView AS cn
-        INNER JOIN CommServ.dbo.APP_CommCellInfo AS ac ON ac.commcellId=cn.id;"""
+        commserv_info_sql = """select cn.SWVersion, cn.ServicePack, cn.OSName, ac.CCHostName from CommServ.dbo.CNCommCellInfoView as cn
+                               inner join CommServ.dbo.APP_CommCellInfo as ac on ac.commcellId=cn.id;"""
         commserv_info = []
         commserv_info = self.fetch_one(commserv_info_sql)
 
         return commserv_info
 
     def get_oracle_backup_job_list(self, client_name):
-        oracle_backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[instance], [nextSCN], [idataagent], [subclient], [storagePolicy], [numbytesuncomp]
+        oracle_backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[instance], [nextSCN], [idataagent], [subclient]
                             FROM [CommServ].[dbo].[CommCellOracleBackupInfo] 
-                            WHERE [jobstatus]='Success' AND [clientname]='{0}' AND [subclient]='default' ORDER BY [startdate] DESC;""".format(client_name)
-        # oracle_backup_sql = """SELECT DISTINCT [jobid],[backuplevel],[startdate],[enddate],[instance], [nextSCN], [idataagent], [subclient], [storagePolicy], [numbytesuncomp]
-        #                     FROM [CommServ].[dbo].[CommCellOracleBackupInfo] 
-        #                     WHERE [jobstatus]='Success' AND [clientname]='{0}' AND [subclient]='default' AND [backuplevel]='Online Full' ORDER BY [startdate] DESC;""".format(client_name)
+                            WHERE [jobstatus]='Success' AND [clientname]='{0}' ORDER BY [startdate] DESC;""".format(
+            client_name)
         content = self.fetch_all(oracle_backup_sql)
         oracle_backuplist = []
         for i in content:
@@ -572,14 +608,9 @@ class CVApi(DataMonitor):
                 "LastTime": last_time,
                 "instance": i[4],
                 "cur_SCN": cur_SCN,
-                "subclient": i[7],
-                "data_sp": i[8],
-                "numbytesuncomp": i[9],
-                "idataagent": idataagent,
+                "subclient": i[7]
             })
         return oracle_backuplist
-
-
 
     def get_all_backup_job_list(self, client_name, agentType, instanceName):
         backuplist = []
@@ -662,7 +693,6 @@ class CVApi(DataMonitor):
                 })
         return backuplist
 
-
     def get_all_restore_job_list(self, client_name,agentType,instanceName):
         if "Oracle" in agentType or "SQL Server" in agentType:
             restore_sql = """SELECT DISTINCT [jobid],[starttime],[endtime],[jobstatus]     
@@ -693,7 +723,6 @@ class CVApi(DataMonitor):
                 "jobstatus": i[3],
             })
         return restorelist
-
 
     def has_auxiliary_job(self, backup_job_id):
         """
@@ -727,27 +756,19 @@ class CVApi(DataMonitor):
                 "operation": i[1],
                 "clientComputer": i[2],
                 "agentType": i[3],
-                "storagePolicy": i[7],
                 "progress": i[10],
-                "delayReason": i[12],
-                "instanceName": i[15],
+                "delayReason": i[12]
             })
         return job_controller_list
 
     def updateCVUTC(self):
-        # utc_sql = """SELECT [timeZone]  FROM [CommServ].[dbo].[APP_CommCell],[CommServ].[dbo].[SchedTimeZone] where [timeZone]='0:-480:'  + [timeZonename] and  [id]=2 and TimeZoneStdName='China Standard Time';"""
-        # content = self.fetch_all(utc_sql)
-        # job_controller_list = []
-        # if len(content) > 0 and content[0][0] != "0:-480:(UTC+08:00) 北京，重庆，香港特别行政区，乌鲁木齐":
-        #     update_sql = """update [CommServ].[dbo].[APP_CommCell] set [timeZone] =N'0:-480:(UTC+08:00) 北京，重庆，香港特别行政区，乌鲁木齐'
-        #                                  where [id]=2;"""
-        #     self.execute(update_sql)
-        utc_sql = """SELECT [timeZone]  FROM [CommServ].[dbo].[APP_CommCell],[CommServ].[dbo].[SchedTimeZone] where [timeZone]='0:-480:'  + [timeZonename] and  [id]=2 and TimeZoneStdName='China Standard Time';"""
+        utc_sql = """SELECT [timeZone] 
+                                FROM [CommServ].[dbo].[APP_CommCell] where [id]=2;"""
         content = self.fetch_all(utc_sql)
         job_controller_list = []
-        if len(content) <= 0:
-            update_sql = """update [CommServ].[dbo].[APP_CommCell] set [timeZone] ='0:-480:' + (select [timeZonename] from [CommServ].[dbo].[SchedTimeZone] where TimeZoneStdName='China Standard Time')
-                                             where [id]=2;"""
+        if len(content) > 0 and content[0][0] != "0:-480:(UTC+08:00)北京，重庆，香港特别行政区，乌鲁木齐":
+            update_sql = """update [CommServ].[dbo].[APP_CommCell] set [timeZone] =N'0:-480:(UTC+08:00)北京，重庆，香港特别行政区，乌鲁木齐'
+                                         where [id]=2;"""
             self.execute(update_sql)
 
     def get_clients_info(self, selected_clients=[]):
@@ -783,7 +804,7 @@ class CVApi(DataMonitor):
             "Running": "运行", "Waiting": "等待", "Pending": "阻塞", "Suspend": "终止", "Completed": "正常",
             "Failed": "失败", "Failed to Start": "启动失败", "Killed": "杀掉",
             "Completed w/ one or more errors": "已完成，但有一个或多个错误",
-            "Completed w/ one or more warnings": "已完成，但有一个或多个警告", "Success": "成功"
+            "Completed w/ one or more warnings": "已完成，但有一个或多个警告", "Success": "成功","PartialSuccess":"部分完成"
         }
 
         backup_status_sql = """SELECT clientname, idataagent, instance, backupset, subclient, startdate, jobstatus, jobid
@@ -1074,7 +1095,7 @@ class CVApi(DataMonitor):
         schedule_policy_sql = """SELECT ccscc.clientname, ccscc.idataagent, ccscc.instance, ccscc.backupset, ccscc.subclient, ccsfs.scheduleId, ccsfs.scheduePolicy, ccsfs.scheduleName, ccsfs.scheduletask, ccsfs.schedbackuptype, ccsfs.schedpattern,
         ccsfs.schedinterval,ccsfs.schedbackupday,ccsfs.schednextbackuptime,ccsfs.schednextbackuptime
         FROM (SELECT clientname, idataagent, instance, backupset, subclient FROM commserv.dbo.CommCellSubClientConfig WHERE backupset!='Indexing BackupSet' AND subclient !='(command line)') AS ccscc
-        LEFT JOIN commserv.dbo.CommCellBkScheduleForSubclients AS ccsfs ON ccsfs.clientname=ccscc.clientname AND ccsfs.idaagent=ccscc.idataagent AND ccsfs.instance=ccscc.instance AND ccsfs.backupset=ccscc.backupset AND ccsfs.subclient=ccscc.subclient
+        LEFT JOIN commserv.dbo.CommCellBkScheduleForSubclients AS ccsfs ON ccsfs.clientname=ccscc.clientname AND ccsfs.instance=ccscc.instance AND ccsfs.idaagent=ccscc.idataagent AND ccsfs.backupset=ccscc.backupset AND ccsfs.subclient=ccscc.subclient
         ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC, ccsfs.scheduePolicy DESC, ccsfs.schedbackuptype DESC
         """
         ret = self.fetch_all(schedule_policy_sql)
@@ -1252,6 +1273,327 @@ class CVApi(DataMonitor):
                     final_list.append(sp)
         return final_list
 
+    def get_sla(self, selected_clients=[], selected_agents=[]):
+        """
+        获取备份状态： 备份状态、辅助拷贝状态
+            selected_clients 指定客户端列表
+            selected_agents 指定应用列表
+        """
+        status_list = {
+            "Running": "运行", "Waiting": "等待", "Pending": "阻塞", "Suspend": "终止", "Completed": "正常",
+            "Failed": "失败", "Failed to Start": "启动失败", "Killed": "杀掉",
+            "Completed w/ one or more errors": "已完成，但有一个或多个错误",
+            "Completed w/ one or more warnings": "已完成，但有一个或多个警告", "Success": "成功","PartialSuccess":"部分完成"
+        }
+
+        backup_status_sql = """SELECT clientname, idataagent, instance, backupset, subclient, startdate, jobstatus, jobid
+        FROM commserv.dbo.CommCellBackupInfo
+        ORDER BY startdate DESC
+        """
+
+        schedule_policy_sql = """SELECT clientname,idaagent,instance,backupset,subclient, count(*) count from commserv.dbo.CommCellBkScheduleForSubclients
+        group by clientname,instance,idaagent,backupset,subclient
+        """
+
+        rpo_sql = """SELECT clientname, idataagent, instance, backupset, subclient, max(startdate) startdate
+        FROM commserv.dbo.CommCellBackupInfo where jobstatus in ('Success','Completed') group by clientname, idataagent, instance, backupset, subclient 
+                """
+
+        backup_status = self.fetch_all(backup_status_sql)
+        duplicated_subclients, client_list = self.get_duplicated_subclients()
+        schedule_policy = self.fetch_all(schedule_policy_sql)
+        rpo_date=self.fetch_all(rpo_sql)
+
+        backup_status_list = []
+        for ds in duplicated_subclients:
+            # 在指定客户端列表内
+            if ds["clientname"] in selected_clients or not selected_clients:  # selected_clients为空
+                # 添加一条空的
+                # 判断 实例 或 备份集
+                type = ""
+                # 备份内容
+                if "File System" in ds['idataagent'] or "Virtual" in ds['idataagent'] or "Big Data Apps" in ds[
+                    'idataagent']:
+                    type = ds['backupset']
+                if "Oracle" in ds['idataagent'] or "SQL Server" in ds['idataagent'] or "MySQL" in ds[
+                    'idataagent'] or "Exchange Database" in ds['idataagent']:
+                    type = ds['instance']
+
+                # 数据库没有实例 或者 文件系统没有备份集
+                if not type:
+                    continue
+                mystatus = {
+                    "clientname": ds["clientname"],
+                    "idataagent": ds["idataagent"],
+                    "instance": ds["instance"],
+                    "backupset": ds["backupset"],
+                    "subclient": ds["subclient"],
+                    "startdate": "无",
+                    "bk_status": "无",
+                    "type": type,
+                    "policy":"未配置",
+                    "rpo":"",
+                    "rposec": 0,
+                    "percent":0
+                }
+
+                timenow = datetime.datetime.now() - timedelta(days=30)
+                countall = 0
+                countsuccess = 0
+                percent = 0
+                #最近一次是否成功、近30天备份成功率
+                for bs in backup_status:
+                    isfrist = True
+                    if bs[0] == ds["clientname"] and bs[1] == ds["idataagent"] and bs[2] == ds["instance"] and bs[3] == ds[
+                        "backupset"] and bs[4] == ds["subclient"]:
+                        bk_status = bs[6]
+                        try:
+                            bk_status = status_list[bk_status]
+                        except:
+                            pass
+                        if isfrist:
+                            mystatus["startdate"]= bs[5]
+                            mystatus["bk_status"]= bk_status if bk_status else "无"
+                            isfrist = False
+                        if bs[5]>timenow:
+                            if bs[6]!="Running" and bs[6]!="Waiting" and bs[6]!="Pending" and bs[6]!="Suspend":
+                                countall = countall+1
+                            if bs[6]=="Completed" or bs[6]=="Completed w/ one or more errors" or bs[6]=="Completed w/ one or more warnings" or bs[6]=="Success" or bs[6]=="PartialSuccess":
+                                countsuccess=countsuccess+1
+                        else:
+                            break
+                try:
+                    percent=round(countsuccess/countall*100,2)
+                except:
+                    pass
+                mystatus["percent"] = percent
+
+                #是否有计划策略
+                for sp in schedule_policy:
+                    if sp[0] == ds["clientname"] and sp[1] == ds["idataagent"] and sp[2] == ds["instance"] and sp[3] == ds["backupset"] and sp[4] == ds["subclient"]:
+
+                        count = sp[5]
+                        if count>0:
+                            mystatus["policy"] ="已配置"
+                        break
+                #rpo
+                for rd in rpo_date:
+                    if rd[0] == ds["clientname"] and rd[1] == ds["idataagent"] and rd[2] == ds["instance"] and rd[3] == ds["backupset"] and rd[4] == ds["subclient"]:
+                        try:
+                            totalsec=(datetime.datetime.now()-rd[5]).total_seconds()
+                            totalsec = int(totalsec)
+                            sec = 0
+                            min = 0
+                            hour=0
+                            day=0
+                            min,sec = divmod(totalsec, 60)
+                            if min>=60:
+                                hour, min = divmod(min, 60)
+                                if hour>=24:
+                                    day, hour = divmod(hour, 24)
+                            strrpo =""
+                            if day>0:
+                                strrpo += str(day) + "天"
+                            if hour>0 and day<=30:
+                                strrpo += str(hour) + "小时"
+                            if min>0  and day<1:
+                                strrpo += str(min) + "分"
+                            if sec > 0 and day < 1:
+                                strrpo += str(sec) + "秒"
+
+                            mystatus["rpo"] = strrpo
+                            mystatus["rposec"] = totalsec
+                        except Exception as e:
+                            print(e)
+                        break
+                backup_status_list.append(mystatus)
+
+        # 排序
+        final_list = []
+        for ci in client_list:
+            for bs in backup_status_list:
+                if ci == bs["clientname"]:
+                    final_list.append(bs)
+        return final_list
+
+    def get_clients_name(self):
+        clients_sql = """SELECT [ClientId],[Client],[NetworkInterface],[OS [Version]]],[Hardware],[GalaxyRelease],[InstallTime] FROM [commserv].[dbo].[CommCellClientConfig] where ClientStatus='installed'"""
+        ret = self.fetch_all(clients_sql)
+        clientname_list = []
+        for c in ret:
+            clientname_list.append({
+                "client_id": c[0],
+                "client_name": c[1],
+            })
+        return clientname_list
+
+    def get_cv_joblist(self, startdate, enddate, clientid, jobstatus):
+        status_list = {"Running": "运行", "Waiting": "等待", "Pending": "阻塞", "Completed": "正常", "Success": "成功",
+                       "PartialSuccess": "部分成功",
+                       "Failed": "失败", "Failed to Start": "启动失败",
+                       "Completed w/ one or more errors": "已完成，但有一个或多个错误",
+                       "Completed w/ one or more warnings": "已完成，但有一个或多个警告"}
+        job_sql = ""
+        if clientid:
+            clientname_sql = """SELECT [Client] FROM [commserv].[dbo].[CommCellClientConfig] WHERE ClientId={CliendId} AND ClientStatus='installed'""".format(CliendId=clientid)
+            content = self.fetch_all(clientname_sql)
+            clientname = content[0][0]
+            if jobstatus != "":
+                if jobstatus == "others":
+                    jobstatus_list = ('Running', 'Waiting', 'Pending', 'Completed', 'Success', 'PartialSuccess',
+                                  'Completed w/ one or more errors', 'Completed w/ one or more warnings', 'Failed', 'Failed to Start')
+                    job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                                FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}' AND jobstatus not in {jobstatus}
+                                ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname,jobstatus=jobstatus_list)
+                else:
+                    if jobstatus == "run":
+                        jobstatus_list = ('Running', 'Waiting', 'Pending')
+                    elif jobstatus == "success":
+                        jobstatus_list = ('Completed', 'Success')
+                    elif jobstatus == "warn":
+                        jobstatus_list = ('PartialSuccess', 'Completed w/ one or more errors', 'Completed w/ one or more warnings')
+                    elif jobstatus == "failed":
+                        jobstatus_list = ('Failed', 'Failed to Start')
+                    job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                                FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}' AND jobstatus in {jobstatus}
+                                ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname,jobstatus=jobstatus_list)
+
+            elif jobstatus == "":
+                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                            FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}'
+                            ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname)
+        elif clientid == "" and jobstatus != "":
+            if jobstatus == "others":
+                jobstatus_list = ('Running', 'Waiting', 'Pending', 'Completed', 'Success', 'PartialSuccess',
+                                  'Completed w/ one or more errors', 'Completed w/ one or more warnings', 'Failed', 'Failed to Start')
+                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                            FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND jobstatus not in {jobstatus}
+                            ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, jobstatus=jobstatus_list)
+            else:
+                if jobstatus == "run":
+                    jobstatus_list = ('Running', 'Waiting', 'Pending')
+                elif jobstatus == "success":
+                    jobstatus_list = ('Completed', 'Success')
+                elif jobstatus == "warn":
+                    jobstatus_list = ('PartialSuccess', 'Completed w/ one or more errors', 'Completed w/ one or more warnings')
+                elif jobstatus == "failed":
+                    jobstatus_list = ('Failed', 'Failed to Start')
+                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                            FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND jobstatus in {jobstatus}
+                            ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, jobstatus=jobstatus_list)
+        else:
+            job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                        FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}'
+                        ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate)
+
+        content = self.fetch_all(job_sql)
+        job_list = []
+        show_job_status_num = {}
+        jobstatus_label = ""
+        job_run_num = 0
+        job_success_num = 0
+        job_warn_num = 0
+        job_failed_num = 0
+        job_other_num = 0
+        for i in content:
+            job_status = i[9]
+            if job_status in status_list:
+                job_status = status_list[job_status]
+                if job_status == '运行' or job_status == '等待' or job_status == '阻塞':
+                    jobstatus_label = 'label label-sm label-success'
+                    job_run_num += 1
+                elif job_status == '正常' or job_status == '成功':
+                    job_success_num += 1
+                    jobstatus_label = 'label label-sm label-success'
+                elif job_status == '已完成，但有一个或多个错误' or job_status == '已完成，但有一个或多个警告' or job_status == '部分成功':
+                    job_warn_num += 1
+                    jobstatus_label = 'label label-sm label-warning'
+                elif job_status == '失败' or job_status == '启动失败':
+                    jobstatus_label = 'label label-sm label-danger'
+                    job_failed_num += 1
+            else:
+                job_status = job_status
+                job_other_num += 1
+                jobstatus_label = 'label label-sm label-default'
+
+            job_list.append({
+                "jobid": i[0],
+                "clientname": i[1],
+                "idataagent": i[2],
+                "instance": i[3],
+                "backupset": i[4],
+                "subclient": i[5],
+                "data_sp": i[6],
+                "backuplevel": i[7],
+                "incrlevel": i[8],
+                "jobstatus": job_status,
+                "jobstatus_label": jobstatus_label,
+                "jobfailedreason": i[10],
+                "startdate": i[11].strftime('%Y-%m-%d %H:%M:%S') if i[11] else "",
+                "enddate": i[12].strftime('%Y-%m-%d %H:%M:%S') if i[12] else "",
+                "totalBackupSize": i[13],
+            })
+
+        show_job_status_num['job_run_num'] = job_run_num
+        show_job_status_num['job_success_num'] = job_success_num
+        show_job_status_num['job_warn_num'] = job_warn_num
+        show_job_status_num['job_failed_num'] = job_failed_num
+
+        return job_list, show_job_status_num
+
+    def display_error_job_list(self, startdate, enddate, clientid):
+        status_list = {"Running": "运行", "Waiting": "等待", "Pending": "阻塞", "Completed": "正常", "Success": "成功",
+                       "PartialSuccess": "部分成功",
+                       "Failed": "失败", "Failed to Start": "启动失败",
+                       "Completed w/ one or more errors": "已完成，但有一个或多个错误",
+                       "Completed w/ one or more warnings": "已完成，但有一个或多个警告"}
+        jobstatus_label = ""
+        #告警信息
+        if clientid:
+            clientname_sql = """SELECT [Client] FROM [commserv].[dbo].[CommCellClientConfig] WHERE ClientId={CliendId} AND ClientStatus='installed'""".format(CliendId=clientid)
+            content = self.fetch_all(clientname_sql)
+            clientname = content[0][0]
+            job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                        FROM [commserv].[dbo].[CommCellBackupInfo] WHERE jobfailedreason <>'' AND enddate >= '{startdate}' AND enddate <= '{enddate}' AND  clientname = '{clientname}'
+                    ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname)
+        else:
+            job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                        FROM [commserv].[dbo].[CommCellBackupInfo] WHERE jobfailedreason <>'' AND enddate >= '{startdate}' AND enddate <= '{enddate}'
+                    ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate)
+
+        content = self.fetch_all(job_sql)
+        error_job_list = []
+        for i in content:
+            job_status = i[9]
+            if job_status in status_list:
+                job_status = status_list[job_status]
+                if job_status == '已完成，但有一个或多个错误' or job_status == '已完成，但有一个或多个警告' or job_status == '部分成功':
+                    jobstatus_label = 'label label-sm label-warning'
+                elif job_status == '失败' or job_status == '启动失败':
+                    jobstatus_label = 'label label-sm label-danger'
+            else:
+                job_status = job_status
+                jobstatus_label = 'label label-sm label-default'
+
+            error_job_list.append({
+                "jobid": i[0],
+                "clientname": i[1],
+                "idataagent": i[2],
+                "instance": i[3],
+                "backupset": i[4],
+                "subclient": i[5],
+                "data_sp": i[6],
+                "backuplevel": i[7],
+                "incrlevel": i[8],
+                "jobstatus": job_status,
+                "jobstatus_label": jobstatus_label,
+                "jobfailedreason": i[10],
+                "startdate": i[11].strftime('%Y-%m-%d %H:%M:%S') if i[11] else "",
+                "enddate": i[12].strftime('%Y-%m-%d %H:%M:%S') if i[12] else "",
+                "totalBackupSize": i[13],
+            })
+        return error_job_list
+
     def get_duplicated_subclients(self):
         client_list = [client["client_name"] for client in self.get_clients_info()]
         subclient_sql = """SELECT [clientname],[idataagent],[instance],[backupset],[subclient]
@@ -1310,7 +1652,6 @@ class CVApi(DataMonitor):
         return aux_copy_list
 
 
-
 if __name__ == '__main__':
     credit = {
         "SQLServerHost": "192.168.100.222\COMMVAULT",
@@ -1320,3 +1661,4 @@ if __name__ == '__main__':
     }
     dm = CVApi(credit)
     dm.get_backup_status()
+

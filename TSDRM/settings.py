@@ -103,8 +103,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': "tesudrm",
         'USER': "root",
-        'PASSWORD': "Passw0rD",
-        'HOST': '127.0.0.1',
+        'PASSWORD': "password",
+        'HOST': '192.168.1.66',
         'PORT': '3306',
     }
 }

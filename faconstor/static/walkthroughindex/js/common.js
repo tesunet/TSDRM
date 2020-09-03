@@ -1,9 +1,9 @@
 ﻿function isEmptyObject(obj) {
-  for (var key in obj) {
-    return false;
-  }
-  return true;
-}﻿
+    for (var key in obj) {
+        return false;
+    }
+    return true;
+}
 var csrfToken = $("[name='csrfmiddlewaretoken']").val();
 var walkthrough_state = "",
     refresh = true,

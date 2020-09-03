@@ -1,0 +1,257 @@
+{% extends "base1.html" %}
+{% block content %}
+    <style>
+        #loading {
+            height: 300px;
+            width: 100%;
+            background-image: url(../static/upload/loading.gif);
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    </style>
+    <div class="row" style="margin-top: -38px">
+        <div class="col-md-2 col-lg-2" style="margin-top: 5px"></div>
+        <div class="col-md-10 col-lg-10">
+            <select class="form-control btn green btn-circle btn-sm" id="utils_manage" name="utils_manage" style="width: 100px; float:right;margin-right: 10px;font-size: 10pt">
+                {% for util in util_manages %}
+                    <option value="{{ util.id }}"   {% if util_id == util.id %}
+                            selected {% endif %} >{{ util.name }} </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div style="height:15px"></div>
+    <div class="portlet-body">
+        <div class="portlet light portlet-fit  calendar">
+            <div class="portlet-body">
+                <ul id="navtabs" class="nav nav-tabs">
+                    <li class="active">
+                        <a href="#tab_1_1" id='tabcheck1' data-toggle="tab"> 基础信息 </a>
+                    </li>
+                    <li>
+                        <a href="#tab_1_2" id='tabcheck2' data-toggle="tab"> 备份状态 </a>
+                    </li>
+                    <li>
+                        <a href="#tab_1_3" id='tabcheck3' data-toggle="tab"> 备份内容 </a>
+                    </li>
+                    <li>
+                        <a href="#tab_1_4" id='tabcheck4' data-toggle="tab"> 计划策略 </a>
+                    </li>
+                    <li>
+                        <a href="#tab_1_5" id='tabcheck5' data-toggle="tab"> 存储策略 </a>
+                    </li>
+                </ul>
+                <div class="tab-content">
+                    <div class="tab-pane fade active in" id="tab_1_1">
+                        <div class="table-scrollable" style="overflow-x:scroll;">
+                            <table class="table table-hover" style="min-width:1200px;">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th> 客户端名</th>
+                                    <th> 主机名</th>
+                                    <th> 版本</th>
+                                    <th> 操作系统</th>
+                                    <th> 安装时间</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody1">
+
+                                </tbody>
+                            </table>
+                            <div id="loading1" hidden></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade " id="tab_1_2">
+                        <div class="table-scrollable" style="overflow-x:scroll;">
+                            <table class="table table-hover" style="min-width:1200px;">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th> 客户端</th>
+                                    <th> 类型</th>
+                                    <th> 实例 / 备份集</th>
+                                    <th> 子客户端</th>
+                                    <th> 最近备份时间</th>
+                                    <th> 备份状态</th>
+                                    <th> 辅助拷贝状态</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody2">
+
+                                </tbody>
+                            </table>
+                            <div id="loading2" hidden></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade " id="tab_1_3">
+                        <div class="table-scrollable" style="overflow-x:scroll;">
+                            <table class="table table-hover" style="min-width:1200px;">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th> 客户端</th>
+                                    <th> 类型</th>
+                                    <th> 实例 / 备份集</th>
+                                    <th> 子客户端</th>
+                                    <th> 备份内容</th>
+                                    <th> 应用大小</th>
+                                    <th> 备份大小</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody3">
+
+                                </tbody>
+                            </table>
+                            <div id="loading3" hidden></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade " id="tab_1_4">
+                        <div class="table-scrollable" style="overflow-x:scroll;">
+                            <table class="table table-hover" id="schedule" style="min-width:1200px;">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th> 客户端</th>
+                                    <th> 类型</th>
+                                    <th> 备份集/实例</th>
+                                    <th> 子客户端</th>
+                                    <th> 计划策略</th>
+                                    <th> 备份类型</th>
+                                    <th> 周期(模式)</th>
+                                    <th> 详情</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody4">
+
+                                </tbody>
+                            </table>
+                            <div id="loading4" hidden></div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade " id="tab_1_5">
+                        <div class="table-scrollable" style="overflow-x:scroll;">
+                            <table class="table table-hover" style="min-width:1200px;">
+                                <thead>
+                                <tr>
+                                    <th></th>
+                                    <th> 客户端</th>
+                                    <th> 类型</th>
+                                    <th> 实例 / 备份集</th>
+                                    <th> 子客户端</th>
+                                    <th> 存储策略</th>
+                                </tr>
+                                </thead>
+                                <tbody id="tbody5">
+
+                                </tbody>
+                            </table>
+                            <div id="loading5" hidden></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">计划详情</h4>
+                </div>
+                <div class="panel-body">
+                    <form class="bs-example form-horizontal activate-form" id="formactivate">{% csrf_token %}
+                        <div class="form-body">
+                            <div class="form-group">
+                                <label class="col-md-3 control-label">计划名称</label>
+                                <div class="col-md-9">
+                                    <input id="scheduleName" type="text" name="scheduleName" class="form-control"
+                                           placeholder="" value="" readonly>
+                                    <div class="form-control-focus"></div>
+
+                                </div>
+                            </div>
+                            <div class="form-group ">
+                                <label class="col-md-3 control-label" for="form_control_1">备份类型</label>
+                                <div class="col-md-9">
+                                    <input id="schedbackuptype" type="text" name="schedbackuptype" class="form-control"
+                                           placeholder="" value="" readonly>
+                                    <div class="form-control-focus"></div>
+
+                                </div>
+                            </div>
+                            <div class="form-group ">
+                                <label class="col-md-3 control-label" for="form_control_1">周期</label>
+                                <div class="col-md-9">
+                                    <input id="schedpattern" type="text" name="schedpattern" class="form-control"
+                                           placeholder="" value="" readonly>
+                                    <div class="form-control-focus"></div>
+
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-3 control-label">模式</label>
+                                <div class="col-md-9">
+                                    <input id="schedbackupday" type="text" name="schedbackupday" class="form-control"
+                                           placeholder="" value="" readonly>
+                                    <div class="form-control-focus"></div>
+
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-3 control-label">开始时间</label>
+                                <div class="col-md-9">
+                                    <input id="schednextbackuptime" type="text" name="schednextbackuptime"
+                                           class="form-control" placeholder="" value="" readonly>
+                                    <div class="form-control-focus"></div>
+
+                                </div>
+                            </div>
+                            <div class="form-group ">
+                                <label class="col-md-3 control-label" for="form_control_1">重复</label>
+                                <div class="col-md-9">
+                                    <input id="schedinterval" type="text" name="schedinterval" class="form-control"
+                                           placeholder="" value="" readonly>
+                                    <div class="form-control-focus"></div>
+
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions ">
+                            <div class="modal-footer">
+                                <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+{% block script %}
+    <script>
+    </script>
+    <link href="/static/assets/global/plugins/jquery-multi-select/css/multi-select.css" rel="stylesheet"
+          type="text/css"/>
+    <link href="/static/assets/global/plugins/jstree/dist/themes/default/style.min.css" rel="stylesheet"
+          type="text/css"/>
+    <link href="/static/assets/global/plugins/select2/css/select2.min.css" rel="stylesheet" type="text/css"/>
+    <link href="/static/assets/global/plugins/select2/css/select2-bootstrap.min.css" rel="stylesheet" type="text/css"/>
+    <script src="/static/assets/global/scripts/app.min.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/jstree/dist/jstree.min.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/jquery-multi-select/js/jquery.multi-select.js"
+            type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/jquery-multi-select/js/jquery.quicksearch.js"
+            type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/select2/js/select2.full.min.js" type="text/javascript"></script>
+    <script src="/static/pages/js/components-select2.min.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/amcharts/amcharts/amcharts.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/amcharts/amcharts/pie.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/amcharts/amcharts/themes/light.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/amcharts/amcharts/serial.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/highcharts/js/highcharts.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/highcharts/js/highcharts-3d.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/highcharts/js/highcharts-more.js" type="text/javascript"></script>
+{% endblock %}

@@ -1,0 +1,214 @@
+﻿ {% extends "base1.html" %}
+
+
+
+{% block content %}
+    <style>
+        #loading {
+            height: 300px;
+            width: 100%;
+            background-image: url(../static/upload/loading.gif);
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+    </style>
+    <div   class="row" style="margin-top: -38px">
+        <div class="col-md-2 col-lg-2" style="margin-top: 5px"></div>
+        <div class="col-md-10 col-lg-10">
+            <select class="form-control btn green btn-circle btn-sm" id="util" name="util" style="width: 100px; float:right;margin-right: 10px;font-size: 10pt">
+                {% for util in util_manages %}
+                    <option value="{{ util.id }}"   {% if util_id == util.id %} selected {% endif %} >{{ util.name }} </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div style="height:15px"></div>
+    <div id="showdata" hidden  class="portlet-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="panel panel-default">
+                    <div class="panel-body easypiechart-panel" >
+                        <div class="col-md-12">
+                            <span class="caption-subject bold uppercase font-green"
+                                  style="font-size:16px">CommServe状态</span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- BEGIN WIDGET THUMB -->
+                            <div class="widget-thumb widget-bg-color-white text-uppercase margin-bottom-20 ">
+                                <div class="widget-thumb-wrap">
+                                    <div class="widget-thumb-body">
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">主机名:</span></div>
+                                        <div class="col-md-8"><span id="cs_host" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">版本:</span></div>
+                                        <div class="col-md-8"><span id="cs_version" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">补丁包:</span></div>
+                                        <div class="col-md-8"><span id="cs_sp" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">操作系统:</span></div>
+                                        <div class="col-md-8"><span id="cs_os" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">网络状态:</span></div>
+                                        <div class="col-md-8"><span id="cs_net"  style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">CPU利用率:</span></div>
+                                        <div class="col-md-8"><span id="cs_cpuloadpercentage"  style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- END WIDGET THUMB -->
+                        </div>
+                        <div class="col-md-6">
+                            <!-- BEGIN WIDGET THUMB -->
+                            <div class="widget-thumb widget-bg-color-white text-uppercase margin-bottom-20 ">
+                                <div class="widget-thumb-wrap">
+                                    <div class="widget-thumb-body">
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">总物理内存:</span></div>
+                                        <div class="col-md-8"><span  id="cs_memtotal" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">物理内存使用率:</span></div>
+                                        <div class="col-md-8"><span  id="cs_memutilization" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">总虚拟内存:</span></div>
+                                        <div class="col-md-8"><span  id="cs_swaptotal" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">虚拟内存使用率:</span></div>
+                                        <div class="col-md-8"><span  id="cs_swaputilization" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">磁盘空间:</span></div>
+                                        <div class="col-md-8"><span  id="cs_disktotal" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">磁盘空间使用率:</span></div>
+                                        <div class="col-md-8"><span  id="cs_diskutilization" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- END WIDGET THUMB -->
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="panel panel-default">
+                    <div class="panel-body easypiechart-panel">
+                        <div class="col-md-12">
+                            <span class="caption-subject bold uppercase font-green"
+                                  style="font-size:16px">接口状态</span>
+                        </div>
+
+                        <div class="col-md-12">
+                            <!-- BEGIN WIDGET THUMB -->
+                            <div class="widget-thumb widget-bg-color-white text-uppercase margin-bottom-20 ">
+                                <div class="widget-thumb-wrap">
+                                    <div class="widget-thumb-body " >
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-8"><span   style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">CV接口端口号:</span></div>
+                                        <div class="col-md-8"><span  id="cs_apiport" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">接口连接:</span></div>
+                                        <div class="col-md-8"><span  id="cs_apiconnect" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-8"><span   style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">CV数据库名:</span></div>
+                                        <div class="col-md-8"><span  id="cs_dbname" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+                                        <div class="col-md-4"><span  style="margin-bottom:15px;text-align:right;" class="widget-thumb-subtitle">数据库连接:</span></div>
+                                        <div class="col-md-8"><span  id="cs_dbconnect" style="margin-bottom:15px" class="widget-thumb-subtitle">&nbsp;</span></div>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- END WIDGET THUMB -->
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-default">
+                    <div class="panel-body easypiechart-panel">
+                        <div class="col-md-12">
+                            <span class="caption-subject bold uppercase font-green"
+                                  style="font-size:16px">MediaAgent状态</span>
+                        </div>
+                        <div class="col-md-12" align="center" style="padding-top: 20px;">
+                            <div  >
+                                <table id="matable"  class="table table-hover table-light" >
+                                        <thead>
+                                            <tr>
+                                                <th> MA名称 </th>
+                                                <th> 版本 </th>
+                                                <th> 补丁包 </th>
+                                                <th> 操作系统 </th>
+                                                <th> 网络状态 </th>
+                                                <th> 状态 </th>
+                                                <th> 总库数 </th>
+                                                <th> 离线库数 </th>
+                                                <th> 总空间</th>
+                                                <th> 空间使用率 </th>
+                                                <th> 剩余空间 </th>
+                                                <th> 预留空间 </th>
+                                                <th> 可用空间</th>
+
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="loading"  class="portlet-body">
+    </div>
+
+
+
+{% endblock %}
+
+{% block script %}
+    <link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css"/>
+    <link href="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.css" rel="stylesheet"
+          type="text/css"/>
+    <script src="/static/assets/global/plugins/datatables/datatables.min.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.js"
+            type="text/javascript"></script>
+
+
+    <link href="/static/assets/global/css/plugins.css" rel="stylesheet" type="text/css"/>
+
+
+
+    <script src="/static/assets/global/plugins/morris/morris.min.js" type="text/javascript"></script>
+    <script src="/static/assets/global/scripts/app.min.js" type="text/javascript"></script>
+
+
+    <script src="/static/assets/global/plugins/amcharts/amcharts/amcharts.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/amcharts/amcharts/pie.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/amcharts/amcharts/themes/light.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/amcharts/amcharts/serial.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/highcharts/js/highcharts.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/highcharts/js/highcharts-3d.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/highcharts/js/highcharts-more.js" type="text/javascript"></script>
+    {#    <script src="/static/assets/pages/scripts/charts-highcharts.js" type="text/javascript"></script>#}
+
+
+    <!-- BEGIN PAGE LEVEL PLUGINS -->
+    <script src="/static/assets/global/plugins/jquery-knob/js/jquery.knob.js" type="text/javascript"></script>
+
+    <!-- END CORE PLUGINS -->
+    <!-- BEGIN PAGE LEVEL PLUGINS -->
+    <script src="/static/assets/global/plugins/moment.min.js" type="text/javascript"></script>
+    <script src="/static/assets/global/plugins/fullcalendar/fullcalendar.min.js" type="text/javascript"></script>
+    <link href="/static/assets/global/plugins/fullcalendar/fullcalendar.min.css" rel="stylesheet" type="text/css"/>
+
+    <script src="/static/assets/pages/scripts/charts-highcharts.min.js" type="text/javascript"></script>
+
+
+
+
+    <!-- END PAGE LEVEL SCRIPTS -->
+
+
+
+
+
+{% endblock %}
+

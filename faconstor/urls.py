@@ -1,5 +1,7 @@
 from django.conf.urls import url
 from faconstor.views import *
+from faconstor.dashboard_views import *
+from faconstor.client_views import *
 from django.views.generic.base import RedirectView
 
 
@@ -161,28 +163,7 @@ urlpatterns = [
     url(r'^origin_data/$', origin_data),
     url(r'^origin_save/$', origin_save),
     url(r'^origin_del/$', origin_del),
-    
-    # 备份内容
-    url(r'^backup_content/$', backup_content, {'funid': '77'}),
-    url(r'^get_backup_content/$', get_backup_content),
 
-    # 计划策略
-    url(r'^schedule_policy/$', schedule_policy, {'funid': '78'}),
-    url(r'^get_schedule_policy/$', get_schedule_policy),
-
-    # 存储策略
-    url(r'^storage_policy/$', storage_policy, {'funid': '79'}),
-    url(r'^get_storage_policy/$', get_storage_policy),
-
-    # 备份状态
-    url(r'^backup_status/$', backup_status, {'funid': '76'}),
-    url(r'^get_backup_status/$', get_backup_status),
-
-    # 磁盘空间
-    url(r'^disk_space/$', disk_space, {'funid': '82'}),
-    url(r'^get_disk_space/$', get_disk_space),
-    url(r'^get_disk_space_daily/$', get_disk_space_daily),
-    url(r'^get_ma_disk_space/$', get_ma_disk_space),
 
     # 流程计划
     url(r'^process_schedule/$', process_schedule, {'funid': '81'}),
@@ -202,6 +183,40 @@ urlpatterns = [
     url(r'^monitor/$', monitor),
     url(r'^get_monitor_data/$', get_monitor_data),
     url(r'^get_clients_status/$', get_clients_status),
+
+    # 仪表盘
+    url(r'^dashboard/$', dashboard, {'funid': '86'}),
+    url(r'^get_dashboard/$', get_dashboard),
+    url(r'^get_frameworkstate/$', get_frameworkstate),
+    url(r'^cv_joblist/$', cv_joblist, {'funid': '90'}),
+    url(r'^get_cv_joblist/$', get_cv_joblist),
+    url(r'^get_client_name/$', get_client_name),
+    url(r'^display_error_job/$', display_error_job, {'funid': '91'}),
+    url(r'^get_display_error_job/$', get_display_error_job),
+    url(r'^get_top5_app_capacity/$', get_top5_app_capacity),
+
+    #灾备基础框架
+    url(r'^framework/$', framework, {'funid': '87'}),
+    url(r'^get_framework/$', get_framework),
+    url(r'^get_csinfo/$', get_csinfo),
+
+    # 客户端监控
+    url(r'^client_list/$', client_list, {'funid': '88'}),
+    url(r'^get_client_info/$', get_client_info),
+    url(r'^get_backup_content/$', get_backup_content),
+    url(r'^get_schedule_policy/$', get_schedule_policy),
+    url(r'^get_storage_policy/$', get_storage_policy),
+    url(r'^get_backup_status/$', get_backup_status),
+
+    # 健康度
+    url(r'^sla/$', sla, {'funid': '89'}),
+    url(r'^get_cv_sla/$', get_cv_sla),
+
+    # 磁盘空间
+    url(r'^disk_space/$', disk_space, {'funid': '92'}),
+    url(r'^get_disk_space/$', get_disk_space),
+    url(r'^get_disk_space_daily/$', get_disk_space_daily),
+    url(r'^get_ma_disk_space/$', get_ma_disk_space),
     
     # 客户端管理
     url(r'^client_manage/$', client_manage, {'funid': '71'}),
@@ -217,12 +232,7 @@ urlpatterns = [
     url(r'^client_cv_get_backup_his/$', client_cv_get_backup_his),
     url(r'^client_cv_recovery/$', client_cv_recovery),
     url(r'^client_cv_get_restore_his/$', client_cv_get_restore_his),
-    url(r'^get_dbcopyinfo/$', get_dbcopyinfo),
-    url(r'^client_dbcopy_save/$', client_dbcopy_save),
-    url(r'^client_dbcopy_del/$', client_dbcopy_del),
-    url(r'^get_adg_status/$', get_adg_status),
-    url(r'^client_dbcopy_get_adg_his/$', client_dbcopy_get_adg_his),
-
+    url(r'^get_cv_process/$', get_cv_process),
     url(r'^get_file_tree/$', get_file_tree),
 
 ]

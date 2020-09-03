@@ -1,4 +1,4 @@
-$(document).ready(function () {
+$(document).ready(function() {
     $("#loading").show();
 
     function getMADiskSpace() {
@@ -6,26 +6,26 @@ $(document).ready(function () {
             type: "POST",
             url: "../get_ma_disk_space/",
             data: {
-                utils_id: $("#utils_manage").val(),
+                util: $("#utils_manage").val(),
             },
-            success: function (data) {
+            success: function(data) {
                 var capacity_available_percent = 0,
                     space_reserved_percent = 0,
                     used_space_percent = 0;
 
-                if (data.status == 1){
+                if (data.status == 1) {
                     capacity_available_percent = data.data.capacity_available_percent,
-                    space_reserved_percent =  data.data.space_reserved_percent,
-                    used_space_percent = data.data.used_space_percent;
+                        space_reserved_percent = data.data.space_reserved_percent,
+                        used_space_percent = data.data.used_space_percent;
                 }
                 AmCharts.makeChart("disk_space_container", {
                     "type": "pie",
                     "theme": "light",
-                    "fontSize":15,
+                    "fontSize": 15,
                     "fontFamily": 'Open Sans',
 
                     "color": '#000',
-                    "colors":["#228B22", "#FF6600", "#FF0F00"],
+                    "colors": ["#228B22", "#FF6600", "#FF0F00"],
 
                     "dataProvider": [{
                         "name": "可用空间",
@@ -58,7 +58,7 @@ $(document).ready(function () {
             data: {
                 'utils_manage_id': utils_manage_id
             },
-            success: function (data) {
+            success: function(data) {
                 if (data.status == 1) {
                     // 磁盘容量表
                     var disk_space = data.data;
@@ -80,9 +80,9 @@ $(document).ready(function () {
                         }
 
                         // GB
-                        var CapacityAvailable = (disk_space[i]["CapacityAvailable"]/1024).toFixed(0)
-                        var SpaceReserved = (disk_space[i]["SpaceReserved"]/1024).toFixed(0)
-                        var TotalSpaceMB = (disk_space[i]["TotalSpaceMB"]/1024).toFixed(0)
+                        var CapacityAvailable = (disk_space[i]["CapacityAvailable"] / 1024).toFixed(0)
+                        var SpaceReserved = (disk_space[i]["SpaceReserved"] / 1024).toFixed(0)
+                        var TotalSpaceMB = (disk_space[i]["TotalSpaceMB"] / 1024).toFixed(0)
 
                         $("tbody").append(
                             '<tr>' +
@@ -159,9 +159,9 @@ $(document).ready(function () {
             borderWidth: 0
         },
         series: [{}]
-    })
+    });
 
-    function setDiskSpaceChart(chart, data){
+    function setDiskSpaceChart(chart, data) {
         while (chart.series.length > 0) {
             chart.series[0].remove(true);
         }
@@ -179,7 +179,7 @@ $(document).ready(function () {
         }
     }
 
-    $('#disk_space tbody').on('click', 'button#edit', function () {
+    $('#disk_space tbody').on('click', 'button#edit', function() {
         var media_id = $(this).find('input').val();
         var utils_id = $("#utils_manage").val();
         $.ajax({
@@ -189,7 +189,7 @@ $(document).ready(function () {
                 media_id: media_id,
                 utils_id: utils_id
             },
-            success: function (data) {
+            success: function(data) {
                 setDiskSpaceChart(chart, data);
             }
         });
@@ -197,7 +197,7 @@ $(document).ready(function () {
 
     getDiskSpace($('#utils_manage').val());
 
-    $('#utils_manage').change(function () {
+    $('#utils_manage').change(function() {
         $("tbody").empty();
         $("#loading").show();
         getDiskSpace($(this).val());
@@ -205,17 +205,17 @@ $(document).ready(function () {
     });
 
 
-    $('#weekly_total_space').click(function () {
+    $('#weekly_total_space').click(function() {
         $.ajax({
             type: "POST",
             url: "../get_disk_space_daily/",
             data: {
                 utils_id: $("#utils_manage").val()
             },
-            success: function (data) {
+            success: function(data) {
                 setDiskSpaceChart(chart, data);
             },
-            error: function () {
+            error: function() {
                 console.log('error')
             }
         });

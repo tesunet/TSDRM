@@ -23,11 +23,6 @@ function displayAgentParams(agent_type) {
         $('#cv_filesystem').hide();
         $('#cv_mssql').show();
         $('#cv_select_file').hide();
-    } else {
-        $('#cv_orcl').hide();
-        $('#cv_filesystem').hide();
-        $('#cv_mssql').hide();
-        $('#cv_select_file').hide();
     }
 }
 
@@ -44,7 +39,8 @@ function getClientree() {
         success: function (data) {
             if (data.ret == 0) {
                 alert(data.data)
-            } else {
+            }
+            else {
                 $('#tree_client').jstree({
                     'core': {
                         "themes": {
@@ -101,8 +97,7 @@ function getClientree() {
                                     } else {
                                         $('#tabcheck2').attr("style", "color: #cbd5dd");
                                         $("#tabcheck2").parent().attr("style", "pointer-events:none;");
-                                        $('#tabcheck3').attr("style", "color: #cbd5dd");
-                                        $("#tabcheck3").parent().attr("style", "pointer-events:none;");
+                                        $("#tabcheck1").click();
                                         $("#title").text("新建")
                                         $("#pname").val(obj.data["name"])
                                         $("#id").val("0");
@@ -136,9 +131,9 @@ function getClientree() {
                                                 type: "POST",
                                                 url: "../clientdel/",
                                                 data:
-                                                    {
-                                                        id: obj.id,
-                                                    },
+                                                {
+                                                    id: obj.id,
+                                                },
                                                 success: function (data) {
                                                     if (data == 1) {
                                                         inst.delete_node(obj);
@@ -173,13 +168,13 @@ function getClientree() {
                                     type: "POST",
                                     url: "../client_move/",
                                     data:
-                                        {
-                                            id: data.node.id,
-                                            parent: data.parent,
-                                            old_parent: data.old_parent,
-                                            position: data.position,
-                                            old_position: data.old_position,
-                                        },
+                                    {
+                                        id: data.node.id,
+                                        parent: data.parent,
+                                        old_parent: data.old_parent,
+                                        position: data.position,
+                                        old_position: data.old_position,
+                                    },
                                     success: function (data) {
                                         if (data == "重名") {
                                             alert("目标节点下存在重名。");
@@ -218,8 +213,10 @@ function getClientree() {
                         $("#pid").val(data.node.parent);
                         $("#my_type").val(type);
                         $("#title").text(data.node.data.name);
-
+                        $('#pname').val(data.node.data.pname);
                         if (type == "CLIENT") {
+                            $('#tabcheck2').removeAttr("style", "color: #cbd5dd");
+                            $("#tabcheck2").parent().removeAttr("style", "pointer-events:none;");
                             $("#tabcheck1").click();
                             $.ajax({
                                 type: "POST",
@@ -254,7 +251,8 @@ function getClientree() {
                                             $("#cvclient_type").val(data.cvinfo.type);
                                             if ($("#cvclient_type").val() == "2") {
                                                 $("#sourcediv").hide();
-                                            } else {
+                                            }
+                                            else {
                                                 $("#sourcediv").show();
                                             }
                                             $("#cvclient_utils_manage").val(data.cvinfo.utils_id);
@@ -267,7 +265,8 @@ function getClientree() {
                                             $("#cvclient_instance").val(data.cvinfo.instanceName);
                                             if (data.cvinfo.destination_id == data.cvinfo.id) {
                                                 $("#cvclient_destination").val('self');
-                                            } else {
+                                            }
+                                            else {
                                                 $("#cvclient_destination").val(data.cvinfo.destination_id);
                                             }
 
@@ -297,18 +296,17 @@ function getClientree() {
                                             for (var i = 0; i < sourcePaths.length; i++) {
                                                 $('#cv_fs_se_1').append("<option value='" + sourcePaths[i] + "'>" + sourcePaths[i] + "</option>");
                                             }
-
                                             // 加载tree
                                             try {
-                                                if ($('#cvclient_agentType').val().indexOf("File System") != -1){
+                                                if ($('#cvclient_agentType').val().indexOf("File System") != -1) {
                                                     getFileTree();
-                                                    if ($('#cvclient_type').val()==2){ // 目标端
+                                                    if ($('#cvclient_type').val() == 2) { // 目标端
                                                         $('#cv_select_file').hide();
                                                     } else {
                                                         $('#cv_select_file').show();
                                                     }
-                                                } 
-                                            } catch (e){}
+                                                }
+                                            } catch (e) { }
 
                                             // SQL Server
                                             var mssqlOverWrite = data.cvinfo.mssqlOverWrite;
@@ -331,65 +329,22 @@ function getClientree() {
 
                                             // 应用类型 -> 参数展示
                                             displayAgentParams(data.cvinfo.agentType);
-                                        } else {
+
+                                            /**
+                                             * 默认时间
+                                             */
+                                            $('#cv_r_datetimepicker').val("");
+                                            $("input[name='optionsRadios'][value='1']").prop("checked", true);
+                                            $("input[name='optionsRadios'][value='2']").prop("checked", false);
+                                        }
+                                        else {
                                             $("#div_creatcv").show();
                                             $("#div_cv").hide();
                                             $("#cv_del").hide();
                                         }
 
-                                        //dbcopy信息
-                                        if (JSON.stringify(data.dbcopyinfo) != '{}') {
-                                            $("#tabcheck3_1").click();
-                                            $("#div_creatdbcopy").hide();
-                                            $("#div_dbcopy").show();
-                                            $("#dbcopy_del").show();
-                                            $("#dbcopy_id").val(data.dbcopyinfo.id);
-                                            $("#dbcopy_dbtype").val(data.dbcopyinfo.dbtype);
-                                            $("#dbcopy_hosttype").val(data.dbcopyinfo.hosttype);
-                                            if ($("#dbcopy_hosttype").val() == "1") {
-                                                $("#dbcopy_std_div").show();
-                                            } else {
-                                                $("#dbcopy_std_div").hide();
-                                            }
-                                            $("#dbcopy_std").empty();
-                                            var std = JSON.parse($("#dbcopy_u_std").val());
-                                            for (var i = 0; i < std.length; i++) {
-                                                if (std[i].type == $("#dbcopy_dbtype").val()) {
-                                                    $("#dbcopy_std").append('<option value="' + std[i].id + '">' + std[i].name + '</option>');
-                                                }
-                                            }
-                                            $("#dbcopy_std").append('<option value="none">' + "无" + '</option>');
-                                            if (data.dbcopyinfo.std_id != null) {
-                                                $("#dbcopy_std").val(data.dbcopyinfo.std_id);
-                                            } else {
-                                                $("#dbcopy_std").val("none");
-                                            }
-
-                                            if ($("#dbcopy_dbtype").val() == "1") {
-                                                $("#mysqldiv").hide();
-                                                $("#oraclediv").show();
-                                                $("#dbcopy_oracleusername").val(data.dbcopyinfo.dbusername);
-                                                $("#dbcopy_oraclepassword").val(data.dbcopyinfo.dbpassowrd);
-                                                $("#dbcopy_oracleinstance").val(data.dbcopyinfo.dbinstance);
-                                            }
-                                            if ($("#dbcopy_dbtype").val() == "2") {
-                                                $("#mysqldiv").show();
-                                                $("#oraclediv").hide();
-                                            }
-                                            if ($("#dbcopy_hosttype").val() == "1") {
-                                                $("#tabcheck3_2").parent().show();
-                                                $("#tabcheck3_3").parent().show();
-                                                get_dbcopy_detail();
-                                            } else {
-                                                $("#tabcheck3_2").parent().hide();
-                                                $("#tabcheck3_3").parent().hide();
-                                            }
-                                        } else {
-                                            $("#div_creatdbcopy").show();
-                                            $("#div_dbcopy").hide();
-                                            $("#dbcopy_del").hide();
-                                        }
-                                    } else {
+                                    }
+                                    else {
                                         $("#host_id").val("0");
                                         $("#host_ip").val("");
                                         $("#host_name").val("");
@@ -430,15 +385,38 @@ function getClientree() {
 
 //commvault
 function get_cv_detail() {
+    $.ajax({
+        type: "POST",
+        dataType: 'json',
+        url: "../get_cv_process/",
+        data:
+        {
+            id: $("#id").val(),
+        },
+        success: function (data) {
+            //流程
+            var processtext = ""
+            for (var i = 0; i < data["process"].length; i++) {
+                processtext += "<div  class='form-group'><button onclick=\"runCVProcess(" + data["process"][i].process_id + ",'1')\"  type='button' class=' btn  green'>流程:" + data["process"][i].process_name + "</button> ";
+                processtext += "</div>"
+            }
+            $("#cv_processdiv").empty();
+            $("#cv_processdiv").append(processtext);
+        },
+        error: function (e) {
+            ;
+        }
+    });
+
     var table = $('#cv_backup_his').DataTable();
     table.ajax.url("../client_cv_get_backup_his?id=" + $('#cv_id').val()
     ).load();
-    var table1 = $('#cv_restore_his').DataTable();
     // 目标客户端
     var dest_client = $('#cvclient_destination').val();
-    if (dest_client == "self"){
+    if (dest_client == "self") {
         dest_client = $('#cv_id').val();
     }
+    var table1 = $('#cv_restore_his').DataTable();
     table1.ajax.url("../client_cv_get_restore_his?id=" + dest_client
     ).load();
 
@@ -481,42 +459,44 @@ function get_cv_detail() {
 
 function getCvInstance() {
     $("#cvclient_instance").empty();
-    var clientdata = [];
     try {
-        clientdata = JSON.parse($("#cvclient_client_info").val());
-    } catch (e) {
-    }
-    var instancelist = [];
-    for (var i = 0; i < clientdata.length; i++) {
-        if (clientdata[i].clientid == $("#cvclient_source").val() && clientdata[i].agent == $("#cvclient_agentType").val()) {
-            if (instancelist.indexOf(clientdata[i].instance) == -1) {
-                instancelist.push(clientdata[i].instance);
+        var clientdata = JSON.parse($("#cvclient_client_info").val());
+        var instancelist = [];
+        for (var i = 0; i < clientdata.length; i++) {
+            if (clientdata[i].clientid == $("#cvclient_source").val() && clientdata[i].agent == $("#cvclient_agentType").val()) {
+                if (instancelist.indexOf(clientdata[i].instance) == -1) {
+                    instancelist.push(clientdata[i].instance);
+                }
             }
         }
+        for (var i = 0; i < instancelist.length; i++) {
+            $("#cvclient_instance").append('<option value="' + instancelist[i] + '">' + instancelist[i] + '</option>');
+        }
+    } catch (e){
+        console.log(e)
     }
-    for (var i = 0; i < instancelist.length; i++) {
-        $("#cvclient_instance").append('<option value="' + instancelist[i] + '">' + instancelist[i] + '</option>');
-    }
+
 }
 
 function getCvAgenttype() {
     $("#cvclient_agentType").empty();
-    var clientdata = [];
     try {
-        clientdata = JSON.parse($("#cvclient_client_info").val());
-    } catch (e) {
-    }
-    var agentlist = [];
-    for (var i = 0; i < clientdata.length; i++) {
-        if (clientdata[i].clientid == $("#cvclient_source").val()) {
-            if (agentlist.indexOf(clientdata[i].agent) == -1) {
-                agentlist.push(clientdata[i].agent);
+        var clientdata = JSON.parse($("#cvclient_client_info").val());
+        var agentlist = [];
+        for (var i = 0; i < clientdata.length; i++) {
+            if (clientdata[i].clientid == $("#cvclient_source").val()) {
+                if (agentlist.indexOf(clientdata[i].agent) == -1) {
+                    agentlist.push(clientdata[i].agent);
+                }
             }
         }
+        for (var i = 0; i < agentlist.length; i++) {
+            $("#cvclient_agentType").append('<option value="' + agentlist[i] + '">' + agentlist[i] + '</option>');
+        }
+    } catch (e){
+        console.log(e)
     }
-    for (var i = 0; i < agentlist.length; i++) {
-        $("#cvclient_agentType").append('<option value="' + agentlist[i] + '">' + agentlist[i] + '</option>');
-    }
+
     getCvInstance();
 }
 
@@ -527,7 +507,7 @@ function getCvClient() {
         if (utildata[i].utils_manage == $("#cvclient_utils_manage").val()) {
             var clientlist = [];
             for (var j = 0; j < utildata[i].instance_list.length; j++) {
-                var client = {"clientid": utildata[i].instance_list[j].clientid, "clientname": utildata[i].instance_list[j].clientname};
+                var client = { "clientid": utildata[i].instance_list[j].clientid, "clientname": utildata[i].instance_list[j].clientname };
                 if (!inArray(client, clientlist)) {
                     clientlist.push(client);
                 }
@@ -580,20 +560,19 @@ function getCvinfo() {
 
 }
 
-// File System
-function getFileTree(){
+function getFileTree() {
     var setting = {
         async: {
             enable: true,
             url: '../get_file_tree/',
             autoParam: ["id"],
-            otherParam: {"cv_id": $('#cv_id').val()},
+            otherParam: { "cv_id": $('#cv_id').val() },
             dataFilter: filter
         },
         check: {
             enable: true,
             chkStyle: "checkbox",               //多选
-            chkboxType: {"Y": "s", "N": "ps"}  //不级联父节点选择
+            chkboxType: { "Y": "s", "N": "ps" }  //不级联父节点选择
         },
         view: {
             showLine: false
@@ -611,119 +590,31 @@ function getFileTree(){
 
     $.fn.zTree.init($("#cv_fs_tree"), setting);
 }
-
-//数据库复制
-function get_dbcopy_detail() {
-    var table = $('#dbcopy_adg_his').DataTable();
-    table.ajax.url("../client_dbcopy_get_adg_his?id=" + $('#id').val()
-    ).load();
-    $.ajax({
-        type: "POST",
-        dataType: 'json',
-        url: "../get_adg_status/",
-        data:
-            {
-                id: $("#id").val(),
-                dbcopy_id: $("#dbcopy_id").val(),
-                dbcopy_std: $("#dbcopy_std").val(),
-            },
-        success: function (data) {
-            //数据库状态
-            l_host_name = data["data"][0].host_name;
-            l_db_status = data["data"][0].db_status;
-            l_switchover_status = data["data"][0].switchover_status;
-
-            r_host_name = data["data"][1].host_name;
-            r_db_status = data["data"][1].db_status;
-            r_switchover_status = data["data"][1].switchover_status;
-            $(".ldbname").text(l_host_name);
-            $(".ldbsta").text(l_db_status);
-            $(".rdbname").text(r_host_name);
-            $(".rdbsta").text(r_db_status);
-
-            if (l_db_status == "OPEN") {
-                $(".ldbimg").attr("src", "/static/assets/pages/img/adg/db1.png");
-            }
-            if (l_db_status == "READ ONLY WITH APPLY") {
-                $(".ldbimg").attr("src", "/static/assets/pages/img/adg/db1.png");
-            }
-            if (l_db_status == "READ WRITE") {
-                $(".ldbimg").attr("src", "/static/assets/pages/img/adg/db1.png");
-            }
-            if (l_db_status == "READ ONLY") {
-                $(".ldbimg").attr("src", "/static/assets/pages/img/adg/db1.png");
-            }
-            if (l_db_status == "MOUNT") {
-                $(".ldbimg").attr("src", "/static/assets/pages/img/adg/db2.png");
-            }
-            if (r_db_status == "OPEN") {
-                $(".rdbimg").attr("src", "/static/assets/pages/img/adg/db1.png");
-            }
-            if (r_db_status == "READ ONLY WITH APPLY") {
-                $(".rdbimg").attr("src", "/static/assets/pages/img/adg/db1.png");
-            }
-            if (r_db_status == "READ WRITE") {
-                $(".rdbimg").attr("src", "/static/assets/pages/img/adg/db1.png");
-            }
-            if (r_db_status == "MOUNT") {
-                $(".rdbimg").attr("src", "/static/assets/pages/img/adg/db2.png");
-            }
-            if (r_db_status == "READ ONLY") {
-                $(".rdbimg").attr("src", "/static/assets/pages/img/adg/db1.png");
-            }
-            if (l_switchover_status == "PRIMARY") {
-                $(".sync").attr("src", "/static/assets/pages/img/adg/sync_r.gif");
-            }
-            if (r_switchover_status == "PRIMARY") {
-                $(".sync").attr("src", "/static/assets/pages/img/adg/sync_l.gif");
-            }
-            //流程
-            var processtext = ""
-            for (var i = 0; i < data["process"].length; i++) {
-                processtext += "<div  class='form-group'><button onclick=\"runprocess(" + data["process"][i].process_id + ",'1')\"  type='button' class=' btn  green'>切换:" + data["process"][i].process_name + "</button> ";
-                if (data["process"][i].back_id != null && data["process"][i].back_id != "") {
-                    processtext += "<button onclick=\"runprocess(" + data["process"][i].process_id + ",'2')\" type='button' class='backprocessbtn btn  green'>回切</button>";
-                }
-                processtext += "</div>"
-            }
-            $("#processdiv").empty();
-            $("#processdiv").append(processtext);
-            l_host_name = data["data"][0].host_name;
-            //$("#test").val(JSON.stringify(data["data"]) + "\n" + "host_status:主机状态,host_ip:主机IP，switchover_status:切换状态,database_role:切换角色,host_name:主机名称,db_status:数据库状态");
-        },
-        error: function (e) {
-            ;
-        }
+/**
+ * 流程模态框
+ * @param {*} processid
+ * @param {*} process_type
+ */
+function runCVProcess(processid, process_type) {
+    /**
+     * 自动化恢复流程
+     */
+    $("#static").modal({ backdrop: "static" });
+    $('#recovery_time').datetimepicker({
+        format: 'yyyy-mm-dd hh:ii:ss',
+        pickerPosition: 'top-right'
     });
-}
-
-function getDbcopyStd() {
-    $("#dbcopy_std").empty();
-
-    var stddata = JSON.parse($("#dbcopy_u_std").val());
-    for (var i = 0; i < stddata.length; i++) {
-        if (stddata[i].type == $("#dbcopy_dbtype").val()) {
-            $("#dbcopy_std").append('<option value="' + stddata[i].id + '">' + stddata[i].name + '</option>');
-        }
-    }
-    $("#dbcopy_std").append('<option value="none">' + "无" + '</option>');
-}
-
-function getDbcopyinfo() {
-    $.ajax({
-        type: 'POST',
-        dataType: 'json',
-        url: '../get_dbcopyinfo/',
-        success: function (data) {
-            $("#dbcopy_u_std").val(JSON.stringify(data.u_std));
-            getDbcopyStd();
-        }
-    });
+    // 写入当前时间
+    var myDate = new Date();
+    $("#run_time").val(myDate.toLocaleString());
+    $("#processid").val(processid);
+    $("#process_type").val(process_type);
 
 }
+
 
 function runprocess(processid, process_type) {
-    $("#static").modal({backdrop: "static"});
+    $("#static").modal({ backdrop: "static" });
     $('#recovery_time').datetimepicker({
         format: 'yyyy-mm-dd hh:ii:ss',
         pickerPosition: 'top-right'
@@ -734,6 +625,8 @@ function runprocess(processid, process_type) {
     $("#processid").val(processid);
     $("#process_type").val(process_type);
 }
+
+
 
 $(document).ready(function () {
     //主机
@@ -764,13 +657,14 @@ $(document).ready(function () {
                             "text": "<i class='jstree-icon jstree-themeicon fa fa-folder icon-state-warning icon-lg jstree-themeicon-custom'></i>" + $("#node_name").val(),
                             "id": data.nodeid,
                             "type": "NODE",
-                            "data": {"remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val()},
+                            "data": { "remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val() },
                             "icon": false,
                         }, "last", false, false);
                         $("#id").val(data.nodeid)
                         $('#tree_client').jstree('deselect_all')
                         $('#tree_client').jstree('select_node', $("#id").val(), true)
-                    } else {
+                    }
+                    else {
                         var curnode = $('#tree_client').jstree('get_node', $("#id").val());
                         var newtext = curnode.text.replace(curnode.data["name"], $("#node_name").val())
                         curnode.text = newtext
@@ -824,7 +718,7 @@ $(document).ready(function () {
                             "text": $("#host_name").val(),
                             "id": data.nodeid,
                             "type": "CLIENT",
-                            "data": {"remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val()},
+                            "data": { "remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val() },
                             "icon": false,
                         }, "last", false, false);
                         $("#id").val(data.nodeid)
@@ -832,9 +726,8 @@ $(document).ready(function () {
                         $('#tree_client').jstree('select_node', $("#id").val(), true)
                         $('#tabcheck2').removeAttr("style", "color: #cbd5dd");
                         $("#tabcheck2").parent().removeAttr("style", "pointer-events:none;");
-                        $('#tabcheck3').removeAttr("style", "color: #cbd5dd");
-                        $("#tabcheck3").parent().removeAttr("style", "pointer-events:none;");
-                    } else {
+                    }
+                    else {
                         var curnode = $('#tree_client').jstree('get_node', $("#id").val());
                         var newtext = curnode.text.replace(curnode.data["name"], $("#host_name").val())
                         curnode.text = newtext
@@ -962,7 +855,7 @@ $(document).ready(function () {
 
     //cv
     getCvinfo();
-    $('#creatcv').click(function () {
+    $('#creatcv').click(function () {  // 创建commvault保护
         $("#div_creatcv").hide();
         $("#div_cv").show();
         $("#cv_del").hide();
@@ -974,6 +867,18 @@ $(document).ready(function () {
         $("#cv_id").val("0");
         $("#cvclient_type").val("1");
 
+        /**
+         * 创建commvault保护时
+         * 新建要清除目录
+         * 新建要隐藏选择目录按钮
+         * 新建要清除树
+         */
+        $('#cv_select_file').hide();
+        try {
+            $.fn.zTree.getZTreeObj("cv_fs_tree").destroy();
+        } catch(e){}
+        $('#cv_fs_se_1').empty();
+        $('#cvclient_agentType').change();  // 主从触发更改操作
     });
 
     $("#cvclient_utils_manage").change(function () {
@@ -993,13 +898,15 @@ $(document).ready(function () {
         getCvInstance();
 
         var cv_agent = $(this).val();
+        console.log(cv_agent);
         // 应用类型 -> 参数展示
         displayAgentParams(cv_agent);
     });
     $("#cvclient_type").change(function () {
         if ($("#cvclient_type").val() == "2") {
             $("#sourcediv").hide();
-        } else {
+        }
+        else {
             $("#sourcediv").show();
         }
     });
@@ -1057,20 +964,21 @@ $(document).ready(function () {
                             $("#tabcheck2_2").parent().show();
                             $("#tabcheck2_3").parent().show();
                             $("#tabcheck2_4").parent().show();
-                        } else {
+                        }
+                        else {
                             $("#tabcheck2_2").parent().hide();
                             $("#tabcheck2_3").parent().hide();
                             $("#tabcheck2_4").parent().hide();
                         }
                         var curnode = $('#tree_client').jstree('get_node', $("#id").val());
-                        var newtext = "<img src = '/static/assets/pages/img/cv/cv.png' height='24px'> " + curnode.text
+                        var newtext = "<img src = '/static/pages/images/cv.png' height='24px'> " + curnode.text
                         $('#tree_client').jstree('set_text', $("#id").val(), newtext);
                     }
                     if ($("#cvclient_type").val() == "2" || $("#cvclient_type").val() == "3") {
                         var destinationdata = JSON.parse($("#cvclient_u_destination").val());
                         for (var i = 0; i < destinationdata.length; i++) {
                             if (destinationdata[i].utilid == $("#cvclient_utils_manage").val()) {
-                                var cur_destination = {"name": $("#cvclient_source").find("option:selected").text(), "id": data.cv_id}
+                                var cur_destination = { "name": $("#cvclient_source").find("option:selected").text(), "id": data.cv_id }
                                 if (!inArray(cur_destination, destinationdata[i].destination_list)) {
                                     destinationdata[i].destination_list.push(cur_destination);
                                     $("#cvclient_u_destination").val(JSON.stringify(destinationdata));
@@ -1084,15 +992,15 @@ $(document).ready(function () {
                     get_cv_detail();
                     // 加载tree
                     try {
-                        if ($('#cvclient_agentType').val().indexOf("File System") != -1){
+                        if ($('#cvclient_agentType').val().indexOf("File System") != -1) {
                             getFileTree();
-                            if ($('#cvclient_type').val()==2){ // 目标端
+                            if ($('#cvclient_type').val() == 2) { // 目标端
                                 $('#cv_select_file').hide();
                             } else {
                                 $('#cv_select_file').show();
                             }
                         }
-                    } catch(e){}
+                    } catch (e) { }
                 }
                 alert(data.info);
             },
@@ -1107,16 +1015,16 @@ $(document).ready(function () {
                 type: "POST",
                 url: "../client_cv_del/",
                 data:
-                    {
-                        id: $("#cv_id").val(),
-                    },
+                {
+                    id: $("#cv_id").val(),
+                },
                 success: function (data) {
                     if (data == 1) {
                         $("#div_creatcv").show();
                         $("#div_cv").hide();
                         $("#cv_del").hide();
                         var curnode = $('#tree_client').jstree('get_node', $("#id").val());
-                        var newtext = curnode.text.replace("<img src = '/static/assets/pages/img/cv/cv.png' height='24px'> ", "")
+                        var newtext = curnode.text.replace("<img src = '/static/pages/images/cv.png' height='24px'> ", "")
                         $('#tree_client').jstree('set_text', $("#id").val(), newtext);
 
                         if ($("#cvclient_type").val() == "2" || $("#cvclient_type").val() == "3") {
@@ -1156,12 +1064,12 @@ $(document).ready(function () {
         "destroy": true,
         //"ajax": "../../oraclerecoverydata?origin_id=" + origin_id,
         "columns": [
-            {"data": "jobId"},
-            {"data": "jobType"},
-            {"data": "Level"},
-            {"data": "StartTime"},
-            {"data": "LastTime"},
-            {"data": null},
+            { "data": "jobId" },
+            { "data": "jobType" },
+            { "data": "Level" },
+            { "data": "StartTime" },
+            { "data": "LastTime" },
+            { "data": null },
         ],
         "columnDefs": [{
             "targets": -1,
@@ -1191,7 +1099,7 @@ $(document).ready(function () {
         var pre_last_time = "";
         try {
             pre_last_time = table.row($(this).parents('tr').next()).data().LastTime;
-        }catch(e){
+        } catch (e) {
             //..
         }
         $('#cv_r_pre_restore_time').val(pre_last_time);
@@ -1209,11 +1117,11 @@ $(document).ready(function () {
         "destroy": true,
         //"ajax": "../../oraclerecoverydata?origin_id=" + origin_id,
         "columns": [
-            {"data": "jobid"},
-            {"data": "jobType"},
-            {"data": "starttime"},
-            {"data": "endtime"},
-            {"data": "jobstatus"}
+            { "data": "jobid" },
+            { "data": "jobType" },
+            { "data": "starttime" },
+            { "data": "endtime" },
+            { "data": "jobstatus" }
         ],
 
         "oLanguage": {
@@ -1245,55 +1153,86 @@ $(document).ready(function () {
             if ($('#cv_r_destClient').val() == "")
                 alert("请选择目标客户端。");
             else {
-                var myrestoreTime = "";
-                if ($("input[name='optionsRadios']:checked").val() == "2" && $('#cv_r_datetimepicker').val() != "") {
-                    myrestoreTime = $('#cv_r_datetimepicker').val();
-                }
-                var destClient = $('#cv_r_destClient option:selected').text().trim();
-                if ($('#cv_r_destClient').val() == "self") {
-                    destClient = $('#cv_r_sourceClient').val()
-                }
+                if (confirm('是否确定启动自主恢复？')){
+                    var myrestoreTime = "";
+                    if ($("input[name='optionsRadios']:checked").val() == "2" && $('#cv_r_datetimepicker').val() != "") {
+                        myrestoreTime = $('#cv_r_datetimepicker').val();
+                    }
+                    var destClient = $('#cv_r_destClient option:selected').text().trim();
+                    if ($('#cv_r_destClient').val() == "self") {
+                        destClient = $('#cv_r_sourceClient').val()
+                    }
 
-                // 区分应用
-                var agent = $("#cvclient_agentType").val();
-                if (agent.indexOf("Oracle") != -1) {
-                    $.ajax({
-                        type: "POST",
-                        url: "../../client_cv_recovery/",
-                        data: {
-                            cv_id: $('#cv_id').val(),
-                            sourceClient: $('#cv_r_sourceClient').val(),
-                            destClient: destClient,
-                            restoreTime: myrestoreTime,
-                            browseJobId: $("#cv_r_browseJobId").val(),
-                            // 判断是oracle还是oracle rac
-                            agent: agent,
-                            data_path: $("#cv_r_data_path").val(),
-                            copy_priority: $("#cv_r_copy_priority").val(),
-                            data_sp: $("#cv_r_data_sp").val(),
-                        },
-                        success: function (data) {
-                            alert(data);
-                            var table1 = $('#cv_restore_his').DataTable();
-                            table1.ajax.reload();
-                        },
-                        error: function (e) {
-                            alert("恢复失败，请于客服联系。");
-                        }
-                    });
-                } else if (agent.indexOf('File System') != -1) {
-                    if ($("input[name='cv_r_path']:checked").val() == "2" && $('#cv_r_mypath').val() == "")
-                        alert("请输入指定路径。");
-                    else {
-                        var iscover = $("input[name='cv_r_overwrite']:checked").val();
-                        var mypath = "same"
-                        if ($("input[name='cv_r_path']:checked").val() == "2")
-                            mypath = $('#cv_r_mypath').val()
-                        var selectedfile = ""
-                        $("#cv_r_fs_se_1 option").each(function () {
-                            var txt = $(this).val();
-                            selectedfile = selectedfile + txt + "*!-!*"
+                    // 区分应用
+                    var agent = $("#cvclient_agentType").val();
+                    if (agent.indexOf("Oracle") != -1) {
+                        $.ajax({
+                            type: "POST",
+                            url: "../../client_cv_recovery/",
+                            data: {
+                                cv_id: $('#cv_id').val(),
+                                sourceClient: $('#cv_r_sourceClient').val(),
+                                destClient: destClient,
+                                restoreTime: myrestoreTime,
+                                browseJobId: $("#cv_r_browseJobId").val(),
+                                // 判断是oracle还是oracle rac
+                                agent: agent,
+                                data_path: $("#cv_r_data_path").val(),
+                                copy_priority: $("#cv_r_copy_priority").val(),
+                                data_sp: $("#cv_r_data_sp").val(),
+                            },
+                            success: function (data) {
+                                alert(data);
+                                var table1 = $('#cv_restore_his').DataTable();
+                                table1.ajax.reload();
+                            },
+                            error: function (e) {
+                                alert("恢复失败，请于客服联系。");
+                            }
                         });
+                    } else if (agent.indexOf('File System') != -1) {
+                        if ($("input[name='cv_r_path']:checked").val() == "2" && $('#cv_r_mypath').val() == "")
+                            alert("请输入指定路径。");
+                        else {
+                            var iscover = $("input[name='cv_r_overwrite']:checked").val();
+                            var mypath = "same"
+                            if ($("input[name='cv_r_path']:checked").val() == "2")
+                                mypath = $('#cv_r_mypath').val()
+                            var selectedfile = ""
+                            $("#cv_r_fs_se_1 option").each(function () {
+                                var txt = $(this).val();
+                                selectedfile = selectedfile + txt + "*!-!*"
+                            });
+                            $.ajax({
+                                type: "POST",
+                                url: "../../client_cv_recovery/",
+                                data: {
+                                    cv_id: $('#cv_id').val(),
+                                    sourceClient: $('#cv_r_sourceClient').val(),
+                                    destClient: destClient,
+                                    restoreTime: myrestoreTime,
+                                    browseJobId: $("#cv_r_browseJobId").val(),
+                                    agent: agent,
+
+                                    iscover: iscover,
+                                    mypath: mypath,
+                                    selectedfile: selectedfile,
+                                },
+                                success: function (data) {
+                                    alert(data);
+                                    var table1 = $('#cv_restore_his').DataTable();
+                                    table1.ajax.reload();
+                                },
+                                error: function (e) {
+                                    alert("恢复失败，请于客服联系。");
+                                }
+                            });
+                        }
+                    } else if (agent.indexOf('SQL Server') != -1) {
+                        var mssql_iscover = "FALSE"
+                        if ($('#cv_r_isoverwrite').is(':checked')) {
+                            mssql_iscover = "TRUE"
+                        }
                         $.ajax({
                             type: "POST",
                             url: "../../client_cv_recovery/",
@@ -1305,9 +1244,7 @@ $(document).ready(function () {
                                 browseJobId: $("#cv_r_browseJobId").val(),
                                 agent: agent,
 
-                                iscover: iscover,
-                                mypath: mypath,
-                                selectedfile: selectedfile,
+                                mssql_iscover: mssql_iscover,
                             },
                             success: function (data) {
                                 alert(data);
@@ -1319,42 +1256,13 @@ $(document).ready(function () {
                             }
                         });
                     }
-                } else if (agent.indexOf('SQL Server') != -1) {
-                    var mssql_iscover = "FALSE"
-                    if ($('#cv_r_isoverwrite').is(':checked')) {
-                        mssql_iscover = "TRUE"
-                    }
-                    $.ajax({
-                        type: "POST",
-                        url: "../../client_cv_recovery/",
-                        data: {
-                            cv_id: $('#cv_id').val(),
-                            sourceClient: $('#cv_r_sourceClient').val(),
-                            destClient: destClient,
-                            restoreTime: myrestoreTime,
-                            browseJobId: $("#cv_r_browseJobId").val(),
-                            agent: agent,
-
-                            mssql_iscover: mssql_iscover,
-                        },
-                        success: function (data) {
-                            alert(data);
-                            var table1 = $('#cv_restore_his').DataTable();
-                            table1.ajax.reload();
-                        },
-                        error: function (e) {
-                            alert("恢复失败，请于客服联系。");
-                        }
-                    });
                 }
-
-
             }
         }
     });
 
     /*
-        自主恢复 
+        自主恢复
             参数
     */
     $('#navtabs2 a').on("click", function () {
@@ -1394,263 +1302,82 @@ $(document).ready(function () {
         if (nodes.length == 0)
             $("#cv_fs_se_1").append("<option value=''></option>");
     })
-    // SQL Server
 
 
-    //db复制
-    getDbcopyinfo();
-    $("#dbcopy_hosttype").change(function () {
-        if ($("#dbcopy_hosttype").val() == "1") {
-            $("#dbcopy_std_div").show();
-        } else {
-            $("#dbcopy_std_div").hide();
+});
+/**
+ * 启动流程
+ */
+$("#confirm").click(function () {
+    if($("#confirmtext")!="确认启动流程") {
+        alert("请在文本框内输入\"确认启动流程\"");
+    }
+    else{
+        var process_id = $("#processid").val();
+        // File System
+        var iscover = $("input[name='cv_r_overwrite']:checked").val();
+        var mypath = "same"
+        if ($("input[name='cv_r_path']:checked").val() == "2") {
+            mypath = $('#cv_r_mypath').val()
         }
-    });
-    $('#creatdbcopy').click(function () {
-        $("#div_creatdbcopy").hide();
-        $("#div_dbcopy").show();
-        $("#dbcopy_del").hide();
-        $("#tabcheck3_1").click();
-        $("#tabcheck3_2").parent().hide();
-        $("#tabcheck3_3").parent().hide();
-
-        $("#dbcopy_id").val("0");
-        $("#dbcopy_dbtype").val("1");
-        $("#dbcopy_hosttype").val("1");
-        $("#dbcopy_oracleusername").val("");
-        $("#dbcopy_oraclepassword").val("");
-        $("#dbcopy_oracleinstance").val("");
-        $("#dbcopy_std_div").show();
-
-    });
-    $('#dbcopy_oracle_save').click(function () {
+        var selectedfile = "";
+        $("#cv_r_fs_se_1 option").each(function () {
+            var txt = $(this).val();
+            selectedfile = selectedfile + txt + "*!-!*"
+        });
+        // SQL Server
+        var mssql_iscover = "FALSE"
+        if ($('#cv_r_isoverwrite').is(':checked')) {
+            mssql_iscover = "TRUE"
+        }
+        // 目标端
+        var std = $('#cv_r_destClient').val();
+        if (std == "self") {
+            std = $("#cv_id").val();
+        }
+        // 非邀请流程启动
         $.ajax({
             type: "POST",
             dataType: 'json',
-            url: "../client_dbcopy_save/",
-            data: {
+            url: "../cv_oracle_run/",
+            data:
+                {
+                    processid: process_id,
+                    run_person: $("#run_person").val(),
+                    run_time: $("#run_time").val(),
+                    run_reason: $("#run_reason").val(),
 
-                id: $("#id").val(),
-                dbcopy_id: $("#dbcopy_id").val(),
-                dbcopy_dbtype: $("#dbcopy_dbtype").val(),
-                dbcopy_hosttype: $("#dbcopy_hosttype").val(),
-                dbcopy_oracleusername: $("#dbcopy_oracleusername").val(),
-                dbcopy_oraclepassword: $("#dbcopy_oraclepassword").val(),
-                dbcopy_oracleinstance: $("#dbcopy_oracleinstance").val(),
-                dbcopy_std: $("#dbcopy_std").val(),
-            },
+                    pri: $("#cv_id").val(),
+                    std: std,
+                    agent_type: $("#cvclient_agentType").val(),
+                    recovery_time: $("#cv_r_datetimepicker").val(),
+                    browseJobId: $("#cv_r_browseJobId").val(),
+
+                    data_path: $("#cv_r_data_path").val(),
+                    copy_priority: $("#cv_r_copy_priority").val(),
+                    db_open: $("#cv_r_db_open").val(),
+                    log_restore: $("#cv_r_log_restore").val(),
+
+                    // SQL Server
+                    mssql_iscover: mssql_iscover,
+
+                    // File System
+                    iscover: iscover,
+                    mypath: mypath,
+                    selectedfile: selectedfile,
+                },
             success: function (data) {
-                if (data.ret == 1) {
-                    if ($("#dbcopy_id").val() == "0") {
-                        $("#dbcopy_id").val(data.dbcopy_id);
-                        $("#dbcopy_del").show();
-                        if ($("#dbcopy_hosttype").val() == "1") {
-                            $("#tabcheck3_2").parent().show();
-                            $("#tabcheck3_3").parent().show();
-                        } else {
-                            $("#tabcheck3_2").parent().hide();
-                            $("#tabcheck3_3").parent().hide();
-                        }
-                        var curnode = $('#tree_client').jstree('get_node', $("#id").val());
-                        var newtext = curnode
-                        if ($("#dbcopy_dbtype").val() == "1") {
-                            newtext = "<img src = '/static/assets/pages/img/cv/oracle.png' height='24px'> " + curnode.text
-                        }
-                        $('#tree_client').jstree('set_text', $("#id").val(), newtext);
-                    }
-                    //刷新备库下拉菜单
-                    if ($("#dbcopy_hosttype").val() == "2") {
-                        var std = $("#dbcopy_std").val();
-                        var stddata = JSON.parse($("#dbcopy_u_std").val());
-                        var cur_std = {"name": $("#host_name").val() + "(" + $("#host_ip").val() + ")", "id": data.dbcopy_id, "type": $("#dbcopy_dbtype").val()}
-                        if (!inArray(cur_std, stddata)) {
-                            stddata.push(cur_std);
-                            $("#dbcopy_u_std").val(JSON.stringify(stddata));
-                        }
-                        getDbcopyStd();
-                        $("#dbcopy_std").val(std);
-                    }
-                    if ($("#dbcopy_hosttype").val() == "1") {
-                        var stddata = JSON.parse($("#dbcopy_u_std").val());
-                        for (var i = 0; i < stddata.length; i++) {
-                            if (stddata[i].id == $("#dbcopy_id").val()) {
-                                stddata.splice(i, 1)
-                                $("#dbcopy_u_std").val(JSON.stringify(stddata));
-                                break;
-                            }
-                        }
-                        $("#dbcopy_std option[value='" + $("#dbcopy_id").val() + "']").remove();
-                    }
-                    if ($("#dbcopy_hosttype").val() == "1") {
-                        $("#tabcheck3_2").parent().show();
-                        $("#tabcheck3_3").parent().show();
-                        get_dbcopy_detail();
-                    } else {
-                        $("#tabcheck3_2").parent().hide();
-                        $("#tabcheck3_3").parent().hide();
-                    }
-                }
-                alert(data.info);
+                if (data["res"] == "新增成功。") {
+                    alert("流程启动成功。");
+                    $("#static").modal("hide");
+                    window.open(data["data"], "_blank");
+                } else
+                    alert(data["res"]);
             },
             error: function (e) {
-                alert("页面出现错误，请于管理员联系。");
+                alert("流程启动失败，请于管理员联系。");
             }
         });
-    });
-    $('#dbcopy_oracle_del').click(function () {
-        if (confirm("确定要删除？删除后不可恢复。")) {
-            $.ajax({
-                type: "POST",
-                url: "../client_dbcopy_del/",
-                data:
-                    {
-                        id: $("#dbcopy_id").val(),
-                    },
-                success: function (data) {
-                    if (data == 1) {
-                        $("#div_creatdbcopy").show();
-                        $("#div_dbcopy").hide();
-                        $("#dbcopy_del").hide();
-
-                        var curnode = $('#tree_client').jstree('get_node', $("#id").val());
-                        var newtext = curnode
-                        if ($("#dbcopy_dbtype").val() == "1") {
-                            newtext = curnode.text.replace("<img src = '/static/assets/pages/img/cv/oracle.png' height='24px'> ", "")
-                        }
-                        $('#tree_client').jstree('set_text', $("#id").val(), newtext);
-                        //刷新备库下拉菜单
-                        var stddata = JSON.parse($("#dbcopy_u_std").val());
-                        for (var i = 0; i < stddata.length; i++) {
-                            if (stddata[i].id == $("#dbcopy_id").val()) {
-                                stddata.splice(i, 1)
-                                $("#dbcopy_u_std").val(JSON.stringify(stddata));
-                                break;
-                            }
-                        }
-                        $("#dbcopy_std option[value='" + $("#dbcopy_id").val() + "']").remove();
-
-                        alert("删除成功！");
-                    } else
-                        alert("删除失败，请于管理员联系。");
-                },
-                error: function (e) {
-                    alert("删除失败，请于管理员联系。");
-                }
-            });
-        }
-    })
-    $("#confirm").click(function () {
-        var process_id = $("#process_id").val();
-
-        // 非邀请流程启动
-        // $.ajax({
-        //     type: "POST",
-        //     dataType: 'json',
-        //     url: "../cv_oracle_run/",
-        //     data:
-        //         {
-        //             processid: process_id,
-        //             run_person: $("#run_person").val(),
-        //             run_time: $("#run_time").val(),
-        //             run_reason: $("#run_reason").val(),
-        //             process_type:$("#process_type").val()
-        //         },
-        //     success: function (data) {
-        //         if (data["res"] == "新增成功。") {
-        //             window.location.href = data["data"];
-        //         } else
-        //             alert(data["res"]);
-        //     },
-        //     error: function (e) {
-        //         alert("流程启动失败，请于管理员联系。");
-        //     }
-        // });
-    });
-    $('#dbcopy_adg_his').dataTable({
-        "bAutoWidth": true,
-        "bSort": false,
-        "bProcessing": true,
-        //"ajax": "../oracle_restore_data/",
-        "fnServerParams": function (aoData) {
-            aoData.push({
-                name: "process_id",
-                value: $("#process_id").val()
-            })
-        },
-        "columns": [
-            {"data": "processrun_id"},
-            {"data": "process_name"},
-            {"data": "process_type"},
-            {"data": "createuser"},
-            {"data": "state"},
-            {"data": "run_reason"},
-            {"data": "starttime"},
-            {"data": "endtime"},
-            {"data": "process_id"},
-            {"data": "process_url"},
-            {"data": null},
-        ],
-        "columnDefs": [{
-            "targets": 1,
-            "render": function (data, type, full) {
-                return full.state != "计划" ? "<td><a href='process_url' target='_blank'>data</a></td>".replace("data", full.process_name).replace("process_url", "/processindex/" + full.processrun_id + "?s=true") : "<td>" + full.process_name + "</td>"
-            }
-        }, {
-            "visible": false,
-            "targets": -2  // 倒数第一列
-        }, {
-            "visible": false,
-            "targets": -3  // 倒数第一列
-        }, {
-            "targets": -1,  // 指定最后一列添加按钮；
-            "data": null,
-            "width": "60px",  // 指定列宽；
-            "render": function (data, type, full) {
-                return "<td><button class='btn btn-xs btn-primary' type='button'><a href='/custom_pdf_report/?processrunid&processid'><i class='fa fa-arrow-circle-down' style='color: white'></i></a></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
-            }
-        }],
-
-        "oLanguage": {
-            "sLengthMenu": "&nbsp;&nbsp;每页显示 _MENU_ 条记录",
-            "sZeroRecords": "抱歉， 没有找到",
-            "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
-            "sInfoEmpty": '',
-            "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
-            "sSearch": "搜索",
-            "oPaginate": {
-                "sFirst": "首页",
-                "sPrevious": "前一页",
-                "sNext": "后一页",
-                "sLast": "尾页"
-            },
-            "sZeroRecords": "没有检索到数据",
-
-        }
-    });
-
-    $('#dbcopy_adg_his tbody').on('click', 'button#delrow', function () {
-        if (confirm("确定要删除该条数据？")) {
-            var table = $('#sample_1').DataTable();
-            var data = table.row($(this).parents('tr')).data();
-            $.ajax({
-                type: "POST",
-                url: "../../delete_current_process_run/",
-                data:
-                    {
-                        processrun_id: data.processrun_id
-                    },
-                success: function (data) {
-                    if (data == 1) {
-                        table.ajax.reload();
-                        alert("删除成功！");
-                    } else
-                        alert("删除失败，请于管理员联系。");
-                },
-                error: function (e) {
-                    alert("删除失败，请于管理员联系。");
-                }
-            });
-
-        }
-    });
+    }
 });
+
