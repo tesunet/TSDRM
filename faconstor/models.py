@@ -41,6 +41,34 @@ class UserInfo(models.Model):
     forgetpassword = models.CharField("修改密码地址", blank=True, null=True, max_length=50)
 
 
+class HostsManage(models.Model):
+    host_ip = models.CharField("主机IP", blank=True, null=True, max_length=50)
+    host_name = models.CharField("主机名称", blank=True, null=True, max_length=256)
+    os = models.CharField("系统", blank=True, null=True, max_length=50)
+    type = models.CharField("连接类型", blank=True, null=True, max_length=20)
+    username = models.CharField("用户名", blank=True, null=True, max_length=50)
+    password = models.CharField("密码", blank=True, null=True, max_length=50)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
+    config = models.TextField("主机参数", null=True, default="<root></root>")
+    pnode = models.ForeignKey('self', null=True, related_name='children', verbose_name='父节点')
+    nodetype = models.CharField("节点类型", blank=True, null=True, max_length=20)
+    sort = models.IntegerField("排序", blank=True, null=True)
+    remark = models.TextField("节点/客户端说明", null=True, default="")
+
+
+class CvClient(models.Model):
+    hostsmanage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name="客户端")
+    utils = models.ForeignKey("UtilsManage", null=True, verbose_name="关联工具")
+    client_id = models.IntegerField("源端client_id", blank=True, null=True)
+    client_name = models.CharField("源端client_name", blank=True, null=True, max_length=128)
+    type = models.TextField("客户端类型", blank=True, null=True)
+    agentType = models.TextField("应用类型", blank=True, null=True)
+    instanceName = models.TextField("实例名", blank=True, null=True)
+    info = models.TextField("客户端相关信息", blank=True, null=True)
+    destination = models.ForeignKey('self', blank=True, null=True, related_name='sourceclient', verbose_name="默认关联终端")
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
+
+
 class Process(models.Model):
     pnode = models.ForeignKey('self', blank=True, null=True, related_name='children', verbose_name='父节点')
     code = models.CharField("预案编号", blank=True, max_length=50)
@@ -52,9 +80,15 @@ class Process(models.Model):
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     sort = models.IntegerField("排序", blank=True, null=True)
     url = models.CharField("页面链接", blank=True, max_length=100)
-    type = models.CharField("预案类型", blank=True, max_length=100, null=True)
+    type = models.CharField("客户端类型", blank=True, max_length=100, null=True)
     color = models.CharField("颜色", blank=True, max_length=50)
     config = models.TextField("流程参数", null=True, default="<root></root>")
+    primary = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='主数据库',
+                                related_name="process_primary_set")
+    backprocess = models.ForeignKey('self', blank=True, null=True, verbose_name='回切流程',
+                                    related_name="process_backprocess_set")
+    hosts = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='关联客户端')
+    processtype = models.CharField("预案类型", blank=True, max_length=100, null=True)
 
 
 class Step(models.Model):
@@ -76,34 +110,6 @@ class Step(models.Model):
         (2, "否")
     )
     force_exec = models.IntegerField("流程关闭时强制执行", choices=force_exec_choices, null=True, default=2)
-
-
-class HostsManage(models.Model):
-    host_ip = models.CharField("主机IP", blank=True, null=True, max_length=50)
-    host_name = models.CharField("主机名称", blank=True, null=True, max_length=256)
-    os = models.CharField("系统", blank=True, null=True, max_length=50)
-    type = models.CharField("连接类型", blank=True, null=True, max_length=20)
-    username = models.CharField("用户名", blank=True, null=True, max_length=50)
-    password = models.CharField("密码", blank=True, null=True, max_length=50)
-    state = models.CharField("状态", blank=True, null=True, max_length=20)
-    config = models.TextField("主机参数", null=True, default="<root></root>")
-    pnode = models.ForeignKey('self', null=True, related_name='children', verbose_name='父节点')
-    nodetype = models.CharField("节点类型", blank=True, null=True, max_length=20)
-    sort = models.IntegerField("排序", blank=True, null=True)
-    remark = models.TextField("节点/客户端说明", null=True, default="")
-    
-
-class CvClient(models.Model):
-    hostsmanage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name="客户端")
-    utils = models.ForeignKey("UtilsManage", null=True, verbose_name="关联工具")
-    client_id = models.IntegerField("源端client_id", blank=True, null=True)
-    client_name = models.CharField("源端client_name", blank=True, null=True, max_length=128)
-    type = models.TextField("客户端类型", blank=True, null=True)
-    agentType = models.TextField("应用类型", blank=True, null=True)
-    instanceName = models.TextField("实例名", blank=True, null=True)
-    info = models.TextField("客户端相关信息", blank=True, null=True)
-    destination = models.ForeignKey('self', blank=True, null=True,related_name='sourceclient', verbose_name="默认关联终端")
-    state = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
 class Script(models.Model):
@@ -291,9 +297,9 @@ class Origin(models.Model):
 class ProcessSchedule(models.Model):
     dj_periodictask = models.OneToOneField(djmodels.PeriodicTask, null=True, verbose_name="定时任务")
     process = models.ForeignKey(Process, null=True, verbose_name="流程预案")
-    name = models.CharField("流程计划名称", null=True, default="", max_length=256)
-    remark = models.TextField("计划说明", null=True, default="")
-    state = models.CharField("状态", null=True, default="", max_length=20)
+    name = models.CharField("流程计划名称", blank=True, null=True, max_length=256)
+    remark = models.TextField("计划说明", null=True, blank=True)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
     schedule_type_choices = (
         (1, "每日"),
         (2, "每周"),

@@ -16,11 +16,12 @@
             <div id="form_div" class="portlet light bordered" hidden>
                 <div class="portlet-title">
                     <div class="caption font-green-sharp">
-                        <label id="title" class="caption-subject bold uppercase">{{ table.name }}</label>
+                        <label id="title" class="caption-subject bold uppercase"></label>
                     </div>
                 </div>
                 <div class="portlet-body form">
                     <form class="bs-example form-horizontal activate-form">{% csrf_token %}
+                        <input type="text" hidden id="is_superuser" name="is_superuser" value="{{is_superuser}}">
                         <input type="text" hidden id="id" name="id" value="">
                         <input type="text" hidden id="pid" name="pid" value="">
                         <input type="text" hidden id="my_type" name="my_type" value="">

@@ -6,7 +6,7 @@ function displayScriptTree() {
             "themes": {
                 "responsive": false,
             },
-            'data': tree_data,
+            'data': treeData,
             'multiple': false,  // 单选
         },
 
@@ -106,9 +106,11 @@ function displayParams(if_instance) {
 // 根据工具加载源客户端
 $("#utils").empty()
 for (var i=0; i<cv_client_data.length; i++){
-    $("#utils").append('<option value="' + cv_client_data[i].utils_id + '">' + cv_client_data[i].utils_name + '</option>');
     if (i==0){
+        $("#utils").append('<option value="' + cv_client_data[i].utils_id + '" selected>' + cv_client_data[i].utils_name + '</option>');
         loadOrigins(cv_client_data[i].utils_id);
+    } else {
+        $("#utils").append('<option value="' + cv_client_data[i].utils_id + '">' + cv_client_data[i].utils_name + '</option>');
     }
 }
 
@@ -118,12 +120,16 @@ function loadOrigins(utils_id){
         if (cv_client_data[i]["utils_id"] == utils_id){
             var origins = cv_client_data[i]["cv_client_list"];
             for (var j=0; j< origins.length; j++){
-                $("#origin").append('<option value="' + origins[j].id + '">' + origins[j].client_name + '(' + cv_client_data[i]["utils_name"] + ')</option>')
+                $("#origin").append('<option value="' + origins[j].id + '">' + origins[j].host_name + '(' + origins[j].client_name + ')</option>')
             }
             break;
         }
     }
 }
+
+$('#utils').change(function(){
+    loadOrigins($(this).val());
+})
 
 function loadHostsParams(){
     $.ajax({
@@ -159,7 +165,7 @@ function loadHostsParams(){
                 $('#host_div').show();
             }
         }
-    })
+    });
 }
 
 $('#host_id').change(function(){
@@ -168,7 +174,6 @@ $('#host_id').change(function(){
 
 $("#load_script").click(function () {
     var script_tree = $('#script_tree').jstree(true).get_selected(true);
-
     try {
         if (script_tree[0].type == "INTERFACE") {
             var data = script_tree[0].data;
@@ -271,6 +276,55 @@ function get_error_solved_process(process_id){
 
 var treedata = "";
 
+function getStepDetail(){
+    $.ajax({
+        type: "POST",
+        dataType: "JSON",
+        url: "../get_step_detail/",
+        data: {
+            id: $('#id').val(),
+        },
+        success: function (data) {
+            var status = data.status,
+                info = data.info,
+                data = data.data;
+            if (status == 0){
+                alert(info);
+            } else {
+                $("#time").val(data.time);
+                $("#approval option:selected").removeProp("selected");
+                $("#skip option:selected").removeProp("selected");
+                $("#rto_count_in option:selected").removeProp("selected");
+                $("#remark").val(data.remark);
+                $("#force_exec").val(data.force_exec);
+
+                var groupInfoList = data.allgroups.split("&");
+                for (var i = 0; i < groupInfoList.length - 1; i++) {
+                    var singlegroupInfoList = groupInfoList[i].split("+");
+                    if (singlegroupInfoList[0] == data.group) {
+                        $("#group").append('<option value="' + singlegroupInfoList[0] + '" selected>' + singlegroupInfoList[1] + '</option>')
+                    } else {
+                        $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
+                    }
+                }
+                $("#approval").find("option[value='" + data.approval + "']").prop("selected", true);
+                $("#skip").find("option[value='" + data.skip + "']").prop("selected", true);
+                $("#rto_count_in").find("option[value='" + data.rto_count_in + "']").prop("selected", true);
+                var scriptInfoList = data.scripts.split("&");
+                for (var i = 0; i < scriptInfoList.length - 1; i++) {
+                    var singleScriptInfoList = scriptInfoList[i].split("+");
+                    $("#se_1").append('<option value="' + singleScriptInfoList[0] + '">' + singleScriptInfoList[1] + '</option>')
+                }
+                var verifyItemsList = data.verifyitems.split("&");
+                for (var i = 0; i < verifyItemsList.length - 1; i++) {
+                    var singleVerifyItemsList = verifyItemsList[i].split("+");
+                    $("#se_2").append('<option value="' + singleVerifyItemsList[0] + '">' + singleVerifyItemsList[1] + '</option>')
+                }
+            }
+        }
+    });
+}
+
 // 定义构造树的函数
 function customTree() {
     $.ajax({
@@ -321,6 +375,7 @@ function customTree() {
                                 $("#title").text("新建");
                                 $("#id").val("0");
                                 $("#pid").val(obj.id);
+                                $('#remark').val("");
                                 $("#time").val("");
                                 $("#skip option:selected").removeProp("selected");
                                 $("#approval option:selected").removeProp("selected");
@@ -333,7 +388,6 @@ function customTree() {
                                     var singlegroupInfoList = groupInfoList[i].split("+");
                                     $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
                                 }
-                                // inst.add_node(obj);
                             }
                         },
                         "删除": {
@@ -341,11 +395,9 @@ function customTree() {
                             "action": function (data) {
                                 var inst = jQuery.jstree.reference(data.reference),
                                     obj = inst.get_node(data.reference);
-                                if (obj.children.length > 0)
+                                if (obj.children.length > 0){
                                     alert("节点下还有其他节点或功能，无法删除。");
-                                else if (obj.data.verify == "first_node") {
-                                    alert("该项为流程名称，无法删除。");
-                                } else {
+                                }else {
                                     if (confirm("确定要删除此节点？删除后不可恢复。")) {
                                         $.ajax({
                                             type: "POST",
@@ -413,11 +465,6 @@ function customTree() {
                     }
                 })
                 .bind('select_node.jstree', function (event, data) {
-                    if (data.node.data.verify == "first_node") {
-                        $("#formdiv").hide();
-                    } else {
-                        $("#formdiv").show();
-                    }
                     $("#se_1").empty();
                     $("#se_2").empty();
                     $("#group").empty();
@@ -425,56 +472,12 @@ function customTree() {
                     $("#id").val(data.node.id);
                     $("#pid").val(data.node.parent);
                     $("#name").val(data.node.text);
-                    $("#time").val(data.node.data.time);
-                    $("#approval option:selected").removeProp("selected");
-                    $("#skip option:selected").removeProp("selected");
-                    $("#rto_count_in option:selected").removeProp("selected");
-                    $("#remark").val(data.node.data.remark);
-                    $("#force_exec").val(data.node.data.force_exec);
-
-                    var groupInfoList = data.node.data.allgroups.split("&");
-                    for (var i = 0; i < groupInfoList.length - 1; i++) {
-                        var singlegroupInfoList = groupInfoList[i].split("+");
-                        if (singlegroupInfoList[0] == data.node.data.group) {
-                            $("#group").append('<option value="' + singlegroupInfoList[0] + '" selected>' + singlegroupInfoList[1] + '</option>')
-                        } else {
-                            $("#group").append('<option value="' + singlegroupInfoList[0] + '">' + singlegroupInfoList[1] + '</option>')
-                        }
+                    if (data.node.parent != "#"){
+                        getStepDetail();
+                        $("#formdiv").show();
+                    } else {
+                        $("#formdiv").hide();
                     }
-                    $("#approval").find("option[value='" + data.node.data.approval + "']").prop("selected", true);
-                    $("#skip").find("option[value='" + data.node.data.skip + "']").prop("selected", true);
-                    $("#rto_count_in").find("option[value='" + data.node.data.rto_count_in + "']").prop("selected", true);
-                    if (data.node.data.verify != "first_node") {
-                        var scriptInfoList = data.node.data.scripts.split("&");
-                        for (var i = 0; i < scriptInfoList.length - 1; i++) {
-                            var singleScriptInfoList = scriptInfoList[i].split("+");
-                            $("#se_1").append('<option value="' + singleScriptInfoList[0] + '">' + singleScriptInfoList[1] + '</option>')
-                        }
-                    }
-                    if (data.node.data.verify != "first_node") {
-                        var verifyItemsList = data.node.data.verifyitems.split("&");
-                        for (var i = 0; i < verifyItemsList.length - 1; i++) {
-                            var singleVerifyItemsList = verifyItemsList[i].split("+");
-                            $("#se_2").append('<option value="' + singleVerifyItemsList[0] + '">' + singleVerifyItemsList[1] + '</option>')
-                        }
-                    }
-
-
-                    var eventNodeName = event.target.nodeName;
-                    if (eventNodeName == 'INS') {
-                        return;
-                    } else if (eventNodeName == 'A') {
-                        var $subject = $(event.target).parent();
-                        if ($subject.find('ul').length > 0) {
-                            $("#title").text($(event.target).text())
-
-                        } else {
-                            //选择的id值
-                            alert($(event.target).parents('li').attr('id'));
-                        }
-                    }
-
-
                 })
             // context-menu
             $('#se_1').contextmenu({
@@ -497,13 +500,14 @@ function customTree() {
                         $("#error_solved").val('');
                         $('#script_instance_name').val('');
                         $('#script_instance_remark').val('');
-                        $('#utils').val('')
+                        $('#utils option:first').prop("selected", true);
 
                         // 隐藏
                         $("#host_id_div").hide();
                         $("#script_text_div").hide();
                         $("#success_text_div").hide();
                         $("#log_address_div").hide();
+                        $("#sort_div").hide();
                         $("#origin_div").hide();
                         $("#commv_interface_div").hide();
                         $('#utils_id_div').hide();
@@ -552,7 +556,7 @@ function customTree() {
                                             $("#host_id").val(data.data.host_id);
                                             // >> Commvault
                                             $('#utils').val(data.data.utils_id)
-                                            $("#origin").val(data.data.origin_id);
+                                            $("#origin").val(data.data.primary_id);
                                             $("#commv_interface").val(data.data.commv_interface);
                                             $('#script_instance_name_div').show();
                                             $('#script_instance_remark_div').show();
@@ -918,13 +922,26 @@ $('#save').click(function () {
             if (data["result"] != "保存成功。") {
                 alert(data["result"])
             } else {
-                if (data["data"]) {
-                    $("#id").val(data.data);
-                }
                 alert("保存成功！");
-                $('#tree_2').jstree("destroy");
 
-                customTree();
+                if ($("#id").val() == "0") {
+                    $('#tree_2').jstree('create_node', $("#pid").val(), {
+                        "text": $("#name").val(),
+                        "id": data.data,
+                    }, "last", false, false);
+
+                    $("#id").val(data.data);
+                    $('#tree_2').jstree('deselect_all');
+                    $('#tree_2').jstree('select_node', $("#id").val(), true);
+                }
+                else {
+                    var curnode = $('#tree_2').jstree('get_node', $("#id").val());
+                    var name = $('#name').val();
+                    var newtext = curnode.text.replace(curnode.text, name);
+                    curnode.text = newtext
+                    $('#tree_2').jstree('set_text', $("#id").val(), newtext);
+                    $('#title').text(newtext);
+                }
             }
         },
         error: function (e) {

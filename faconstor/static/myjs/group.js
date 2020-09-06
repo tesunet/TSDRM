@@ -1,4 +1,4 @@
-$(function() {
+$(function () {
     $('#se_1').contextmenu({
         target: '#context-menu2',
         onItem: function (context, e) {
@@ -21,9 +21,9 @@ $(function() {
                             type: "POST",
                             url: "../groupdel/",
                             data:
-                                {
-                                    id: $("#se_1").find('option:selected').attr("id"),
-                                },
+                            {
+                                id: $("#se_1").find('option:selected').attr("id"),
+                            },
                             success: function (data) {
                                 if (data == "删除成功。") {
                                     $("#se_1").find('option:selected').remove();
@@ -63,11 +63,11 @@ $(function() {
             dataType: 'json',
             url: "../groupsave/",
             data:
-                {
-                    id: $("#id").val(),
-                    name: $("#name").val(),
-                    remark: $("#remark").val(),
-                },
+            {
+                id: $("#id").val(),
+                name: $("#name").val(),
+                remark: $("#remark").val(),
+            },
             success: function (data) {
                 var myres = data["res"];
                 var mydata = data["data"];
@@ -97,9 +97,9 @@ $(function() {
             dataType: 'json',
             url: "../getusertree/",
             data:
-                {
-                    id: $("#id").val(),
-                },
+            {
+                id: $("#id").val(),
+            },
             success: function (data) {
                 $('#tree_2').data('jstree', false).empty();
 
@@ -136,10 +136,10 @@ $(function() {
             type: "POST",
             url: "../groupsaveusertree/",
             data:
-                {
-                    id: $("#id").val(),
-                    selecteduser: $("#tree_2").jstree("get_checked", null, true).toString(),
-                },
+            {
+                id: $("#id").val(),
+                selecteduser: $("#tree_2").jstree("get_checked", null, true).toString(),
+            },
             success: function (data) {
                 $('#static1').modal('hide');
                 alert(data);
@@ -160,10 +160,9 @@ $(function() {
             type: "POST",
             dataType: 'json',
             url: "../getfuntree/",
-            data:
-                {
-                    id: $("#id").val(),
-                },
+            data: {
+                id: $("#id").val(),
+            },
             success: function (data) {
                 $('#tree_3').data('jstree', false).empty();
 
@@ -190,8 +189,7 @@ $(function() {
                 alert("页面出现错误，请于管理员联系。");
             }
         });
-
-    })
+    });
 
     $('#savefun').click(function () {
         $.ajax({
@@ -199,10 +197,10 @@ $(function() {
             type: "POST",
             url: "../groupsavefuntree/",
             data:
-                {
-                    id: $("#id").val(),
-                    selectedfun: $("#tree_3").jstree("get_checked", null, true).toString(),
-                },
+            {
+                id: $("#id").val(),
+                selectedfun: $("#tree_3").jstree("get_checked", null, true).toString(),
+            },
             success: function (data) {
                 $('#static2').modal('hide');
                 alert(data);
@@ -212,9 +210,7 @@ $(function() {
                 alert("页面出现错误，请于管理员联系。");
             }
         });
-
-
-    })
+    });
 
     $('#host').click(function () {
         $.ajax({
@@ -271,7 +267,6 @@ $(function() {
             }
         });
     });
-
     $('#flow').click(function () {
         $.ajax({
             type: "POST",
@@ -324,7 +319,7 @@ $(function() {
             }
         });
     });
-})
+});
 
 
 

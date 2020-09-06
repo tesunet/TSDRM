@@ -2,107 +2,146 @@
 
 {% block content %}
 
-    <div style="height:10px"></div>
-    <div class="portlet-body">
-        <div class="row">
-            <div id="p_tree" class="col-md-4 tree-demo"></div>
-            <div class="col-md-8">
-                <div id="form_div" class="portlet light bordered" {{ table.right_info_hidden }}>
-                    <div class="portlet-title">
-                        <div class="caption font-green-sharp">
-                            <label id="title" class="caption-subject bold uppercase">{{ table.name }}</label>
-                        </div>
+<div style="height:10px"></div>
+<div class="portlet-body">
+    <div class="row">
+        <div id="p_tree" class="col-md-4 tree-demo"></div>
+        <div class="col-md-8">
+            <div id="form_div" class="portlet light bordered" hidden>
+                <div class="portlet-title">
+                    <div class="caption font-green-sharp">
+                        <label id="title" class="caption-subject bold uppercase"></label>
                     </div>
-                    <div class="portlet-body form">
-                        <form action="#" class="form-horizontal" method="post">{% csrf_token %}
-                            <input type="text" hidden id="id" name="id" value="{{ table.id }}">
-                            <input type="text" hidden id="pid" name="pid" value="{{ table.pid }}">
+                </div>
+                <div class="portlet-body form">
+                    <form class="form-horizontal" id="p_form">{% csrf_token %}
+                        <input type="text" hidden id="id" name="id">
+                        <input type="text" hidden id="pid" name="pid">
+                        <input type="text" hidden id="my_type" name="my_type">
+                        <input type="text" hidden id="p_backs" name="p_backs" value="{{ p_backs }}">
+                        <div id="processdiv">
                             <div class="form-body">
                                 <div class="form-group" style="margin-top:-20px">
                                     <label class="col-md-2 control-label">所属节点</label>
                                     <div class="col-md-10">
                                         <input readonly type="text" class="form-control" id="pname" name="pname"
-                                               placeholder="所属节点" value="{{ table.pname }}">
+                                            placeholder="所属节点">
                                         <div class="form-control-focus"></div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-md-2 control-label"><span style="color:red; ">*</span>预案编号</label>
+                                    <label class="col-md-2 control-label"><span style="color:red; ">*</span>场景名称</label>
                                     <div class="col-md-10">
-                                        <input id="code" type="text" name="code" class="form-control" value="{{ table.code }}">
+                                        <input id="name" type="text" name="name" class="form-control">
                                         <div class="form-control-focus"></div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; ">*</span>预案名称</label>
+                                    <label class="col-md-2 control-label"><span style="color:red; ">*</span>场景类型</label>
                                     <div class="col-md-10">
-                                        <input id="name" type="text" name="name" class="form-control" value="{{ table.name }}">
+                                        <select class="form-control" id="processtype" name="processtype">
+                                            <option value="1">主流程</option>
+                                            <option value="2">回切流程</option>
+                                            <option value="3">排错流程</option>
+                                        </select>
                                         <div class="form-control-focus"></div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; ">*</span>预案类型</label>
+                                    <label class="col-md-2 control-label"><span style="color:red; ">*</span>客户端类型</label>
                                     <div class="col-md-10">
                                         <select class="form-control" id="type" name="type">
-                                            <option value="Commvault" {% if table.type == "Commvault" %}selected{% endif %}>Commvault</option>
-                                            <option value="Falconstor" {% if table.type == "Falconstor" %}selected{% endif %}>Falconstor</option>
+                                            <option value="Commvault">Commvault</option>
+                                            <option value="Falconstor">Falconstor</option>
+{#                                            <option value="Oracle ADG">Oracle ADG</option>#}
+{#                                            <option value="MYSQL">MYSQL</option>#}
                                         </select>
                                         <div class="form-control-focus"></div>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>预案描述</label>
-                                    <div class="col-md-10">
-                                        <input id="remark" type="text" name="remark" class="form-control" value="{{ table.remark }}">
-                                        <div class="form-control-focus"></div>
-    
+                                <div id="adg_div" {% if table.type == "Oracle ADG" %}{% else %}hidden{% endif %}>
+                                    <div class="form-group">
+                                        <label class="col-md-2 control-label"><span style="color:red; ">*</span>主数据库</label>
+                                        <div class="col-md-10">
+                                            <select class="form-control" id="process_main_database"
+                                                name="process_main_database">
+                                                {% for md in all_main_database %}
+                                                <option value="{{ md.main_database_id }}">{{ md.main_database_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-control-focus"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" id="processtype_div" hidden>
+                                        <label class="col-md-2 control-label">回切流程</label>
+                                        <div class="col-md-10">
+                                            <select class="form-control" id="process_back" name="process_back">
+
+                                            </select>
+                                            <div class="form-control-focus"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="cv_clients_div">
+                                    <div class="form-group">
+                                        <label class="col-md-2 control-label">关联客户端</label>
+                                        <div class="col-md-10">
+                                            <select class="form-control" id="cv_client" name="cv_client">
+                                                <option value="">无</option>
+                                                {% for host in hosts %}
+                                                    <option value="{{ host.id }}">{{ host.host_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-control-focus"></div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; ">*</span>是否签到</label>
+                                    <label class="col-md-2 control-label"><span style="color:red; "></span>场景描述</label>
+                                    <div class="col-md-10">
+                                        <input id="remark" type="text" name="remark" class="form-control"
+                                            value="{{ table.remark }}">
+                                        <div class="form-control-focus"></div>
+
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label"><span style="color:red; ">*</span>是否签到</label>
                                     <div class="col-md-10">
                                         <select class="form-control" id="sign" name="sign">
-                                            <option value="1" {% if table.sign == "1" %}selected{% endif %}>是</option>
-                                            <option value="0" {% if table.sign == "0" %}selected{% endif %}>否</option>
+                                            <option value="1">是</option>
+                                            <option value="0">否</option>
                                         </select>
                                         <div class="form-control-focus"></div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>RTO</label>
+                                    <label class="col-md-2 control-label"><span style="color:red; "></span>RTO</label>
                                     <div class="col-md-10">
-                                        <input id="rto" type="number" name="rto" class="form-control" value="{{ table.rto }}">
+                                        <input id="rto" type="number" name="rto" class="form-control">
                                         <div class="form-control-focus"></div>
-    
                                     </div>
                                 </div>
-    
+
                                 <div class="form-group">
                                     <label class="col-md-2 control-label"><span style="color:red; "></span>RPO</label>
                                     <div class="col-md-10">
-                                        <input id="rpo" type="number" name="rpo" class="form-control" value="{{ table.rpo }}">
+                                        <input id="rpo" type="number" name="rpo" class="form-control">
                                         <div class="form-control-focus"></div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>排序</label>
+                                    <label class="col-md-2 control-label"><span style="color:red; "></span>排序</label>
                                     <div class="col-md-10">
-                                        <input id="sort" type="number" name="sort" class="form-control" value="{{ table.sort }}">
+                                        <input id="sort" type="number" name="sort" class="form-control">
                                         <div class="form-control-focus"></div>
-    
+
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="col-md-2 control-label"><span
-                                            style="color:red; "></span>图表颜色</label>
+                                    <label class="col-md-2 control-label"><span style="color:red; "></span>图表颜色</label>
                                     <div class="col-md-10">
-                                        <input id="process_color" type="text" name="process_color" class="form-control" value="{{ table.color }}">
+                                        <input id="process_color" type="text" name="process_color" class="form-control">
                                         <div class="form-control-focus"></div>
                                     </div>
                                 </div>
@@ -117,10 +156,11 @@
                                             </ul>
                                         </div>
                                         <button hidden id="param_edit" tabindex="-1" data-toggle="modal"
-                                                data-target="#static01"></button>
+                                            data-target="#static01"></button>
                                         <select id="param_se" size="7" class="form-control" style="overflow-y:auto;">
                                             {% for p in table.config %}
-                                            <option value="{{ p.variable_name }}">{{ p.param_name }}:{{ p.variable_name }}:{{ p.param_value }}</option>
+                                            <option value="{{ p.variable_name }}">
+                                                {{ p.param_name }}:{{ p.variable_name }}:{{ p.param_value }}</option>
                                             {% endfor %}
                                         </select>
                                         <input type="text" id="config" name="config" hidden>
@@ -128,68 +168,92 @@
                                 </div>
                             </div>
                             <div class="form-actions noborder" style="margin-top:-30px;text-align:center">
-                                <button type="submit" id="interface_save" name="interface_save" class="btn blue">
+                                <button type="button" id="interface_save" name="interface_save" class="btn blue">
                                     保存
                                 </button>
                             </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-    <div id="static01" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog" style="margin-top: 150px;width:580px">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                    <h4 class="modal-title">参数配置</h4>
-                    <input id="param_operate" type="text" value="new" hidden>
-                </div>
-                <div class="panel-body">
-                    <div class="bs-example form-horizontal activate-form">
-                        <div class="form-body" id="params">
-
                         </div>
-                        <div class="form-actions ">
-                            <div class="modal-footer">
-                                <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
-                                </button>
-                                <button type="button" id="params_save" name="params_save" class="btn green">保存
-                                </button>
+                        <div id="nodediv">
+                            <div class="form-body">
+                                <div class="form-group" style="margin-top:-20px">
+                                    <label class="col-md-2 control-label">所属节点</label>
+                                    <div class="col-md-10">
+                                        <input readonly type="text" class="form-control" id="node_pname"
+                                               name="node_pname" placeholder="所属节点">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
+                                    <label class="col-md-2 control-label" for="form_control_1">节点名称</label>
+                                    <div class="col-md-10">
+                                        <input type="text" class="form-control" id="node_name" name="node_name"
+                                               placeholder="节点名称">
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                                <div class="form-group ">
+                                    <label class="col-md-2 control-label" for="form_control_1">节点说明</label>
+                                    <div class="col-md-10">
+                                        <textarea class="form-control" placeholder="最大限制2500个汉字" rows="4"
+                                                  id="node_remark"
+                                                  name="node_remark"></textarea>
+                                        <div class="form-control-focus"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-actions noborder" style="margin-top:-30px;text-align:center">
+                                <button type="button" id="node_save" name="node_save" class="btn blue">保存</button>
                             </div>
                         </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+<div id="static01" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog" style="margin-top: 150px;width:580px">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                <h4 class="modal-title">参数配置</h4>
+                <input id="param_operate" type="text" value="new" hidden>
+            </div>
+            <div class="panel-body">
+                <div class="bs-example form-horizontal activate-form">
+                    <div class="form-body" id="params">
+
+                    </div>
+                    <div class="form-actions ">
+                        <div class="modal-footer">
+                            <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
+                            </button>
+                            <button type="button" id="params_save" name="params_save" class="btn green">保存
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
-
 {% block script %}
-    <script>
-        var treeData = {{ tree_data|safe }}
-        $.ajaxSetup({
-            data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
-        });
-    </script>
-    <link href="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.css" rel="stylesheet"
-          type="text/css"/>
-    <link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css"/>
-    <link href="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.css" rel="stylesheet"
-          type="text/css"/>
-    <script src="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.js"
-            type="text/javascript"></script>
-    <script src="/static/assets/global/plugins/datatables/datatables.min.js" type="text/javascript"></script>
-    <script src="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.js"
-            type="text/javascript"></script>
-    // context-munu
-    <script src="/static/assets/global/plugins/bootstrap-contextmenu/bootstrap-contextmenu.js"
-            type="text/javascript"></script>
+<link href="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.css" rel="stylesheet"
+    type="text/css" />
+<link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css" />
+<link href="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.css" rel="stylesheet"
+    type="text/css" />
+<script src="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.js" type="text/javascript"></script>
+<script src="/static/assets/global/plugins/datatables/datatables.min.js" type="text/javascript"></script>
+<script src="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.js"
+    type="text/javascript"></script>
+// context-munu
+<script src="/static/assets/global/plugins/bootstrap-contextmenu/bootstrap-contextmenu.js"
+    type="text/javascript"></script>
 
-    <!-- jstree -->
-    <link href="/static/assets/global/plugins/jstree/dist/themes/default/style.min.css" rel="stylesheet" type="text/css"/>
-    <script src="/static/assets/global/plugins/jstree/dist/jstree.min.js" type="text/javascript"></script>
+<!-- jstree -->
+<link href="/static/assets/global/plugins/jstree/dist/themes/default/style.min.css" rel="stylesheet" type="text/css" />
+<script src="/static/assets/global/plugins/jstree/dist/jstree.min.js" type="text/javascript"></script>
 {% endblock %}
-

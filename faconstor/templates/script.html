@@ -12,29 +12,24 @@
         <div class="row">
             <div id="tree_2" class="col-md-4 tree-demo"></div>
             <div class="col-md-8">
-                <div id="form_div" class="portlet light bordered" {{ table.right_info_hidden }}>
-                    {% if errors %}
-                        {% for error in errors %}
-                            <div ID="error" class="alert alert-danger ">{{ error }}</div>
-                            <span> {% endfor %}</span>
-                    {% endif %}
+                <div id="form_div" class="portlet light bordered" hidden>
                     <div class="portlet-title">
                         <div class="caption font-green-sharp">
-                            <label id="title" class="caption-subject bold uppercase">{{ table.name }}</label>
+                            <label id="title" class="caption-subject bold uppercase"></label>
                         </div>
                     </div>
                     <div class="portlet-body form">
-                        <form action="#" class="form-horizontal" method="post">{% csrf_token %}
-                            <input type="text" hidden id="id" name="id" value="{{ table.id }}">
-                            <input type="text" hidden id="pid" name="pid" value="{{ table.pid }}">
-                            <input type="text" hidden id="my_type" name="my_type" value="{{ table.my_type }}">
-                            <div id="interface" {{ table.interface_hidden }}>
+                        <form class="form-horizontal" id="s_form">{% csrf_token %}
+                            <input type="text" hidden id="id" name="id">
+                            <input type="text" hidden id="pid" name="pid">
+                            <input type="text" hidden id="my_type" name="my_type">
+                            <div id="interface" hidden>
                                 <div class="form-body">
                                     <div class="form-group" style="margin-top:-20px">
                                         <label class="col-md-2 control-label">所属节点</label>
                                         <div class="col-md-10">
                                             <input readonly type="text" class="form-control" id="pname" name="pname"
-                                                   placeholder="所属节点" value="{{ table.pname }}">
+                                                   placeholder="所属节点">
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
@@ -42,8 +37,7 @@
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; ">*</span>接口编号</label>
                                         <div class="col-md-10">
-                                            <input id="code" type="text" name="code" class="form-control"
-                                                   value="{{ table.code }}">
+                                            <input id="code" type="text" name="code" class="form-control">
                                             <div class="form-control-focus"></div>
 
                                         </div>
@@ -52,8 +46,7 @@
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; ">*</span>接口名称</label>
                                         <div class="col-md-10">
-                                            <input id="name" type="text" name="name" class="form-control "
-                                                   value="{{ table.name }}">
+                                            <input id="name" type="text" name="name" class="form-control ">
                                             <div class="form-control-focus"></div>
 
                                         </div>
@@ -63,34 +56,34 @@
                                                 style="color:red; ">*</span>接口类型</label>
                                         <div class="col-md-10">
                                             <select class="form-control" id="interface_type" name="interface_type">
-                                                {% for it in table.interface_type_list %}
-                                                    <option value="{{ it.value }}" {{ it.selected }}>{{ it.value }}</option>
-                                                {% endfor %}
+                                                <option value="Commvault">Commvault</option>
+                                                <option value="Linux">Linux</option>
+                                                <option value="Windows">Windows</option>
                                             </select>
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
-                                    <div class="form-group" id="commv_interface_div" {{ table.interface_divs.commv_interface_div }}>
+                                    <div class="form-group" id="commv_interface_div">
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; ">*</span>类名</label>
                                         <div class="col-md-10">
-                                            <input type="text" class="form-control" id="commv_interface" name="commv_interface" value="{{ table.commv_interface }}">
+                                            <input type="text" class="form-control" id="commv_interface" name="commv_interface">
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
-                                    <div class="form-group" id="script_text_div" {{ table.interface_divs.script_text_div }}>
+                                    <div class="form-group" id="script_text_div" hidden>
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; ">*</span>脚本内容
                                             <i title="{% verbatim %}流程参数: {{}} 脚本参数: [[]] 主机参数: (()) {% endverbatim %}"
                                                class="fa fa-question-circle"></i></label>
                                         <div class="col-md-10">
                                     <textarea name="script_text" id="script_text" class="form-control"
-                                              rows="8">{{ table.script_text }}</textarea>
+                                              rows="8"></textarea>
                                             <div class="form-control-focus"></div>
 
                                         </div>
                                     </div>
-                                    <div class="form-group" id="script_params_div" {{ table.interface_divs.script_text_div }}>
+                                    <div class="form-group" id="script_params_div" hidden>
                                         <label class="col-md-2 control-label">脚本参数</label>
                                         <div class="col-md-10">
                                             <div id="context-menu2">
@@ -106,36 +99,31 @@
                                                     data-target="#static01"></button>
                                             <select id="param_se" size="7" class="form-control"
                                                     style="overflow-y:auto;">
-                                                {% for p in table.insert_params %}
-                                                    <option value="{{ p.variable_name }}">{{ p.param_name }}: {{ p.param_value }}</option>
-                                                {% endfor %}
+
                                             </select>
-                                            <input type="text" id="insert_params" name="insert_params"
-                                                   value="{{ table.insert_params_json }}" hidden>
+                                            <input type="text" id="insert_params" name="insert_params" hidden>
                                         </div>
                                     </div>
-                                    <div class="form-group"
-                                         id="success_text_div" {{ table.interface_divs.success_text_div }}>
+                                    <div class="form-group" id="success_text_div" hidden>
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; "></span>SUCCESSTEXT</label>
                                         <div class="col-md-10">
                                             <input id="success_text" type="text" name="success_text"
-                                                   class="form-control" value="{{ table.success_text }}">
+                                                   class="form-control">
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
                                     <div class="form-group ">
                                         <label class="col-md-2 control-label" for="form_control_1">接口说明</label>
                                         <div class="col-md-10">
-                                            <textarea class="form-control" placeholder="最大限制2500个汉字" rows="4"
-                                                      id="remark" name="remark">{{ table.remark }}</textarea>
+                                            <textarea class="form-control" placeholder="最大限制2500个汉字" rows="4" id="remark" name="remark"></textarea>
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
 
                                 </div>
                                 <div class="form-actions noborder" style="margin-top:-30px;text-align:center">
-                                    <button type="submit" id="interface_save" name="interface_save" class="btn blue">
+                                    <button type="button" id="interface_save" name="interface_save" class="btn blue">
                                         保存
                                     </button>
                                 </div>
@@ -146,7 +134,7 @@
                                         <label class="col-md-2 control-label">所属节点</label>
                                         <div class="col-md-10">
                                             <input readonly type="text" class="form-control" id="node_pname"
-                                                   name="node_pname" placeholder="所属节点" value="{{ table.node_pname }}">
+                                                   name="node_pname" placeholder="所属节点">
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
@@ -154,7 +142,7 @@
                                         <label class="col-md-2 control-label" for="form_control_1">名称</label>
                                         <div class="col-md-10">
                                             <input type="text" class="form-control" id="node_name" name="node_name"
-                                                   placeholder="组织名称" value="{{ table.node_name }}">
+                                                   placeholder="组织名称">
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
@@ -163,7 +151,7 @@
                                         <div class="col-md-10">
                                             <textarea class="form-control" placeholder="最大限制2500个汉字" rows="4"
                                                       id="node_remark"
-                                                      name="node_remark">{{ table.node_remark }}</textarea>
+                                                      name="node_remark"></textarea>
                                             <div class="form-control-focus"></div>
 
                                         </div>
@@ -172,7 +160,7 @@
 
                                 </div>
                                 <div class="form-actions noborder" style="margin-top:-30px;text-align:center">
-                                    <button type="submit" id="node_save" name="node_save" class="btn blue">保存</button>
+                                    <button type="button" id="node_save" name="node_save" class="btn blue">保存</button>
                                 </div>
                             </div>
 
@@ -212,9 +200,6 @@
 {% endblock %}
 
 {% block script %}
-    <script>
-        var treeData = {{tree_data|safe}};
-    </script>
     <link href="/static/assets/global/plugins/jquery-multi-select/css/multi-select.css" rel="stylesheet"
           type="text/css"/>
     <link href="/static/assets/global/plugins/jstree/dist/themes/default/style.min.css" rel="stylesheet"

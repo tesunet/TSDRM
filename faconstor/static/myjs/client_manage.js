@@ -58,7 +58,7 @@ function getClientree() {
                             "icon": false
                         }
                     },
-                    "contextmenu": {
+                    "contextmenu":$('#is_superuser').val()=="True"?{
                         "items": {
                             "create": null,
                             "rename": null,
@@ -151,7 +151,12 @@ function getClientree() {
                             },
 
                         }
-                    },
+                    }:{"items": {
+                            "create": null,
+                            "rename": null,
+                            "remove": null,
+                            "ccp": null,
+                        }},
                     "plugins": ["contextmenu", "dnd", "types", "role"]
                 })
                     .on('move_node.jstree', function (e, data) {

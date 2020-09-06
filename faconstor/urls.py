@@ -2,6 +2,9 @@ from django.conf.urls import url
 from faconstor.views import *
 from faconstor.dashboard_views import *
 from faconstor.client_views import *
+from faconstor.system_views import *
+from faconstor.config_views import *
+from faconstor.search_views import *
 from django.views.generic.base import RedirectView
 
 
@@ -28,6 +31,9 @@ urlpatterns = [
 
     # 系统维护
     url(r'^organization/$', organization, {'funid': '61'}),
+    url(r'^get_org_tree/$', get_org_tree),
+    url(r'^get_org_detail/$', get_org_detail),
+    url(r'^org_user_save/$', org_user_save),
     url(r'^orgdel/$', orgdel),
     url(r'^orgmove/$', orgmove),
     url(r'^orgpassword/$', orgpassword),
@@ -39,12 +45,15 @@ urlpatterns = [
     url(r'^getfuntree/$', getfuntree),
     url(r'^groupsavefuntree/$', groupsavefuntree),
     url(r'^function/$', function, {'funid': '63'}),
+    url(r'^get_fun_tree/$', get_fun_tree),
+    url(r'^get_fun_detail/$', get_fun_detail),
+    url(r'^fun_save/$', fun_save),
     url(r'^fundel/$', fundel),
     url(r'^funmove/$', funmove),
     url(r'^get_all_client_tree/$', get_all_client_tree),
     url(r'^group_save_host_tree/$', group_save_host_tree),
     url(r'^get_all_process_tree/$', get_all_process_tree),
-    url(r'^group_save_process_tree/$', group_save_process_tree),    
+    url(r'^group_save_process_tree/$', group_save_process_tree),
 
     # 主机管理
     url(r'^hosts_manage/$', hosts_manage, {'funid': '68'}),
@@ -52,11 +61,13 @@ urlpatterns = [
     url(r'^hosts_manage_data/$', hosts_manage_data),
     url(r'^hosts_manage_del/$', hosts_manage_del),
 
-    # 预案管理
+    # 配置管理
     url(r'^script/$', script, {'funid': '32'}),
     url(r'^scriptdel/$', scriptdel),
-    url(r'^scriptsave/$', scriptsave),
     url(r'^script_move/$', script_move),
+    url(r'^get_script_detail/$', get_script_detail),
+    url(r'^get_script_tree/$', get_script_tree),
+    url(r'^script_save/$', script_save),
 
     url(r'^processconfig/$', processconfig, {'funid': '31'}),
     url(r'^processscriptsave/$', processscriptsave),
@@ -64,11 +75,13 @@ urlpatterns = [
     url(r'^remove_script/$', remove_script),
     url(r'^setpsave/$', setpsave),
     url(r'^custom_step_tree/$', custom_step_tree),
-    url(r'^processconfig/$', processconfig, {'funid': '63'}),
+    url(r'^get_step_detail/$', get_step_detail),
     url(r'^del_step/$', del_step),
     url(r'^move_step/$', move_step),
     url(r'^get_all_groups/$', get_all_groups),
     url(r'^processdesign/$', process_design, {"funid": "33"}),
+    url(r'^get_process_tree/$', get_process_tree),
+    url(r'^get_process_detail/$', get_process_detail),
     url(r'^process_save/$', process_save),
     url(r'^process_del/$', process_del),
     url(r'^process_move/$', process_move),
@@ -78,8 +91,6 @@ urlpatterns = [
     url(r'^display_params/$', display_params),
     url(r'^load_hosts_params/$', load_hosts_params),
     url(r'^get_error_solved_process/$', get_error_solved_process),
-    url(r'^solve_error/$', solve_error),
-    url(r'^get_error_sovled_status/$', get_error_sovled_status),
 
     # 切换演练
     url(r'^falconstorswitch/(?P<process_id>\d+)$', falconstorswitch),
@@ -99,6 +110,9 @@ urlpatterns = [
     url(r'^walkthroughindex/(\d+)/$', walkthroughindex),
     url(r'^get_walkthrough_index_data/$', get_walkthrough_index_data),
     url(r'^walkthrough_run_invited/$', walkthrough_run_invited),
+
+    url(r'^solve_error/$', solve_error),
+    url(r'^get_error_sovled_status/$', get_error_sovled_status),
     # 演练报告
     url(r'^walkthrough_pdf/$', walkthrough_pdf),
     url(r'^get_walkthrough_info/$', get_walkthrough_info),
@@ -125,7 +139,7 @@ urlpatterns = [
 
     # 历史查询
     url(r'^custom_pdf_report/$', custom_pdf_report),
-    url(r'^falconstorsearch/$', falconstorsearch, {'funid': '64'}),
+    url(r'^restore_search/$', falconstorsearch, {'funid': '64'}),
     url(r'^falconstorsearchdata/$', falconstorsearchdata),
     url(r'^tasksearch/$', tasksearch, {'funid': '65'}),
     url(r'^tasksearchdata/$', tasksearchdata),

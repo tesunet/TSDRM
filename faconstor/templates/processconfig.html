@@ -3,10 +3,9 @@
 {% block content %}
     <header class="panel-heading" style="height:40px;border-color: white;background-color: white;">
         <div class="row" style="margin-top: -7px">
-            <div class="col-md-2 col-lg-2" style="margin-top: 5px"></div>
             <div class="col-md-10 col-lg-10">
-
-                <select class="form-control" id="process" name="process" style="width:250px; float:right;">
+                <label style="float:left;margin-top: 5px">选择场景：</label>
+                <select class="form-control" id="process" name="process" style="width:250px; float:left;">
                     {% for process in processlist %}
                         <option value="{{ process.id }}"
                                 {% if process_id == process.id %}selected{% endif %}>{{ process.name }} </option>
@@ -441,7 +440,7 @@
                 csrfmiddlewaretoken: '{{ csrf_token }}'
             },
         });
-        var tree_data = {{tree_data|safe}};
+        var treeData = {{tree_data|safe}};
         var cv_client_data = {{cv_client_data|safe}};
     </script>
 

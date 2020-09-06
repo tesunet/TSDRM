@@ -31,6 +31,7 @@ def client_manage(request, funid):
     return render(request, 'client_manage.html',
                   {'username': request.user.userinfo.fullname,
                    "pagefuns": getpagefuns(funid, request=request),
+                   "is_superuser":request.user.is_superuser
                   })
 
 
