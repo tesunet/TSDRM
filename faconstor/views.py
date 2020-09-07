@@ -1,4 +1,5 @@
 # coding:utf-8
+from mimetypes import add_type
 import time
 import datetime
 import sys
@@ -1615,7 +1616,7 @@ def userpassword(request):
     return HttpResponse(result)
 
 
-def get_params(config):
+def get_params(config, add_type=None):
     """
     <root>
         <param param_name="1" variable_name="2" param_value="3"/>
@@ -1631,11 +1632,19 @@ def get_params(config):
         config = etree.XML(pre_config)
     param_nodes = config.xpath("//param")
     for pn in param_nodes:
-        param_list.append({
-            "param_name": pn.attrib.get("param_name", ""),
-            "variable_name": pn.attrib.get("variable_name", ""),
-            "param_value": pn.attrib.get("param_value", ""),
-        })
+        if not add_type:
+            param_list.append({
+                "param_name": pn.attrib.get("param_name", ""),
+                "variable_name": pn.attrib.get("variable_name", ""),
+                "param_value": pn.attrib.get("param_value", ""),
+            })
+        else:
+            param_list.append({
+                "param_name": pn.attrib.get("param_name", ""),
+                "variable_name": pn.attrib.get("variable_name", ""),
+                "param_value": pn.attrib.get("param_value", ""),
+                "type": add_type
+            })
     return param_list
 
 

@@ -214,13 +214,34 @@
                                 </div>
                             </div>
                             <div class="form-group" id="script_text_div" hidden>
-                                <label class="col-md-2 control-label">脚本内容
-                                    <i title="{% verbatim %}流程参数: {{}} 脚本参数: [[]] 主机参数: (()) {% endverbatim %}"
-                                       class="fa fa-question-circle"></i></label>
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>脚本内容
+                                        <a style="color: #000000" data-toggle="collapse" data-parent="#accordion" href="#collapse1">
+                                            <i class="fa fa-question-circle" title='点击查看字符串格式'></i></a>
+                                    </label>
                                 <div class="col-md-10">
-                                    <textarea name="script_text" id="script_text" class="form-control"
-                                              rows="8" disabled></textarea>
+                                    <textarea name="script_text" id="script_text" class="form-control" rows="8"></textarea>
                                     <div class="form-control-focus"></div>
+                                </div>
+                                <div id="collapse1" class="col-md-offset-2 col-md-10 panel-collapse collapse">
+                                    <div class="panel-body">
+                                        <b>传参方式：</b><br>
+                                        流程参数: {{escape_dict}} 脚本参数: [[]] 主机参数: (())<br>
+                                        系统保留参数：<br>
+                                        &nbsp&nbsp&nbsp&nbsp主机：<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _host_ip (主机地址)	<br>		
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _host_name (主机名)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _host_os (主机系统类型)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _host_username (主机用户名)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _host_password (主机密码)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _cv_cli_id (客户端ID)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _cv_cli_name (客户端名称)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _cv_cli_type (客户端类型)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _cv_cli_agentType (应用类型)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _cv_cli_instanceName (应用实例)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _cv_cli_std_id (目标端ID)<br>
+                                        &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp _cv_cli_std_name (目标端名称)<br>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-group" id="success_text_div" hidden>

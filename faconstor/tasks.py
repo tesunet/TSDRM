@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from genericpath import exists
 from logging import log
 from celery import shared_task
 import datetime
@@ -142,9 +143,60 @@ def exec_script(steprunid, username, fullname):
 def content_load_params(script_instance):
     """
     脚本中传入参数
-    :return:
+        脚本参数 info
+        主机参数 info + HostsManage(表所有字段信息) + CvClient(表所有字段信息)
+        流程参数 info + Process(表所有字段信息)
+    :return: 整合参数后脚本内容
     """
-    params = eval(script_instance.params)
+    from .views import get_params
+    params = eval(script_instance.params)  # 包含所有参数与值的映射关系
+
+    # 加上特定参数 --> HostsManage CvClient Process 等表下字段的值
+    hm = script_instance.hosts_manage
+    if hm:
+        hm_spc = {  # 特定主机参数(字段)
+            "_host_ip": hm.host_ip,
+            "_host_name": hm.host_name,
+            "_host_os": hm.os,
+            "_host_type": hm.type,
+            "_host_username": hm.username,
+            "_host_password": hm.password,
+        }
+        hm_spc_params = [{
+            "variable_name": k,
+            "param_value": v,
+            "type": "HOST",
+        } for k, v in hm_spc.items() if k]
+        hm_cfg_params = get_params(hm.config, add_type="HOST")  # 主机参数
+        
+        params.extend(hm_spc_params)
+        params.extend(hm_cfg_params)
+        hms = hm.cvclient_set.exclude(state="9")
+        cv_cli = hms[0] if hms.exists() else ""  # 主机下的客户端
+        if cv_cli:
+            cv_cli_spc = {   # 特定客户端参数(字段)
+                "_cv_cli_id": cv_cli.client_id,
+                "_cv_cli_name": cv_cli.client_name,
+                "_cv_cli_agentType": cv_cli.agentType,
+                "_cv_cli_instanceName": cv_cli.instanceName,
+                "_cv_cli_std_id": cv_cli.destination.client_id if cv_cli.destination else "",
+                "_cv_cli_std_name": cv_cli.destination.client_name if cv_cli.destination else ""
+            }
+            cv_cli_spc_params = [{
+                "variable_name": k,
+                "param_value": v,
+                "type": "HOST",
+            } for k, v in cv_cli_spc.items() if k]
+            params.extend(cv_cli_spc_params)
+    try:
+        p = script_instance.step.process
+        p_spc = {}  # 流程特定参数 暂无
+        p_cgf_params = get_params(p.config, add_type="PROCESS")
+        params.extend(p_cgf_params) # 流程参数
+    except Exception as e:
+        print(e)
+
+    # config fields >> params参数字典
     script = script_instance.script
     script_text = script.script_text
     # 匹配出参数，替换
@@ -174,24 +226,24 @@ def content_load_params(script_instance):
             if variable_name.strip() == param["variable_name"]:
                 param_value = param["param_value"]
                 break
-        return param_value
+        return str(param_value) if param_value else ""
 
-    # 流程参数参数 注意空格
+    # 流程参数
     process_variable_list, process_variable_list_with_symbol = get_variable_name(script_text, "PROCESS")
     for n, pv in enumerate(process_variable_list):
-        param_value = get_value_from_params(pv, params)
+        param_value = get_value_from_params(pv, params)     
         script_text = script_text.replace(process_variable_list_with_symbol[n], param_value)
 
     # 主机参数
-    host_variable_list, host_variable_list_with_symbol = get_variable_name(script_text, "HOST")
+    host_variable_list, host_variable_list_with_symbol = get_variable_name(script_text, "HOST")  
     for n, hv in enumerate(host_variable_list):
         param_value = get_value_from_params(hv, params)
         script_text = script_text.replace(host_variable_list_with_symbol[n], param_value)
     # 脚本参数
-    script_variable_list, script_variable_list_with_symbol = get_variable_name(script_text, "SCRIPT")
+    script_variable_list, script_variable_list_with_symbol = get_variable_name(script_text, "SCRIPT")   # 获取脚本实例相关参数名称
     for n, sv in enumerate(script_variable_list):
-        param_value = get_value_from_params(sv, params)
-        script_text = script_text.replace(script_variable_list_with_symbol[n], param_value)
+        param_value = get_value_from_params(sv, params)     # 从参数键值字典中获取参数的值
+        script_text = script_text.replace(script_variable_list_with_symbol[n], param_value)   # 替换参数值
 
     return script_text
 

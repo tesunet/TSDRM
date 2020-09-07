@@ -853,10 +853,12 @@ def processconfig(request, funid):
         tree_data.append(root)
     tree_data = json.dumps(tree_data, ensure_ascii=False)
 
+    escape_dict = "{{}}"
+
     return render(request, 'processconfig.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
                    "processlist": processlist, "process_id": process_id, "all_hosts_manage": all_hosts_manage,
-                   "tree_data": tree_data, "cv_client_data": cv_client_data})
+                   "tree_data": tree_data, "cv_client_data": cv_client_data, "escape_dict": escape_dict})
 
 
 @login_required
@@ -1641,24 +1643,24 @@ def display_params(request):
                 } for x in cur_params]
 
         else:
-            # 流程参数
-            try:
-                process = Process.objects.get(id=int(process_id))
-            except:
-                pass
-            else:
-                process_param_list = get_params(process.config)
-                process_variable_list = get_variable_name(script_text, "PROCESS")
-                for pv in process_variable_list:
-                    for pp in process_param_list:
-                        if pv.strip() == pp["variable_name"]:
-                            data.append({
-                                "param_name": pp["param_name"],
-                                "variable_name": pp["variable_name"],
-                                "param_value": pp["param_value"],
-                                "type": "PROCESS"
-                            })
-                            break
+            # # 流程参数
+            # try:
+            #     process = Process.objects.get(id=int(process_id))
+            # except:
+            #     pass
+            # else:
+            #     process_param_list = get_params(process.config)
+            #     process_variable_list = get_variable_name(script_text, "PROCESS")
+            #     for pv in process_variable_list:
+            #         for pp in process_param_list:
+            #             if pv.strip() == pp["variable_name"]:
+            #                 data.append({
+            #                     "param_name": pp["param_name"],
+            #                     "variable_name": pp["variable_name"],
+            #                     "param_value": pp["param_value"],
+            #                     "type": "PROCESS"
+            #                 })
+            #                 break
 
             script_param_list = get_params(script.config)
             script_variable_list = get_variable_name(script_text, "SCRIPT")
@@ -2460,9 +2462,11 @@ def get_script_node(parent, select_id):
 
 @login_required
 def script(request, funid):
+    escape_dict = "{{}}"
     return render(request, 'script.html', {
         'username': request.user.userinfo.fullname,
         "pagefuns": getpagefuns(funid, request=request),
+        "escape_dict": escape_dict
     })
 
 
