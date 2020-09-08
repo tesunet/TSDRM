@@ -1314,7 +1314,7 @@ $(document).ready(function () {
  * 启动流程
  */
 $("#confirm").click(function () {
-    if($("#confirmtext")!="确认启动流程") {
+    if($("#confirmtext").val()!="确认启动流程") {
         alert("请在文本框内输入\"确认启动流程\"");
     }
     else{
