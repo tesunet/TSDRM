@@ -1344,7 +1344,7 @@ $("#confirm").click(function () {
         $.ajax({
             type: "POST",
             dataType: 'json',
-            url: "../cv_oracle_run/",
+            url: "../falconstorrun/",
             data:
                 {
                     processid: process_id,
