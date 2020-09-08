@@ -99,8 +99,7 @@
                                 <div class="form-group">
                                     <label class="col-md-2 control-label"><span style="color:red; "></span>场景描述</label>
                                     <div class="col-md-10">
-                                        <input id="remark" type="text" name="remark" class="form-control"
-                                            value="{{ table.remark }}">
+                                        <input id="remark" type="text" name="remark" class="form-control">
                                         <div class="form-control-focus"></div>
 
                                     </div>
@@ -158,10 +157,7 @@
                                         <button hidden id="param_edit" tabindex="-1" data-toggle="modal"
                                             data-target="#static01"></button>
                                         <select id="param_se" size="7" class="form-control" style="overflow-y:auto;">
-                                            {% for p in table.config %}
-                                            <option value="{{ p.variable_name }}">
-                                                {{ p.param_name }}:{{ p.variable_name }}:{{ p.param_value }}</option>
-                                            {% endfor %}
+
                                         </select>
                                         <input type="text" id="config" name="config" hidden>
                                     </div>

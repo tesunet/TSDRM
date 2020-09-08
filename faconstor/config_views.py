@@ -625,7 +625,7 @@ def process_save(request):
     rto = request.POST.get('rto', '')
     rpo = request.POST.get('rpo', '')
     sort = request.POST.get('sort', '')
-    color = request.POST.get('color', '')
+    color = request.POST.get('process_color', '')
     cv_client = request.POST.get('cv_client', '')
     type = request.POST.get('type', '')
     nodetype = request.POST.get('my_type', '')
