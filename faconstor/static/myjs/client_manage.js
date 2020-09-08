@@ -347,7 +347,6 @@ function getClientree() {
                                             $("#div_cv").hide();
                                             $("#cv_del").hide();
                                         }
-
                                     }
                                     else {
                                         $("#host_id").val("0");
@@ -1384,5 +1383,10 @@ $("#confirm").click(function () {
             }
         });
     }
+});
+
+$('#static').on("show.bs.modal", function(){
+    $('#confirmtext').val("");
+    $('#run_reason').val("");
 });
 
