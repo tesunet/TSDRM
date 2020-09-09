@@ -1267,7 +1267,9 @@ def create_process_run(*args, **kwargs):
                 myprocessrun.state = "RUN"
                 process_type = myprocessrun.process.type
                 if process_type.upper() == "COMMVAULT":
-                    cv_restore_params_save(myprocessrun)
+                    # 传入的客户端参数
+                    cv_params = kwargs.get("cv_params", {})
+                    cv_restore_params_save(myprocessrun, **cv_params)
 
                 myprocessrun.save()
                 mystep = cur_process.step_set.exclude(state="9")
@@ -1308,38 +1310,62 @@ def create_process_run(*args, **kwargs):
                     exec_process.delay(myprocessrun.id)
 
 
-def cv_restore_params_save(processrun):
+def cv_restore_params_save(processrun, **kwargs):
     """
     保存 Commvault Oracle 恢复需要的参数
-    Args:
-        processrun 流程对象
+    1.默认客户端存储info
+    2.流程启动前传入参数，写入ProcessRun.info
+    @param processrun {orm object}: 流程对象
+    @param pr_params {dict object}: 传入流程参数
     """
-    # 计划流程用的是默认 恢复选项
-    # 计划流程如果是Commvault 在流程中首个 客户端 对应的 恢复选项 写到ProcessRun
-    try:
-        pri_id, std_id, cv_client_info = "", "", ""
-        process = processrun.process
-
-        # 过滤所有脚本
-        all_steps = process.step_set.exclude(state="9")
-        for cur_step in all_steps:
-            script_instances = cur_step.scriptinstance_set.exclude(state="9")
-            for script_instance in script_instances:
-                if script_instance.primary:
-                    pri = script_instance.primary
-                    pri_id = pri.id
-                    std_id = pri.destination.id if pri.destination else ""
-                    cv_client_info = pri.info
-                    break
+    pr_params = kwargs
+    if not pr_params:  # 默认客户端参数
         try:
-            cv_client_info = etree.XML(cv_client_info)
-            node = cv_client_info.xpath("//param")[0]
-            node.attrib["pri_id"] = str(pri_id)
-            node.attrib["std_id"] = str(std_id)
-            content = etree.tounicode(node)
-            processrun.info = content
-            processrun.save()
+            pri_id, std_id, cv_client_info = "", "", ""
+            process = processrun.process
+
+            # 过滤所有脚本
+            all_steps = process.step_set.exclude(state="9")
+            for cur_step in all_steps:
+                script_instances = cur_step.scriptinstance_set.exclude(state="9")
+                for script_instance in script_instances:
+                    if script_instance.primary:
+                        pri = script_instance.primary
+                        pri_id = pri.id
+                        std_id = pri.destination.id if pri.destination else ""
+                        cv_client_info = pri.info
+                        break
+            try:
+                cv_client_info = etree.XML(cv_client_info)
+                node = cv_client_info.xpath("//param")[0]
+                node.attrib["pri_id"] = str(pri_id)
+                node.attrib["std_id"] = str(std_id)
+                content = etree.tounicode(node)
+                processrun.info = content
+                processrun.save()
+            except Exception as e:
+                logger.info(str(e))
         except Exception as e:
             logger.info(str(e))
-    except Exception as e:
-        logger.info(str(e))
+    else:   # 传入流程参数
+        root = etree.XML("<root><param/></root>")
+        params_nodes = root.xpath("//param")
+        recovery_time = None
+        if params_nodes:
+            params_node = params_nodes[0]
+            for k, v in pr_params.items():
+                if k == "recovery_time":
+                    try:
+                        recovery_time = datetime.datetime.strptime(v, "%Y-%m-%d %H:%M:%S")
+                    except Exception as e:
+                        pass
+                else:
+                    params_node.attrib['{0}'.format(k)] = str(v)
+
+        content = etree.tounicode(root)
+        processrun.info = content
+
+        # 若计划任务指定时间
+        if recovery_time:
+            processrun.recover_time = recovery_time
+        processrun.save()

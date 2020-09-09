@@ -1773,6 +1773,10 @@ def process_schedule(request, funid):
                             cv_params["pri_id"] = pri.id
                             cv_params["pri_name"] = pri.client_name
                             cv_params["std_id"] = std_id
+
+                            # 恢复时间点
+                            cv_params["recovery_time"] = param.attrib.get("recovery_time", "")
+
                             # Oracle
                             cv_params["data_path"] = param.attrib.get("data_path", "")
                             cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
@@ -2017,7 +2021,7 @@ def process_schedule_save(request):
                     # 默认关闭
                     cur_periodictask.enabled = 0
                     # 任务名称
-                    cur_periodictask.task = "drm.tasks.create_process_run"
+                    cur_periodictask.task = "faconstor.tasks.create_process_run"
                     cur_periodictask.kwargs = json.dumps({
                         'cur_process': cur_process.id,
                         'creatuser':  request.user.username,
@@ -2060,7 +2064,7 @@ def process_schedule_save(request):
                             cur_crontab_schedule.day_of_month = per_month if per_month else "*"
                             cur_crontab_schedule.save()
                             # 刷新定时器状态
-                            cur_periodictask.task = "drm.tasks.create_process_run"
+                            cur_periodictask.task = "faconstor.tasks.create_process_run"
                             cur_periodictask.kwargs = json.dumps({
                                 'cur_process': cur_process.id,
                                 'creatuser':  request.user.username,

@@ -183,12 +183,25 @@ $('#process_schedule_dt tbody').on('click', 'button#edit', function () {
             $('#pri_id').val(cv_params.pri_id);
             $('#pri').val(cv_params.pri_name);
             $('#std').val(cv_params.std_id);
+            var recovery_time = cv_params.recovery_time;
+
+            if (recovery_time){
+                $("input[name='optionsRadios'][value='2']").prop("checked", true);
+                $('#recovery_time').val(recovery_time);
+            } else {
+                $("input[name='optionsRadios'][value='1']").prop("checked", true);
+                $('#recovery_time').val("");
+            }
+
+            $('#std').val(cv_params.std_id);
 
             $('#Commvault_div').show();
         } else {
             $('#Commvault_div').hide();
         }
         displayAgentParams(cv_params, agent_type);
+
+        // 恢复时间
 
     } catch (e) {
         console.log(e)
