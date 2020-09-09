@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from genericpath import exists
 from logging import log
 from celery import shared_task
 import datetime

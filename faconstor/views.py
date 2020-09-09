@@ -1,5 +1,4 @@
 # coding:utf-8
-from mimetypes import add_type
 import time
 import datetime
 import sys
