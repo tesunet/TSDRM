@@ -122,7 +122,7 @@ class ServerByPara(object):
                     # data_init = str(stdout.read(), encoding='utf-8')
                     data_init = ServerByPara.handle_codec(stdout.read())
                     if data_init:
-                        data_init = "".join(data_init.split("\r\n"))
+                        data_init = " ".join(data_init.split("\r\n"))
 
                     if "command not found" in data_init:  # 命令不存在
                         exec_tag = 1

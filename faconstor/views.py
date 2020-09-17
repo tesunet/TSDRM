@@ -17,6 +17,7 @@ import logging
 from collections import OrderedDict
 import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from ast import literal_eval
 
 from django.utils.timezone import utc
 from django.utils.timezone import localtime
@@ -1940,7 +1941,7 @@ def falconstorswitch(request, process_id):
                     cv_params["overWrite"] = param.attrib.get("overWrite", "")
                     cv_params["inPlace"] = param.attrib.get("inPlace", "")
                     cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
-                    cv_params["sourcePaths"] = eval(param.attrib.get("sourcePaths", "[]"))
+                    cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
                     
                     # SQL Server
                     cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
@@ -3537,7 +3538,7 @@ def verify_items(request):
     verify_array = request.POST.get("verify_array", "")
     step_id = request.POST.get("step_id", "")
     try:
-        verify_array = eval(verify_array)
+        verify_array = literal_eval(verify_array)
     except:
         verify_array = []
     current_step_run = StepRun.objects.filter(id=step_id).exclude(state="9").select_related("processrun",

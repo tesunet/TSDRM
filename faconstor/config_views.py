@@ -2,6 +2,7 @@
 from django.db import reset_queries
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, Http404, HttpResponse, JsonResponse
+from ast import literal_eval
 
 from django.contrib.auth.decorators import login_required
 from faconstor.models import *
@@ -1631,7 +1632,7 @@ def display_params(request):
         if if_instance == "1":
             try:
                 script_instance = ScriptInstance.objects.get(id=int(script_instance_id))
-                cur_params = eval(script_instance.params)
+                cur_params = literal_eval(script_instance.params)
             except Exception as e:
                 print(e)
             else:
@@ -1787,7 +1788,7 @@ def process_schedule(request, funid):
                             cv_params["overWrite"] = param.attrib.get("overWrite", "")
                             cv_params["inPlace"] = param.attrib.get("inPlace", "")
                             cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
-                            cv_params["sourcePaths"] = eval(param.attrib.get("sourcePaths", "[]"))
+                            cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
 
                             # SQL Server
                             cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")

@@ -11,6 +11,7 @@ import logging
 import uuid
 import re
 from lxml import etree
+from ast import literal_eval
 
 from django.db import connection
 from django.db.models import Q
@@ -148,7 +149,7 @@ def content_load_params(script_instance):
     :return: 整合参数后脚本内容
     """
     from .views import get_params
-    params = eval(script_instance.params)  # 包含所有参数与值的映射关系
+    params = literal_eval(script_instance.params)  # 包含所有参数与值的映射关系
 
     # 加上特定参数 --> HostsManage CvClient Process 等表下字段的值
     hm = script_instance.hosts_manage

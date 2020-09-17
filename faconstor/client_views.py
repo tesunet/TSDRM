@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect, Http404, HttpResponse, JsonRespons
 from django.http import StreamingHttpResponse
 from django.db.models import Max
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from ast import literal_eval
 
 from .tasks import *
 from .views import getpagefuns,get_credit_info
@@ -400,7 +401,7 @@ def get_client_detail(request):
 
                         cvinfo["overWrite"] = param_el[0].attrib.get("overWrite", "")
                         cvinfo["destPath"] = param_el[0].attrib.get("destPath", "")
-                        cvinfo["sourcePaths"] = eval(param_el[0].attrib.get("sourcePaths", "[]"))
+                        cvinfo["sourcePaths"] = literal_eval(param_el[0].attrib.get("sourcePaths", "[]"))
 
                         cvinfo["mssqlOverWrite"] = param_el[0].attrib.get("mssqlOverWrite", "")
                 except:
