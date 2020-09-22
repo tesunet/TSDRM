@@ -83,6 +83,8 @@ class Process(models.Model):
     type = models.CharField("客户端类型", blank=True, max_length=100, null=True)
     color = models.CharField("颜色", blank=True, max_length=50)
     config = models.TextField("流程参数", null=True, default="<root></root>")
+    hosts_config = models.TextField("关联主机", null=True, default="<root></root>")
+
     primary = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='主数据库',
                                 related_name="process_primary_set")
     backprocess = models.ForeignKey('self', blank=True, null=True, verbose_name='回切流程',
