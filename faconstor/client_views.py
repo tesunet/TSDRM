@@ -1266,6 +1266,57 @@ def pro_del(request):
     })
 
 
+@login_required
+def processinsconfig(request, funid):
+    # 单机恢复预案
+    pro_list = []
+    pros = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="") | Q(type="NODE")).only("id", "name", "associated_hosts")
+    from .views import get_params
+    for pro in pros:
+        associated_hosts = pro.associated_hosts
+        try:
+            hosts = etree.XML(associated_hosts).xpath("//host")
+            associated_host_list = []
+            for h in hosts:
+                associated_host_list.append({
+                    "hosts_id": h.attrib.get("id", ""),
+                    "hosts_name": h.attrib.get("name", ""),
+                })
+
+            # 流程参数
+            process_param_list = get_params(pro.config)
+
+            pro_list.append({
+                "process_id": pro.id,
+                "process_name": pro.name,
+                "hosts": associated_host_list,
+                "process_param_list": process_param_list,
+            })
+        except Exception as e:
+            print(e)
+
+    hosts_manages = HostsManage.objects.exclude(state="9").only("id", "host_name", "config")
+    hosts_list = []
+    for hm in hosts_manages:
+        # 主机参数
+        host_param_list = get_params(hm.config)
+        hosts_list.append({
+            "id": hm.id,
+            "host_name": hm.host_name,
+            "host_param_list": host_param_list
+        })
+
+    return render(request, 'processinsconfig.html', {
+        'username': request.user.userinfo.fullname,
+        "pagefuns": getpagefuns(funid, request=request),
+        "is_superuser": request.user.is_superuser,
+        "pro_list": pro_list,
+        "pro_list_json": json.dumps(pro_list),
+        "hosts_manages": hosts_list,
+        "hosts_manages_json": json.dumps(hosts_list),
+    })
+
+
 def get_instance_list(um):
     # 解析出账户信息
     _, sqlserver_credit = get_credit_info(um.content)
