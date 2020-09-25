@@ -250,6 +250,7 @@ function getProcessInstancedata(host_id, empty=false) {
         }
 
         selectAssociatedHost();  // 注册选中事件
+        $('select[id^="hosts_manage_"]').prop('disabled', true);
         /**
          * 加载流程参数
          */
