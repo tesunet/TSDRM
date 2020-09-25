@@ -83,7 +83,7 @@ class Process(models.Model):
     type = models.CharField("客户端类型", blank=True, max_length=100, null=True)
     color = models.CharField("颜色", blank=True, max_length=50)
     config = models.TextField("流程参数", null=True, default="<root></root>")
-    hosts_config = models.TextField("关联主机", null=True, default="<root></root>")
+    associated_hosts = models.TextField("关联主机", null=True, default="<root></root>")
 
     primary = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='主数据库',
                                 related_name="process_primary_set")
@@ -91,6 +91,16 @@ class Process(models.Model):
                                     related_name="process_backprocess_set")
     hosts = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='关联客户端')
     processtype = models.CharField("预案类型", blank=True, max_length=100, null=True)
+
+
+class ProcessInstance(models.Model):
+    """
+    流程实例
+    """
+    process = models.ForeignKey(Process, blank=True, null=True, verbose_name="预案")
+    name = models.CharField("流程实例名称", blank=True, max_length=128)
+    config = models.TextField("流程参数/主机参数", default="</root>", null=True)
+    state = models.CharField("状态", blank=True, null=True, max_length=20)
 
 
 class Step(models.Model):
@@ -132,16 +142,17 @@ class Script(models.Model):
 class ScriptInstance(models.Model):
     script = models.ForeignKey(Script, blank=True, null=True, verbose_name='源接口')
     step = models.ForeignKey(Step, blank=True, null=True, verbose_name="步骤")
-    primary = models.ForeignKey("CvClient", blank=True, null=True, verbose_name='源端客户端')
-    utils = models.ForeignKey("UtilsManage", blank=True, null=True, verbose_name='工具')
+    primary = models.ForeignKey("CvClient", blank=True, null=True, verbose_name='源端客户端')  # 待删除
+    utils = models.ForeignKey("UtilsManage", blank=True, null=True, verbose_name='工具')  # 待删除
     name = models.CharField("接口实例名称", blank=True, max_length=500)
     remark = models.CharField("接口实例说明", blank=True, max_length=500)
     sort = models.IntegerField("执行顺序", blank=True, null=True)
     params = models.TextField("脚本内容参数", null=True, default="")
     log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
-    hosts_manage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='选择主机')
+    hosts_manage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='选择主机')  # 待删除
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     process = models.ForeignKey(Process, null=True, verbose_name="子流程(排错流程)")
+    associated_hosts = models.TextField("关联主机", null=True, default="</root>")
 
 
 class Walkthrough(models.Model):

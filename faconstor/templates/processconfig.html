@@ -1,20 +1,7 @@
 {% extends "base1.html" %}
 
 {% block content %}
-    <header class="panel-heading" style="height:40px;border-color: white;background-color: white;">
-        <div class="row" style="margin-top: -7px">
-            <div class="col-md-10 col-lg-10">
-                <label style="float:left;margin-top: 5px">选择场景：</label>
-                <select class="form-control" id="process" name="process" style="width:250px; float:left;">
-                    {% for process in processlist %}
-                        <option value="{{ process.id }}"
-                                {% if process_id == process.id %}selected{% endif %}>{{ process.name }} </option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-    </header>
-
+    <input type="text" value="{{process_id}}" name="process" id="process" hidden>
     <div style="height:10px"></div>
     <div class="portlet-body">
         <div class="row">
@@ -269,31 +256,12 @@
                                     <div class="form-control-focus"></div>
                                 </div>
                             </div>
-                            <div class="form-group" id="utils_id_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择工具</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="utils" name="utils">
-
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
-                            <div class="form-group" id="origin_div" hidden>
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择源客户端</label>
-                                <div class="col-md-10">
-                                    <input type="text" id="origin_data" value="{{cv_client_data}}" hidden>
-                                    <select class="form-control" id="origin" name="origin">
-                                            <option value=""></option>
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
                             <div class="form-group" id="host_id_div" hidden>
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择主机</label>
                                 <div class="col-md-10">
                                     <select class="form-control" id="host_id" name="host_id">
-                                        {% for host in all_hosts_manage %}
-                                            <option value="{{ host.id }}">{{ host.host_name }}</option>
+                                        {% for host in hosts_list %}
+                                            <option value="{{ host.hosts_id }}">{{ host.hosts_name }}</option>
                                         {% endfor %}
                                     </select>
                                     <div class="form-control-focus"></div>
@@ -462,7 +430,6 @@
             },
         });
         var treeData = {{tree_data|safe}};
-        var cv_client_data = {{cv_client_data|safe}};
     </script>
 
     <link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css"/>
@@ -495,4 +462,5 @@
     <script src="/static/assets/global/plugins/bootstrap-contextmenu/bootstrap-contextmenu.js"
             type="text/javascript"></script>
     <script src="/static/new/js/slimscroll/jquery.slimscroll.min.js"></script>
+    <script src="/static/myjs/processconfig.js" type="text/javascript"></script>
 {% endblock %}

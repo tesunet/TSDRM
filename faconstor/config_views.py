@@ -488,6 +488,20 @@ def get_process_detail(request):
         except Exception as e:
             print(e)
 
+        hosts_list = []
+        try:
+            associated_hosts = etree.XML(process.associated_hosts)
+
+            host_el = associated_hosts.xpath("//host")
+            for he in host_el:
+                hosts_list.append({
+                    "hosts_id": he.attrib.get("id", ""),
+                    "hosts_name": he.attrib.get("name", ""),
+                })
+        except Exception as e:
+            print(e)
+
+
         data = {
             "pname": process.pnode.name if process.pnode else "",
             "process_id": process.id,
@@ -502,6 +516,7 @@ def get_process_detail(request):
             "type": process.type,
             "processtype": process.processtype,
             "variable_param_list": param_list,
+            "hosts_list": hosts_list,
             "cv_client": process.hosts_id,
             "main_database": process.primary_id,
             "p_back": process.backprocess_id
@@ -631,16 +646,14 @@ def process_save(request):
     type = request.POST.get('type', '')
     nodetype = request.POST.get('my_type', '')
     processtype = request.POST.get('processtype', '')
-    config = request.POST.get('config', [])
+    config = request.POST.get('config', "[]")
+    associated_hosts = request.POST.get('associated_hosts', "[]")
     node_name = request.POST.get('node_name', '')
     node_remark = request.POST.get('node_name', '')
 
-    main_database = request.POST.get('process_main_database', '')
-    process_back = request.POST.get('process_back', '')
     try:
         id = int(id)
         pid = int(pid)
-        process_back = int(process_back)
         cv_client = int(cv_client)
     except Exception as e:
         pass
@@ -694,81 +707,85 @@ def process_save(request):
             info = '是否签到不能为空。'
             status = 0
         else:
-            try:
-                if type=="Oracle ADG" or type=="Oracle ADG":
-                    main_database = int(main_database)
-            except ValueError as e:
-                info = '主数据库不能为空。'
-                status = 0
+            # 流程参数
+            root = etree.Element("root")
+
+            if config:
+                config = json.loads(config)
+                # 动态参数
+                for c_config in config:
+                    param_node = etree.SubElement(root, "param")
+                    param_node.attrib["param_name"] = c_config["param_name"].strip()
+                    param_node.attrib["variable_name"] = c_config["variable_name"].strip()
+                    param_node.attrib["param_value"] = c_config["param_value"].strip()
+            xml_config = etree.tounicode(root)
+
+            # 关联主机
+            hosts_root = etree.Element("root")
+            if associated_hosts:
+                associated_hosts = json.loads(associated_hosts)
+                for ah in associated_hosts:
+                    hosts_node = etree.SubElement(hosts_root, "host")
+                    if ah["hosts_id"]:
+                        hosts_node.attrib["id"] = ah["hosts_id"]
+                    else:
+                        hosts_node.attrib["id"] = str(uuid.uuid1())
+                    hosts_node.attrib["name"] = ah["hosts_name"]
+            hosts_xml_config = etree.tounicode(hosts_root)
+
+            if id == 0:
+                try:
+                    processsave = Process()
+                    processsave.url = '/cv_oracler'
+                    processsave.name = name
+                    processsave.remark = remark
+                    processsave.sign = sign
+                    processsave.rto = rto if rto else None
+                    processsave.rpo = rpo if rpo else None
+                    processsave.sort = sort if sort else None
+                    processsave.color = color
+                    processsave.type = type
+                    processsave.processtype = processtype
+                    processsave.hosts_id = cv_client if cv_client else None
+                    processsave.config = xml_config
+                    processsave.associated_hosts = hosts_xml_config
+                    processsave.pnode_id = pid
+
+                    # 排序
+                    sort = 1
+                    try:
+                        max_sort = Process.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
+                            max_sort=Max('sort', distinct=True))["max_sort"]
+                        sort = max_sort + 1
+                    except:
+                        pass
+                    processsave.sort = sort
+
+                    processsave.save()
+                    select_id = processsave.id
+                except Exception as e:
+                    info = "保存失败：{0}".format(e)
+                    status = 0
             else:
-                # 流程参数
-                root = etree.Element("root")
-
-                if config:
-                    config = json.loads(config)
-                    # 动态参数
-                    for c_config in config:
-                        param_node = etree.SubElement(root, "param")
-                        param_node.attrib["param_name"] = c_config["param_name"].strip()
-                        param_node.attrib["variable_name"] = c_config["variable_name"].strip()
-                        param_node.attrib["param_value"] = c_config["param_value"].strip()
-                xml_config = etree.tounicode(root)
-
-                if id == 0:
-                    try:
-                        processsave = Process()
-                        processsave.url = '/cv_oracler'
-                        processsave.name = name
-                        processsave.remark = remark
-                        processsave.sign = sign
-                        processsave.rto = rto if rto else None
-                        processsave.rpo = rpo if rpo else None
-                        processsave.sort = sort if sort else None
-                        processsave.color = color
-                        processsave.type = type
-                        processsave.processtype = processtype
-                        processsave.primary_id = main_database
-                        processsave.backprocess_id = process_back
-                        processsave.hosts_id = cv_client if cv_client else None
-                        processsave.config = xml_config
-                        processsave.pnode_id = pid
-
-                        # 排序
-                        sort = 1
-                        try:
-                            max_sort = Process.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
-                                max_sort=Max('sort', distinct=True))["max_sort"]
-                            sort = max_sort + 1
-                        except:
-                            pass
-                        processsave.sort = sort
-
-                        processsave.save()
-                        select_id = processsave.id
-                    except Exception as e:
-                        info = "保存失败：{0}".format(e)
-                        status = 0
-                else:
-                    try:
-                        processsave = Process.objects.get(id=id)
-                        processsave.name = name
-                        processsave.remark = remark
-                        processsave.sign = sign
-                        processsave.rto = rto if rto else None
-                        processsave.rpo = rpo if rpo else None
-                        processsave.sort = sort if sort else None
-                        processsave.color = color
-                        processsave.type = type
-                        processsave.processtype = processtype
-                        processsave.primary_id = main_database
-                        processsave.backprocess_id = process_back
-                        processsave.hosts_id = cv_client if cv_client else None
-                        processsave.config = xml_config
-                        processsave.save()
-                        select_id = processsave.id
-                    except Exception as e:
-                        info = "保存失败：{0}".format(e)
-                        status = 0
+                try:
+                    processsave = Process.objects.get(id=id)
+                    processsave.name = name
+                    processsave.remark = remark
+                    processsave.sign = sign
+                    processsave.rto = rto if rto else None
+                    processsave.rpo = rpo if rpo else None
+                    processsave.sort = sort if sort else None
+                    processsave.color = color
+                    processsave.type = type
+                    processsave.processtype = processtype
+                    processsave.hosts_id = cv_client if cv_client else None
+                    processsave.config = xml_config
+                    processsave.associated_hosts = hosts_xml_config
+                    processsave.save()
+                    select_id = processsave.id
+                except Exception as e:
+                    info = "保存失败：{0}".format(e)
+                    status = 0
 
     return JsonResponse({
         "status": status,
@@ -800,32 +817,20 @@ def process_del(request):
 @login_required
 def processconfig(request, funid):
     process_id = request.GET.get("process_id", "")
-    if process_id:
+    hosts_list = []
+    try:
         process_id = int(process_id)
+        cur_process = Process.objects.get(id=process_id)
+        # 主机选项
+        associated_hosts = etree.XML(cur_process.associated_hosts)
+        hosts = associated_hosts.xpath("//host")
+        hosts_list = [{
+            "hosts_id": h.attrib.get("id", ""),
+            "hosts_name": h.attrib.get("name", ""),
+        } for h in hosts]
+    except Exception as e:
+        print(e)
 
-    processes = Process.objects.exclude(state="9").order_by("sort").filter(processtype="1",).exclude(type="NODE")
-    processlist = []
-    for process in processes:
-        processlist.append({"id": process.id, "code": process.code, "name": process.name})
-
-    # 主机选项
-    all_hosts_manage = HostsManage.objects.exclude(state="9")
-
-    # commvault源端客户端
-    # 工具
-    cv_client_data = []
-    utils = UtilsManage.objects.exclude(state="9").filter(util_type="Commvault")
-    for u in utils:
-        cv_client_list = u.cvclient_set.exclude(state="9").exclude(type=2).values("id", "client_name", "hostsmanage__host_name")
-        cv_client_data.append({
-            "utils_id": u.id,
-            "utils_name": u.name,
-            "cv_client_list": [{
-                "id": str(x["id"]),
-                "client_name": x["client_name"],
-                "host_name": x["hostsmanage__host_name"]
-            } for x in cv_client_list],
-        })
     # tree_data
     select_id = ""
     tree_data = []
@@ -858,8 +863,8 @@ def processconfig(request, funid):
 
     return render(request, 'processconfig.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                   "processlist": processlist, "process_id": process_id, "all_hosts_manage": all_hosts_manage,
-                   "tree_data": tree_data, "cv_client_data": cv_client_data, "escape_dict": escape_dict})
+                   "process_id": process_id, "hosts_list": hosts_list,
+                   "tree_data": tree_data, "escape_dict": escape_dict})
 
 
 @login_required
@@ -876,9 +881,14 @@ def processscriptsave(request):
 
     # add
     script_instance_name = request.POST.get('script_instance_name', '')  # 必填
-    utils = request.POST.get('utils', '')  # Commvault 必填
-    host_id = request.POST.get('host_id', '')  # Linux Window 必填
-    origin_id = request.POST.get('origin', '')  # Commvault必填
+
+    associated_hosts = request.POST.get('associated_hosts', '{}')
+
+    try:
+        associated_hosts = json.loads(associated_hosts)
+    except:
+        associated_hosts = {}
+
     log_address = request.POST.get('log_address', '')
     sort = request.POST.get('sort', '')
     script_instance_remark = request.POST.get('script_instance_remark', '')
@@ -891,18 +901,6 @@ def processscriptsave(request):
         script_id = int(script_id)
     except:
         script_id = None
-    try:
-        host_id = int(host_id)
-    except:
-        host_id = None
-    try:
-        origin_id = int(origin_id)
-    except:
-        origin_id = None
-    try:
-        utils = int(utils)
-    except:
-        utils = None
     try:
         script_instance_id = int(script_instance_id)
     except:
@@ -921,41 +919,40 @@ def processscriptsave(request):
         result["status"] = 0
         result["info"] = "接口实例名称未填写。"
     else:
+        associated_hosts_xml = "</root>"
+        if not associated_hosts:
+            return JsonResponse({
+                "status": 0,
+                "info": "未选择主机"
+            })
+        else:
+            try:
+                hosts_root = etree.Element("root")
+                hosts_node = etree.SubElement(hosts_root, "host")
+                hosts_node.attrib["id"] = associated_hosts["hosts_id"]
+                hosts_node.attrib["name"] = associated_hosts["hosts_name"]
+                associated_hosts_xml = etree.tounicode(hosts_root)
+            except Exception as e:
+                print(e)
+
         if interface_type == "Commvault":
-            if not utils:
-                return JsonResponse({
-                    "status": 0,
-                    "info": "未选择工具。"
-                })
-            if not origin_id:
-                return JsonResponse({
-                    "status": 0,
-                    "info": "未选择源客户端"
-                })
             create_data = {
                 "params": config,
                 "step_id": step_id,
                 "script_id": script_id,
                 "name": script_instance_name,
-                "utils_id": utils,
-                "primary_id": origin_id,
                 "log_address": log_address,
                 "sort": sort,
                 "process_id": error_solved,
                 "remark": script_instance_remark,
                 "hosts_manage_id": None,
+                "associated_hosts": associated_hosts_xml,
             }
         else:
-            if not host_id:
-                return JsonResponse({
-                    "status": 0,
-                    "info": "未选择主机"
-                })
             create_data = {
                 "params": config,
                 "step_id": step_id,
                 "script_id": script_id,
-                "hosts_manage_id": host_id,
                 "name": script_instance_name,
                 "log_address": log_address,
                 "sort": sort,
@@ -964,11 +961,11 @@ def processscriptsave(request):
 
                 "utils_id": None,
                 "primary_id": None,
+                "associated_hosts": associated_hosts_xml,
             }
 
         try:
             step = Step.objects.get(id=int(step_id))
-            script_id = int(script_id)
         except Exception as e:
             result["status"] = 0
             result["info"] = "保存脚本失败: {0}。".format(e)
@@ -1034,6 +1031,14 @@ def get_script_data(request):
         pass
     else:
         script = script_instance.script
+        host_id = ""
+
+        try:
+            associated_hosts = etree.XML(script_instance.associated_hosts)
+            host_id = associated_hosts.xpath("//host")[0].attrib.get("id", "")
+        except Exception as e:
+            print(e)
+
         data = {
             "script_id": script.id,
             "script_code": script.code,
@@ -1051,7 +1056,7 @@ def get_script_data(request):
             "script_instance_error_solved": script_instance.process_id,
             "params": "",
             "log_address": script_instance.log_address,
-            "host_id": script_instance.hosts_manage_id,
+            "host_id": host_id,
             "primary_id": script_instance.primary_id,
             "utils_id": script_instance.utils_id
         }
@@ -1644,25 +1649,6 @@ def display_params(request):
                 } for x in cur_params]
 
         else:
-            # # 流程参数
-            # try:
-            #     process = Process.objects.get(id=int(process_id))
-            # except:
-            #     pass
-            # else:
-            #     process_param_list = get_params(process.config)
-            #     process_variable_list = get_variable_name(script_text, "PROCESS")
-            #     for pv in process_variable_list:
-            #         for pp in process_param_list:
-            #             if pv.strip() == pp["variable_name"]:
-            #                 data.append({
-            #                     "param_name": pp["param_name"],
-            #                     "variable_name": pp["variable_name"],
-            #                     "param_value": pp["param_value"],
-            #                     "type": "PROCESS"
-            #                 })
-            #                 break
-
             script_param_list = get_params(script.config)
             script_variable_list = get_variable_name(script_text, "SCRIPT")
             for sv in script_variable_list:

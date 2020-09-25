@@ -69,7 +69,7 @@ urlpatterns = [
     url(r'^get_script_tree/$', get_script_tree),
     url(r'^script_save/$', script_save),
 
-    url(r'^processconfig/$', processconfig, {'funid': '31'}),
+    url(r'^processconfig/$', processconfig, {'funid': '33'}),
     url(r'^processscriptsave/$', processscriptsave),
     url(r'^get_script_data/$', get_script_data),
     url(r'^remove_script/$', remove_script),
@@ -248,5 +248,7 @@ urlpatterns = [
     url(r'^client_cv_get_restore_his/$', client_cv_get_restore_his),
     url(r'^get_cv_process/$', get_cv_process),
     url(r'^get_file_tree/$', get_file_tree),
-
+    url(r'^get_pro_data/$', get_pro_data),
+    url(r'^pro_save/$', pro_save),
+    url(r'^pro_del/$', pro_del),
 ]

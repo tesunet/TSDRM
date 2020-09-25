@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from ast import literal_eval
 
 from .tasks import *
-from .views import getpagefuns,get_credit_info
+from .views import getpagefuns, get_credit_info
 from faconstor.api import SQLApi
 
 import datetime
@@ -18,6 +18,7 @@ from ping3 import ping
 from collections import OrderedDict
 import cx_Oracle
 import pymysql
+from lxml import etree
 
 pythoncom.CoInitialize()
 import wmi
@@ -28,13 +29,54 @@ import wmi
 ######################
 @login_required
 def client_manage(request, funid):
+    # 单机恢复预案
+    pro_list = []
+    pros = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="") | Q(type="NODE")).only("id", "name", "associated_hosts")
+    from .views import get_params
+    for pro in pros:
+        associated_hosts = pro.associated_hosts
+        try:
+            hosts = etree.XML(associated_hosts).xpath("//host")
+            if len(hosts) == 1:  # 单机
+                associated_host_list = []
+                for h in hosts:
+                    associated_host_list.append({
+                        "hosts_id": h.attrib.get("id", ""),
+                        "hosts_name": h.attrib.get("name", ""),
+                    })
 
-    return render(request, 'client_manage.html',
-                  {'username': request.user.userinfo.fullname,
-                   "pagefuns": getpagefuns(funid, request=request),
-                   "is_superuser":request.user.is_superuser
-                  })
+                # 流程参数
+                process_param_list = get_params(pro.config)
 
+                pro_list.append({
+                    "process_id": pro.id,
+                    "process_name": pro.name,
+                    "hosts": associated_host_list,
+                    "process_param_list": process_param_list,
+                })
+        except Exception as e:
+            print(e)
+
+    hosts_manages = HostsManage.objects.exclude(state="9").only("id", "host_name", "config")
+    hosts_list = []
+    for hm in hosts_manages:
+        # 主机参数
+        host_param_list = get_params(hm.config)
+        hosts_list.append({
+            "id": hm.id,
+            "host_name": hm.host_name,
+            "host_param_list": host_param_list
+        })
+
+    return render(request, 'client_manage.html', {
+        'username': request.user.userinfo.fullname,
+        "pagefuns": getpagefuns(funid, request=request),
+        "is_superuser": request.user.is_superuser,
+        "pro_list": pro_list,
+        "pro_list_json": json.dumps(pro_list),
+        "hosts_manages": hosts_list,
+        "hosts_manages_json": json.dumps(hosts_list),
+    })
 
 
 def get_client_node(parent, select_id, request):
@@ -81,14 +123,7 @@ def get_client_node(parent, select_id, request):
             node[
                 "text"] = "<i class='jstree-icon jstree-themeicon fa fa-folder icon-state-warning icon-lg jstree-themeicon-custom'></i>" + \
                           node["text"]
-
         if child.nodetype == "CLIENT":
-            db_client = DbCopyClient.objects.exclude(state="9").filter(hostsmanage=child)
-            if len(db_client) > 0:
-                if db_client[0].dbtype == "1":
-                    node["text"] = "<img src = '/static/pages/images/oracle.png' height='24px'> " + node["text"]
-                if db_client[0].dbtype == "2":
-                    node["text"] = "<img src = '/static/pages/images/mysql.png' height='24px'> " + node["text"]
             cv_client = CvClient.objects.exclude(state="9").filter(hostsmanage=child)
             if len(cv_client) > 0:
                 node["text"] = "<img src = '/static/pages/images/cv.png' height='24px'> " + node["text"]
@@ -996,6 +1031,239 @@ def get_file_tree(request):
         treedata = json.dumps(treedata)
 
     return HttpResponse(treedata)
+
+
+@login_required
+def pro_save(request):
+    """
+    config:
+        <root>
+            <process>
+                <param param_name variable_name param_value></param>
+                <param param_name variable_name param_value></param>
+            </process>
+            <host hosts_id host_uuid host_given_name host_name>
+                <param param_name variable_name param_value></param>
+                <param param_name variable_name param_value></param>
+            </host>
+        </root>
+    :param request:
+    :return:
+    """
+    status = 1
+    info = "保存成功。"
+
+    p_id = request.POST.get("p_id", "")
+    pros_id = request.POST.get("pros_id", "")
+    pro_ins = request.POST.get("pro_ins", "")
+    config = request.POST.get("config", "{}")
+    config_xml = "</root>"
+    # JSON TO XML
+    try:
+        root = etree.Element("root")
+
+        config = json.loads(config)
+
+        process_config = config["PROCESS"]
+        hosts_config = config["HOSTS"]
+
+        process_node = etree.SubElement(root, "process")
+        for p in process_config:
+            params = p["params"]
+            for param in params:
+                params_node = etree.SubElement(process_node, "param")
+                params_node.attrib["param_name"] = param["param_name"]
+                params_node.attrib["variable_name"] = param["variable_name"]
+                params_node.attrib["param_value"] = param["param_value"]
+
+        for h in hosts_config:
+            host_node = etree.SubElement(root, "host")
+            host_node.attrib["host_id"] = h["host_id"]
+            host_node.attrib["host_uuid"] = h["host_uuid"]
+            host_node.attrib["host_given_name"] = h["host_given_name"]
+            host_node.attrib["host_name"] = h["host_name"]
+            params = h["params"]
+            for param in params:
+                params_node = etree.SubElement(host_node, "param")
+                params_node.attrib["param_name"] = param["param_name"]
+                params_node.attrib["variable_name"] = param["variable_name"]
+                params_node.attrib["param_value"] = param["param_value"]
+        config_xml = etree.tounicode(root)
+    except:
+        pass
+
+    try:
+        p_id = int(p_id)
+    except ValueError as e:
+        status = 0
+        info = "保存失败。"
+    else:
+        if not pro_ins:
+            status = 0
+            info = "流程实例名称未填写。"
+        else:
+            try:
+                pros_id = int(pros_id)
+            except:
+                status = 0
+                info = "预案未选择。"
+            else:
+                if p_id == 0:
+                    try:
+                        p_id = ProcessInstance.objects.create(**{
+                            "name": pro_ins,
+                            "process_id": pros_id,
+                            "config": config_xml,
+                        }).id
+                    except:
+                        status = 0
+                        info = "新增失败。"
+                else:
+                    try:
+                        ProcessInstance.objects.filter(id=p_id).update(**{
+                            "name": pro_ins,
+                            "process_id": pros_id,
+                            "config": config_xml,
+                        })
+                    except:
+                        status = 0
+                        info = "修改失败。"
+
+    return JsonResponse({
+        "status": status,
+        "info": info,
+        "data": p_id,
+    })
+
+
+@login_required
+def get_pro_data(request):
+    """
+    associated_hosts_xml:
+        <root>
+            <host hosts_id host_uuid host_given_name host_name></host>
+        </root>
+    config_xml:
+        <root>
+            <process>
+                <param param_name variable_name param_value></param>
+                <param param_name variable_name param_value></param>
+            </process>
+            <host hosts_id host_uuid host_given_name host_name>
+                <param param_name variable_name param_value></param>
+                <param param_name variable_name param_value></param>
+            </host>
+        </root>
+    :param request:
+    :return: id name process_name associated_name
+
+    """
+    result = []
+    h_id = request.GET.get("host_id", "")  # 若为单机 仅有一台 且ID相同
+    empty = request.GET.get("empty", "false")
+
+    if empty == "false":
+        p_inss = ProcessInstance.objects.exclude(state="9")
+        for p_ins in p_inss:
+            # 判断host_id是否相同，且仅有一台
+            is_same_host = False
+            is_single_host = False
+
+            config = {}
+            associated_name = ""
+
+            try:
+                config_root = etree.XML(p_ins.config)
+                # 流程参数
+                process_nodes = config_root.xpath("//process")
+                process_params = []
+                if process_nodes:
+                    p_param_nodes = process_nodes[0].xpath("./param")
+                    for p_param_node in p_param_nodes:
+                        process_params.append({
+                            "param_name": p_param_node.attrib.get("param_name", ""),
+                            "variable_name": p_param_node.attrib.get("variable_name", ""),
+                            "param_value": p_param_node.attrib.get("param_value", ""),
+                        })
+
+                config["PROCESS"] = [{
+                    "params": process_params,
+                }]
+                # 主机参数
+                host_root = etree.XML(p_ins.config)
+                host_nodes = host_root.xpath("//host")
+                host_list = []
+
+                if len(host_nodes) == 1:
+                    is_single_host = True
+
+                for host_node in host_nodes:
+                    host_id = host_node.attrib.get("host_id", "")
+                    host_uuid = host_node.attrib.get("host_uuid", "")
+                    host_given_name = host_node.attrib.get("host_given_name", "")
+                    host_name = host_node.attrib.get("host_name", "")
+
+                    host_params = []
+                    host_param_nodes = host_node.xpath("./param")
+                    for h_param_node in host_param_nodes:
+                        host_params.append({
+                            "param_name": h_param_node.attrib.get("param_name", ""),
+                            "variable_name": h_param_node.attrib.get("variable_name", ""),
+                            "param_value": h_param_node.attrib.get("param_value", ""),
+                        })
+                    host_list.append({
+                        "host_id": host_id,
+                        "host_uuid": host_uuid,
+                        "host_given_name": host_given_name,
+                        "host_name": host_name,
+                        "params": host_params
+                    })
+                    associated_name += "{0}, ".format(host_name)
+
+                    if host_id == h_id and h_id:
+                        is_same_host = True
+                        break
+                config["HOST"] = host_list
+            except:
+                pass
+
+            if all([is_same_host, is_single_host]) or not h_id:
+                result.append({
+                    "config": config,
+                    "id": p_ins.id,
+                    "name": p_ins.name,
+                    "process_id": p_ins.process_id,
+                    "process_name": p_ins.process.name if p_ins.process else "",
+                    "associated_name": associated_name if not associated_name.endswith(", ") else associated_name[:-2],
+                })
+
+    return JsonResponse({
+        "data": result,
+    })
+
+
+@login_required
+def pro_del(request):
+    status = 1
+    info = '删除成功。'
+    pro_ins_id = request.POST.get('pro_ins_id', '')
+
+    try:
+        pro_ins_id = int(pro_ins_id)
+    except:
+        status = 0
+        info = '网络异常。'
+    else:
+        pro_ins = ProcessInstance.objects.filter(id=pro_ins_id)
+        if pro_ins.exists():
+            pro_ins.update(**{'state': '9'})
+        else:
+            status = 0
+            info = '该流程实例不存在，删除失败。'
+    return JsonResponse({
+        'status': status,
+        'info': info
+    })
 
 
 def get_instance_list(um):

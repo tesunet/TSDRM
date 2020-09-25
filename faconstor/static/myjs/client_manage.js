@@ -26,6 +26,344 @@ function displayAgentParams(agent_type) {
     }
 }
 
+function selectAssociatedHost() {
+    /**
+     * 注册选中事件
+     */
+    $('select[id^="hosts_manage_"]').change(function () {
+        $('#host_div').show();
+        var ribbon_id = $(this).prop("id").split("_").pop(),
+            hosts_name = $(this).find('option:selected').text(),
+            hosts_manage_id = $(this).val();
+        $('#host_param_ribbon_' + ribbon_id).prev().text(hosts_name);
+        $('#host_param_ribbon_' + ribbon_id).parent().prop('h_id', hosts_manage_id);  // 主机ID
+
+        // 主机参数
+        var hosts_manage_list = [],
+            hosts_manage_id = $('#hosts_manage_' + ribbon_id).val();
+        try {
+            hosts_manage_list = JSON.parse($('#hosts_manage_list').val());
+        } catch (e) {
+        }
+        $('#host_param_ribbon_' + ribbon_id).empty();
+        for (var i = 0; i < hosts_manage_list.length; i++) {
+            if (hosts_manage_id == hosts_manage_list[i]["id"]) {
+                var host_param_list = hosts_manage_list[i]['host_param_list'];
+                var host_param_html = '';
+                for (var i = 0; i < host_param_list.length; i++) {
+                    var params = host_param_list[i];
+                    var pre_group_div = '',
+                        aft_group_div = '';
+                    if (i % 2 == 0) {  // 奇数(i+1)
+                        pre_group_div = '<div class="form-group">\n';
+                    } else {
+                        aft_group_div = '</div>';
+                    }
+                    if (i == host_param_list.length - 1) {
+                        aft_group_div = '</div>';
+                    }
+                    host_param_html += pre_group_div +
+                        '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
+                        '    <div class="col-md-4">\n' +
+                        '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
+                        '               value="' + params.param_value + '"\n' +
+                        '               >\n' +
+                        '        <div class="form-control-focus"></div>\n' +
+                        '    </div>\n' +
+                        aft_group_div;
+                }
+                $('#host_param_ribbon_' + ribbon_id).append(host_param_html);
+                break;
+            }
+        }
+    });
+}
+
+/**
+ * 流程实例表
+ *  empty 新增时的空列表
+ */
+function getProcessInstancedata(host_id, empty=false) {
+    if ($.fn.DataTable.isDataTable( '#pro_config' )){
+        $('#pro_config').dataTable().fnDestroy();
+    }
+    $('#pro_config').dataTable({
+        "destory": true,
+        "bAutoWidth": true,
+        "bSort": true,
+        "bProcessing": true,
+        "ajax": "../get_pro_data/?host_id=" + host_id + "&empty=" + empty,
+        "columns": [
+            {"data": "id"},
+            {"data": "name"},
+            {"data": "process_name"},
+            {"data": "associated_name"},
+            {"data": null}
+        ],
+        "columnDefs": [{
+            "targets": -1,
+            "data": null,
+            "width": "100px",
+            "render": function (data, type, full) {
+                return "<button  id='edit' title='编辑' data-toggle='modal' data-target='#static07' class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button>" +
+                    "<button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>" +
+                    "<button title='启动'  id='setup' class='btn btn-xs btn-primary' type='button' disabled><i class='fa fa-power-off'></i></button>";
+            },
+        }],
+        "oLanguage": {
+            "sLengthMenu": "每页显示 _MENU_ 条记录",
+            "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
+            "sInfoEmpty": "没有数据",
+            "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
+            "sSearch": "搜索",
+            "oPaginate": {
+                "sFirst": "首页",
+                "sPrevious": "前一页",
+                "sNext": "后一页",
+                "sLast": "尾页"
+            },
+            "sZeroRecords": "没有检索到数据",
+        },
+    });
+    $('#pro_config tbody').on('click', 'button#delrow', function () {
+        if (confirm("确定要删除该条数据？")) {
+            var table = $('#pro_config').DataTable();
+            var data = table.row($(this).parents('tr')).data();
+            $.ajax({
+                type: "POST",
+                url: "../pro_del/",
+                data: {
+                    pro_ins_id: data.id,
+                },
+                success: function (data) {
+                    var status = data.status,
+                        info = data.info;
+                    if (status == 1) {
+                        table.ajax.reload();
+                    }
+                    alert(info);
+                },
+                error: function (e) {
+                    alert("删除失败，请于管理员联系。");
+                }
+            });
+
+        }
+    });
+    $('#pro_config tbody').on('click', 'button#edit', function () {
+        var table = $('#pro_config').DataTable();
+        var data = table.row($(this).parents('tr')).data();
+        console.log(data.process_id)
+        $('#p_id').val(data.id);
+        $('#pro_ins').val(data.name);
+        $('#pros').val(data.process_id);
+
+        /**
+         * 加载关联主机
+         * 主机参数
+         */
+        var HOST = data.config.HOST,
+            PROCESS = data.config.PROCESS,
+            process_name = data.process_name;
+
+        $('#associated_host_div').empty();
+        $('#host_param_div').empty();
+        if (HOST.length > 0) {
+            $('#host_div').show();
+        } else {
+            $('#host_div').hide();
+        }
+        for (var i = 0; i < HOST.length; i++) {
+            var cur_host = HOST[i];
+            // 关联主机
+            //      供选主机的所有选项 以及选中selected选项
+            var host_options_html = "";
+            var hosts_manage_list = $('#hosts_manage_list').val();
+            try {
+                hosts_manage_list = JSON.parse(hosts_manage_list);
+            } catch (e) {
+                hosts_manage_list = [];
+            }
+            for (var M = 0; M < hosts_manage_list.length; M++) {
+                if (cur_host['host_id'] == hosts_manage_list[M]['id']) {
+                    host_options_html += '<option value="' + hosts_manage_list[M]['id'] + '" selected>' + hosts_manage_list[M]['host_name'] + '</option>';
+                } else {
+                    host_options_html += '<option value="' + hosts_manage_list[M]['id'] + '">' + hosts_manage_list[M]['host_name'] + '</option>';
+                }
+            }
+
+            $('#associated_host_div').append(
+                '<div class="form-group">' +
+                '<label class="col-md-2 control-label">关联主机' + (i + 1) + '</label>\n' +
+                '<div class="col-md-4">\n' +
+                '    <input type="text" id="associated_host_id_' + (i + 1) + '" name="associated_host_id_' + (i + 1) + '" value="' + cur_host['host_uuid'] + '" hidden>\n' +
+                '    <input type="text" id="associated_host_' + (i + 1) + '" name="associated_host_' + (i + 1) + '" class="form-control" value="' + cur_host['host_given_name'] + '" readonly>\n' +
+                '    <div class="form-control-focus"></div>\n' +
+                '</div>\n' +
+                '<div class="col-md-2 control-label" style="text-align: center; color: #00B83F">\n' +
+                '    <span><i class="fa fa-link fa-lg"></i></span>\n' +
+                '</div>\n' +
+                '<div class="col-md-4">\n' +
+                '    <select name="hosts_manage_' + (i + 1) + '" id="hosts_manage_' + (i + 1) + '" class="form-control">\n' + host_options_html +
+                '    </select>\n' +
+                '    <div class="form-control-focus"></div>\n' +
+                '</div>' +
+                '</div>'
+            );
+
+            // 主机参数inner
+            var host_params = cur_host['params'];
+            var host_param_html = '';
+            for (var j = 0; j < host_params.length; j++) {
+                var params = host_params[j];
+                var pre_group_div = '',
+                    aft_group_div = '';
+                if (j % 2 == 0) {  // 奇数(i+1)
+                    pre_group_div = '<div class="form-group">\n';
+                } else {
+                    aft_group_div = '</div>';
+                }
+                if (j == params.length - 1) {
+                    aft_group_div = '</div>';
+                }
+                host_param_html += pre_group_div +
+                    '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
+                    '    <div class="col-md-4">\n' +
+                    '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
+                    '               value="' + params.param_value + '"\n' +
+                    '               >\n' +
+                    '        <div class="form-control-focus"></div>\n' +
+                    '    </div>\n' +
+                    aft_group_div;
+            }
+
+            // 主机参数wrapper
+            $('#host_param_div').append('<div class="mt-element-ribbon bg-grey-steel" h_id="" style="margin:0">\n' +
+                '    <div class="ribbon ribbon-border-hor ribbon-clip ribbon-color-primary">\n' +
+                '        <div class="ribbon-sub ribbon-clip"></div>\n' +
+                cur_host.host_name +
+                '    </div>\n' +
+                '    <div class="ribbon-content" id="host_param_ribbon_' + (i + 1) + '">\n' + host_param_html +
+                '    </div>\n' +
+                '</div>');
+            $('#host_param_ribbon_' + (i + 1)).parent().prop('h_id', cur_host["host_id"]);  // 参数中匹配主机关系的依据
+        }
+
+        selectAssociatedHost();  // 注册选中事件
+        /**
+         * 加载流程参数
+         */
+        $('#pro_param_ribbon').empty();
+
+        if (PROCESS.length > 0) {
+            $('#process_div').show();
+
+            var process_param_list = PROCESS[0]['params']
+            var pro_param_html = '';
+            for (var k = 0; k < process_param_list.length; k++) {
+                var param = process_param_list[k];
+                var pre_group_div = '',
+                    aft_group_div = '';
+                if (k % 2 == 0) {  // 奇数(i+1)
+                    pre_group_div = '<div class="form-group">\n';
+                } else {
+                    aft_group_div = '</div>';
+                }
+                if (k == process_param_list.length - 1) {
+                    aft_group_div = '</div>';
+                }
+                pro_param_html += pre_group_div +
+                    '    <label class="col-md-2 control-label" style="padding-left: 0;">' + param.param_name + '</label>\n' +
+                    '    <div class="col-md-4">\n' +
+                    '        <input id="' + param.variable_name + '" type="text" name="' + param.variable_name + '" class="form-control"\n' +
+                    '               value="' + param.param_value + '"\n' +
+                    '               >\n' +
+                    '        <div class="form-control-focus"></div>\n' +
+                    '    </div>\n' +
+                    aft_group_div;
+            }
+            $('#pro_param_ribbon').append(pro_param_html);
+            // 流程名称
+            $('#process_param_div .ribbon').text(process_name);
+        } else {
+            $('#process_div').hide();
+        }
+    });
+}
+
+function initClient() {
+    $('#cv_id').val('0');
+
+    $("#host_ip").val("");
+    $("#host_name").val("");
+    $("#os").val("");
+    $("#username").val("");
+    $("#password").val("");
+    $("#remark").val("");
+    $('#param_se').empty();
+    /**
+     * Commvault配置、自主恢复字段初始化，参数初始化
+     */
+    $('#cvclient_type').val('');
+    $('#cvclient_utils_manage').val('');
+    $('#cvclient_source').val('');
+    $('#cvclient_agentType').val('');
+    $('#cvclient_instance').val('');
+    $('#cvclient_destination').val('');
+
+    $('#cv_orcl').hide();
+    $('#cv_filesystem').hide();
+    $('#cv_mssql').hide();
+
+    $('#cv_r_orcl').hide();
+    $('#cv_r_mssql').hide();
+    $('#cv_r_filesystem').hide();
+
+    $('#cv_r_sourceClient').val('');
+    $('#cv_r_destClient').val('');
+
+    // ORACLE
+    $('#cvclient_copy_priority').val(1);  // 默认主拷贝
+    $('#cvclient_db_open').val(1);  // 默认开启数据库
+    $('#cvclient_log_restore').val(1);  // 默认回滚日志
+    $('#cvclient_data_path').val('');
+
+    $('#cv_r_copy_priority').val(1);
+    $('#cv_r_db_open').val(1);
+    $('#cv_r_log_restore').val(1);
+    $('#cv_r_data_path').val('');
+
+    // FILE SYSTEM
+    $('input[name="cv_overwrite"]:first').prop("checked", true);  // 默认有介质较新改写
+    $('input[name="cv_path"]:first').prop("checked", true);  // 默认恢复到相同路径
+    $('#cv_mypath').val('');
+    $('#cv_fs_se_1').empty();
+
+    $('input[name="cv_r_overwrite"]:first').prop("checked", true);
+    $('input[name="cv_r_path"]:first').prop("checked", true);
+    $('#cv_r_mypath').val('');
+    $('#cv_r_fs_se_1').empty();
+
+    // MSSQL
+    $('#cv_isoverwrite').prop("checked", true);  // 默认无条件改写
+    $('#cv_r_isoverwrite').prop("checked", true);
+
+    /**
+     * 节点/客户端DIV区分展示
+     */
+    $("#client").show();
+    $("#node").hide();
+    $("#node_save").hide();
+    $("#client_save").show();
+
+    /**
+     * 初始化备份历史、恢复历史、流程实例
+     */
+    $('#cv_backup_his').dataTable().fnClearTable();
+    $('#cv_restore_his').dataTable().fnClearTable();
+    $('#pro_config').dataTable().fnClearTable();
+}
+
 
 //主机
 function getClientree() {
@@ -39,8 +377,7 @@ function getClientree() {
         success: function (data) {
             if (data.ret == 0) {
                 alert(data.data)
-            }
-            else {
+            } else {
                 $('#tree_client').jstree({
                     'core': {
                         "themes": {
@@ -58,7 +395,7 @@ function getClientree() {
                             "icon": false
                         }
                     },
-                    "contextmenu":$('#is_superuser').val()=="True"?{
+                    "contextmenu": $('#is_superuser').val() == "True" ? {
                         "items": {
                             "create": null,
                             "rename": null,
@@ -95,26 +432,17 @@ function getClientree() {
                                     if (obj.type == "CLIENT") {
                                         alert("无法在客户端下新建客户端。");
                                     } else {
-                                        $('#tabcheck2').attr("style", "color: #cbd5dd");
-                                        $("#tabcheck2").parent().attr("style", "pointer-events:none;");
                                         $("#tabcheck1").click();
+                                        /**
+                                         * 基础信息字段初始化
+                                         */
                                         $("#title").text("新建")
                                         $("#pname").val(obj.data["name"])
                                         $("#id").val("0");
                                         $("#pid").val(obj.id);
                                         $("#my_type").val("CLIENT");
-                                        $("#host_ip").val("");
-                                        $("#host_name").val("");
-                                        $("#os").val("");
-                                        $("#username").val("");
-                                        $("#password").val("");
-                                        $("#remark").val("");
-                                        $('#param_se').empty();
-
-                                        $("#client").show()
-                                        $("#node").hide()
-                                        $("#node_save").hide()
-                                        $("#client_save").show()
+                                        initClient();
+                                        getProcessInstancedata('', empty=true);
                                     }
                                 }
                             },
@@ -131,9 +459,9 @@ function getClientree() {
                                                 type: "POST",
                                                 url: "../clientdel/",
                                                 data:
-                                                {
-                                                    id: obj.id,
-                                                },
+                                                    {
+                                                        id: obj.id,
+                                                    },
                                                 success: function (data) {
                                                     if (data == 1) {
                                                         inst.delete_node(obj);
@@ -151,12 +479,14 @@ function getClientree() {
                             },
 
                         }
-                    }:{"items": {
+                    } : {
+                        "items": {
                             "create": null,
                             "rename": null,
                             "remove": null,
                             "ccp": null,
-                        }},
+                        }
+                    },
                     "plugins": ["contextmenu", "dnd", "types", "role"]
                 })
                     .on('move_node.jstree', function (e, data) {
@@ -173,13 +503,13 @@ function getClientree() {
                                     type: "POST",
                                     url: "../client_move/",
                                     data:
-                                    {
-                                        id: data.node.id,
-                                        parent: data.parent,
-                                        old_parent: data.old_parent,
-                                        position: data.position,
-                                        old_position: data.old_position,
-                                    },
+                                        {
+                                            id: data.node.id,
+                                            parent: data.parent,
+                                            old_parent: data.old_parent,
+                                            position: data.position,
+                                            old_position: data.old_position,
+                                        },
                                     success: function (data) {
                                         if (data == "重名") {
                                             alert("目标节点下存在重名。");
@@ -212,6 +542,7 @@ function getClientree() {
                     })
                     .bind('select_node.jstree', function (event, data) {
                         $("#form_div").show();
+                        initClient();  // 初始化各个tab的信息
                         var type = data.node.original.type;
 
                         $("#id").val(data.node.id);
@@ -248,16 +579,12 @@ function getClientree() {
 
                                         //cv信息
                                         if (JSON.stringify(data.cvinfo) != '{}') {
-                                            $("#tabcheck2_1").click();
-                                            $("#div_creatcv").hide();
-                                            $("#div_cv").show();
                                             $("#cv_del").show();
                                             $("#cv_id").val(data.cvinfo.id);
                                             $("#cvclient_type").val(data.cvinfo.type);
                                             if ($("#cvclient_type").val() == "2") {
                                                 $("#sourcediv").hide();
-                                            }
-                                            else {
+                                            } else {
                                                 $("#sourcediv").show();
                                             }
                                             $("#cvclient_utils_manage").val(data.cvinfo.utils_id);
@@ -270,8 +597,7 @@ function getClientree() {
                                             $("#cvclient_instance").val(data.cvinfo.instanceName);
                                             if (data.cvinfo.destination_id == data.cvinfo.id) {
                                                 $("#cvclient_destination").val('self');
-                                            }
-                                            else {
+                                            } else {
                                                 $("#cvclient_destination").val(data.cvinfo.destination_id);
                                             }
 
@@ -311,7 +637,8 @@ function getClientree() {
                                                         $('#cv_select_file').show();
                                                     }
                                                 }
-                                            } catch (e) { }
+                                            } catch (e) {
+                                            }
 
                                             // SQL Server
                                             var mssqlOverWrite = data.cvinfo.mssqlOverWrite;
@@ -322,15 +649,6 @@ function getClientree() {
                                             }
 
                                             get_cv_detail();
-                                            if ($("#cvclient_type").val() == "1" || $("#cvclient_type").val() == "3") {
-                                                $("#tabcheck2_2").parent().show();
-                                                $("#tabcheck2_3").parent().show();
-                                                $("#tabcheck2_4").parent().show();
-                                            } else {
-                                                $("#tabcheck2_2").parent().hide();
-                                                $("#tabcheck2_3").parent().hide();
-                                                $("#tabcheck2_4").parent().hide();
-                                            }
 
                                             // 应用类型 -> 参数展示
                                             displayAgentParams(data.cvinfo.agentType);
@@ -341,14 +659,10 @@ function getClientree() {
                                             $('#cv_r_datetimepicker').val("");
                                             $("input[name='optionsRadios'][value='1']").prop("checked", true);
                                             $("input[name='optionsRadios'][value='2']").prop("checked", false);
-                                        }
-                                        else {
-                                            $("#div_creatcv").show();
-                                            $("#div_cv").hide();
+                                        } else {
                                             $("#cv_del").hide();
                                         }
-                                    }
-                                    else {
+                                    } else {
                                         $("#host_id").val("0");
                                         $("#host_ip").val("");
                                         $("#host_name").val("");
@@ -364,8 +678,13 @@ function getClientree() {
                                     alert("页面出现错误，请于管理员联系。");
                                 }
                             });
-                            $("#client").show()
-                            $("#node").hide()
+                            $("#client").show();
+                            $("#node").hide();
+
+                            /**
+                             * 流程实例
+                             */
+                            getProcessInstancedata(data.node.id);
                         }
                         if (type == "NODE") {
                             $("#node_pname").val(data.node.data.pname)
@@ -394,9 +713,9 @@ function get_cv_detail() {
         dataType: 'json',
         url: "../get_cv_process/",
         data:
-        {
-            id: $("#id").val(),
-        },
+            {
+                id: $("#id").val(),
+            },
         success: function (data) {
             //流程
             var processtext = ""
@@ -476,7 +795,7 @@ function getCvInstance() {
         for (var i = 0; i < instancelist.length; i++) {
             $("#cvclient_instance").append('<option value="' + instancelist[i] + '">' + instancelist[i] + '</option>');
         }
-    } catch (e){
+    } catch (e) {
         console.log(e)
     }
 
@@ -497,7 +816,7 @@ function getCvAgenttype() {
         for (var i = 0; i < agentlist.length; i++) {
             $("#cvclient_agentType").append('<option value="' + agentlist[i] + '">' + agentlist[i] + '</option>');
         }
-    } catch (e){
+    } catch (e) {
         console.log(e)
     }
 
@@ -511,7 +830,7 @@ function getCvClient() {
         if (utildata[i].utils_manage == $("#cvclient_utils_manage").val()) {
             var clientlist = [];
             for (var j = 0; j < utildata[i].instance_list.length; j++) {
-                var client = { "clientid": utildata[i].instance_list[j].clientid, "clientname": utildata[i].instance_list[j].clientname };
+                var client = {"clientid": utildata[i].instance_list[j].clientid, "clientname": utildata[i].instance_list[j].clientname};
                 if (!inArray(client, clientlist)) {
                     clientlist.push(client);
                 }
@@ -570,13 +889,13 @@ function getFileTree() {
             enable: true,
             url: '../get_file_tree/',
             autoParam: ["id"],
-            otherParam: { "cv_id": $('#cv_id').val() },
+            otherParam: {"cv_id": $('#cv_id').val()},
             dataFilter: filter
         },
         check: {
             enable: true,
             chkStyle: "checkbox",               //多选
-            chkboxType: { "Y": "s", "N": "ps" }  //不级联父节点选择
+            chkboxType: {"Y": "s", "N": "ps"}  //不级联父节点选择
         },
         view: {
             showLine: false
@@ -594,6 +913,7 @@ function getFileTree() {
 
     $.fn.zTree.init($("#cv_fs_tree"), setting);
 }
+
 /**
  * 流程模态框
  * @param {*} processid
@@ -603,7 +923,7 @@ function runCVProcess(processid, process_type) {
     /**
      * 自动化恢复流程
      */
-    $("#static").modal({ backdrop: "static" });
+    $("#static").modal({backdrop: "static"});
     $('#recovery_time').datetimepicker({
         format: 'yyyy-mm-dd hh:ii:ss',
         pickerPosition: 'top-right'
@@ -618,7 +938,7 @@ function runCVProcess(processid, process_type) {
 
 
 function runprocess(processid, process_type) {
-    $("#static").modal({ backdrop: "static" });
+    $("#static").modal({backdrop: "static"});
     $('#recovery_time').datetimepicker({
         format: 'yyyy-mm-dd hh:ii:ss',
         pickerPosition: 'top-right'
@@ -631,13 +951,7 @@ function runprocess(processid, process_type) {
 }
 
 
-
 $(document).ready(function () {
-    //主机
-    $(".tabbed>ul>li").click(function () {
-        var aa = this.firstElementChild;
-        aa.click();
-    });
     $('#loading').show();
     $('#showdata').hide();
 
@@ -661,14 +975,13 @@ $(document).ready(function () {
                             "text": "<i class='jstree-icon jstree-themeicon fa fa-folder icon-state-warning icon-lg jstree-themeicon-custom'></i>" + $("#node_name").val(),
                             "id": data.nodeid,
                             "type": "NODE",
-                            "data": { "remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val() },
+                            "data": {"remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val()},
                             "icon": false,
                         }, "last", false, false);
                         $("#id").val(data.nodeid)
                         $('#tree_client').jstree('deselect_all')
                         $('#tree_client').jstree('select_node', $("#id").val(), true)
-                    }
-                    else {
+                    } else {
                         var curnode = $('#tree_client').jstree('get_node', $("#id").val());
                         var newtext = curnode.text.replace(curnode.data["name"], $("#node_name").val())
                         curnode.text = newtext
@@ -722,7 +1035,7 @@ $(document).ready(function () {
                             "text": $("#host_name").val(),
                             "id": data.nodeid,
                             "type": "CLIENT",
-                            "data": { "remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val() },
+                            "data": {"remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val()},
                             "icon": false,
                         }, "last", false, false);
                         $("#id").val(data.nodeid)
@@ -730,8 +1043,7 @@ $(document).ready(function () {
                         $('#tree_client').jstree('select_node', $("#id").val(), true)
                         $('#tabcheck2').removeAttr("style", "color: #cbd5dd");
                         $("#tabcheck2").parent().removeAttr("style", "pointer-events:none;");
-                    }
-                    else {
+                    } else {
                         var curnode = $('#tree_client').jstree('get_node', $("#id").val());
                         var newtext = curnode.text.replace(curnode.data["name"], $("#host_name").val())
                         curnode.text = newtext
@@ -859,31 +1171,6 @@ $(document).ready(function () {
 
     //cv
     getCvinfo();
-    $('#creatcv').click(function () {  // 创建commvault保护
-        $("#div_creatcv").hide();
-        $("#div_cv").show();
-        $("#cv_del").hide();
-        $("#tabcheck2_1").click();
-        $("#tabcheck2_2").parent().hide();
-        $("#tabcheck2_3").parent().hide();
-        $("#tabcheck2_4").parent().hide();
-
-        $("#cv_id").val("0");
-        $("#cvclient_type").val("1");
-
-        /**
-         * 创建commvault保护时
-         * 新建要清除目录
-         * 新建要隐藏选择目录按钮
-         * 新建要清除树
-         */
-        $('#cv_select_file').hide();
-        try {
-            $.fn.zTree.getZTreeObj("cv_fs_tree").destroy();
-        } catch(e){}
-        $('#cv_fs_se_1').empty();
-        $('#cvclient_agentType').change();  // 主从触发更改操作
-    });
 
     $("#cvclient_utils_manage").change(function () {
         getCvClient();
@@ -902,15 +1189,13 @@ $(document).ready(function () {
         getCvInstance();
 
         var cv_agent = $(this).val();
-        console.log(cv_agent);
         // 应用类型 -> 参数展示
         displayAgentParams(cv_agent);
     });
     $("#cvclient_type").change(function () {
         if ($("#cvclient_type").val() == "2") {
             $("#sourcediv").hide();
-        }
-        else {
+        } else {
             $("#sourcediv").show();
         }
     });
@@ -964,16 +1249,6 @@ $(document).ready(function () {
                     if ($("#cv_id").val() == "0") {
                         $("#cv_id").val(data.cv_id);
                         $("#cv_del").show();
-                        if ($("#cvclient_type").val() == "1" || $("#cvclient_type").val() == "3") {
-                            $("#tabcheck2_2").parent().show();
-                            $("#tabcheck2_3").parent().show();
-                            $("#tabcheck2_4").parent().show();
-                        }
-                        else {
-                            $("#tabcheck2_2").parent().hide();
-                            $("#tabcheck2_3").parent().hide();
-                            $("#tabcheck2_4").parent().hide();
-                        }
                         var curnode = $('#tree_client').jstree('get_node', $("#id").val());
                         var newtext = "<img src = '/static/pages/images/cv.png' height='24px'> " + curnode.text
                         $('#tree_client').jstree('set_text', $("#id").val(), newtext);
@@ -982,7 +1257,7 @@ $(document).ready(function () {
                         var destinationdata = JSON.parse($("#cvclient_u_destination").val());
                         for (var i = 0; i < destinationdata.length; i++) {
                             if (destinationdata[i].utilid == $("#cvclient_utils_manage").val()) {
-                                var cur_destination = { "name": $("#cvclient_source").find("option:selected").text(), "id": data.cv_id }
+                                var cur_destination = {"name": $("#cvclient_source").find("option:selected").text(), "id": data.cv_id}
                                 if (!inArray(cur_destination, destinationdata[i].destination_list)) {
                                     destinationdata[i].destination_list.push(cur_destination);
                                     $("#cvclient_u_destination").val(JSON.stringify(destinationdata));
@@ -1004,7 +1279,8 @@ $(document).ready(function () {
                                 $('#cv_select_file').show();
                             }
                         }
-                    } catch (e) { }
+                    } catch (e) {
+                    }
                 }
                 alert(data.info);
             },
@@ -1019,13 +1295,11 @@ $(document).ready(function () {
                 type: "POST",
                 url: "../client_cv_del/",
                 data:
-                {
-                    id: $("#cv_id").val(),
-                },
+                    {
+                        id: $("#cv_id").val(),
+                    },
                 success: function (data) {
                     if (data == 1) {
-                        $("#div_creatcv").show();
-                        $("#div_cv").hide();
                         $("#cv_del").hide();
                         var curnode = $('#tree_client').jstree('get_node', $("#id").val());
                         var newtext = curnode.text.replace("<img src = '/static/pages/images/cv.png' height='24px'> ", "")
@@ -1068,12 +1342,12 @@ $(document).ready(function () {
         "destroy": true,
         //"ajax": "../../oraclerecoverydata?origin_id=" + origin_id,
         "columns": [
-            { "data": "jobId" },
-            { "data": "jobType" },
-            { "data": "Level" },
-            { "data": "StartTime" },
-            { "data": "LastTime" },
-            { "data": null },
+            {"data": "jobId"},
+            {"data": "jobType"},
+            {"data": "Level"},
+            {"data": "StartTime"},
+            {"data": "LastTime"},
+            {"data": null},
         ],
         "columnDefs": [{
             "targets": -1,
@@ -1097,14 +1371,13 @@ $(document).ready(function () {
         }
     });
     $('#cv_backup_his tbody').on('click', 'button#select', function () {
-        $('#tabcheck2_3').click();
+        $('#tabcheck4').click();
         var table = $('#cv_backup_his').DataTable();
         var data = table.row($(this).parents('tr')).data();
         var pre_last_time = "";
         try {
             pre_last_time = table.row($(this).parents('tr').next()).data().LastTime;
         } catch (e) {
-            //..
         }
         $('#cv_r_pre_restore_time').val(pre_last_time);
         $("#cv_r_datetimepicker").val(data.LastTime);
@@ -1121,11 +1394,11 @@ $(document).ready(function () {
         "destroy": true,
         //"ajax": "../../oraclerecoverydata?origin_id=" + origin_id,
         "columns": [
-            { "data": "jobid" },
-            { "data": "jobType" },
-            { "data": "starttime" },
-            { "data": "endtime" },
-            { "data": "jobstatus" }
+            {"data": "jobid"},
+            {"data": "jobType"},
+            {"data": "starttime"},
+            {"data": "endtime"},
+            {"data": "jobstatus"}
         ],
 
         "oLanguage": {
@@ -1151,62 +1424,95 @@ $(document).ready(function () {
     });
 
     $('#cv_r_recovery').click(function () {
-        if ($("input[name='optionsRadios']:checked").val() == "2" && $('#cv_r_datetimepicker').val() == "")
-            alert("请输入时间。");
-        else {
-            if ($('#cv_r_destClient').val() == "")
+        if (!$('#cv_r_sourceClient').val()) {
+            alert('源客户端为空，请务必先保存Commvault配置。')
+        } else {
+            if ($('#cv_r_destClient').val() == "") {
                 alert("请选择目标客户端。");
-            else {
-                if (confirm('是否确定启动自主恢复？')){
-                    var myrestoreTime = "";
-                    if ($("input[name='optionsRadios']:checked").val() == "2" && $('#cv_r_datetimepicker').val() != "") {
-                        myrestoreTime = $('#cv_r_datetimepicker').val();
-                    }
-                    var destClient = $('#cv_r_destClient option:selected').text().trim();
-                    if ($('#cv_r_destClient').val() == "self") {
-                        destClient = $('#cv_r_sourceClient').val()
-                    }
+            } else {
+                if ($("input[name='optionsRadios']:checked").val() == "2" && $('#cv_r_datetimepicker').val() == "")
+                    alert("请输入时间。");
+                else {
+                    if (confirm('是否确定启动自主恢复？')) {
+                        var myrestoreTime = "";
+                        if ($("input[name='optionsRadios']:checked").val() == "2" && $('#cv_r_datetimepicker').val() != "") {
+                            myrestoreTime = $('#cv_r_datetimepicker').val();
+                        }
+                        var destClient = $('#cv_r_destClient option:selected').text().trim();
+                        if ($('#cv_r_destClient').val() == "self") {
+                            destClient = $('#cv_r_sourceClient').val()
+                        }
 
-                    // 区分应用
-                    var agent = $("#cvclient_agentType").val();
-                    if (agent.indexOf("Oracle") != -1) {
-                        $.ajax({
-                            type: "POST",
-                            url: "../../client_cv_recovery/",
-                            data: {
-                                cv_id: $('#cv_id').val(),
-                                sourceClient: $('#cv_r_sourceClient').val(),
-                                destClient: destClient,
-                                restoreTime: myrestoreTime,
-                                browseJobId: $("#cv_r_browseJobId").val(),
-                                // 判断是oracle还是oracle rac
-                                agent: agent,
-                                data_path: $("#cv_r_data_path").val(),
-                                copy_priority: $("#cv_r_copy_priority").val(),
-                                data_sp: $("#cv_r_data_sp").val(),
-                            },
-                            success: function (data) {
-                                alert(data);
-                                var table1 = $('#cv_restore_his').DataTable();
-                                table1.ajax.reload();
-                            },
-                            error: function (e) {
-                                alert("恢复失败，请于客服联系。");
-                            }
-                        });
-                    } else if (agent.indexOf('File System') != -1) {
-                        if ($("input[name='cv_r_path']:checked").val() == "2" && $('#cv_r_mypath').val() == "")
-                            alert("请输入指定路径。");
-                        else {
-                            var iscover = $("input[name='cv_r_overwrite']:checked").val();
-                            var mypath = "same"
-                            if ($("input[name='cv_r_path']:checked").val() == "2")
-                                mypath = $('#cv_r_mypath').val()
-                            var selectedfile = ""
-                            $("#cv_r_fs_se_1 option").each(function () {
-                                var txt = $(this).val();
-                                selectedfile = selectedfile + txt + "*!-!*"
+                        // 区分应用
+                        var agent = $("#cvclient_agentType").val();
+                        if (agent.indexOf("Oracle") != -1) {
+                            $.ajax({
+                                type: "POST",
+                                url: "../../client_cv_recovery/",
+                                data: {
+                                    cv_id: $('#cv_id').val(),
+                                    sourceClient: $('#cv_r_sourceClient').val(),
+                                    destClient: destClient,
+                                    restoreTime: myrestoreTime,
+                                    browseJobId: $("#cv_r_browseJobId").val(),
+                                    // 判断是oracle还是oracle rac
+                                    agent: agent,
+                                    data_path: $("#cv_r_data_path").val(),
+                                    copy_priority: $("#cv_r_copy_priority").val(),
+                                    data_sp: $("#cv_r_data_sp").val(),
+                                },
+                                success: function (data) {
+                                    alert(data);
+                                    var table1 = $('#cv_restore_his').DataTable();
+                                    table1.ajax.reload();
+                                },
+                                error: function (e) {
+                                    alert("恢复失败，请于客服联系。");
+                                }
                             });
+                        } else if (agent.indexOf('File System') != -1) {
+                            if ($("input[name='cv_r_path']:checked").val() == "2" && $('#cv_r_mypath').val() == "")
+                                alert("请输入指定路径。");
+                            else {
+                                var iscover = $("input[name='cv_r_overwrite']:checked").val();
+                                var mypath = "same"
+                                if ($("input[name='cv_r_path']:checked").val() == "2")
+                                    mypath = $('#cv_r_mypath').val()
+                                var selectedfile = ""
+                                $("#cv_r_fs_se_1 option").each(function () {
+                                    var txt = $(this).val();
+                                    selectedfile = selectedfile + txt + "*!-!*"
+                                });
+                                $.ajax({
+                                    type: "POST",
+                                    url: "../../client_cv_recovery/",
+                                    data: {
+                                        cv_id: $('#cv_id').val(),
+                                        sourceClient: $('#cv_r_sourceClient').val(),
+                                        destClient: destClient,
+                                        restoreTime: myrestoreTime,
+                                        browseJobId: $("#cv_r_browseJobId").val(),
+                                        agent: agent,
+
+                                        iscover: iscover,
+                                        mypath: mypath,
+                                        selectedfile: selectedfile,
+                                    },
+                                    success: function (data) {
+                                        alert(data);
+                                        var table1 = $('#cv_restore_his').DataTable();
+                                        table1.ajax.reload();
+                                    },
+                                    error: function (e) {
+                                        alert("恢复失败，请于客服联系。");
+                                    }
+                                });
+                            }
+                        } else if (agent.indexOf('SQL Server') != -1) {
+                            var mssql_iscover = "FALSE"
+                            if ($('#cv_r_isoverwrite').is(':checked')) {
+                                mssql_iscover = "TRUE"
+                            }
                             $.ajax({
                                 type: "POST",
                                 url: "../../client_cv_recovery/",
@@ -1218,9 +1524,7 @@ $(document).ready(function () {
                                     browseJobId: $("#cv_r_browseJobId").val(),
                                     agent: agent,
 
-                                    iscover: iscover,
-                                    mypath: mypath,
-                                    selectedfile: selectedfile,
+                                    mssql_iscover: mssql_iscover,
                                 },
                                 success: function (data) {
                                     alert(data);
@@ -1232,46 +1536,19 @@ $(document).ready(function () {
                                 }
                             });
                         }
-                    } else if (agent.indexOf('SQL Server') != -1) {
-                        var mssql_iscover = "FALSE"
-                        if ($('#cv_r_isoverwrite').is(':checked')) {
-                            mssql_iscover = "TRUE"
-                        }
-                        $.ajax({
-                            type: "POST",
-                            url: "../../client_cv_recovery/",
-                            data: {
-                                cv_id: $('#cv_id').val(),
-                                sourceClient: $('#cv_r_sourceClient').val(),
-                                destClient: destClient,
-                                restoreTime: myrestoreTime,
-                                browseJobId: $("#cv_r_browseJobId").val(),
-                                agent: agent,
-
-                                mssql_iscover: mssql_iscover,
-                            },
-                            success: function (data) {
-                                alert(data);
-                                var table1 = $('#cv_restore_his').DataTable();
-                                table1.ajax.reload();
-                            },
-                            error: function (e) {
-                                alert("恢复失败，请于客服联系。");
-                            }
-                        });
                     }
                 }
             }
         }
     });
 
-    /*
-        自主恢复
-            参数
-    */
-    $('#navtabs2 a').on("click", function () {
+    /**
+     * 自主恢复
+     *      应用对应的参数显示DIV
+     */
+    $('#navtabs a').on("click", function () {
         var a_id = $(this).prop('id');
-        if (a_id == 'tabcheck2_3') {
+        if (a_id == 'tabcheck4') {
             var agent_type = $('#cvclient_agentType').val();
             if (agent_type.indexOf("Oracle") != -1) {
                 $('#cv_r_orcl').show();
@@ -1305,18 +1582,273 @@ $(document).ready(function () {
         }
         if (nodes.length == 0)
             $("#cv_fs_se_1").append("<option value=''></option>");
-    })
+    });
+
+    /**
+     * 选择预案切换
+     */
+    $('#pros').change(function () {
+        try {
+            var pro_list = JSON.parse($('#pro_list').val()),
+                pro_id = $(this).val();
+            $('#associated_host_div').empty();
+            $('#host_param_div').empty();
+
+            // 关联主机
+            for (var i = 0; i < pro_list.length; i++) {
+                if (pro_id == pro_list[i]["process_id"]) {
+                    // 关联主机
+                    var hosts = pro_list[i]["hosts"];
+                    for (var j = 0; j < hosts.length; j++) {
+                        $('#associated_host_div').append(
+                            '<div class="form-group">' +
+                            '<label class="col-md-2 control-label">关联主机' + (j + 1) + '</label>\n' +
+                            '<div class="col-md-4">\n' +
+                            '    <input type="text" id="associated_host_id_' + (j + 1) + '" name="associated_host_id_' + (j + 1) + '" value="' + hosts[j]['hosts_id'] + '" hidden>\n' +
+                            '    <input type="text" id="associated_host_' + (j + 1) + '" name="associated_host_' + (j + 1) + '" class="form-control" value="' + hosts[j]['hosts_name'] + '" readonly>\n' +
+                            '    <div class="form-control-focus"></div>\n' +
+                            '</div>\n' +
+                            '<div class="col-md-2 control-label" style="text-align: center; color: #00B83F">\n' +
+                            '    <span><i class="fa fa-link fa-lg"></i></span>\n' +
+                            '</div>\n' +
+                            '<div class="col-md-4">\n' +
+                            '    <select name="hosts_manage_' + (j + 1) + '" id="hosts_manage_' + (j + 1) + '" class="form-control">\n' +
+                            '    </select>\n' +
+                            '    <div class="form-control-focus"></div>\n' +
+                            '</div>' +
+                            '</div>'
+                        );
+                    }
+
+                    // HostsManage
+                    var hosts_num = hosts.length,
+                        hosts_manage_list = $('#hosts_manage_list').val();
+                    try {
+                        hosts_manage_list = JSON.parse(hosts_manage_list);
+                    } catch (e) {
+                        hosts_manage_list = [];
+                    }
+                    for (var L = 0; L < hosts_num; L++) {
+                        for (var M = 0; M < hosts_manage_list.length; M++) {
+                            $('#hosts_manage_' + (L + 1)).append('<option value="' + hosts_manage_list[M]['id'] + '">' + hosts_manage_list[M]['host_name'] + '</option>');
+                        }
+
+                        // 主机参数默认空栏，待选择主机后填充
+                        $('#host_param_div').append('<div class="mt-element-ribbon bg-grey-steel" h_id="" style="margin:0">\n' +
+                            '    <div class="ribbon ribbon-border-hor ribbon-clip ribbon-color-primary">\n' +
+                            '        <div class="ribbon-sub ribbon-clip"></div>\n' +
+                            '        待选择\n' +
+                            '    </div>\n' +
+                            '    <div class="ribbon-content" id="host_param_ribbon_' + (L + 1) + '">\n' +
+                            '    </div>\n' +
+                            '</div>');
+                    }
 
 
+                    // 流程参数
+                    var process_param_list = pro_list[i]['process_param_list'];
+                    if (process_param_list.length > 0) {
+                        $('#process_div').show();
+                    } else {
+                        $('#process_div').hide();
+                    }
+
+                    $('#pro_param_ribbon').empty();
+                    var pro_param_html = '';
+                    for (var k = 0; k < process_param_list.length; k++) {
+                        var params = process_param_list[k];
+                        var pre_group_div = '',
+                            aft_group_div = '';
+                        if (k % 2 == 0) {  // 奇数(i+1)
+                            pre_group_div = '<div class="form-group">\n';
+                        } else {
+                            aft_group_div = '</div>';
+                        }
+                        if (k == process_param_list.length - 1) {
+                            aft_group_div = '</div>';
+                        }
+                        pro_param_html += pre_group_div +
+                            '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
+                            '    <div class="col-md-4">\n' +
+                            '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
+                            '               value="' + params.param_value + '"\n' +
+                            '               >\n' +
+                            '        <div class="form-control-focus"></div>\n' +
+                            '    </div>\n' +
+                            aft_group_div;
+                    }
+                    $('#pro_param_ribbon').append(pro_param_html);
+                    // 流程名称
+                    $('#process_param_div .ribbon').text(pro_list[i]['process_name']);
+                    break;
+                }
+            }
+
+            /**
+             * 选择关联主机
+             */
+            // $('select[id^="hosts_manage_"]').val("");
+            selectAssociatedHost();
+
+            $('select[id^="hosts_manage_"]').val($('#id').val()).trigger('change').prop('disabled', true);
+
+        } catch (e) {
+        }
+    });
+
+
+    /**
+     * 流程配置保存(实例化)
+     * @param pros_id: 预案ID
+     * @param associated_hosts: 主机对应关系
+     [{
+                'host_id': '',
+                'host_uuid': '',
+                'host_given_name': '',
+                'host_name': ''
+            },{
+                'host_id': '',
+                'host_uuid': '',
+                'host_given_name': '',
+                'host_name': ''
+            }]
+     * @param config: 流程参数/主机参数
+     {
+                "PROCESS": [{
+                    'params': [{  // 参数集
+                        'param_name': '',
+                        'variable_name': '',
+                        'param_value': '',
+                    }]
+                }],
+                "HOSTS": [{
+                    'host_id': '',
+                    'host_uuid': '',
+                    'host_given_name': '',
+                    'host_name': '',
+                    'params': [{  // 参数集
+                        'param_name': '',
+                        'variable_name': '',
+                        'param_value': '',
+                    }]
+                }]
+            }
+     */
+    $('#pro_save').click(function () {
+        var pros_id = $('#pros').val(),
+            associated_hosts = [];
+        $('#associated_host_div').children().each(function (index, el) {
+            var associated_host_id = $(el).find('input:first').val(),
+                associated_host_name = $(el).find('input:last').val(),
+                hosts_manage_id = $(el).find('select[id^="hosts_manage_"]').val(),
+                hosts_manage_name = $(el).find('select[id^="hosts_manage_"] option:selected').text();
+            associated_hosts.push({
+                'host_id': hosts_manage_id,
+                'host_uuid': associated_host_id,
+                'host_given_name': associated_host_name,
+                'host_name': hosts_manage_name,
+            })
+        });
+
+        var process_params = [];
+        $('#process_param_div').find('input').each(function (index, el) {
+            var p_variable_name = $(el).prop('id');
+            p_param_value = $(el).val();
+            p_param_name = $(el).parent().prev().text();
+            process_params.push({
+                'param_name': p_param_name,
+                'variable_name': p_variable_name,
+                'param_value': p_param_value,
+            })
+        });
+        var HOSTS = [];
+        $('#host_param_div').children().each(function (index, el) {
+            var h_params = [],
+                h_id = $(el).prop('h_id');
+            $(el).find('input').each(function (index, el) {
+                var h_variable_name = $(el).prop('id');
+                h_param_value = $(el).val();
+                h_param_name = $(el).parent().prev().text();
+                h_params.push({
+                    'param_name': h_param_name,
+                    'variable_name': h_variable_name,
+                    'param_value': h_param_value,
+                })
+            });
+            var h_config = {}
+            // 从associated_hosts匹配出主机对应关系
+            for (var i = 0; i < associated_hosts.length; i++) {
+                if (h_id == associated_hosts[i]['host_id']) {
+                    h_config = associated_hosts[i];
+                    break;
+                }
+            }
+            h_config['params'] = h_params
+            HOSTS.push(h_config);
+        })
+
+        var config = {
+            'PROCESS': [{
+                'params': process_params,
+            }],
+            'HOSTS': HOSTS
+        }
+        try {
+            config = JSON.stringify(config);
+        } catch (e) {
+            config = '{}'
+        }
+        var table = $('#pro_config').DataTable();
+        $.ajax({
+            type: 'POST',
+            dataType: 'JSON',
+            url: '../pro_save/',
+            data: {
+                'p_id': $('#p_id').val(),  // 实例ID
+                'pros_id': pros_id,
+                'pro_ins': $('#pro_ins').val(),
+                'config': config,
+            },
+            success: function (data) {
+                var status = data.status,
+                    info = data.info,
+                    data = data.data;
+                if (status == 1) {
+                    $('#p_id').val(data);
+                    $('#static07').modal('hide');
+                    table.ajax.reload();
+                }
+                alert(info);
+            }
+        });
+    });
+
+    /**
+     * 新增流程实例
+     */
+    $('#pro_new').click(function () {
+        var host_id = $('#id').val();
+
+        $('#pros').val('');
+        $('#p_id').val('0');
+        $('#pro_ins').val('');
+        /**
+         * 初始化
+         */
+        $('#pro_param_ribbon').empty();
+        $('#process_div').hide();
+        $('#host_param_div').empty();
+        $('#host_div').hide();
+        $('#associated_host_div').empty();
+    });
 });
 /**
  * 启动流程
  */
 $("#confirm").click(function () {
-    if($("#confirmtext").val()!="确认启动流程") {
+    if ($("#confirmtext").val() != "确认启动流程") {
         alert("请在文本框内输入\"确认启动流程\"");
-    }
-    else{
+    } else {
         var process_id = $("#processid").val();
         // File System
         var iscover = $("input[name='cv_r_overwrite']:checked").val();
@@ -1385,7 +1917,7 @@ $("#confirm").click(function () {
     }
 });
 
-$('#static').on("show.bs.modal", function(){
+$('#static').on("show.bs.modal", function () {
     $('#confirmtext').val("");
     $('#run_reason').val("");
 });

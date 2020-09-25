@@ -1,4 +1,4 @@
-function getProcessDetail(id, node_type){
+function getProcessDetail(id, node_type) {
     $.ajax({
         type: "POST",
         dataType: "JSON",
@@ -10,7 +10,7 @@ function getProcessDetail(id, node_type){
             var status = data.status,
                 info = data.info,
                 data = data.data;
-            if (status == 0){
+            if (status == 0) {
                 alert(info);
             } else {
                 $("#title").text(data.process_name);
@@ -26,40 +26,31 @@ function getProcessDetail(id, node_type){
                     $("#rpo").val(data.process_rpo);
                     $("#sort").val(data.process_sort);
                     $("#process_color").val(data.process_color);
-                    $("#cv_client").val(data.cv_client);
-                    $("#process_main_database").val(data.main_database);
                     $("#type").val(data.type);
                     $("#processtype").empty()
-                    if (data.processtype=="1") {
+                    if (data.processtype == "1") {
                         $('#processtype').append('<option value="1">主流程</option>');
                         $('#processtype_div').show();
-                    }else{
+                    } else {
                         $('#processtype').append('<option value="2">回切流程</option>');
                         $('#processtype').append('<option value="3">排错流程</option>');
                         $('#processtype_div').hide();
                     }
                     $("#processtype").val(data.processtype);
-            
-                    if (data.type == "Oracle ADG" || data.type == "MYSQL") {
-                        $("#adg_div").show();
-                    } else {
-                        $("#adg_div").hide();
-                    }
-                    if (data.type == "Commvault") {
-                        $("#cv_clients_div").show();
-                    } else {
-                        $("#cv_clients_div").hide();
-                    }
-                    
-                    // 回切流程
-                    getProcessBack(data.type);
-                    $('#process_back').val(data.p_back);
                     // 动态参数
                     $('#param_se').empty();
                     var variable_param_list = data.variable_param_list;
                     for (var i = 0; i < variable_param_list.length; i++) {
                         $('#param_se').append('<option value="' + variable_param_list[i].variable_name + '">' + variable_param_list[i].param_name + ':' + variable_param_list[i].variable_name + ':' + variable_param_list[i].param_value + '</option>');
                     }
+                    $('#config').val(JSON.stringify(variable_param_list));
+                    // 关联主机
+                    $('#hosts_se').empty();
+                    var hosts_list = data.hosts_list;
+                    for (var i = 0; i < hosts_list.length; i++) {
+                        $('#hosts_se').append('<option value="' + hosts_list[i].hosts_id + '">' + hosts_list[i].hosts_name + '</option>')
+                    }
+                    $('#associated_hosts').val(JSON.stringify(hosts_list));
                 }
                 if (node_type == "NODE") {
                     $("#node_pname").val(data.pname)
@@ -73,7 +64,7 @@ function getProcessDetail(id, node_type){
     });
 }
 
-function getProcessTree(){
+function getProcessTree() {
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -85,7 +76,7 @@ function getProcessTree(){
             var status = data.status,
                 info = data.info,
                 data = data.data;
-            if (status == 0){
+            if (status == 0) {
                 alert(info);
             } else {
                 $('#p_tree').jstree({
@@ -126,7 +117,7 @@ function getProcessTree(){
                                         $("#node_name").val("");
                                         $("#node_pname").val(obj.text);
                                         $("#remark").val("");
-                
+
                                         $("#processdiv").hide();
                                         $("#nodediv").show();
                                         $("#node_save").show();
@@ -139,16 +130,16 @@ function getProcessTree(){
                                     var inst = jQuery.jstree.reference(data.reference),
                                         obj = inst.get_node(data.reference);
                                     if (obj.type == "PROCESS" && obj.data.processtype != "1") {
-                                            alert("无法在子场景下新建场景。");
+                                        alert("无法在子场景下新建场景。");
                                     } else {
                                         $("#processtype").empty()
-                                        if (obj.type == "PROCESS"){
+                                        if (obj.type == "PROCESS") {
                                             $('#processtype').append('<option selected value="2">回切流程</option>');
                                             $('#processtype').append('<option value="3">排错流程</option>');
-                                        }else{
+                                        } else {
                                             $('#processtype').append('<option value="1" selected>主流程</option>');
                                         }
-                
+
                                         $("#form_div").show();
                                         $("#processdiv").show();
                                         $("#nodediv").hide();
@@ -167,12 +158,6 @@ function getProcessTree(){
                                         $("#process_color").val("");
                                         $("#type").val("");
                                         $('#param_se').empty();
-                                        $("#adg_div").hide();
-                                        $("#cv_clients_div").hide();
-                                        
-                                        $('#process_main_database').val(""); // 主数据库
-                                        $('#process_back').val(""); // 回切流程
-                                        $('#cv_client').val(""); // 关联客户端
                                     }
                                 }
                             },
@@ -215,7 +200,7 @@ function getProcessTree(){
                         var node = data.node;
                         $('#id').val(node.id);
                         $('#pid').val(node.parent);
-                        if (node.parent == "#"){
+                        if (node.parent == "#") {
                             $("#form_div").hide();
                             $("#node_save").hide();
                             $("#interface_save").hide();
@@ -258,7 +243,7 @@ function getProcessTree(){
                                                 if (data == "子场景") {
                                                     alert("子场景不能移动至节点下。");
                                                     location.reload()
-                                                }else {
+                                                } else {
                                                     if (data != "0") {
                                                         var selectid = $("#id").val();
                                                         if (selectid == moveid) {
@@ -287,40 +272,20 @@ function getProcessTree(){
 
 getProcessTree();
 
-function getProcessBack(agent_type){
-    /**
-     * 获取对应Agent类型的回切流程 当前父节点下
-     */
-    var id = $('#id').val();
-    $('#process_back').empty();
-    $('#process_back').append('<option value="">无</option>');
-    try {
-        var p_backs = eval($('#p_backs').val());
-        for (var i=0; i < p_backs.length; i++){
-            if (p_backs[i].type == agent_type && p_backs[i].pnode_id == id){
-                $('#process_back').append('<option value="' + p_backs[i].id + '">' + p_backs[i].name + '</option>');
-            }
-        }
-    } catch(e){
-
-    }
-}
-getProcessBack($('type').val());  // 新增时需要
-
-$('#node_save, #interface_save').click(function (data){
+$('#node_save, #interface_save').click(function (data) {
     var save_type = $(this).prop("id");
     $.ajax({
         type: "POST",
         dataType: "JSON",
         url: "../process_save/",
         data: $('#p_form').serialize(),
-        success: function (data){
+        success: function (data) {
             var status = data.status,
                 info = data.info,
                 select_id = data.data;
-            if (status == 1){
+            if (status == 1) {
                 if ($("#id").val() == "0") {
-                    if (save_type == "node_save"){
+                    if (save_type == "node_save") {
                         $('#p_tree').jstree('create_node', $("#pid").val(), {
                             "text": $("#node_name").val(),
                             "id": select_id,
@@ -340,7 +305,7 @@ $('#node_save, #interface_save').click(function (data){
                 } else {
                     var curnode = $('#p_tree').jstree('get_node', $("#id").val());
                     var name = "";
-                    if (save_type == "node_save"){
+                    if (save_type == "node_save") {
                         name = $("#node_name").val();
                     } else {
                         name = $('#name').val();
@@ -350,12 +315,129 @@ $('#node_save, #interface_save').click(function (data){
                     $('#p_tree').jstree('set_text', $("#id").val(), newtext);
                     $('#title').text(newtext);
                 }
-            }   
+            }
             alert(info);
         }
     });
 });
 
+/**
+ * 关联主机
+ */
+$('#hosts_se').contextmenu({
+    target: '#context-menu',
+    onItem: function (context, e) {
+        if ($(e.target).text() == "新增") {
+            $('#hosts_operate').val('new');
+            $('#hosts').empty();
+            $("#hosts").append(
+                '<div class="form-group">' +
+                '<label class="col-md-2 control-label"><span style="color:red; "></span>主机名称</label>' +
+                '<div class="col-md-10">' +
+                '<input id="hosts_name" type="text" name="hosts_name" class="form-control" placeholder="">' +
+                '<input id="hosts_id" type="text" name="hosts_id" hidden>' +
+                '<div class="form-control-focus"></div>' +
+                '</div>' +
+                '</div>'
+            );
+
+            $("button#param_edit").click();
+        }
+        if ($(e.target).text() == "修改") {
+            $('#hosts_operate').val('edit');
+            if ($("#hosts_se").find('option:selected').length == 0)
+                alert("请选择要修改的主机。");
+            else {
+                if ($("#hosts_se").find('option:selected').length > 1)
+                    alert("修改时请不要选择多条记录。");
+                else {
+                    var hosts_id = $("#hosts_se").val();
+                    hosts_name = $('#hosts_se').find('option:selected').text();
+
+                    $("#hosts").empty();
+                    $("#hosts").append(
+                        '<div class="form-group">' +
+                        '<label class="col-md-2 control-label"><span style="color:red; "></span>主机名称</label>' +
+                        '<div class="col-md-10">' +
+                        '<input id="hosts_name" type="text" name="hosts_name" class="form-control" value=" ' + hosts_name + '">' +
+                        '<input id="hosts_id" type="text" name="hosts_id" value="' + hosts_id + '" hidden>' +
+                        '<div class="form-control-focus"></div>' +
+                        '</div>' +
+                        '</div>'
+                    );
+                    $("button#hosts_edit").click();
+                }
+            }
+
+        }
+        if ($(e.target).text() == "删除") {
+            $('#hosts_operate').val('delete');
+            if ($("#hosts_se").find('option:selected').length == 0)
+                alert("请选择要删除的主机。");
+            else {
+                if (confirm("确定要删除该主机吗？")) {
+                    $("#hosts_se").find('option:selected').remove();
+                    loadHosts();
+                }
+            }
+        }
+    }
+});
+
+function loadHosts() {
+    // put all hosts into associated_hosts
+    var hosts_list = [];
+    $('#hosts_se option').each(function () {
+        var h_name = $(this).text().trim(),
+            h_id = $(this).prop("value");
+        var hosts_dict = {
+            "hosts_name": h_name,
+            "hosts_id": h_id,
+        };
+        hosts_list.push(hosts_dict);
+    });
+    $('#associated_hosts').val(JSON.stringify(hosts_list));
+}
+
+$('#hosts_save').click(function () {
+    var hosts_operate = $('#hosts_operate').val();
+    var hosts_name = $('#hosts_name').val();
+
+    var existed = false;
+    if (hosts_operate == "new") {
+        // 判断是否重复
+        $("#hosts_se option").each(function () {
+            if (hosts_name == $(this).text()) {
+                existed = true;
+                return false;
+            }
+        });
+        if (!existed) {
+            $('#hosts_se').append('<option value="">' + hosts_name + '</option>');
+            $("#static02").modal("hide");
+        } else {
+            alert("该主机名(" + hosts_name + ")已存在，请重先填写。")
+        }
+    }
+    if (hosts_operate == "edit") {
+        // 非当前选中节点，相同的表示重复
+        var hostsOption = $("#hosts_se option");
+        for (var i = 0; i < hostsOption.length; i++) {
+            if (hosts_name == $(hostsOption[i]).text() && $("#hosts_se").find('option:selected').get(0).index != i) {
+                existed = true;
+                break;
+            }
+        }
+        if (!existed) {
+            $("#hosts_se").find('option:selected').text(hosts_name);
+            $("#static02").modal("hide");
+        } else {
+            alert("该变量名(" + hosts_name + ")已存在，请重先填写。");
+        }
+    }
+
+    loadHosts();
+});
 
 $('#param_se').contextmenu({
     target: '#context-menu2',
@@ -444,12 +526,28 @@ $('#param_se').contextmenu({
             else {
                 if (confirm("确定要删除该参数吗？")) {
                     $("#param_se").find('option:selected').remove();
-                    insertParams();
+                    loadParams();
                 }
             }
         }
     }
 });
+
+function loadParams() {
+    // put all params into config
+    var params_list = [];
+    $('#param_se option').each(function () {
+        var txt_param_list = $(this).text().split(":");
+        var val_param = $(this).prop("value");
+        var param_dict = {
+            "param_name": txt_param_list[0],
+            "variable_name": val_param,
+            "param_value": txt_param_list[2]
+        };
+        params_list.push(param_dict);
+    });
+    $('#config').val(JSON.stringify(params_list));
+}
 
 $('#params_save').click(function () {
     var param_operate = $('#param_operate').val();
@@ -466,11 +564,10 @@ $('#params_save').click(function () {
             }
         })
         if (!existed) {
-            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ':'  + variable_name + ':' + param_value + '</option>');
+            $('#param_se').append('<option value="' + variable_name + '">' + param_name + ':' + variable_name + ':' + param_value + '</option>');
             $("#static01").modal("hide");
-            insertParams();
         } else {
-            alert("该变量名(" + variable_name + ")已存在，请重写填写。")
+            alert("该变量名(" + variable_name + ")已存在，请重先填写。")
         }
     }
     if (param_operate == "edit") {
@@ -483,59 +580,20 @@ $('#params_save').click(function () {
             }
         }
         if (!existed) {
-            $("#param_se").find('option:selected').val(variable_name).text(param_name+ ':'  + variable_name + ':' + param_value);
+            $("#param_se").find('option:selected').val(variable_name).text(param_name + ':' + variable_name + ':' + param_value);
             $("#static01").modal("hide");
-            insertParams();
         } else {
-            alert("该变量名(" + variable_name + ")已存在，请重写填写。")
+            alert("该变量名(" + variable_name + ")已存在，请重先填写。")
         }
     }
 
-    // put all params into config 
-    var params_list = [];
-    $('#param_se option').each(function () {
-        var txt_param_list = $(this).text().split(":");
-        var val_param = $(this).prop("value");
-        var param_dict = {
-            "param_name": txt_param_list[0],
-            "variable_name": val_param,
-            "param_value": txt_param_list[2]
-        };
-        params_list.push(param_dict)
-    });
-    $('#config').val(JSON.stringify(params_list))
+    loadParams();
 });
 
-function insertParams() {
-    // 修改数据 $('#param_se option')都写入$("#params")
-    var params_list = [];
 
-    // 构造参数Map>> Array (动态参数)
-    $('#param_se option').each(function () {
-        // 构造单个参数信息
-        var txt_param_list = $(this).text().split(":");
-        var val_param = $(this).prop("value");
-        var param_dict = {
-            "param_name": txt_param_list[0],
-            "variable_name": val_param,
-            "param_value": txt_param_list[2]
-        };
-        params_list.push(param_dict)
-    });
-    $("#insert_params").val(JSON.stringify(params_list));
-}
-
-$("#type").change(function () {
-    getProcessBack($(this).val());
-    if ($("#type").val()=="Oracle ADG" || $("#type").val()=="MYSQL"){
-        $("#adg_div").show();
-    }
-    else{
-        $("#adg_div").hide();
-    }
-    if ($(this).val() == "Commvault"){
-        $("#cv_clients_div").show();
-    } else{
-        $("#cv_clients_div").hide();
-    } 
+/**
+ * 编辑流程
+ */
+$('#p_edit').click(function () {
+    window.open("/processconfig/?process_id=" + $('#id').val());
 });

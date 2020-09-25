@@ -42,26 +42,10 @@ function displayParams(if_instance) {
             if_instance: if_instance,
         },
         success: function (data) {
-            // $('#process_param_div').children().eq(0).empty();
             $('#script_param_div').children().eq(0).empty();
-            // $('#host_param_div').children().eq(0).empty();
-            // var process_div_hidden = true;
             var script_div_hidden = true;
             for (var i = 0; i < data.data.length; i++) {
                 var params = data.data[i];
-                // if (params["type"] == "PROCESS") {
-                //     $('#process_param_div').children().eq(0).append('<div class="form-group">\n' +
-                //         '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
-                //         '    <div class="col-md-10">\n' +
-                //         '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control" readonly\n' +
-                //         '               value="' + params.param_value + '"\n' +
-                //         '               >\n' +
-                //         '        <div class="form-control-focus"></div>\n' +
-                //         '\n' +
-                //         '    </div>\n' +
-                //         '</div>');
-                //     process_div_hidden = false;
-                // }
                 if (params["type"] == "SCRIPT") {
                     $('#script_param_div').children().eq(0).append('<div class="form-group">\n' +
                         '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
@@ -75,25 +59,8 @@ function displayParams(if_instance) {
                         '</div>');
                     script_div_hidden = false;
                 }
-                // if (params["type"] == "HOST") {
-                //     $('#host_param_div').children().eq(0).append('<div class="form-group">\n' +
-                //         '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
-                //         '    <div class="col-md-10">\n' +
-                //         '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control" readonly\n' +
-                //         '               value="' + params.param_value + '"\n' +
-                //         '               >\n' +
-                //         '        <div class="form-control-focus"></div>\n' +
-                //         '\n' +
-                //         '    </div>\n' +
-                //         '</div>');
-                //     host_div_hidden = false;
-                // }
             }
-            // if (process_div_hidden) {
-            //     $('#process_div').hide();
-            // } else {
-            //     $('#process_div').show();
-            // }
+
             if (script_div_hidden) {
                 $('#script_div').hide();
             } else {
@@ -102,75 +69,6 @@ function displayParams(if_instance) {
         }
     })
 }
-
-// 根据工具加载源客户端
-$("#utils").empty()
-for (var i=0; i<cv_client_data.length; i++){
-    if (i==0){
-        $("#utils").append('<option value="' + cv_client_data[i].utils_id + '" selected>' + cv_client_data[i].utils_name + '</option>');
-        loadOrigins(cv_client_data[i].utils_id);
-    } else {
-        $("#utils").append('<option value="' + cv_client_data[i].utils_id + '">' + cv_client_data[i].utils_name + '</option>');
-    }
-}
-
-function loadOrigins(utils_id){
-    $('#origin').empty();
-    for (var i=0; i<cv_client_data.length; i++){
-        if (cv_client_data[i]["utils_id"] == utils_id){
-            var origins = cv_client_data[i]["cv_client_list"];
-            for (var j=0; j< origins.length; j++){
-                $("#origin").append('<option value="' + origins[j].id + '">' + origins[j].host_name + '(' + origins[j].client_name + ')</option>')
-            }
-            break;
-        }
-    }
-}
-
-$('#utils').change(function(){
-    loadOrigins($(this).val());
-})
-
-// function loadHostsParams(){
-//     $.ajax({
-//         type: "POST",
-//         dataType: "JSON",
-//         url: "../load_hosts_params/",
-//         data: {
-//             host_id: $('#host_id').val(),
-//             script_id: $('#scriptid').val(),
-//         },
-//         success: function(data){
-//             $('#host_param_div').children().eq(0).empty();
-//             var host_div_hidden = true;
-//             for (var i = 0; i < data.data.length; i++) {
-//                 var params = data.data[i];
-//                 if (params["type"] == "HOST") {
-//                     $('#host_param_div').children().eq(0).append('<div class="form-group">\n' +
-//                         '    <label class="col-md-2 control-label" style="padding-left: 0;">' + params.param_name + '</label>\n' +
-//                         '    <div class="col-md-10">\n' +
-//                         '        <input id="' + params.variable_name + '" type="text" name="' + params.variable_name + '" class="form-control"\n' +
-//                         '               value="' + params.param_value + '"\n' +
-//                         '               >\n' +
-//                         '        <div class="form-control-focus"></div>\n' +
-//                         '\n' +
-//                         '    </div>\n' +
-//                         '</div>');
-//                     host_div_hidden = false;
-//                 }
-//             }
-//             if (host_div_hidden) {
-//                 $('#host_div').hide();
-//             } else {
-//                 $('#host_div').show();
-//             }
-//         }
-//     });
-// }
-
-// $('#host_id').change(function(){
-//     loadHostsParams();
-// })
 
 $("#load_script").click(function () {
     var script_tree = $('#script_tree').jstree(true).get_selected(true);
@@ -198,21 +96,17 @@ $("#load_script").click(function () {
             $('#sort_div').show();
             $('#error_solved_div').show();
             if (data.interface_type == "Commvault") {
-                $("#host_id_div").hide();
+                $("#host_id_div").show();
                 $("#script_text_div").hide();
                 $("#success_text_div").hide();
                 $("#log_address_div").hide();
-                $("#origin_div").show();
                 $("#commv_interface_div").show();
-                $('#utils_id_div').show();
             } else {
                 $("#host_id_div").show();
                 $("#script_text_div").show();
                 $("#success_text_div").show();
                 $("#log_address_div").show();
-                $("#origin_div").hide();
                 $("#commv_interface_div").hide();
-                $('#utils_id_div').hide();
             }
             $("#scriptid").val(script_tree[0].id);
             $("#scriptcode").val(data.code);
@@ -231,7 +125,6 @@ $("#load_script").click(function () {
             alert('请选择接口。')
         }
     } catch(e){
-        console.log(e)
         alert('请选择接口。')
     }
 });
@@ -493,14 +386,12 @@ function customTree() {
                         $("#success_text").val("");
                         $("#log_address").val("");
                         $("#host_id").val("");
-                        $("#origin").val("");
                         $("#commv_interface").val("");
                         $("#interface_type").val("");
                         $("#sort").val('');
                         $("#error_solved").val('');
                         $('#script_instance_name').val('');
                         $('#script_instance_remark').val('');
-                        $('#utils option:first').prop("selected", true);
 
                         // 隐藏
                         $("#host_id_div").hide();
@@ -508,9 +399,7 @@ function customTree() {
                         $("#success_text_div").hide();
                         $("#log_address_div").hide();
                         $("#sort_div").hide();
-                        $("#origin_div").hide();
                         $("#commv_interface_div").hide();
-                        $('#utils_id_div').hide();
                         $('#script_instance_name_div').hide();
                         $('#script_instance_remark_div').hide();
                         $('#sort_div').hide();
@@ -555,8 +444,6 @@ function customTree() {
                                             // >> Linux/Windows
                                             $("#host_id").val(data.data.host_id);
                                             // >> Commvault
-                                            $('#utils').val(data.data.utils_id)
-                                            $("#origin").val(data.data.primary_id);
                                             $("#commv_interface").val(data.data.commv_interface);
                                             $('#script_instance_name_div').show();
                                             $('#script_instance_remark_div').show();
@@ -564,22 +451,17 @@ function customTree() {
                                             $('#error_solved_div').show();
                                             // 判断是否为commvault
                                             if (data.data.interface_type == "Commvault") {
-                                                $("#host_id_div").hide();
+                                                $("#host_id_div").show();
                                                 $("#script_text_div").hide();
                                                 $("#success_text_div").hide();
                                                 $("#log_address_div").hide();
-                                                $("#origin_div").show();
                                                 $("#commv_interface_div").show();
-                                                $('#utils_id_div').show();
-
                                             } else {
                                                 $("#host_id_div").show();
                                                 $("#script_text_div").show();
                                                 $("#success_text_div").show();
                                                 $("#log_address_div").show();
-                                                $("#origin_div").hide();
                                                 $("#commv_interface_div").hide();
-                                                $('#utils_id_div').hide();
                                             }
 
                                             displayParams(1);
@@ -714,18 +596,14 @@ function customTree() {
 $("#interface_type").change(function () {
     var interface_type = $(this).val();
     if (interface_type == "commvault") {
-        $("#host_id_div").hide();
         $("#script_text_div").hide();
         $("#success_text_div").hide();
         $("#log_address_div").hide();
-        $("#origin_div").show();
         $("#commv_interface_div").show();
     } else {
-        $("#host_id_div").show();
         $("#script_text_div").show();
         $("#success_text_div").show();
         $("#log_address_div").show();
-        $("#origin_div").hide();
         $("#commv_interface_div").hide();
     }
 });
@@ -739,18 +617,16 @@ $('#sample_1 tbody').on('click', 'button#select', function () {
 
     // 判断是否为commvault
     if (data.interface_type == "commvault") {
-        $("#host_id_div").hide();
+        $("#host_id_div").show();
         $("#script_text_div").hide();
         $("#success_text_div").hide();
         $("#log_address_div").hide();
-        $("#origin_div").show();
         $("#commv_interface_div").show();
     } else {
         $("#host_id_div").show();
         $("#script_text_div").show();
         $("#success_text_div").show();
         $("#log_address_div").show();
-        $("#origin_div").hide();
         $("#commv_interface_div").hide();
     }
 
@@ -763,7 +639,6 @@ $('#sample_1 tbody').on('click', 'button#select', function () {
 
     // commvault
     $("#interface_type").val(data.interface_type);
-    $("#origin").val(data.origin);
     $("#commv_interface").val(data.commv_interface);
 
     $('#static03').modal('hide');
@@ -783,14 +658,6 @@ $("#process").change(function () {
 // 脚本
 $('#scriptsave').click(function () {
     var config = [];
-    // $('#process_div').find('input').each(function () {
-    //     config.push({
-    //         param_name: $(this).parent().prev().text(),
-    //         variable_name: $(this).attr("id"),
-    //         param_value: $(this).val(),
-    //         type: "PROCESS"
-    //     })
-    // })
     $('#script_div').find('input').each(function () {
         config.push({
             param_name: $(this).parent().prev().text(),
@@ -799,14 +666,20 @@ $('#scriptsave').click(function () {
             type: "SCRIPT"
         })
     })
-    // $('#host_div').find('input').each(function () {
-    //     config.push({
-    //         param_name: $(this).parent().prev().text(),
-    //         variable_name: $(this).attr("id"),
-    //         param_value: $(this).val(),
-    //         type: "HOST"
-    //     })
-    // })
+    /**
+     * 关联主机
+     */
+    var associated_hosts = {},
+        hosts_id = $('#host_id').val(),
+        hosts_name = $('#host_id option:selected').text();
+
+    if (hosts_id){
+        associated_hosts = {
+            'hosts_id': $('#host_id').val(),
+            'hosts_name': $('#host_id option:selected').text()
+        }
+    }
+
     $.ajax({
         type: "POST",
         dataType: 'json',
@@ -828,9 +701,7 @@ $('#scriptsave').click(function () {
              */
             script_instance_id: $('#script_instance_id').val(),
             script_instance_name: $('#script_instance_name').val(),
-            utils: $('#utils').val(),
-            host_id: $('#host_id').val(),
-            origin: $('#origin').val(),
+            associated_hosts: JSON.stringify(associated_hosts),  // 关联主机
             commv_interface: $('#commv_interface').val(),
             log_address: $('#log_address').val(),
             sort: $('#sort').val(),
