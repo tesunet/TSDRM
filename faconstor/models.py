@@ -309,7 +309,8 @@ class Origin(models.Model):
 
 class ProcessSchedule(models.Model):
     dj_periodictask = models.OneToOneField(djmodels.PeriodicTask, null=True, verbose_name="定时任务")
-    process = models.ForeignKey(Process, null=True, verbose_name="流程预案")
+    process = models.ForeignKey(Process, null=True, verbose_name="流程预案")  # 待删除
+    pro_ins = models.ForeignKey(ProcessInstance, null=True, verbose_name="流程预案实例")  
     name = models.CharField("流程计划名称", blank=True, null=True, max_length=256)
     remark = models.TextField("计划说明", null=True, blank=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
