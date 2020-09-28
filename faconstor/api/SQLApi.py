@@ -500,9 +500,9 @@ class CVApi(DataMonitor):
     #         })
     #     return library_space_info
     def get_library_space_info(self):
-        library_space_sql = """SELECT cmaiv.DisplayName, cmiv.LibraryName, cmpv.MountPathName, cmpv.CapacityAvailable, cmpv.SpaceReserved, cmiv.TotalSpaceMB, cmiv.LastBackupTime, cmpv.Offline, cmiv.MediaID, cmiv.LibraryID
+        library_space_sql = """SELECT cmaiv.DisplayName, cmiv.LibraryName, cmpv.MountPathName, cmpv.CapacityAvailable, cmpv.SpaceReserved, cmiv.TotalSpaceMB, cmiv.LastBackupTime, cmpv.Offline, cmiv.MediaID, cmiv.LibraryID,cmiv.BarCode
         FROM CommServ.dbo.CNMMMountPathView AS cmpv
-        LEFT JOIN (SELECT LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID,max(LastBackupTime) LastBackupTime,max(MediaID) MediaID FROM CommServ.dbo.CNMMMediaInfoView GROUP BY LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID, MediaID) AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
+        LEFT JOIN (SELECT BarCode,LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID,max(LastBackupTime) LastBackupTime,max(MediaID) MediaID FROM CommServ.dbo.CNMMMediaInfoView GROUP BY LibraryName,TotalSpaceMB,TotalFreeSpaceMB,LibraryID, MediaID,BarCode) AS cmiv ON cmiv.TotalFreeSpaceMB=(cmpv.CapacityAvailable+cmpv.SpaceReserved) AND cmiv.LibraryID=cmpv.LibraryID
         LEFT JOIN CommServ.dbo.CNMMMALibraryView AS cmalv ON cmalv.LibraryID=cmpv.LibraryID
         LEFT JOIN CommServ.dbo.CNMMMAInfoView AS cmaiv ON cmaiv.MediaAgentID=cmalv.MediaAgentID
         WHERE cmpv.offline=0 ORDER BY cmaiv.DisplayName ASC, cmiv.LibraryName ASC"""
@@ -525,7 +525,8 @@ class CVApi(DataMonitor):
                 "LastBackupTime": i[6],
                 "Offline": i[7],
                 "MediaID": i[8],
-                "LibraryID": i[9]
+                "LibraryID": i[9],
+                "BarCode": i[10]
             })
         return library_space_info
 
@@ -1442,7 +1443,7 @@ class CVApi(DataMonitor):
                 if jobstatus == "others":
                     jobstatus_list = ('Running', 'Waiting', 'Pending', 'Completed', 'Success', 'PartialSuccess',
                                   'Completed w/ one or more errors', 'Completed w/ one or more warnings', 'Failed', 'Failed to Start')
-                    job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                    job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize],[jobfailedreason]
                                 FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}' AND jobstatus not in {jobstatus}
                                 ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname,jobstatus=jobstatus_list)
                 else:
@@ -1454,19 +1455,19 @@ class CVApi(DataMonitor):
                         jobstatus_list = ('PartialSuccess', 'Completed w/ one or more errors', 'Completed w/ one or more warnings')
                     elif jobstatus == "failed":
                         jobstatus_list = ('Failed', 'Failed to Start')
-                    job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                    job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize],[jobfailedreason]
                                 FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}' AND jobstatus in {jobstatus}
                                 ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname,jobstatus=jobstatus_list)
 
             elif jobstatus == "":
-                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize],[jobfailedreason]
                             FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}'
                             ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname)
         elif clientid == "" and jobstatus != "":
             if jobstatus == "others":
                 jobstatus_list = ('Running', 'Waiting', 'Pending', 'Completed', 'Success', 'PartialSuccess',
                                   'Completed w/ one or more errors', 'Completed w/ one or more warnings', 'Failed', 'Failed to Start')
-                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize],[jobfailedreason]
                             FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND jobstatus not in {jobstatus}
                             ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, jobstatus=jobstatus_list)
             else:
@@ -1478,11 +1479,11 @@ class CVApi(DataMonitor):
                     jobstatus_list = ('PartialSuccess', 'Completed w/ one or more errors', 'Completed w/ one or more warnings')
                 elif jobstatus == "failed":
                     jobstatus_list = ('Failed', 'Failed to Start')
-                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+                job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize],[jobfailedreason]
                             FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND jobstatus in {jobstatus}
                             ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate, jobstatus=jobstatus_list)
         else:
-            job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize]
+            job_sql = """SELECT [jobid],[clientname],[idataagent],[instance],[backupset],[subclient],[data_sp],[backuplevel],[incrlevel],[jobstatus],[jobfailedreason],[startdate],[enddate],[totalBackupSize],[jobfailedreason]
                         FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}'
                         ORDER BY [startdate] DESC""".format(startdate=startdate, enddate=enddate)
 
@@ -1532,6 +1533,7 @@ class CVApi(DataMonitor):
                 "startdate": i[11].strftime('%Y-%m-%d %H:%M:%S') if i[11] else "",
                 "enddate": i[12].strftime('%Y-%m-%d %H:%M:%S') if i[12] else "",
                 "totalBackupSize": i[13],
+                "jobfailedreason": i[14],
             })
 
         show_job_status_num['job_run_num'] = job_run_num
@@ -1540,6 +1542,82 @@ class CVApi(DataMonitor):
         show_job_status_num['job_failed_num'] = job_failed_num
 
         return job_list, show_job_status_num
+
+    def get_cv_joblist_daily(self):
+        job_sql = """select CONVERT(BIGINT,DATEDIFF(MI,'1970-01-01 00:00:00.000', CONVERT(varchar(10),startdate,120))) * 60000 startdate,round(sum(totalbackupsize)/1024.00/1024/1024,2) from [commserv].[dbo].[CommCellBackupInfo]  where startdate>dateadd(year,-1,getdate())
+                    group by CONVERT(varchar(10),startdate,120) order by startdate"""
+
+        content = self.fetch_all(job_sql)
+        job_list = []
+        for i in content:
+            job_list.append([i[0],float(i[1])])
+
+        return job_list
+
+    def get_cv_jobbytype(self, startdate, enddate, clientid, jobstatus):
+        job_sql = ""
+        if clientid:
+            clientname_sql = """SELECT [Client] FROM [commserv].[dbo].[CommCellClientConfig] WHERE ClientId={CliendId} AND ClientStatus='installed'""".format(CliendId=clientid)
+            content = self.fetch_all(clientname_sql)
+            clientname = content[0][0]
+            if jobstatus != "":
+                if jobstatus == "others":
+                    jobstatus_list = ('Running', 'Waiting', 'Pending', 'Completed', 'Success', 'PartialSuccess',
+                                  'Completed w/ one or more errors', 'Completed w/ one or more warnings', 'Failed', 'Failed to Start')
+                    job_sql = """SELECT [idataagent],round(sum(totalBackupSize)/1024.00/1024/1024,2),count(*)
+                                FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}' AND jobstatus not in {jobstatus} group by [idataagent]
+                                ORDER BY [idataagent] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname,jobstatus=jobstatus_list)
+                else:
+                    if jobstatus == "run":
+                        jobstatus_list = ('Running', 'Waiting', 'Pending')
+                    elif jobstatus == "success":
+                        jobstatus_list = ('Completed', 'Success')
+                    elif jobstatus == "warn":
+                        jobstatus_list = ('PartialSuccess', 'Completed w/ one or more errors', 'Completed w/ one or more warnings')
+                    elif jobstatus == "failed":
+                        jobstatus_list = ('Failed', 'Failed to Start')
+                    job_sql = """SELECT [idataagent],round(sum(totalBackupSize)/1024.00/1024/1024,2),count(*)
+                                FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}' AND jobstatus in {jobstatus} group by [idataagent]
+                                ORDER BY [idataagent] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname,jobstatus=jobstatus_list)
+
+            elif jobstatus == "":
+                job_sql = """SELECT [idataagent],round(sum(totalBackupSize)/1024.00/1024/1024,2),count(*)
+                            FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND clientname = '{clientname}' group by [idataagent]
+                            ORDER BY [idataagent] DESC""".format(startdate=startdate, enddate=enddate, clientname=clientname)
+        elif clientid == "" and jobstatus != "":
+            if jobstatus == "others":
+                jobstatus_list = ('Running', 'Waiting', 'Pending', 'Completed', 'Success', 'PartialSuccess',
+                                  'Completed w/ one or more errors', 'Completed w/ one or more warnings', 'Failed', 'Failed to Start')
+                job_sql = """SELECT [idataagent],round(sum(totalBackupSize)/1024.00/1024/1024,2),count(*)
+                            FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND jobstatus not in {jobstatus} group by [idataagent]
+                            ORDER BY [idataagent] DESC""".format(startdate=startdate, enddate=enddate, jobstatus=jobstatus_list)
+            else:
+                if jobstatus == "run":
+                    jobstatus_list = ('Running', 'Waiting', 'Pending')
+                elif jobstatus == "success":
+                    jobstatus_list = ('Completed', 'Success')
+                elif jobstatus == "warn":
+                    jobstatus_list = ('PartialSuccess', 'Completed w/ one or more errors', 'Completed w/ one or more warnings')
+                elif jobstatus == "failed":
+                    jobstatus_list = ('Failed', 'Failed to Start')
+                job_sql = """SELECT [idataagent],round(sum(totalBackupSize)/1024.00/1024/1024,2),count(*)
+                            FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}' AND jobstatus in {jobstatus}  group by [idataagent]
+                            ORDER BY [idataagent] DESC""".format(startdate=startdate, enddate=enddate, jobstatus=jobstatus_list)
+        else:
+            job_sql = """SELECT [idataagent],round(sum(totalBackupSize)/1024.00/1024/1024,2),count(*)
+                        FROM [commserv].[dbo].[CommCellBackupInfo] WHERE enddate >= '{startdate}' AND enddate <= '{enddate}'  group by [idataagent]
+                        ORDER BY [idataagent] DESC""".format(startdate=startdate, enddate=enddate)
+
+        content = self.fetch_all(job_sql)
+        idataagent_list=[]
+        totalBackupSize_list = []
+        totalBackupTimes_list = []
+        for i in content:
+            idataagent_list.append(i[0])
+            totalBackupSize_list.append(float(i[1]))
+            totalBackupTimes_list.append(i[2])
+
+        return {"idataagent_list":idataagent_list,"totalBackupSize_list":totalBackupSize_list,"totalBackupTimes_list":totalBackupTimes_list}
 
     def display_error_job_list(self, startdate, enddate, clientid):
         status_list = {"Running": "运行", "Waiting": "等待", "Pending": "阻塞", "Completed": "正常", "Success": "成功",

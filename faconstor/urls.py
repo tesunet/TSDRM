@@ -231,6 +231,11 @@ urlpatterns = [
     url(r'^get_disk_space/$', get_disk_space),
     url(r'^get_disk_space_daily/$', get_disk_space_daily),
     url(r'^get_ma_disk_space/$', get_ma_disk_space),
+
+    #备份任务
+    url(r'^get_jobbackupsize_daily/$', get_jobbackupsize_daily),
+    url(r'^get_jobbytype/$', get_jobbytype),
+
     
     # 客户端管理
     url(r'^client_manage/$', client_manage, {'funid': '71'}),

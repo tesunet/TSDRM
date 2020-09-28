@@ -139,6 +139,78 @@ def get_cv_joblist(request):
 
 
 @login_required
+def get_jobbackupsize_daily(request):
+    util = request.GET.get('util', '')
+    try:
+        util = int(util)
+    except:
+        return JsonResponse({
+            "ret": 0,
+            "data": 'Commvault工具未配置。',
+        })
+    job_list = []
+    util_manages = UtilsManage.objects.exclude(state='9').filter(id=util)
+    if len(util_manages) > 0:
+        util = util_manages[0]
+        if util.util_type.upper() == 'COMMVAULT':
+            commvault_credit, sqlserver_credit = get_credit_info(util.content)
+
+            try:
+                dm = SQLApi.CVApi(sqlserver_credit)
+                job_list = dm.get_cv_joblist_daily()
+
+            except Exception as e:
+                print(e)
+                return JsonResponse({
+                    "ret": 0,
+                    "data": "获取信息失败。",
+                })
+    return JsonResponse({"data": job_list})
+
+
+
+@login_required
+def get_jobbytype(request):
+    util = request.GET.get('util', '')
+    startdate = request.GET.get('startdate', '')
+    enddate = request.GET.get('enddate', '')
+    clientid = request.GET.get('clientid', '')
+    jobstatus = request.GET.get('jobstatus', '')
+
+    try:
+        clientid = int(clientid)
+    except:
+        clientid = ""
+
+    try:
+        util = int(util)
+    except:
+        return JsonResponse({
+            "ret": 0,
+            "data": 'Commvault工具未配置。',
+        })
+    job_list = []
+    util_manages = UtilsManage.objects.exclude(state='9').filter(id=util)
+    if len(util_manages) > 0:
+        util = util_manages[0]
+        if util.util_type.upper() == 'COMMVAULT':
+            commvault_credit, sqlserver_credit = get_credit_info(util.content)
+
+            try:
+                dm = SQLApi.CVApi(sqlserver_credit)
+                totaljob = dm.get_cv_jobbytype(startdate, enddate, clientid, jobstatus)
+
+            except Exception as e:
+                print(e)
+                return JsonResponse({
+                    "ret": 0,
+                    "data": "获取信息失败。",
+                })
+    return JsonResponse({"data": totaljob})
+
+
+
+@login_required
 def get_client_name(request):
     utils = request.POST.get('utils', '')
 

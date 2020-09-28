@@ -89,6 +89,7 @@ $(document).ready(function() {
                             '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + sort + '</td>' +
                             '<td rowspan="' + disk_space[i].display_name_rowspan + '" style="vertical-align:middle; ' + display_name_hidden + '">' + disk_space[i]["DisplayName"] + '</td>' +
                             '<td rowspan="' + disk_space[i].library_name_rowspan + '" style="vertical-align:middle; ' + library_name_hidden + '">' + disk_space[i]["LibraryName"] + '</td>' +
+                            '<td style="vertical-align:middle">' + disk_space[i]["BarCode"] + '</td>' +
                             '<td style="vertical-align:middle">' + disk_space[i]["MountPathName"] + '</td>' +
                             '<td style="vertical-align:middle">' + CapacityAvailable + ' GB</td>' +
                             '<td style="vertical-align:middle">' + SpaceReserved + ' GB</td>' +
@@ -117,13 +118,14 @@ $(document).ready(function() {
     })
     var chart = new Highcharts.Chart({
         chart: {
+            type: 'column',
             renderTo: 'disk_space_hc',
             style: {
                 fontFamily: 'Open Sans'
             }
         },
         title: {
-            text: '每周磁盘数据',
+            text: '每月磁盘数据',
             x: -20 //center
         },
 
