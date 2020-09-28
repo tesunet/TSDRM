@@ -1808,7 +1808,7 @@ def process_schedule_save(request):
     if request.user.is_authenticated():
         process_schedule_id = request.POST.get('process_schedule_id', '')
         process_schedule_name = request.POST.get('process_schedule_name', '')
-        process = request.POST.get('process', '')
+        pro_ins_id = request.POST.get('pro_ins_id', '')
         process_schedule_remark = request.POST.get('process_schedule_remark', '')
 
         schedule_type = request.POST.get('schedule_type', '')
@@ -1848,7 +1848,7 @@ def process_schedule_save(request):
             })
 
         try:
-            process = int(process)
+            pro_ins_id = int(pro_ins_id)
         except ValueError as e:
             return JsonResponse({
                 "ret": 0,
@@ -1889,7 +1889,7 @@ def process_schedule_save(request):
                     })
 
         try:
-            cur_process = Process.objects.get(id=process)
+            cur_process = ProcessInstance.objects.get(id=pro_ins_id)
         except Process.DoesNotExist as e:
             ret = 0
             info = "流程不存在。"
@@ -1903,7 +1903,7 @@ def process_schedule_save(request):
 
                 cv_params = {}
                 # 传入流程参数
-                if cur_process.type == "Commvault":
+                if cur_process.process.type == "Commvault":
                     try:
                         pri = int(pri)
                     except Exception:
@@ -2020,7 +2020,7 @@ def process_schedule_save(request):
 
                     ps = ProcessSchedule()
                     ps.dj_periodictask_id = cur_periodictask_id
-                    ps.process = cur_process
+                    ps.pro_ins = cur_process
                     ps.name = process_schedule_name
                     ps.remark = process_schedule_remark
                     ps.schedule_type = schedule_type
@@ -2062,7 +2062,7 @@ def process_schedule_save(request):
                             cur_periodictask.enabled = cur_periodictask_status
                             cur_periodictask.save()
 
-                            ps.process = cur_process
+                            ps.pro_ins = cur_process
                             ps.name = process_schedule_name
                             ps.remark = process_schedule_remark
                             ps.schedule_type = schedule_type
@@ -2082,53 +2082,57 @@ def process_schedule_data(request):
     if request.user.is_authenticated():
         result = []
 
-        all_process_schedules = ProcessSchedule.objects.exclude(state="9").select_related("process", "dj_periodictask", "dj_periodictask__crontab")
+        pro_ins_id = request.GET.get('pro_ins_id', '')
 
-        for process_schedule in all_process_schedules:
-            process_id = process_schedule.process.id
-            process_name = process_schedule.process.name
-            remark = process_schedule.remark
-            schedule_type = process_schedule.schedule_type
-            schedule_type_display = process_schedule.get_schedule_type_display()
-            # 定时任务
-            status, minutes, hours, per_week, per_month = "", "", "", "", ""
-            periodictask = process_schedule.dj_periodictask
-            cv_params = {}
-            if periodictask:
-                status = periodictask.enabled
-                cur_crontab_schedule = periodictask.crontab
-                try:
-                    kwargs = json.loads(periodictask.kwargs)
-                    cv_params = kwargs.get("cv_params", "")
-                    agent_type = kwargs.get("agent_type", "")
-                except Exception as e:
-                    print(e)
+        try:
+            pro_ins_id = int(pro_ins_id)
+        except ValueError:
+            pass
+        else:
+            all_process_schedules = ProcessSchedule.objects.filter(pro_ins_id=pro_ins_id).exclude(state="9").select_related("pro_ins", "process", "dj_periodictask", "dj_periodictask__crontab")
 
-                if cur_crontab_schedule:
-                    minutes = cur_crontab_schedule.minute
-                    hours = cur_crontab_schedule.hour
-                    per_week = cur_crontab_schedule.day_of_week
-                    per_month = cur_crontab_schedule.day_of_month
+            for process_schedule in all_process_schedules:
+                remark = process_schedule.remark
+                schedule_type = process_schedule.schedule_type
+                schedule_type_display = process_schedule.get_schedule_type_display()
+                # 定时任务
+                status, minutes, hours, per_week, per_month = "", "", "", "", ""
+                periodictask = process_schedule.dj_periodictask
+                cv_params = {}
+                agent_type = ""
+                if periodictask:
+                    status = periodictask.enabled
+                    cur_crontab_schedule = periodictask.crontab
+                    try:
+                        kwargs = json.loads(periodictask.kwargs)
+                        cv_params = kwargs.get("cv_params", "")
+                        agent_type = kwargs.get("agent_type", "")
+                    except Exception as e:
+                        print(e)
 
-            result.append({
-                "process_schedule_id": process_schedule.id,
-                "process_schedule_name": process_schedule.name,
-                "process_id": process_id,
-                "process_name": process_name,
-                "remark": remark,
-                "schedule_type": schedule_type,
-                "schedule_type_display": schedule_type_display,
-                "minutes": minutes,
-                "hours": hours,
-                "per_week": per_week,
-                "per_month": per_month,
-                "status": status,
+                    if cur_crontab_schedule:
+                        minutes = cur_crontab_schedule.minute
+                        hours = cur_crontab_schedule.hour
+                        per_week = cur_crontab_schedule.day_of_week
+                        per_month = cur_crontab_schedule.day_of_month
 
-                # Commvault参数
-                "p_type": process_schedule.process.type,
-                "cv_params": cv_params,
-                "agent_type": agent_type,
-            })
+                result.append({
+                    "process_schedule_id": process_schedule.id,
+                    "process_schedule_name": process_schedule.name,
+                    "remark": remark,
+                    "schedule_type": schedule_type,
+                    "schedule_type_display": schedule_type_display,
+                    "minutes": minutes,
+                    "hours": hours,
+                    "per_week": per_week,
+                    "per_month": per_month,
+                    "status": status,
+
+                    # Commvault参数
+                    "p_type": process_schedule.pro_ins.process.type,
+                    "cv_params": cv_params,
+                    "agent_type": agent_type,
+                })
         return JsonResponse({"data": result})
     else:
         return HttpResponseRedirect("/login")

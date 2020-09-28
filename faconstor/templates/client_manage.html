@@ -608,32 +608,6 @@
             </div>
         </div>
     </div>
-    <div id="cv_fs_model" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                    <h4 class="modal-title">选择目录</h4>
-                </div>
-                <div style="height:400px;overflow:auto; ">
-                    <div>
-                        <ul id="cv_fs_tree" class="ztree"></ul>
-                    </div>
-
-                    <p>
-                    <p>
-                    <p>
-                </div>
-                <div class="modal-footer">
-                    <button id="cv_selectpath" type="button" data-dismiss="modal"
-                            class="btn green uppercase">确定
-                    </button>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div id="static02" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -911,6 +885,7 @@
                             <div class="form-group">
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>选择预案</label>
                                 <div class="col-md-10">
+                                    <input type="text" id="pro_type" name="pro_type" hidden>
                                     <input type="text" id="pro_list" name="pro_list" value="{{ pro_list_json }}" hidden>
                                     <select name="pros" id="pros" class="form-control">
                                         {% for pro in pro_list %}
@@ -1016,8 +991,7 @@
                                     -->
                                 </div>
                             </div>
-                            <!-- 暂缓
-                            <div class="form-group" id="pro_schedule">
+                            <div class="form-group" id="pro_schedule" hidden>
                                 <div class="form-group" style="margin-bottom:0;">
                                     <label class="col-md-2 control-label" for="form_control_1"
                                            style="vertical-align: inherit;font-weight:bold;color: #2ab4c0">流程计划
@@ -1045,7 +1019,6 @@
                                             <tr>
                                                 <th style="width:40px;"> 序号</th>
                                                 <th> 计划名称</th>
-                                                <th> 流程</th>
                                                 <th> 计划类型</th>
                                                 <th> 计划时间</th>
                                                 <th> 计划说明</th>
@@ -1059,7 +1032,6 @@
                                     </div>
                                 </div>
                             </div>
-                            -->
                         </div>
                         <div class="form-actions ">
                             <div class="modal-footer">
@@ -1081,6 +1053,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
                     <h4 class="modal-title">流程计划管理</h4>
                     <input hidden id="process_schedule_id" type="text" name="process_schedule_id">
+                    <input hidden id="edit_row" type="text" name="edit_row">
                 </div>
                 <div class="panel-body">
                     <form class="bs-example form-horizontal activate-form">{% csrf_token %}
@@ -1094,20 +1067,9 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>流程</label>
-                                <div class="col-md-10">
-                                    <select class="form-control" id="process" name="process">
-                                        {% for process in all_process %}
-                                            <option value="{{ process.id }}">{{ process.name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
-                            <div class="form-group">
                                 <label class="col-md-2 control-label"><span style="color:red; ">*</span>周期类型</label>
                                 <div class="col-md-10">
-                                    <select name="schedule_type" id="schedule_type" class="form-control select2">
+                                    <select name="schedule_type" id="schedule_type" class="form-control">
                                         <option value="1">每日</option>
                                         <option value="2">每周</option>
                                         <option value="3">每月</option>
@@ -1168,20 +1130,20 @@
                                         <hr style="height:1px;border:none;border-top:1px solid #87cefa;">
                                     </div>
                                 </div>
-                                <input type="text" id="browse_job_id" name="browse_job_id" hidden>
-                                <input type="text" id="agent_type" name="agent_type" hidden>
+                                <input type="text" id="jh_browse_job_id" name="jh_browse_job_id" hidden>
+                                <input type="text" id="jh_agent_type" name="jh_agent_type" hidden>
 
                                 <div class="form-group">
                                     <label class="col-lg-2 control-label">源客户端</label>
                                     <div class="col-lg-10">
-                                        <input id="pri" type="text" name="pri" class="form-control" readonly>
-                                        <input id="pri_id" type="text" name="pri_id" hidden>
+                                        <input id="jh_pri" type="text" name="jh_pri" class="form-control" readonly>
+                                        <input id="jh_pri_id" type="text" name="jh_pri_id" hidden>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label class="col-lg-2 control-label">目标客户端</label>
                                     <div class="col-md-10">
-                                        <select class="form-control" id="std" name="std">
+                                        <select class="form-control" id="jh_std" name="jh_std">
                                             {% for cv_client in cv_clients %}
                                                 <option value="{{ cv_client.id }}">{{ cv_client.client_name }}</option>
                                             {% endfor %}
@@ -1191,24 +1153,24 @@
                                 <div class="form-group">
                                     <label class="col-md-2 control-label">恢复时间点</label>
                                     <div class="col-md-10">
-                                        <div class="input-group" id="cv_recovery_time_redio_group">
+                                        <div class="input-group" id="jh_cv_recovery_time_redio_group">
                                             <span class="input-group-addon">
-                                                <input type="radio" name="optionsRadios" value="1"
+                                                <input type="radio" name="jh_optionsRadios" value="1"
                                                        checked> 最新时间点
-                                                <input type="radio" name="optionsRadios"
+                                                <input type="radio" name="jh_optionsRadios"
                                                        value="2">选择时间
                                             </span>
-                                            <input id="recovery_time" autocomplete="off" type="datetime" name="recovery_time" class="form-control">
+                                            <input id="jh_recovery_time" autocomplete="off" type="datetime" name="jh_recovery_time" class="form-control">
                                         </div>
                                     </div>
                                 </div>
 
-                                <div id="cv_orcl" hidden>
+                                <div id="jh_cv_orcl" hidden>
                                     <div class="form-group">
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; "></span>选择拷贝优先级</label>
                                         <div class="col-md-10">
-                                            <select name="cv_copy_priority" id="cv_copy_priority" class="form-control">
+                                            <select name="jh_cv_copy_priority" id="jh_cv_copy_priority" class="form-control">
                                                 <option value="1">主拷贝</option>
                                                 <option value="2">辅助拷贝</option>
                                             </select>
@@ -1219,7 +1181,7 @@
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; "></span>是否开启数据库</label>
                                         <div class="col-md-10">
-                                            <select name="cv_db_open" id="cv_db_open" class="form-control">
+                                            <select name="jh_cv_db_open" id="jh_cv_db_open" class="form-control">
                                                 <option value="1">是</option>
                                                 <option value="2">否</option>
                                             </select>
@@ -1230,7 +1192,7 @@
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; "></span>是否回滚日志</label>
                                         <div class="col-md-10">
-                                            <select name="cv_log_restore" id="cv_log_restore" class="form-control">
+                                            <select name="jh_cv_log_restore" id="jh_cv_log_restore" class="form-control">
                                                 <option value="1">是</option>
                                                 <option value="2">否</option>
                                             </select>
@@ -1241,27 +1203,27 @@
                                         <label class="col-md-2 control-label"><span
                                                 style="color:red; "></span>数据重定向路径</label>
                                         <div class="col-md-10">
-                                            <input id="cv_data_path" type="text" name="cv_data_path" class="form-control" placeholder="">
+                                            <input id="jh_cv_data_path" type="text" name="jh_cv_data_path" class="form-control" placeholder="">
                                             <div class="form-control-focus"></div>
                                         </div>
                                     </div>
                                 </div>
-                                <div id="cv_mssql" hidden>
+                                <div id="jh_cv_mssql" hidden>
                                     <div class="form-group form-md-line-input ">
                                         <label class="col-md-2 control-label">无条件改写</label>
                                         <div class="col-md-10">
-                                            <input id="cv_isoverwrite" name="cv_isoverwrite" type="checkbox" value="True" style="width: 20px; height: 20px;"/>
+                                            <input id="jh_cv_isoverwrite" name="jh_cv_isoverwrite" type="checkbox" value="True" style="width: 20px; height: 20px;"/>
                                         </div>
                                     </div>
                                 </div>
-                                <div id="cv_filesystem" hidden>
+                                <div id="jh_cv_filesystem" hidden>
                                     <div class="form-group">
                                         <label class="col-md-2 control-label">文件改写</label>
                                         <div class="col-md-10" style="padding-top:6px">
                                             <div class="input-group">
                                                 <span>
-                                                    <input type="radio" name="cv_overwrite" value="FALSE" checked> 如果介质上文件较新则改写
-                                                    <input type="radio" name="cv_overwrite" value="TRUE">无条件改写
+                                                    <input type="radio" name="jh_cv_overwrite" value="FALSE" checked> 如果介质上文件较新则改写
+                                                    <input type="radio" name="jh_cv_overwrite" value="TRUE">无条件改写
                                                 </span>
                                             </div>
                                         </div>
@@ -1271,28 +1233,27 @@
                                         <div class="col-md-10">
                                             <div class="input-group">
                                                 <span class="input-group-addon">
-                                                    <input type="radio" name="cv_path" value="1" checked> 相同文件夹
-                                                    <input type="radio" name="cv_path" value="2">指定路径
+                                                    <input type="radio" name="jh_cv_path" value="1" checked> 相同文件夹
+                                                    <input type="radio" name="jh_cv_path" value="2">指定路径
                                                 </span>
-                                                <input id="cv_mypath" autocomplete="off" type="path" name="cv_mypath" class="form-control">
+                                                <input id="jh_cv_mypath" autocomplete="off" type="path" name="jh_cv_mypath" class="form-control">
                                             </div>
                                         </div>
                                     </div>
                                     <div class="form-group" style="padding-top:20px">
                                         <label class="col-md-2 control-label">恢复目录</label>
                                         <div class="col-md-10">
-                                            <select multiple="multiple" id="cv_fs_se_1" size="10" class="form-control" style="overflow-y:auto;">
+                                            <select multiple="multiple" id="jh_cv_fs_se_1" size="10" class="form-control" style="overflow-y:auto;">
                                                 <option value=''></option>
                                             </select>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
                             <div class="form-actions">
                                 <div class="modal-footer">
-                                    <span id='cv_select_file' hidden>
-                                        <button type="button" data-toggle="modal" data-target="#cv_fs_model" class="btn green uppercase">选择目录</button>
+                                    <span id='jh_cv_select_file' hidden>
+                                        <button type="button" data-toggle="modal" data-target="#jh_cv_fs_model" class="btn green uppercase">选择目录</button>
                                     </span>
                                     <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
                                     </button>
@@ -1305,6 +1266,7 @@
             </div>
         </div>
     </div>
+
     <div id="static09" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog" style="width:900px;">
             <div class="modal-content">
@@ -1341,9 +1303,64 @@
         </div>
     </div>
 
+    <div id="cv_fs_model" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">选择目录</h4>
+                </div>
+                <div style="height:400px;overflow:auto; ">
+                    <div>
+                        <ul id="cv_fs_tree" class="ztree"></ul>
+                    </div>
+
+                    <p>
+                    <p>
+                    <p>
+                </div>
+                <div class="modal-footer">
+                    <button id="cv_selectpath" type="button" data-dismiss="modal"
+                            class="btn green uppercase">确定
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="jh_cv_fs_model" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">选择目录</h4>
+                </div>
+                <div style="height:400px;overflow:auto; ">
+                    <div>
+                        <ul id="jh_cv_fs_tree" class="ztree"></ul>
+                    </div>
+
+                    <p>
+                    <p>
+                    <p>
+                </div>
+                <div class="modal-footer">
+                    <button id="jh_cv_selectpath" type="button" data-dismiss="modal"
+                            class="btn green uppercase">确定
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
     <div id="loading" class="portlet-body">
     </div>
 {% endblock %} {% block script %}
+
+    <script>
+        var p_params = {{ p_params|safe }};
+    </script>
+
     <link href="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.css" rel="stylesheet" type="text/css"/>
     <link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css"/>
     <link href="/static/assets/global/plugins/datatables/plugins/bootstrap/datatables.bootstrap.css" rel="stylesheet" type="text/css"/>
