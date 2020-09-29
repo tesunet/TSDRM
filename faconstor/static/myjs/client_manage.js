@@ -31,7 +31,7 @@ function selectAssociatedHost() {
      * 注册选中事件
      */
     $('select[id^="hosts_manage_"]').change(function () {
-        $('#host_div').show();
+        // $('#host_div').show();
         var ribbon_id = $(this).prop("id").split("_").pop(),
             hosts_name = $(this).find('option:selected').text(),
             hosts_manage_id = $(this).val();
@@ -168,11 +168,11 @@ function getProcessInstancedata(host_id, empty = false) {
 
         $('#associated_host_div').empty();
         $('#host_param_div').empty();
-        if (HOST.length > 0) {
-            $('#host_div').show();
-        } else {
-            $('#host_div').hide();
-        }
+        // if (HOST.length > 0) {
+        //     $('#host_div').show();
+        // } else {
+        //     $('#host_div').hide();
+        // }
         for (var i = 0; i < HOST.length; i++) {
             var cur_host = HOST[i];
             // 关联主机
@@ -1886,7 +1886,7 @@ $(document).ready(function () {
         $('#pro_param_ribbon').empty();
         $('#process_div').hide();
         $('#host_param_div').empty();
-        $('#host_div').hide();
+        // $('#host_div').hide();
         $('#associated_host_div').empty();
     });
 
