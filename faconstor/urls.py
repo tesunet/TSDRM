@@ -258,4 +258,5 @@ urlpatterns = [
     url(r'^pro_del/$', pro_del),
 
     url(r'^processinsconfig/$', processinsconfig, {'funid': '93'}),
+    url(r'^get_cv_params/$', get_cv_params),
 ]

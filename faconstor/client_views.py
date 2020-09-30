@@ -1,4 +1,5 @@
 # 客户端管理
+from django.apps import config
 from django.shortcuts import render
 from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
@@ -1369,7 +1370,7 @@ def processinsconfig(request, funid):
         except Exception as e:
             print(e)
 
-    hosts_manages = HostsManage.objects.exclude(state="9").only("id", "host_name", "config")
+    hosts_manages = HostsManage.objects.exclude(state="9").filter(nodetype='CLIENT').only("id", "host_name", "config")
     hosts_list = []
     for hm in hosts_manages:
         # 主机参数
@@ -1379,77 +1380,7 @@ def processinsconfig(request, funid):
             "host_name": hm.host_name,
             "host_param_list": host_param_list
         })
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")| Q(type="NODE")).filter(processtype="1").order_by("sort").only("id", "name")
 
-    p_params = []
-    # 流程下包含客户端的默认参数
-    for p in all_process:
-        cv_params = {
-            "pri_id": "",
-            "pri_name": "",
-            "std_id": "",
-            # Oracle
-            "data_path": "",
-            "copy_priority": "",
-            "db_open": "",
-            "log_restore": "",
-            # File System
-            "destPath": "",
-            "overWrite": "",
-            "inPlace": "",
-            "OSRestore": "",
-            "sourcePaths": "",
-            # SQL Server
-            "mssqlOverWrite": "",
-        }
-        agent_type = ""
-        all_steps = p.step_set.exclude(state="9")
-        if_break = False
-        for cur_step in all_steps:
-            all_scriptinstances = cur_step.scriptinstance_set.exclude(state="9")
-            for cur_scriptinstance in all_scriptinstances:
-                pri = cur_scriptinstance.primary
-                if pri:
-                    agent_type = pri.agentType
-                    info = etree.XML(pri.info)
-                    params = info.xpath("//param")
-
-                    if params:
-                        param = params[0]
-                        std_id = pri.destination.id if pri.destination else ""
-                        cv_params["pri_id"] = pri.id
-                        cv_params["pri_name"] = pri.client_name
-                        cv_params["std_id"] = std_id
-
-                        # 恢复时间点
-                        cv_params["recovery_time"] = param.attrib.get("recovery_time", "")
-
-                        # Oracle
-                        cv_params["data_path"] = param.attrib.get("data_path", "")
-                        cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
-                        cv_params["db_open"] = param.attrib.get("db_open", "")
-                        cv_params["log_restore"] = param.attrib.get("log_restore", "")
-                        # File System
-                        cv_params["destPath"] = param.attrib.get("destPath", "")
-                        cv_params["overWrite"] = param.attrib.get("overWrite", "")
-                        cv_params["inPlace"] = param.attrib.get("inPlace", "")
-                        cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
-                        cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
-
-                        # SQL Server
-                        cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
-
-                    if_break = True
-                    break
-            if if_break:
-                break
-
-        p_params.append({
-            "p_id": p.id,
-            "p_type": p.type,
-            "cv_params": cv_params,
-            "agent_type": agent_type,
-        })
     cv_clients = CvClient.objects.exclude(state="9").values("id", "client_name")
     return render(request, 'processinsconfig.html', {
         'username': request.user.userinfo.fullname,
@@ -1459,8 +1390,88 @@ def processinsconfig(request, funid):
         "pro_list_json": json.dumps(pro_list),
         "hosts_manages": hosts_list,
         "hosts_manages_json": json.dumps(hosts_list),
-        "p_params": json.dumps(p_params, ensure_ascii=False),
         'cv_clients': cv_clients,
+    })
+
+
+@login_required
+def get_cv_params(request):
+    pro_ins_id = request.POST.get('pro_ins_id', '')
+
+    is_commvault = 0
+    agent_type = ''
+    cv_params = {
+        "pri_id": "",
+        "pri_name": "",
+        "std_id": "",
+        # Oracle
+        "data_path": "",
+        "copy_priority": "",
+        "db_open": "",
+        "log_restore": "",
+        # File System
+        "destPath": "",
+        "overWrite": "",
+        "inPlace": "",
+        "OSRestore": "",
+        "sourcePaths": "",
+        # SQL Server
+        "mssqlOverWrite": "",
+    }
+    try:
+        pro_ins_id = int(pro_ins_id)
+        pro_ins = ProcessInstance.objects.get(id=pro_ins_id)
+        config_root = etree.XML(pro_ins.config)
+        # HOST -> CVCLIENT -> CV_PARAMS
+        hosts = config_root.xpath('//host')
+        for host in hosts:
+            host_id = host.attrib.get('host_id', '')
+            try:
+                host_id = int(host_id)
+            except:
+                pass
+            cv_clients = CvClient.objects.exclude(state='9').filter(hostsmanage_id=host_id)
+            if cv_clients.exists():
+                is_commvault = 1
+                pri = cv_clients[0]
+                agent_type = pri.agentType
+                std_id = pri.destination.id if pri.destination else ""
+                cv_params["pri_id"] = pri.id
+                cv_params["pri_name"] = pri.client_name
+                cv_params["std_id"] = std_id
+
+                info = etree.XML(pri.info)
+                params = info.xpath("//param")
+
+                if params:
+                    param = params[0]
+
+                    # 恢复时间点
+                    cv_params["recovery_time"] = param.attrib.get("recovery_time", "")
+
+                    # Oracle
+                    cv_params["data_path"] = param.attrib.get("data_path", "")
+                    cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
+                    cv_params["db_open"] = param.attrib.get("db_open", "")
+                    cv_params["log_restore"] = param.attrib.get("log_restore", "")
+                    # File System
+                    cv_params["destPath"] = param.attrib.get("destPath", "")
+                    cv_params["overWrite"] = param.attrib.get("overWrite", "")
+                    cv_params["inPlace"] = param.attrib.get("inPlace", "")
+                    cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
+                    cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
+
+                    # SQL Server
+                    cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
+    except:
+        pass
+    
+    return JsonResponse({
+        'data': {
+            'cv_params': cv_params,
+            'agent_type': agent_type,
+            'is_commvault': is_commvault,
+        },
     })
 
 

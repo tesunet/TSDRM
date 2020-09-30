@@ -126,7 +126,6 @@ function getProcessInstancedata(host_id, empty = false) {
         $('#pro_schedule').show();
         var table = $('#pro_config').DataTable();
         var data = table.row($(this).parents('tr')).data();
-        console.log(data.process_id)
         $('#p_id').val(data.id);
         $('#pro_ins').val(data.name);
         $('#pros').val(data.process_id);
@@ -261,6 +260,29 @@ function getProcessInstancedata(host_id, empty = false) {
         } else {
             $('#process_div').hide();
         }
+
+        /**
+         * 如果当前流程实例已经配置成功，加载Commvault主机携带的参数
+         */
+        $('#cv_info').val('');
+        $.ajax({
+            type: 'POST',
+            dataType: 'JSON',
+            url: '../get_cv_params/',
+            data: {
+                'pro_ins_id': $('#p_id').val(),
+            },
+            success: function(data){
+                var cv_info = data.data;
+                
+                try {
+                    cv_info = JSON.stringify(cv_info)
+                } catch(e){}
+
+                $('#cv_info').val(cv_info);
+            }
+        });
+
     });
 }
 
@@ -608,6 +630,30 @@ $("#sche_new").click(function () {
     $("#schedule_type").val("");
     $('#Commvault_div').hide();
     $('#jh_cv_select_file').hide();
+
+    /**
+     * Commavult
+     */
+    try {
+        var cv_info = JSON.parse($('#cv_info').val());
+        var cv_params = cv_info.cv_params,
+            agent_type = cv_info.agent_type,
+            is_commvault = cv_info.is_commvault;
+        if (is_commvault) {
+            $('#jh_pri_id').val(cv_params.pri_id);
+            $('#jh_pri').val(cv_params.pri_name);
+            $('#jh_std').val(cv_params.std_id);
+
+            $('#jh_std').val(cv_params.std_id);
+
+            $('#Commvault_div').show();
+        } else {
+            $('#Commvault_div').hide();
+        }
+        displayJHAgentParams(cv_params, agent_type);
+    } catch (e) {
+        console.log(e)
+    }
 });
 
 // time-picker
@@ -638,34 +684,38 @@ $("#schedule_type").change(function () {
         $("#per_month_div").show();
     }
 });
-function displayProcessParams(p_id) {
-    /**
-     * Commvault流程下应用参数
-     */
-    for (var i = 0; i < p_params.length; i++) {
-        var p_param = p_params[i],
-            p_type = p_params[i].p_type,
-            cv_params = p_params[i].cv_params;
 
-        /*
-         * 对应流程参数
-         */
-        if (p_type == "Commvault") {
-            $('#jh_pri_id').val(cv_params.pri_id);
-            $('#jh_pri').val(cv_params.pri_name);
-            $('#jh_std').val(cv_params.std_id);
+function getJHFileTree(cv_id) {
+    var setting = {
+        async: {
+            enable: true,
+            url: '../get_file_tree/',
+            autoParam: ["id"],
+            otherParam: { "cv_id": cv_id },
+            dataFilter: filter
+        },
+        check: {
+            enable: true,
+            chkStyle: "checkbox",               //多选
+            chkboxType: { "Y": "s", "N": "ps" }  //不级联父节点选择
+        },
+        view: {
+            showLine: false
+        },
 
-            $('#Commvault_div').show();
-        } else {
-            $('#Commvault_div').hide();
+    };
+
+    function filter(treeId, parentNode, childNodes) {
+        if (!childNodes) return null;
+        for (var i = 0, l = childNodes.length; i < l; i++) {
+            childNodes[i].name = childNodes[i].name.replace(/\.n/g, '.');
         }
-
-        if (p_id == p_param.p_id) {
-            displayJHAgentParams(cv_params, p_param.agent_type)
-            break;
-        }
+        return childNodes;
     }
+
+    $.fn.zTree.init($("#jh_cv_fs_tree"), setting);
 }
+
 function displayJHAgentParams(cv_params, agent_type) {
     /**
      * 应用参数
@@ -891,11 +941,6 @@ $('#sche_save').click(function () {
     });
 });
 
-$('#static08').on('shown.bs.modal', function () {
-    var p_id = $('#pros').val();
-    displayProcessParams(p_id);
-});
-
 function loadScheData() {
     if ($.fn.DataTable.isDataTable('#process_schedule_dt')) {
         $('#process_schedule_dt').dataTable().fnDestroy();
@@ -1067,7 +1112,6 @@ $('#process_schedule_dt tbody').on('click', 'button#edit', function () {
         $("#per_month_div").show();
     }
 
-
     var per_time = data.hours + ":" + data.minutes;
     $("#per_time").val(per_time).timepicker("setTime", per_time);
     $("#per_week").val(data.per_week != "*" ? data.per_week : "").trigger("change");
@@ -1093,9 +1137,6 @@ $('#process_schedule_dt tbody').on('click', 'button#edit', function () {
             $('#Commvault_div').hide();
         }
         displayJHAgentParams(cv_params, agent_type);
-
-        // 恢复时间
-
     } catch (e) {
         console.log(e)
     }
