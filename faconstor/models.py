@@ -167,7 +167,8 @@ class Walkthrough(models.Model):
 
 
 class ProcessRun(models.Model):
-    process = models.ForeignKey(Process)
+    process = models.ForeignKey(Process)    # 待删除
+    pro_ins = models.ForeignKey(ProcessInstance, null=True, verbose_name='流程实例')
     walkthrough = models.ForeignKey(Walkthrough, blank=True, null=True)
     starttime = models.DateTimeField("开始时间", blank=True, null=True)
     endtime = models.DateTimeField("结束时间", blank=True, null=True)
