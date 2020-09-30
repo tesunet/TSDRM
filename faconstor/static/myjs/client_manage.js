@@ -289,6 +289,30 @@ function getProcessInstancedata(host_id, empty = false) {
         } else {
             $('#process_div').hide();
         }
+
+        /**
+         * 如果当前流程实例已经配置成功，加载Commvault主机携带的参数
+         */
+        $('#cv_info').val('');
+        $.ajax({
+            type: 'POST',
+            dataType: 'JSON',
+            url: '../get_cv_params/',
+            data: {
+                'pro_ins_id': $('#p_id').val(),
+            },
+            success: function(data){
+                var cv_info = data.data;
+                
+                try {
+                    cv_info = JSON.stringify(cv_info)
+                } catch(e){}
+
+                $('#cv_info').val(cv_info);
+            }
+        });
+
+
     });
 }
 
@@ -1904,6 +1928,30 @@ $(document).ready(function () {
         $("#schedule_type").val("");
         $('#Commvault_div').hide();
         $('#jh_cv_select_file').hide();
+
+        /**
+         * Commavult
+         */
+        try {
+            var cv_info = JSON.parse($('#cv_info').val());
+            var cv_params = cv_info.cv_params,
+                agent_type = cv_info.agent_type,
+                is_commvault = cv_info.is_commvault;
+            if (is_commvault) {
+                $('#jh_pri_id').val(cv_params.pri_id);
+                $('#jh_pri').val(cv_params.pri_name);
+                $('#jh_std').val(cv_params.std_id);
+
+                $('#jh_std').val(cv_params.std_id);
+
+                $('#Commvault_div').show();
+            } else {
+                $('#Commvault_div').hide();
+            }
+            displayJHAgentParams(cv_params, agent_type);
+        } catch (e) {
+            console.log(e)
+        }
     });
 
     // time-picker
@@ -1934,34 +1982,7 @@ $(document).ready(function () {
             $("#per_month_div").show();
         }
     });
-    function displayProcessParams(p_id) {
-        /**
-         * Commvault流程下应用参数
-         */
-        for (var i = 0; i < p_params.length; i++) {
-            var p_param = p_params[i],
-                p_type = p_params[i].p_type,
-                cv_params = p_params[i].cv_params;
 
-            /*
-             * 对应流程参数
-             */
-            if (p_type == "Commvault") {
-                $('#jh_pri_id').val(cv_params.pri_id);
-                $('#jh_pri').val(cv_params.pri_name);
-                $('#jh_std').val(cv_params.std_id);
-
-                $('#Commvault_div').show();
-            } else {
-                $('#Commvault_div').hide();
-            }
-
-            if (p_id == p_param.p_id) {
-                displayJHAgentParams(cv_params, p_param.agent_type)
-                break;
-            }
-        }
-    }
     function displayJHAgentParams(cv_params, agent_type) {
         /**
          * 应用参数
@@ -2185,11 +2206,6 @@ $(document).ready(function () {
                 alert("页面出现错误，请于管理员联系。");
             }
         });
-    });
-
-    $('#static08').on('shown.bs.modal', function () {
-        var p_id = $('#pros').val();
-        displayProcessParams(p_id);
     });
 
     function loadScheData(){

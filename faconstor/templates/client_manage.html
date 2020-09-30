@@ -871,6 +871,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
                     <h4 class="modal-title">流程配置</h4>
                     <input type="text" id="p_id" name="p_id" hidden>
+                    <input type="text" id="cv_info" name="cv_info" hidden>
                 </div>
                 <div class="panel-body">
                     <form class="bs-example form-horizontal activate-form">{% csrf_token %}
@@ -1355,10 +1356,6 @@
     <div id="loading" class="portlet-body">
     </div>
 {% endblock %} {% block script %}
-
-    <script>
-        var p_params = {{ p_params|safe }};
-    </script>
 
     <link href="/static/assets/global/plugins/bootstrap-fileinput/bootstrap-fileinput.css" rel="stylesheet" type="text/css"/>
     <link href="/static/assets/global/plugins/datatables/datatables.min.css" rel="stylesheet" type="text/css"/>
