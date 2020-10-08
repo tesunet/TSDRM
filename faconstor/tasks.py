@@ -2,18 +2,12 @@ from __future__ import absolute_import
 from logging import log
 from celery import shared_task
 import datetime
-import time
 import paramiko
 import os
-import json
 import subprocess
 import logging
 import uuid
-import re
 from lxml import etree
-from ast import literal_eval
-
-from django.db import connection
 from django.db.models import Q
 
 from faconstor.models import *
@@ -22,7 +16,9 @@ from .models import *
 from TSDRM import settings
 from .api import SQLApi
 from .CVApi import *
-
+from .public import (
+    content_load_params, match_host
+)
 logger = logging.getLogger('tasks')
 
 
@@ -56,7 +52,6 @@ def get_disk_space_crond():
                 print(e)
 
 
-# @shared_task(bind=True, default_retry_delay=300, max_retries=5)  # 错误处理机制，因网络延迟等问题的重试；
 @shared_task
 def exec_script(steprunid, username, fullname):
     """
@@ -140,114 +135,6 @@ def exec_script(steprunid, username, fullname):
                     myprocesstask.save()
 
 
-def content_load_params(script_instance):
-    """
-    脚本中传入参数
-        脚本参数 info
-        主机参数 info + HostsManage(表所有字段信息) + CvClient(表所有字段信息)
-        流程参数 info + Process(表所有字段信息)
-    :return: 整合参数后脚本内容
-    """
-    from .views import get_params
-    params = literal_eval(script_instance.params)  # 包含所有参数与值的映射关系
-
-    # 加上特定参数 --> HostsManage CvClient Process 等表下字段的值
-    hm = script_instance.hosts_manage
-    if hm:
-        hm_spc = {  # 特定主机参数(字段)
-            "_host_ip": hm.host_ip,
-            "_host_name": hm.host_name,
-            "_host_os": hm.os,
-            "_host_type": hm.type,
-            "_host_username": hm.username,
-            "_host_password": hm.password,
-        }
-        hm_spc_params = [{
-            "variable_name": k,
-            "param_value": v,
-            "type": "HOST",
-        } for k, v in hm_spc.items() if k]
-        hm_cfg_params = get_params(hm.config, add_type="HOST")  # 主机参数
-        
-        params.extend(hm_spc_params)
-        params.extend(hm_cfg_params)
-        hms = hm.cvclient_set.exclude(state="9")
-        cv_cli = hms[0] if hms.exists() else ""  # 主机下的客户端
-        if cv_cli:
-            cv_cli_spc = {   # 特定客户端参数(字段)
-                "_cv_cli_id": cv_cli.client_id,
-                "_cv_cli_name": cv_cli.client_name,
-                "_cv_cli_agentType": cv_cli.agentType,
-                "_cv_cli_instanceName": cv_cli.instanceName,
-                "_cv_cli_std_id": cv_cli.destination.client_id if cv_cli.destination else "",
-                "_cv_cli_std_name": cv_cli.destination.client_name if cv_cli.destination else ""
-            }
-            cv_cli_spc_params = [{
-                "variable_name": k,
-                "param_value": v,
-                "type": "HOST",
-            } for k, v in cv_cli_spc.items() if k]
-            params.extend(cv_cli_spc_params)
-    try:
-        p = script_instance.step.process
-        p_spc = {}  # 流程特定参数 暂无
-        p_cgf_params = get_params(p.config, add_type="PROCESS")
-        params.extend(p_cgf_params) # 流程参数
-    except Exception as e:
-        print(e)
-
-    # config fields >> params参数字典
-    script = script_instance.script
-    script_text = script.script_text
-    # 匹配出参数，替换
-    def get_variable_name(content, param_type):
-        variable_list = []
-        variable_list_with_symbol = []
-        com = ""
-        com_with_symbol = ""
-        if param_type == "HOST":
-            com = re.compile("\(\((.*?)\)\)")
-            com_with_symbol = re.compile("(\(\(.*?\)\))")
-        if param_type == "PROCESS":
-            com = re.compile("\{\{(.*?)\}\}")
-            com_with_symbol = re.compile("(\{\{.*?\}\})")
-        if param_type == "SCRIPT":
-            com = re.compile("\[\[(.*?)\]\]")
-            com_with_symbol = re.compile("(\[\[.*?\]\])")
-        if com:
-            variable_list = com.findall(content)
-        if com_with_symbol:
-            variable_list_with_symbol = com_with_symbol.findall(content)
-        return variable_list, variable_list_with_symbol
-
-    def get_value_from_params(variable_name, params):
-        param_value = ""
-        for param in params:
-            if variable_name.strip() == param["variable_name"]:
-                param_value = param["param_value"]
-                break
-        return str(param_value) if param_value else ""
-
-    # 流程参数
-    process_variable_list, process_variable_list_with_symbol = get_variable_name(script_text, "PROCESS")
-    for n, pv in enumerate(process_variable_list):
-        param_value = get_value_from_params(pv, params)     
-        script_text = script_text.replace(process_variable_list_with_symbol[n], param_value)
-
-    # 主机参数
-    host_variable_list, host_variable_list_with_symbol = get_variable_name(script_text, "HOST")  
-    for n, hv in enumerate(host_variable_list):
-        param_value = get_value_from_params(hv, params)
-        script_text = script_text.replace(host_variable_list_with_symbol[n], param_value)
-    # 脚本参数
-    script_variable_list, script_variable_list_with_symbol = get_variable_name(script_text, "SCRIPT")   # 获取脚本实例相关参数名称
-    for n, sv in enumerate(script_variable_list):
-        param_value = get_value_from_params(sv, params)     # 从参数键值字典中获取参数的值
-        script_text = script_text.replace(script_variable_list_with_symbol[n], param_value)   # 替换参数值
-
-    return script_text
-
-
 @shared_task
 def force_exec_script(processrunid):
     try:
@@ -260,6 +147,7 @@ def force_exec_script(processrunid):
         except ProcessRun.DoesNotExist as e:
             print("流程不存在, ", e)
         else:
+            pro_ins = processrun.pro_ins
             all_step_runs = processrun.steprun_set.exclude(step__state="9").filter(step__force_exec=1)
             for steprun in all_step_runs:
                 cur_step_scripts = steprun.scriptrun_set.all()
@@ -307,7 +195,7 @@ def force_exec_script(processrunid):
 
                         try:
                             # 处理脚本内容
-                            script_text = content_load_params(script_instance)
+                            script_text = content_load_params(script_instance, pro_ins)
                             with open(local_file, "w") as f:
                                 f.write(script_text)
                         except FileNotFoundError as e:
@@ -363,7 +251,7 @@ def force_exec_script(processrunid):
                         windows_temp_script_file = windows_temp_script_path + r"\\" + windows_temp_script_name
 
                         # 处理脚本内容
-                        script_text = content_load_params(script_instance)
+                        script_text = content_load_params(script_instance, pro_ins)
 
                         para_list = script_text.split("\n")
                         for num, content in enumerate(para_list):
@@ -434,6 +322,8 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
     # 判断该步骤是否已完成，如果未完成，先执行当前步骤
     processrun = ProcessRun.objects.filter(id=steprun.processrun.id)
     processrun = processrun[0]
+    pro_ins = processrun.pro_ins
+    process = pro_ins.process
     if processrun.state == "RUN" or processrun.state == "ERROR":
         # 将错误流程改成RUN
         processrun.state = "RUN"
@@ -442,8 +332,9 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
         if steprun.state != "DONE":
             # 判断是否有子步骤，如果有，先执行子步骤
             # 取消错误消息展示
-            all_done_tasks = ProcessTask.objects.exclude(state="1").filter(processrun_id=processrun.id,
-                                                                           type="ERROR")
+            all_done_tasks = ProcessTask.objects.exclude(state="1").filter(
+                processrun_id=processrun.id, type="ERROR"
+            )
             for task in all_done_tasks:
                 task.state = "1"
                 task.save()
@@ -454,27 +345,25 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
             steprun.save()
 
             children = steprun.step.children.order_by("sort").exclude(state="9")
-            if len(children) > 0:
-                for child in children:
-                    childsteprun = child.steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
-                    if len(childsteprun) > 0:
-                        childsteprun = childsteprun[0]
-                        start_time = childsteprun.starttime
-                        if start_time:
-                            if_repeat = True
-                        else:
-                            if_repeat = False
-                        childreturn = runstep(childsteprun, if_repeat, processrun_params)
-                        if childreturn == 0:
-                            return 0
-                        if childreturn == 2:
-                            return 2
+            for child in children:
+                childsteprun = child.steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
+                if childsteprun.exists():
+                    childsteprun = childsteprun[0]
+                    start_time = childsteprun.starttime
+                    if start_time:
+                        if_repeat = True
+                    else:
+                        if_repeat = False
+                    childreturn = runstep(childsteprun, if_repeat, processrun_params)
+                    if childreturn == 0:
+                        return 0
+                    if childreturn == 2:
+                        return 2
             scriptruns = steprun.scriptrun_set.exclude(Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
             for scriptrun in scriptruns:
                 # 目的：不在服务器存放脚本；
                 #   Linux：通过ssh上传文件至服务器端；执行脚本；删除脚本；
                 #   Windows：通过>/>> 逐行重定向字符串至服务端文件；执行脚本；删除脚本；
-
                 scriptrun.starttime = datetime.datetime.now()
                 scriptrun.result = ""
                 scriptrun.state = "RUN"
@@ -484,16 +373,19 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                 script = script_instance.script
                 script_name = script_instance.name if script_instance.name else ""
                 recover_job_id = ""
+
+                # HostsManage CvClient
+                associated_host = match_host(script_instance, pro_ins)
+
                 if script.interface_type in ["Linux", "Windows"]:
-                    # HostsManage
-                    cur_host_manage = script_instance.hosts_manage
-                    ip = cur_host_manage.host_ip
-                    username = cur_host_manage.username
-                    password = cur_host_manage.password
+                    ip, username, password = '', '', ''
+
+                    if associated_host:
+                        ip = associated_host.host_ip
+                        username = associated_host.username
+                        password = associated_host.password
 
                     system_tag = script.interface_type
-                    # linux_temp_script_file = "/tmp/tmp_script.sh"
-                    # windows_temp_script_file = "C:/tmp_script.bat"
 
                     if system_tag == "Linux":
                         ###########################
@@ -518,31 +410,29 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                             "script"
                         )
 
-                        local_file = script_path + os.sep + "{0}_local_script.sh".format(processrun.process.name)
+                        local_file = script_path + os.sep + "{0}_local_script.sh".format(processrun.pro_ins.name)
 
                         try:
                             with open(local_file, "w") as f:
                                 # 处理脚本内容
-                                script_text = content_load_params(script_instance)  # 待修改
+                                script_text = content_load_params(script_instance, pro_ins)  # 待修改
                                 f.write(script_text)
                         except FileNotFoundError as e:
                             scriptrun.runlog = "Linux脚本写入本地失败。"  # 写入错误类型
                             scriptrun.explain = "Linux脚本写入本地失败：{0}。".format(e)
                             scriptrun.state = "ERROR"
                             scriptrun.save()
-                            scriptrun.state = "ERROR"
-                            scriptrun.save()
 
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = steprun.processrun
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.senduser = steprun.processrun.creatuser
-                            myprocesstask.receiveauth = steprun.step.group
-                            myprocesstask.type = "ERROR"
-                            myprocesstask.state = "0"
-                            myprocesstask.content = "Linux脚本" + script_name + "内容写入失败，请处理。"
-                            myprocesstask.steprun_id = steprun.id
-                            myprocesstask.save()
+                            ProcessTask.objects.create(**{
+                                'processrun': steprun.processrun,
+                                'starttime': datetime.datetime.now(),
+                                'senduser': steprun.processrun.creatuser,
+                                'receiveauth': steprun.step.group,
+                                'type': 'ERROR',
+                                'state': '0',
+                                'content': 'Linux脚本{0}内容写入失败，请处理。'.format(script_name),
+                                'steprun_id': steprun.id,
+                            })
                             return 0
 
                         # 上传Linux服务器
@@ -558,16 +448,16 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                             steprun.state = "ERROR"
                             steprun.save()
 
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = steprun.processrun
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.senduser = steprun.processrun.creatuser
-                            myprocesstask.receiveauth = steprun.step.group
-                            myprocesstask.type = "ERROR"
-                            myprocesstask.state = "0"
-                            myprocesstask.content = "上传" + script_name + "脚本时，连接服务器失败。"
-                            myprocesstask.steprun_id = steprun.id
-                            myprocesstask.save()
+                            ProcessTask.objects.create(**{
+                                'processrun': steprun.processrun,
+                                'starttime': datetime.datetime.now(),
+                                'senduser': steprun.processrun.creatuser,
+                                'receiveauth': steprun.step.group,
+                                'type': 'ERROR',
+                                'state': '0',
+                                'content': '上传{0}脚本时，连接服务器失败。'.format(script_name),
+                                'steprun_id': steprun.id,
+                            })
                             return 0
                         else:
                             try:
@@ -580,16 +470,16 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                                 steprun.state = "ERROR"
                                 steprun.save()
 
-                                myprocesstask = ProcessTask()
-                                myprocesstask.processrun = steprun.processrun
-                                myprocesstask.starttime = datetime.datetime.now()
-                                myprocesstask.senduser = steprun.processrun.creatuser
-                                myprocesstask.receiveauth = steprun.step.group
-                                myprocesstask.type = "ERROR"
-                                myprocesstask.state = "0"
-                                myprocesstask.content = "脚本" + script_name + "上传失败：{0}。".format(e)
-                                myprocesstask.steprun_id = steprun.id
-                                myprocesstask.save()
+                                ProcessTask.objects.create(**{
+                                    'processrun': steprun.processrun,
+                                    'starttime': datetime.datetime.now(),
+                                    'senduser': steprun.processrun.creatuser,
+                                    'receiveauth': steprun.step.group,
+                                    'type': 'ERROR',
+                                    'state': '0',
+                                    'content': '脚本{0}上传失败：{1}。'.format(script_name, e),
+                                    'steprun_id': steprun.id,
+                                })
                                 return 0
                             else:
                                 sftp.chmod(linux_temp_script_file, int("755", 8))
@@ -611,7 +501,7 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
 
                         windows_temp_script_name = "tmp_script_{scriptrun_id}.bat".format(**{"scriptrun_id": scriptrun.id})
                         windows_temp_script_file = windows_temp_script_path + r"\\" + windows_temp_script_name
-                        script_text = content_load_params(script_instance)
+                        script_text = content_load_params(script_instance, pro_ins)
                         para_list = script_text.split("\n")
                         for num, content in enumerate(para_list):
                             tmp_cmd = ""
@@ -631,16 +521,16 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                                 steprun.state = "ERROR"
                                 steprun.save()
 
-                                myprocesstask = ProcessTask()
-                                myprocesstask.processrun = steprun.processrun
-                                myprocesstask.starttime = datetime.datetime.now()
-                                myprocesstask.senduser = steprun.processrun.creatuser
-                                myprocesstask.receiveauth = steprun.step.group
-                                myprocesstask.type = "ERROR"
-                                myprocesstask.state = "0"
-                                myprocesstask.content = "脚本" + script_name + "上传windows脚本文件失败，请处理。"
-                                myprocesstask.steprun_id = steprun.id
-                                myprocesstask.save()
+                                ProcessTask.objects.create(**{
+                                    'processrun': steprun.processrun,
+                                    'starttime': datetime.datetime.now(),
+                                    'senduser': steprun.processrun.creatuser,
+                                    'receiveauth': steprun.step.group,
+                                    'type': 'ERROR',
+                                    'state': '0',
+                                    'content': '脚本{0}上传windows脚本文件失败，请处理。'.format(script_name),
+                                    'steprun_id': steprun.id,
+                                })
                                 return 0
 
                         exe_cmd = windows_temp_script_file
@@ -724,17 +614,17 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                     steprun.state = "ERROR"
                     steprun.save()
 
-                    myprocesstask = ProcessTask()
-                    myprocesstask.processrun = steprun.processrun
-                    myprocesstask.starttime = datetime.datetime.now()
-                    myprocesstask.senduser = steprun.processrun.creatuser
-                    myprocesstask.receiveauth = steprun.step.group
-                    myprocesstask.type = "ERROR"
-                    myprocesstask.logtype = "SCRIPT"
-                    myprocesstask.state = "0"
-                    myprocesstask.content = "接口" + script_name + "调用执行失败，请处理。"
-                    myprocesstask.steprun_id = steprun.id
-                    myprocesstask.save()
+                    ProcessTask.objects.create(**{
+                        'processrun': steprun.processrun,
+                        'starttime': datetime.datetime.now(),
+                        'senduser': steprun.processrun.creatuser,
+                        'receiveauth': steprun.step.group,
+                        'type': 'ERROR',
+                        'logtype': 'SCRIPT',
+                        'state': '0',
+                        'content': '接口{0}调用执行失败，请处理。'.format(script_name),
+                        'steprun_id': steprun.id,
+                    })
                     return 0
                 # Oracle恢复失败问题
                 if result["exec_tag"] in [2, 3]:
@@ -784,15 +674,15 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                 scriptrun.state = "DONE"
                 scriptrun.save()
 
-                myprocesstask = ProcessTask()
-                myprocesstask.processrun = steprun.processrun
-                myprocesstask.starttime = datetime.datetime.now()
-                myprocesstask.senduser = steprun.processrun.creatuser
-                myprocesstask.type = "INFO"
-                myprocesstask.logtype = "SCRIPT"
-                myprocesstask.state = "1"
-                myprocesstask.content = "脚本" + script_name + "完成。"
-                myprocesstask.save()
+                ProcessTask.objects.create(**{
+                    'processrun': steprun.processrun,
+                    'starttime': datetime.datetime.now(),
+                    'senduser': steprun.processrun.creatuser,
+                    'type': 'INFO',
+                    'logtype': 'SCRIPT',
+                    'state': '1',
+                    'content': '脚本{0}完成。'.format(script_name),
+                })
 
             if steprun.step.approval == "1" or steprun.verifyitemsrun_set.all():
                 steprun.state = "CONFIRM"
@@ -800,18 +690,18 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                 steprun.save()
 
                 steprun_name = steprun.step.name if steprun.step.name else ""
-                myprocesstask = ProcessTask()
-                myprocesstask.processrun = steprun.processrun
-                myprocesstask.starttime = datetime.datetime.now()
-                myprocesstask.senduser = steprun.processrun.creatuser
-                myprocesstask.receiveauth = steprun.step.group
-                myprocesstask.type = "RUN"
-                myprocesstask.state = "0"
-                task_content = "步骤" + steprun_name + "等待确认，请处理。"
-                myprocesstask.content = task_content
-                myprocesstask.steprun_id = steprun.id
+                task_content = '步骤{0}等待确认，请处理。'.format(steprun_name)
 
-                myprocesstask.save()
+                ProcessTask.objects.create(**{
+                    'processrun': steprun.processrun,
+                    'starttime': datetime.datetime.now(),
+                    'senduser': steprun.processrun.creatuser,
+                    'receiveauth': steprun.step.group,
+                    'type': 'RUN',
+                    'state': '0',
+                    'content': task_content,
+                    'steprun_id': steprun.id,
+                })
 
                 return 2
             else:
@@ -820,15 +710,16 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                 steprun.save()
 
                 steprun_name = steprun.step.name if steprun.step.name else ""
-                myprocesstask = ProcessTask()
-                myprocesstask.processrun = steprun.processrun
-                myprocesstask.starttime = datetime.datetime.now()
-                myprocesstask.senduser = steprun.processrun.creatuser
-                myprocesstask.type = "INFO"
-                myprocesstask.logtype = "STEP"
-                myprocesstask.state = "1"
-                myprocesstask.content = "步骤" + steprun_name + "完成。"
-                myprocesstask.save()
+
+                ProcessTask.objects.create(**{
+                    'processrun': steprun.processrun,
+                    'starttime': datetime.datetime.now(),
+                    'senduser': steprun.processrun.creatuser,
+                    'type': 'INFO',
+                    'logtype': 'STEP',
+                    'state': '1',
+                    'content': '步骤{0}完成。'.format(steprun_name),
+                })
 
         nextstep = steprun.step.next.exclude(state="9")
         if len(nextstep) > 0:
@@ -843,15 +734,12 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                     current_process_run.starttime = datetime.datetime.now()
                     current_process_run.state = "RUN"
                     current_process_run.walkthroughstate = "RUN"
-                    current_process_run.DataSet_id = 89
                     current_process_run.save()
 
-                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
-
-                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                    allgroup = process.step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                         "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                    if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
                         # 将当前流程改成SIGN
                         c_process_run_id = current_process_run.id
                         c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
@@ -863,31 +751,31 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                             try:
                                 signgroup = Group.objects.get(id=int(group["group"]))
                                 groupname = signgroup.name
-                                myprocesstask = ProcessTask()
-                                myprocesstask.processrun = current_process_run
-                                myprocesstask.starttime = datetime.datetime.now()
-                                myprocesstask.senduser = 'admin'
-                                myprocesstask.receiveauth = group["group"]
-                                myprocesstask.type = "SIGN"
-                                myprocesstask.state = "0"
-                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
-                                myprocesstask.save()
+
+                                ProcessTask.objects.create(**{
+                                    'processrun': current_process_run,
+                                    'starttime': datetime.datetime.now(),
+                                    'senduser': 'admin',
+                                    'receiveauth': group["group"],
+                                    'type': 'SIGN',
+                                    'state': '0',
+                                    'content': '流程即将启动，请{0}签到。'.format(groupname),
+                                })
                             except:
                                 pass
 
                     else:
                         prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
-                        if len(prosssigns) <= 0:
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = current_process_run
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.type = "INFO"
-                            myprocesstask.logtype = "START"
-                            myprocesstask.state = "1"
-                            myprocesstask.senduser = 'admin'
-                            myprocesstask.content = "流程启动。"
-                            myprocesstask.save()
-
+                        if not prosssigns.exists():
+                            ProcessTask.objects.create(**{
+                                'processrun': current_process_run,
+                                'starttime': datetime.datetime.now(),
+                                'type': 'INFO',
+                                'logtype': 'START',
+                                'state': '1',
+                                'senduser': 'admin',
+                                'content': '流程启动。',
+                            })
                             exec_process.delay(current_process_run.id)
                 else:
                     walkthrough = processrun.walkthrough
@@ -930,15 +818,15 @@ def exec_process(processrunid, if_repeat=False):
     # processrun_params 流程参数 传递
     processrun_params = {}
     
-    # Commvault流程恢复 nextSCN选项
-    # 流程恢复 ...ProcessRun>>copy_priority
-    # 计划流程 ...Origin>>copy_priority
-    #   先获取优先级 再获取nextSCN选项(主拷贝、辅助拷贝) 
-    if processrun.process.type.upper() == "COMMVAULT":
+    # Commvault应用Oracle匹配对应的SCN号
+    # 辅助拷贝优先：匹配辅助拷贝完成的备份记录恢复
+    process = processrun.pro_ins.process
+    p_type = process.type.upper()
+
+    if p_type == "COMMVAULT":
         # 获取流程参数
         # utils.content copy_priority pri
         # 工具认证信息，恢复优先级，源客户端名称
-        copy_priority = 1
         utils_content = ""
         pri_client_name = ""
         std_id = None
@@ -948,7 +836,7 @@ def exec_process(processrunid, if_repeat=False):
         instance_name = ""
         try:
             info = etree.XML(info)
-        except Exception:
+        except:
             pass
         else:
             pri_id = info.xpath("//param")[0].attrib.get("pri_id")
@@ -981,15 +869,16 @@ def exec_process(processrunid, if_repeat=False):
                 if not ret:
                     dm.close()
                     end_step_tag = 0
-                    myprocesstask = ProcessTask()
-                    myprocesstask.processrun = processrun
-                    myprocesstask.starttime = datetime.datetime.now()
-                    myprocesstask.senduser = processrun.creatuser
-                    myprocesstask.receiveuser = processrun.creatuser
-                    myprocesstask.type = "ERROR"
-                    myprocesstask.state = "0"
-                    myprocesstask.content = "无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启。"
-                    myprocesstask.save()
+
+                    ProcessTask.objects.create(**{
+                        'processrun': processrun,
+                        'starttime': datetime.datetime.now(),
+                        'senduser': processrun.creatuser,
+                        'receiveuser': processrun.creatuser,
+                        'type': 'ERROR',
+                        'state': '0',
+                        'content': '无联机全备记录，请修改配置，完成联机全备后，待辅助拷贝结束后重启。',
+                    })
                 else:
                     curSCN = None
 
@@ -1055,19 +944,15 @@ def exec_process(processrunid, if_repeat=False):
                 current_process_run.starttime = datetime.datetime.now()
                 current_process_run.state = "RUN"
                 current_process_run.walkthroughstate = "RUN"
-                
-                process_type = current_process_run.process.type
-                if process_type.upper() == "COMMVAULT":
-                    cv_restore_params_save(current_process_run)
-                
                 current_process_run.save()
+                if p_type == "COMMVAULT":
+                    cv_restore_params_save(current_process_run)
 
-                process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
+                allgroup = process.step_set.exclude(state="9").exclude(
+                    Q(group="") | Q(group=None)
+                ).values("group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-                    "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
-
-                if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
                     # 将当前流程改成SIGN
                     c_process_run_id = current_process_run.id
                     c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
@@ -1079,31 +964,29 @@ def exec_process(processrunid, if_repeat=False):
                         try:
                             signgroup = Group.objects.get(id=int(group["group"]))
                             groupname = signgroup.name
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = current_process_run
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.senduser = 'admin'
-                            myprocesstask.receiveauth = group["group"]
-                            myprocesstask.type = "SIGN"
-                            myprocesstask.state = "0"
-                            myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
-                            myprocesstask.save()
+                            ProcessTask.objects.create(**{
+                                'processrun': current_process_run,
+                                'starttime': datetime.datetime.now(),
+                                'senduser': 'admin',
+                                'receiveauth': group["group"],
+                                'type': 'SIGN',
+                                'state': '0',
+                                'content': '流程即将启动，请' + groupname + '签到。',
+                            })
                         except:
                             pass
-
                 else:
                     prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
-                    if len(prosssigns) <= 0:
-                        myprocesstask = ProcessTask()
-                        myprocesstask.processrun = current_process_run
-                        myprocesstask.starttime = datetime.datetime.now()
-                        myprocesstask.type = "INFO"
-                        myprocesstask.logtype = "START"
-                        myprocesstask.state = "1"
-                        myprocesstask.senduser = 'admin'
-                        myprocesstask.content = "流程启动。"
-                        myprocesstask.save()
-
+                    if not prosssigns.exists():
+                        ProcessTask.objects.create(**{
+                            'processrun': current_process_run,
+                            'starttime': datetime.datetime.now(),
+                            'type': 'INFO',
+                            'logtype': 'START',
+                            'state': '1',
+                            'senduser': 'admin',
+                            'content': '流程启动。',
+                        })
                         exec_process.delay(current_process_run.id)
             else:
                 walkthrough = processrun.walkthrough
@@ -1113,38 +996,37 @@ def exec_process(processrunid, if_repeat=False):
 
         end_step_tag = runstep(steprunlist[0], if_repeat, processrun_params)
     else:
-        myprocesstask = ProcessTask()
-        myprocesstask.processrun = processrun
-        myprocesstask.starttime = datetime.datetime.now()
-        myprocesstask.senduser = processrun.creatuser
-        myprocesstask.receiveuser = processrun.creatuser
-        myprocesstask.type = "ERROR"
-        myprocesstask.state = "0"
-        myprocesstask.content = "流程配置错误，请处理。"
-        myprocesstask.save()
+        ProcessTask.objects.create(**{
+            'processrun': processrun,
+            'starttime': datetime.datetime.now(),
+            'senduser': processrun.creatuser,
+            'receiveuser': processrun.creatuser,
+            'type': 'ERROR',
+            'state': '0',
+            'content': '流程配置错误，请处理。',
+        })
     if end_step_tag == 0:
         processrun.state = "ERROR"
         processrun.save()
     if end_step_tag == 1:
-        processrun = ProcessRun.objects.filter(id=processrunid)
-        processrun = processrun[0]
         curwalkthroughstate = processrun.walkthroughstate
         processrun.state = "DONE"
         processrun.walkthroughstate = "DONE"
         processrun.endtime = datetime.datetime.now()
         processrun.save()
-        myprocesstask = ProcessTask()
-        myprocesstask.processrun = processrun
-        myprocesstask.starttime = datetime.datetime.now()
-        myprocesstask.senduser = processrun.creatuser
-        myprocesstask.type = "INFO"
-        myprocesstask.logtype = "END"
-        myprocesstask.state = "1"
-        myprocesstask.content = "流程结束。"
-        myprocesstask.save()
 
-        # 演练中，当前力流程结束时，启动下一流程
-        if processrun.walkthrough is not None:
+        ProcessTask.objects.create(**{
+            'processrun': processrun,
+            'starttime': datetime.datetime.now(),
+            'senduser': processrun.creatuser,
+            'type': 'INFO',
+            'logtype': 'END',
+            'state': '1',
+            'content': '流程结束。',
+        })
+
+        # 演练中，当前一流程结束时，启动下一流程
+        if curwalkthroughstate is not None:
             if curwalkthroughstate != "DONE":
                 current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
                 if current_process_run:
@@ -1154,12 +1036,11 @@ def exec_process(processrunid, if_repeat=False):
                     current_process_run.walkthroughstate = "RUN"
                     current_process_run.save()
 
-                    process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(Q(type=None) | Q(type=""))
+                    allgroup = process.step_set.exclude(state="9").exclude(
+                        Q(group="") | Q(group=None)
+                    ).values("group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-                        "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
-
-                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                    if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
                         # 将当前流程改成SIGN
                         c_process_run_id = current_process_run.id
                         c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
@@ -1171,31 +1052,30 @@ def exec_process(processrunid, if_repeat=False):
                             try:
                                 signgroup = Group.objects.get(id=int(group["group"]))
                                 groupname = signgroup.name
-                                myprocesstask = ProcessTask()
-                                myprocesstask.processrun = current_process_run
-                                myprocesstask.starttime = datetime.datetime.now()
-                                myprocesstask.senduser = 'admin'
-                                myprocesstask.receiveauth = group["group"]
-                                myprocesstask.type = "SIGN"
-                                myprocesstask.state = "0"
-                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
-                                myprocesstask.save()
+
+                                ProcessTask.objects.create(**{
+                                    'processrun': current_process_run,
+                                    'starttime': datetime.datetime.now(),
+                                    'senduser': 'admin',
+                                    'receiveauth': group["group"],
+                                    'type': 'SIGN',
+                                    'state': '0',
+                                    'content': '流程即将启动，请' + groupname + '签到。',
+                                })
                             except:
                                 pass
-
                     else:
                         prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
                         if len(prosssigns) <= 0:
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = current_process_run
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.type = "INFO"
-                            myprocesstask.logtype = "START"
-                            myprocesstask.state = "1"
-                            myprocesstask.senduser = 'admin'
-                            myprocesstask.content = "流程启动。"
-                            myprocesstask.save()
-
+                            ProcessTask.objects.create(**{
+                                'processrun': current_process_run,
+                                'starttime': datetime.datetime.now(),
+                                'type': 'INFO',
+                                'logtype': 'START',
+                                'state': '1',
+                                'senduser': 'admin',
+                                'content': '流程启动。',
+                            })
                             exec_process.delay(current_process_run.id)
                 else:
                     walkthrough = processrun.walkthrough
@@ -1206,29 +1086,6 @@ def exec_process(processrunid, if_repeat=False):
     if end_step_tag == 5:
         processrun.state = "STOP"
         processrun.save()
-        #
-    #     processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
-    #     if len(processtasks) > 0:
-    #         processtasks[0].state = "1"
-    #         processtasks[0].endtime = datetime.datetime.now()
-    #         processtasks[0].save()
-    # else:
-    #     processrun.state = "ERROR"
-    #     processrun.save()
-    #     processtasks = ProcessTask.objects.filter(state="0", processrun=processrun)
-    #     if len(processtasks) > 0:
-    #         processtasks[0].state = "1"
-    #         processtasks[0].save()
-    #
-    #         myprocesstask = ProcessTask()
-    #         myprocesstask.processrun = processrun
-    #         myprocesstask.starttime = datetime.datetime.now()
-    #         myprocesstask.senduser = processtasks[0].senduser
-    #         myprocesstask.receiveuser = processtasks[0].receiveuser
-    #         myprocesstask.type = "RUN"
-    #         myprocesstask.state = "0"
-    #         myprocesstask.content = processrun.process.name + " 流程运行出错，请处理。"
-    #         myprocesstask.save()
 
 
 @shared_task
@@ -1323,7 +1180,7 @@ def cv_restore_params_save(processrun, **kwargs):
     if not pr_params:  # 默认客户端参数
         try:
             pri_id, std_id, cv_client_info = "", "", ""
-            process = processrun.process
+            process = processrun.pro_ins.process
 
             # 过滤所有脚本
             all_steps = process.step_set.exclude(state="9")

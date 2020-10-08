@@ -4,46 +4,34 @@ import datetime
 import sys
 import os
 import json
-import random
 import uuid
-import xlrd
-import xlwt
 from lxml import etree
 import re
 import pdfkit
 import requests
 from operator import itemgetter
-import logging
-from collections import OrderedDict
-import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from ast import literal_eval
 
-from django.utils.timezone import utc
 from django.utils.timezone import localtime
 from django.shortcuts import render
 from django.contrib import auth
-from django.template import RequestContext
 from django.http import HttpResponseRedirect, Http404, HttpResponse, JsonResponse
 from django.http import StreamingHttpResponse
 from django.db.models import Q
-from django.db.models import Count
-from django.db.models import Sum, Max
 from django.db import connection
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.cache import cache_page
-from django.utils.encoding import escape_uri_path
 from django.core.mail import send_mail
-from django.forms.models import model_to_dict
 from django.template.response import TemplateResponse
 from django.contrib.auth.decorators import login_required
-from djcelery.models import CrontabSchedule, PeriodicTask, IntervalSchedule
 
 from faconstor.tasks import *
 from faconstor.models import *
 from .remote import ServerByPara
 from TSDRM import settings
 from .api import SQLApi
+from .public import (
+    get_credit_info
+)
 
 funlist = []
 
@@ -181,12 +169,12 @@ def getpagefuns(funid, request=""):
                 mygroup.append(str(curguoup.id))
         allprosstasks = ProcessTask.objects.filter(
             Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
-            "-starttime").exclude(processrun__state="9").select_related("processrun", "processrun__process",
+            "-starttime").exclude(processrun__state="9").select_related("processrun", "processrun__pro_ins__process",
                                                                         "steprun__step")
         if len(allprosstasks) > 0:
             for task in allprosstasks:
                 send_time = task.starttime
-                process_name = task.processrun.process.name
+                process_name = task.processrun.pro_ins.process.name
                 process_run_reason = task.processrun.run_reason
                 task_id = task.id
                 processrunid = task.processrun.id
@@ -200,8 +188,8 @@ def getpagefuns(funid, request=""):
                     address = ""
 
                 task_nums = len(allprosstasks)
-                process_color = task.processrun.process.color
-                process_url = task.processrun.process.url + "/" + str(task.processrun.id)
+                process_color = task.processrun.pro_ins.process.color
+                process_url = task.processrun.pro_ins.process.url + "/" + str(task.processrun.id)
                 time = task.starttime
 
                 # 图标与颜色
@@ -243,13 +231,14 @@ def processindex(request, processrun_id):
     # processrun_id = request.GET.get("p_run_id", "")
     s_tag = request.GET.get("s", "")
     # exclude
-    c_process_run = ProcessRun.objects.filter(id=processrun_id).select_related("process")
+    process_id, process_name, process_url = '', '', ''
+    c_process_run = ProcessRun.objects.filter(id=processrun_id).select_related("pro_ins__process")
     if c_process_run.exists():
-        process_url = c_process_run[0].process.url
-        process_name = c_process_run[0].process.name
-        process_id = c_process_run[0].process.id
+        process_url = c_process_run[0].pro_ins.process.url
+        process_name = c_process_run[0].pro_ins.process.name
+        process_id = c_process_run[0].pro_ins.process_id
     else:
-        raise Http404()
+        errors.append('流程不存在。') 
     return render(request, 'processindex.html',
                   {'username': request.user.userinfo.fullname, "errors": errors, "processrun_id": processrun_id,
                    "process_url": process_url, "process_name": process_name, "process_id": process_id,
@@ -279,14 +268,14 @@ def walkthroughindex(request, walkthrough_id):
 def get_process_index_data(request):
     processrun_id = request.POST.get("p_run_id", "")
 
-    current_processruns = ProcessRun.objects.filter(id=int(processrun_id)).select_related("process")
+    current_processruns = ProcessRun.objects.filter(id=int(processrun_id)).select_related("pro_ins__process")
 
     if current_processruns:
         current_processrun = current_processruns[0]
 
         # 当前流程状态
         c_process_run_state = current_processrun.state
-        name = current_processrun.process.name
+        name = current_processrun.pro_ins.process.name
         starttime = current_processrun.starttime
         endtime = current_processrun.endtime
         rtoendtime = ""
@@ -294,7 +283,7 @@ def get_process_index_data(request):
         state = current_processrun.state
         percent = 0
 
-        process_id = current_processrun.process_id
+        process_id = current_processrun.pro_ins.process_id
 
         # 正确顺序的父级Step
         all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by(
@@ -1212,32 +1201,37 @@ def index(request, funid):
     funlist = sorted(funlist, key=lambda fun: fun.sort)
     # 最新操作
     alltask = []
-    cursor = connection.cursor()
-    cursor.execute("""
-    select t.starttime, t.content, t.type, t.state, t.logtype, p.name, p.color from faconstor_processtask as t left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where r.state!='9' order by t.starttime desc;
-    """)
-    rows = cursor.fetchall()
+    p_tasks = ProcessTask.objects.exclude(state='9').exclude(processrun__pro_ins__process__state='9').select_related('processrun__pro_ins__process').order_by('-starttime')
 
-    if len(rows) > 0:
-        for task in rows:
-            time = task[0]
-            content = task[1]
-            task_type = task[2]
-            task_state = task[3]
-            task_logtype = task[4]
-            process_name = task[5]
-            process_color = task[6]
+    for task in p_tasks:
+        time = task.starttime
+        content = task.content
+        task_type = task.type
+        task_state = task.state
+        task_logtype = task.logtype
 
-            # 图标与颜色
-            current_icon, current_color = custom_c_color(task_type, task_state, task_logtype)
+        process_name, process_color = '', ''
 
-            time = custom_time(time)
+        try:
+            process_name = task.processrun.pro_ins.process.name
+        except AttributeError:
+            pass
+        try:
+            process_color = task.processrun.pro_ins.process.color
+        except AttributeError:
+            pass
 
-            alltask.append(
-                {"content": content, "time": time, "process_name": process_name, "task_color": current_color,
-                 "task_icon": current_icon, "process_color": process_color})
-            if len(alltask) >= 50:
-                break
+        # 图标与颜色
+        current_icon, current_color = custom_c_color(task_type, task_state, task_logtype)
+
+        time = custom_time(time)
+
+        alltask.append(
+            {"content": content, "time": time, "process_name": process_name, "task_color": current_color,
+                "task_icon": current_icon, "process_color": process_color})
+        if len(alltask) >= 50:
+            break
+
     # 成功率，恢复次数，平均RTO，最新切换
     all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
     successful_processruns = ProcessRun.objects.filter(state="DONE")
@@ -1288,7 +1282,7 @@ def index(request, funid):
 
     # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
     current_processruns = ProcessRun.objects.exclude(state__in=["PLAN", "DONE", "STOP", "REJECT"]).exclude(
-        state="9").select_related("process")
+        state="9").select_related("pro_ins__process")
     curren_processrun_info_list = []
     state_dict = {
         "DONE": "已完成",
@@ -1316,8 +1310,10 @@ def index(request, funid):
             all_steps = []
             group_name = ""
             users = ""
-            process_id = current_processrun.process_id
-            current_process_name = current_processrun.process.name
+            try:
+                current_process_name = current_processrun.pro_ins.process.name
+            except AttributeError:
+                pass
             start_time = current_processrun.starttime.replace(tzinfo=None)
             start_time_strftime = start_time.strftime('%Y-%m-%d %H:%M:%S')
             current_time = datetime.datetime.now()
@@ -1329,8 +1325,11 @@ def index(request, funid):
             current_processrun_id = current_processrun.id
 
             # 进程url
-            processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)
-
+            processrun_url = '/'
+            try:
+                processrun_url = current_processrun.pro_ins.process.url + "/" + str(current_processrun_id)
+            except:
+                pass
             # 当前系统任务
             current_process_task_info = get_c_process_run_tasks(current_processrun.id)
 
@@ -1354,21 +1353,21 @@ def index(request, funid):
 
     # 系统切换成功率
     all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
-    process_success_rate_list = []
-    if all_processes:
-        for process in all_processes:
-            process_name = process.name
-            all_processrun_list = process.processrun_set.filter(Q(state="DONE") | Q(state="STOP"))
-            successful_processruns = process.processrun_set.filter(state="DONE")
-            current_process_success_rate = "%.0f" % (len(successful_processruns) / len(
-                all_processrun_list) * 100) if all_processrun_list and successful_processruns else 0
+    process_success_rate_list = []  # 待修改
+    # if all_processes:
+    #     for process in all_processes:
+    #         process_name = process.name
+    #         all_processrun_list = process.processrun_set.filter(Q(state="DONE") | Q(state="STOP"))
+    #         successful_processruns = process.processrun_set.filter(state="DONE")
+    #         current_process_success_rate = "%.0f" % (len(successful_processruns) / len(
+    #             all_processrun_list) * 100) if all_processrun_list and successful_processruns else 0
 
-            process_dict = {
-                "process_name": process_name,
-                "current_process_success_rate": current_process_success_rate,
-                "color": process.color
-            }
-            process_success_rate_list.append(process_dict)
+    #         process_dict = {
+    #             "process_name": process_name,
+    #             "current_process_success_rate": current_process_success_rate,
+    #             "color": process.color
+    #         }
+    #         process_success_rate_list.append(process_dict)
 
     # 右上角消息任务
     return render(request, "index.html",
@@ -1383,64 +1382,72 @@ def index(request, funid):
 def get_process_rto(request):
     # 不同流程最近的12次切换RTO
     all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
-    process_rto_list = []
-    if all_processes:
-        for process in all_processes:
-            process_name = process.name
-            processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
-            current_rto_list = []
-            for processrun_rto_obj in processrun_rto_obj_list:
-                all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(
-                    step__rto_count_in="0").filter(step__pnode=None)
-                step_rto = 0
-                if all_step_runs:
-                    for step_run in all_step_runs:
-                        rto = 0
-                        end_time = step_run.endtime
-                        start_time = step_run.starttime
-                        if end_time and start_time:
-                            delta_time = (end_time - start_time)
-                            rto = delta_time.total_seconds()
+    process_rto_list = [] # 待修改
+    # if all_processes:
+    #     for process in all_processes:
+    #         process_name = process.name
+    #         processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
+    #         current_rto_list = []
+    #         for processrun_rto_obj in processrun_rto_obj_list:
+    #             all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(
+    #                 step__rto_count_in="0").filter(step__pnode=None)
+    #             step_rto = 0
+    #             if all_step_runs:
+    #                 for step_run in all_step_runs:
+    #                     rto = 0
+    #                     end_time = step_run.endtime
+    #                     start_time = step_run.starttime
+    #                     if end_time and start_time:
+    #                         delta_time = (end_time - start_time)
+    #                         rto = delta_time.total_seconds()
 
-                        step_rto += rto
-                # 扣除子级步骤中可能的rto_count_in的时间
-                all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
-                    step__rto_count_in="0").exclude(
-                    step__pnode=None).filter(step__pnode__rto_count_in="1")
-                inner_rto_not_count_in = 0
-                if all_inner_step_runs:
-                    for inner_step_run in all_inner_step_runs:
-                        end_time = inner_step_run.endtime
-                        start_time = inner_step_run.starttime
-                        if end_time and start_time:
-                            delta_time = (end_time - start_time)
-                            rto = delta_time.total_seconds()
-                            inner_rto_not_count_in += rto
-                step_rto -= inner_rto_not_count_in
+    #                     step_rto += rto
+    #             # 扣除子级步骤中可能的rto_count_in的时间
+    #             all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
+    #                 step__rto_count_in="0").exclude(
+    #                 step__pnode=None).filter(step__pnode__rto_count_in="1")
+    #             inner_rto_not_count_in = 0
+    #             if all_inner_step_runs:
+    #                 for inner_step_run in all_inner_step_runs:
+    #                     end_time = inner_step_run.endtime
+    #                     start_time = inner_step_run.starttime
+    #                     if end_time and start_time:
+    #                         delta_time = (end_time - start_time)
+    #                         rto = delta_time.total_seconds()
+    #                         inner_rto_not_count_in += rto
+    #             step_rto -= inner_rto_not_count_in
 
-                current_rto = float("%.2f" % (step_rto / 60))
+    #             current_rto = float("%.2f" % (step_rto / 60))
 
-                current_rto_list.append(current_rto)
-            process_dict = {
-                "process_name": process_name,
-                "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[
-                                                                                               -50:][::-1],
-                "color": process.color
-            }
-            process_rto_list.append(process_dict)
+    #             current_rto_list.append(current_rto)
+    #         process_dict = {
+    #             "process_name": process_name,
+    #             "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[
+    #                                                                                            -50:][::-1],
+    #             "color": process.color
+    #         }
+    #         process_rto_list.append(process_dict)
     return JsonResponse({"data": process_rto_list})
 
 
 @login_required
 def get_daily_processrun(request):
-    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).select_related("process").filter(process__pnode__pnode=None)
+    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).select_related("pro_ins__process").filter(pro_ins__process__pnode__pnode=None)
     process_success_rate_list = []
     if all_processrun_objs:
         for process_run in all_processrun_objs:
-            process_name = process_run.process.name
+            process_name = ''
+            try:
+                process_name = process_run.pro_ins.process.name
+            except AttributeError:
+                pass
             start_time = process_run.starttime
             end_time = process_run.endtime
-            process_color = process_run.process.color
+            process_color = ''
+            try:
+                process_color = process_run.process.color
+            except AttributeError:
+                pass
             process_run_id = process_run.id
             # 进程url
             processrun_url = "/processindex/" + str(process_run.id) + "?s=true"
@@ -1614,52 +1621,6 @@ def userpassword(request):
             result = "旧密码输入错误，请重新输入。"
 
     return HttpResponse(result)
-
-
-def get_params(config, add_type=None):
-    """
-    <root>
-        <param param_name="1" variable_name="2" param_value="3"/>
-        <param param_name="3" variable_name="4" param_value="5"/>
-        <param param_name="5" variable_name="6" param_value="7"/>
-    </root>
-    """
-    param_list = []
-    pre_config = "<root></root>"
-    if config:
-        config = etree.XML(config)
-    else:
-        config = etree.XML(pre_config)
-    param_nodes = config.xpath("//param")
-    for pn in param_nodes:
-        if not add_type:
-            param_list.append({
-                "param_name": pn.attrib.get("param_name", ""),
-                "variable_name": pn.attrib.get("variable_name", ""),
-                "param_value": pn.attrib.get("param_value", ""),
-            })
-        else:
-            param_list.append({
-                "param_name": pn.attrib.get("param_name", ""),
-                "variable_name": pn.attrib.get("variable_name", ""),
-                "param_value": pn.attrib.get("param_value", ""),
-                "type": add_type
-            })
-    return param_list
-
-
-def get_variable_name(content, param_type):
-    variable_list = []
-    com = ""
-    if param_type == "HOST":
-        com = re.compile("\(\((.*?)\)\)")
-    if param_type == "PROCESS":
-        com = re.compile("\{\{(.*?)\}\}")
-    if param_type == "SCRIPT":
-        com = re.compile("\[\[(.*?)\]\]")
-    if com:
-        variable_list = com.findall(content)
-    return variable_list
 
 
 @login_required
@@ -2037,7 +1998,7 @@ def falconstorswitchdata(request):
 @login_required
 def falconstorrun(request):
     result = {}
-    processid = request.POST.get('processid', '')
+    pro_ins_id = request.POST.get('pro_ins_id', '')
     run_person = request.POST.get('run_person', '')
     run_time = request.POST.get('run_time', '')
     run_reason = request.POST.get('run_reason', '')
@@ -2061,23 +2022,22 @@ def falconstorrun(request):
     mssql_iscover = request.POST.get("mssql_iscover", "")
     
     try:
-        processid = int(processid)
+        pro_ins_id = int(pro_ins_id)
+        pro_ins = ProcessInstance.objects.get(id=pro_ins_id)
     except:
-        raise Http404()
-    process = Process.objects.filter(id=processid).exclude(state="9").exclude(Q(type=None) | Q(type=""))
-    if not process.exists():
         result["res"] = '流程启动失败，该流程不存在。'
     else:
-        running_process = ProcessRun.objects.filter(process=process[0], state__in=["RUN", "ERROR"])
+        running_process = ProcessRun.objects.filter(pro_ins=pro_ins, state__in=["RUN", "ERROR"])
         if running_process.exists():
             result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
         else:
-            planning_process = ProcessRun.objects.filter(process=process[0], state="PLAN")
+            planning_process = ProcessRun.objects.filter(pro_ins=pro_ins, state="PLAN")
             if planning_process.exists():
                 result["res"] = '流程启动失败，计划流程未执行，务必先完成计划流程。'
             else:
+                process = pro_ins.process
                 myprocessrun = ProcessRun()
-                myprocessrun.process = process[0]
+                myprocessrun.pro_ins = pro_ins
                 myprocessrun.starttime = datetime.datetime.now()
                 myprocessrun.creatuser = request.user.username
                 myprocessrun.run_reason = run_reason
@@ -2085,8 +2045,7 @@ def falconstorrun(request):
                     recovery_time, "%Y-%m-%d %H:%M:%S"
                 ) if recovery_time else None
                 myprocessrun.state = "RUN"
-
-                if process[0].type.upper() == 'COMMVAULT':
+                if process.type.upper() == 'COMMVAULT':
                     try:
                         pri = int(pri)
                     except Exception:
@@ -2161,7 +2120,7 @@ def falconstorrun(request):
                     myprocessrun.info = config
 
                 myprocessrun.save()
-                mystep = process[0].step_set.exclude(state="9").order_by("sort")
+                mystep = process.step_set.exclude(state="9").order_by("sort")
                 if not mystep.exists():
                     result["res"] = '流程启动失败，没有找到可用步骤。'
                 else:
@@ -2187,10 +2146,10 @@ def falconstorrun(request):
                             myverifyitemsrun.steprun = mysteprun
                             myverifyitemsrun.save()
 
-                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                    allgroup = process.step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
                         "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                    if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
                         # 将当前流程改成SIGN
                         c_process_run_id = myprocessrun.id
                         c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
@@ -2233,6 +2192,7 @@ def falconstorrun(request):
                             exec_process.delay(myprocessrun.id)
                             result["res"] = "新增成功。"
                             result["data"] = "/processindex/" + str(myprocessrun.id)
+    
     return JsonResponse(result)
 
 
@@ -2766,7 +2726,7 @@ def getrunsetps(request):
         processrun = int(processrun)
         processruns = ProcessRun.objects.exclude(state="9").filter(id=processrun)
         if len(processruns) > 0:
-            process_name = processruns[0].process.name
+            process_name = processruns[0].pro_ins.process.name
             process_state = processruns[0].state
             process_note = processruns[0].note
             try:
@@ -2805,7 +2765,7 @@ def getrunsetps(request):
             processresult["process_note"] = process_note
             processresult["process_rto"] = process_rto
 
-            steplist = Step.objects.exclude(state="9").filter(process=processruns[0].process, pnode=None).order_by(
+            steplist = Step.objects.exclude(state="9").filter(process=processruns[0].pro_ins.process, pnode=None).order_by(
                 "sort")
             for step in steplist:
                 runid = 0
@@ -3208,15 +3168,16 @@ def reload_task_nums(request):
         for curguoup in guoups:
             mygroup.append(str(curguoup.id))
     allprosstasks = ProcessTask.objects.filter(
-        Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)).filter(state="0").order_by(
-        "-starttime").exclude(processrun__state="9").select_related("processrun", "processrun__process",
-                                                                    "steprun__step", "steprun")
+        Q(receiveauth__in=mygroup) | Q(receiveuser=request.user.username)
+    ).filter(state="0").order_by("-starttime").exclude(processrun__state="9").select_related(
+        "processrun", "processrun__pro_ins__process","steprun__step", "steprun"
+    )
     total_task_info = {}
     message_task = []
     if len(allprosstasks) > 0:
         for task in allprosstasks:
             send_time = task.starttime
-            process_name = task.processrun.process.name
+            process_name = task.processrun.pro_ins.process.name
             process_run_reason = task.processrun.run_reason
             task_id = task.id
             processrunid = task.processrun.id
@@ -3230,8 +3191,8 @@ def reload_task_nums(request):
                 address = ""
 
             task_nums = len(allprosstasks)
-            process_color = task.processrun.process.color
-            process_url = task.processrun.process.url + "/" + str(task.processrun.id)
+            process_color = task.processrun.pro_ins.process.color
+            process_url = task.processrun.pro_ins.process.url + "/" + str(task.processrun.id)
             time = task.starttime
 
             # 图标与颜色
@@ -3511,7 +3472,7 @@ def get_force_script_info(request):
         })
     else:
         finish = 1
-        cur_process_id = cur_process_run.process.id
+        cur_process_id = cur_process_run.pro_ins.process.id
         script_name_list = []
         script_status_list = []
         all_step_runs = cur_process_run.steprun_set.exclude(step__state="9").filter(step__force_exec=1)
@@ -3654,11 +3615,11 @@ def show_result(request):
     current_processrun = ProcessRun.objects.filter(id=processrun_id)
     if current_processrun:
         current_processrun = current_processrun[0]
-        process_id = current_processrun.process.id
+        process_id = current_processrun.pro_ins.process.id
     else:
         raise Http404()
 
-    process_name = current_processrun.process.name if current_processrun else ""
+    process_name = current_processrun.pro_ins.process.name if current_processrun else ""
     processrun_time = current_processrun.starttime.strftime("%Y-%m-%d")
 
     # 父级
@@ -4423,104 +4384,6 @@ def hosts_manage_del(request):
                 "ret": 1,
                 "info": "删除成功。"
             })
-
-
-
-def get_credit_info(content, util_type="COMMVAULT"):
-    commvault_credit = {
-        'webaddr': '',
-        'port': '',
-        'hostusername': '',
-        'hostpasswd': '',
-        'username': '',
-        'passwd': '',
-    }
-    sqlserver_credit = {
-        'SQLServerHost': '',
-        'SQLServerUser': '',
-        'SQLServerPasswd': '',
-        'SQLServerDataBase': '',
-    }
-    kvm_credit = {
-        'KvmHost': '',
-        'KvmUser': '',
-        'KvmPasswd': '',
-        'SystemType': '',
-    }
-
-    try:
-        doc = etree.XML(content)
-        if util_type == 'COMMVAULT':
-            # Commvault账户信息
-            try:
-                commvault_credit['webaddr'] = doc.xpath('//webaddr/text()')[0]
-            except:
-                pass
-            try:
-                commvault_credit['port'] = doc.xpath('//port/text()')[0]
-            except:
-                pass
-            try:
-                commvault_credit['hostusername'] = doc.xpath('//hostusername/text()')[0]
-            except:
-                pass
-            try:
-                commvault_credit['hostpasswd'] = base64.b64decode(doc.xpath('//hostpasswd/text()')[0]).decode()
-            except:
-                pass
-            try:
-                commvault_credit['username'] = doc.xpath('//username/text()')[0]
-            except:
-                pass
-            try:
-                commvault_credit['passwd'] = base64.b64decode(doc.xpath('//passwd/text()')[0]).decode()
-            except:
-                pass
-
-            # SQL Server账户信息
-            try:
-                sqlserver_credit['SQLServerHost'] = doc.xpath('//SQLServerHost/text()')[0]
-            except:
-                pass
-            try:
-                sqlserver_credit['SQLServerUser'] = doc.xpath('//SQLServerUser/text()')[0]
-            except:
-                pass
-            try:
-                sqlserver_credit['SQLServerPasswd'] = base64.b64decode(
-                    doc.xpath('//SQLServerPasswd/text()')[0]).decode()
-            except:
-                pass
-            try:
-                sqlserver_credit['SQLServerDataBase'] = doc.xpath('//SQLServerDataBase/text()')[0]
-            except:
-                pass
-
-            return commvault_credit, sqlserver_credit
-        elif util_type == 'KVM':
-            # Kvm账户信息
-            try:
-                kvm_credit['KvmHost'] = doc.xpath('//KvmHost/text()')[0]
-            except:
-                pass
-            try:
-                kvm_credit['KvmUser'] = doc.xpath('//KvmUser/text()')[0]
-            except:
-                pass
-            try:
-                kvm_credit['KvmPasswd'] = base64.b64decode(
-                    doc.xpath('//KvmPasswd/text()')[0]).decode()
-            except:
-                pass
-            try:
-                kvm_credit['SystemType'] = doc.xpath('//SystemType/text()')[0]
-            except:
-                pass
-            return kvm_credit
-
-    except Exception as e:
-        print(e)
-
 
 
 def get_oracle_client(um):

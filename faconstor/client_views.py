@@ -1,23 +1,21 @@
 # 客户端管理
 from django.shortcuts import render
-from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, Http404, HttpResponse, JsonResponse
-from django.http import StreamingHttpResponse
 from django.db.models import Max
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from ast import literal_eval
 
 from .tasks import *
-from .views import getpagefuns, get_credit_info
+from .views import getpagefuns
 from faconstor.api import SQLApi
+from .public import (
+    get_params, get_credit_info
+)
+import json
 
 import datetime
 import pythoncom
-from ping3 import ping
-from collections import OrderedDict
-import cx_Oracle
-import pymysql
 from lxml import etree
 
 pythoncom.CoInitialize()
@@ -32,7 +30,6 @@ def client_manage(request, funid):
     # 单机恢复预案
     pro_list = []
     pros = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="") | Q(type="NODE")).only("id", "name", "associated_hosts")
-    from .views import get_params
     for pro in pros:
         associated_hosts = pro.associated_hosts
         try:
@@ -1272,8 +1269,9 @@ def pro_del(request):
 def processinsconfig(request, funid):
     # 单机恢复预案
     pro_list = []
-    pros = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="") | Q(type="NODE")).only("id", "name", "associated_hosts")
-    from .views import get_params
+    pros = Process.objects.exclude(state="9").exclude(
+        Q(type=None) | Q(type="") | Q(type="NODE")
+    ).only("id", "name", "associated_hosts")
     for pro in pros:
         associated_hosts = pro.associated_hosts
         try:
@@ -1297,7 +1295,9 @@ def processinsconfig(request, funid):
         except Exception as e:
             print(e)
 
-    hosts_manages = HostsManage.objects.exclude(state="9").filter(nodetype='CLIENT').only("id", "host_name", "config")
+    hosts_manages = HostsManage.objects.exclude(state="9").filter(nodetype='CLIENT').only(
+        "id", "host_name", "config"
+    )
     hosts_list = []
     for hm in hosts_manages:
         # 主机参数

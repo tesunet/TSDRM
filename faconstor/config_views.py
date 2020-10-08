@@ -8,14 +8,17 @@ from django.contrib.auth.decorators import login_required
 from faconstor.models import *
 import json
 from lxml import etree
-from .views import getpagefuns,get_credit_info,get_params,get_variable_name
+from .views import getpagefuns
+from .public import (
+    get_params, get_variable_name, get_credit_info
+)
 from django.db.models import Q
 from django.db.models import Max
 import copy
-import datetime
 import base64
 from djcelery.models import CrontabSchedule, PeriodicTask
 import uuid
+
 
 @login_required
 def script_save(request):
@@ -412,10 +415,10 @@ def process_design(request, funid):
     p_backs = Process.objects.exclude(state="9").filter(processtype=2).values("id", "name", "type", "pnode_id")
 
     return render(request, "processdesign.html", {
-        'username': request.user.userinfo.fullname, 
+        'username': request.user.userinfo.fullname,
         "pagefuns": getpagefuns(funid, request=request),
-        'all_main_database': all_main_database, 
-        'p_backs':p_backs,
+        'all_main_database': all_main_database,
+        'p_backs': p_backs,
         "hosts": [{
             "id": str(x["id"]),
             "host_name": x["host_name"]
@@ -501,7 +504,6 @@ def get_process_detail(request):
         except Exception as e:
             print(e)
 
-
         data = {
             "pname": process.pnode.name if process.pnode else "",
             "process_id": process.id,
@@ -559,9 +561,9 @@ def process_move(request):
     my_process = Process.objects.get(id=id)
 
     # 判断目标父节点是否为接口，若为接口无法挪动
-    if process_parent.type != "NODE" and my_process.processtype=="1":
+    if process_parent.type != "NODE" and my_process.processtype == "1":
         return HttpResponse("主场景")
-    elif process_parent.type == "NODE" and my_process.type != "NODE" and my_process.processtype!="1" :
+    elif process_parent.type == "NODE" and my_process.type != "NODE" and my_process.processtype != "1":
         return HttpResponse("子场景")
     else:
         # 目标父节点下所有节点 除了自身 接口名称都不得相同 否则重名
@@ -607,9 +609,9 @@ def get_process_node(parent, select_id):
         node["text"] = child.name
         node["id"] = child.id
         node["children"] = get_process_node(child, select_id)
-        childtype=child.type
+        childtype = child.type
         if childtype != "NODE":
-            childtype="PROCESS"
+            childtype = "PROCESS"
         node["type"] = childtype
         node["data"] = {
             "pname": parent.name,
@@ -680,7 +682,7 @@ def process_save(request):
                     processsave.pnode_id = pid
 
                     processsave.save()
-                    name=node_name
+                    name = node_name
                     select_id = processsave.id
                 except Exception as e:
                     info = "保存失败：{0}".format(e)
@@ -1084,7 +1086,7 @@ def get_error_solved_process(request):
         info = "获取排错流程失败。"
         status = 0
     else:
-        data = Process.objects.exclude(state="9").filter(pnode_id=p_id,processtype="3").values("id", "name")
+        data = Process.objects.exclude(state="9").filter(pnode_id=p_id, processtype="3").values("id", "name")
 
     return JsonResponse({
         "status": status,
@@ -1339,7 +1341,7 @@ def get_step_detail(request):
                 group_id = int(group_id)
                 group_name = Group.objects.filter(id=group_id)[0].name
             except:
-               pass
+                pass
 
         all_groups = Group.objects.exclude(state="9")
         group_string = " " + "+" + " -------------- " + "&"
@@ -1348,16 +1350,16 @@ def get_step_detail(request):
             group_string += id_name_plus
 
         data = {
-            "time": cur_step.time, 
-            "approval": cur_step.approval, 
-            "skip": cur_step.skip, 
+            "time": cur_step.time,
+            "approval": cur_step.approval,
+            "skip": cur_step.skip,
             "group_name": group_name,
-            "group": cur_step.group, 
-            "scripts": script_string, 
+            "group": cur_step.group,
+            "scripts": script_string,
             "allgroups": group_string,
-            "rto_count_in": cur_step.rto_count_in, 
+            "rto_count_in": cur_step.rto_count_in,
             "remark": cur_step.remark,
-            "verifyitems": verify_items_string, 
+            "verifyitems": verify_items_string,
             "force_exec": cur_step.force_exec if cur_step.force_exec else 2
         }
     return JsonResponse({
@@ -1625,7 +1627,6 @@ def display_params(request):
     script_id = request.POST.get("script_id", "")
     script_instance_id = request.POST.get("script_instance_id", "")
     if_instance = request.POST.get("if_instance", "")
-    process_id = request.POST.get("process_id", "")
 
     try:
         script = Script.objects.get(id=int(script_id))
@@ -1650,7 +1651,7 @@ def display_params(request):
 
         else:
             script_param_list = get_params(script.config)
-            script_variable_list = get_variable_name(script_text, "SCRIPT")
+            script_variable_list, _ = get_variable_name(script_text, "SCRIPT")
             for sv in script_variable_list:
                 for sp in script_param_list:
                     if sv.strip() == sp["variable_name"]:
@@ -1696,7 +1697,7 @@ def load_hosts_params(request):
 
             # 主机参数
             host_param_list = get_params(host.config) if host else []
-            host_variable_list = get_variable_name(script_text, "HOST")
+            host_variable_list, _ = get_variable_name(script_text, "HOST")
             for hv in host_variable_list:
                 for hp in host_param_list:
                     if hv.strip() == hp["variable_name"]:
@@ -1713,12 +1714,13 @@ def load_hosts_params(request):
         "info": info
     })
 
+
 ######################
 # 流程计划
 ######################
 def process_schedule(request, funid):
     if request.user.is_authenticated():
-        all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")| Q(type="NODE")).filter(processtype="1").order_by("sort").only("id", "name")
+        all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="") | Q(type="NODE")).filter(processtype="1").order_by("sort").only("id", "name")
 
         p_params = []
         # 流程下包含客户端的默认参数
@@ -1989,7 +1991,6 @@ def process_schedule_save(request):
                             'info': '其他应用正在开发中。'
                         })
 
-
                 # 新增
                 if process_schedule_id == 0:
                     cur_crontab_schedule = CrontabSchedule()
@@ -2011,7 +2012,7 @@ def process_schedule_save(request):
                     cur_periodictask.task = "faconstor.tasks.create_process_run"
                     cur_periodictask.kwargs = json.dumps({
                         'cur_process': cur_process.id,
-                        'creatuser':  request.user.username,
+                        'creatuser': request.user.username,
                         'cv_params': cv_params,
                         "agent_type": agent_type,
                     })
@@ -2054,7 +2055,7 @@ def process_schedule_save(request):
                             cur_periodictask.task = "faconstor.tasks.create_process_run"
                             cur_periodictask.kwargs = json.dumps({
                                 'cur_process': cur_process.id,
-                                'creatuser':  request.user.username,
+                                'creatuser': request.user.username,
                                 'cv_params': cv_params,
                                 "agent_type": agent_type,
                             })
@@ -2089,7 +2090,8 @@ def process_schedule_data(request):
         except ValueError:
             pass
         else:
-            all_process_schedules = ProcessSchedule.objects.filter(pro_ins_id=pro_ins_id).exclude(state="9").select_related("pro_ins", "process", "dj_periodictask", "dj_periodictask__crontab")
+            all_process_schedules = ProcessSchedule.objects.filter(pro_ins_id=pro_ins_id).exclude(state="9").select_related("pro_ins", "process", "dj_periodictask",
+                                                                                                                            "dj_periodictask__crontab")
 
             for process_schedule in all_process_schedules:
                 remark = process_schedule.remark
@@ -2221,7 +2223,6 @@ def process_schedule_del(request):
 def util_manage(request, funid):
     return render(request, 'util_manage.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request)})
-
 
 
 @login_required

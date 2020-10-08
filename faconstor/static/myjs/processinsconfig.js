@@ -79,7 +79,7 @@ function getProcessInstancedata(host_id, empty = false) {
             "render": function (data, type, full) {
                 return "<button  id='edit' title='编辑' data-toggle='modal' data-target='#static07' class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button>" +
                     "<button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>" +
-                    "<button title='启动'  id='setup' class='btn btn-xs btn-primary' type='button' disabled><i class='fa fa-power-off'></i></button>";
+                    "<button  id='setup' title='启动' data-toggle='modal' data-target='#static10' class='btn btn-xs btn-primary' type='button'><i class='fa fa-power-off'></i></button>";
             },
         }],
         "oLanguage": {
@@ -272,17 +272,62 @@ function getProcessInstancedata(host_id, empty = false) {
             data: {
                 'pro_ins_id': $('#p_id').val(),
             },
-            success: function(data){
+            success: function (data) {
                 var cv_info = data.data;
-                
+
                 try {
                     cv_info = JSON.stringify(cv_info)
-                } catch(e){}
+                } catch (e) { }
 
                 $('#cv_info').val(cv_info);
             }
         });
 
+    });
+    $('#pro_config tbody').on('click', 'button#setup', function () {
+        var table = $('#pro_config').DataTable();
+        var data = table.row($(this).parents('tr')).data();
+        $("#qd_std").val('');
+        $("#run_reason").val("");
+        $("#qd_recovery_time").val("");
+        $('#pro_ins_id').val(data.id);
+        // 写入当前时间
+        var myDate = new Date();
+        $("#run_time").val(myDate.toLocaleString());
+        $("input[name='qd_cv_recovery_time_redio_group'][value='1']").prop("checked", true);
+        $("input[name='qd_cv_recovery_time_redio_group'][value='2']").prop("checked", false);
+    
+        /**
+         * 如果当前流程实例已经配置成功，加载Commvault主机携带的参数
+         */
+        $.ajax({
+            type: 'POST',
+            dataType: 'JSON',
+            url: '../get_cv_params/',
+            data: {
+                'pro_ins_id': data.id,
+            },
+            success: function (data) {
+                var cv_info = data.data;
+    
+                /**
+                 * Commavult
+                 */
+                var cv_params = cv_info.cv_params,
+                    agent_type = cv_info.agent_type,
+                    is_commvault = cv_info.is_commvault;
+                if (is_commvault) {
+                    $('#qd_pri_id').val(cv_params.pri_id);
+                    $('#qd_pri').val(cv_params.pri_name);
+                    $('#qd_std').val(cv_params.std_id);
+
+                    $('#qd_commvault_div').show();
+                } else {
+                    $('#qd_commvault_div').hide();
+                }
+                displayQDAgentParams(cv_params, agent_type, is_commvault);
+            }
+        });
     });
 }
 
@@ -601,7 +646,6 @@ $('#pro_save').click(function () {
  * 新增流程实例
  */
 $('#pro_new').click(function () {
-    var host_id = $('#id').val();
     $('#pro_schedule').hide();
     $('#pros').val('');
     $('#p_id').val('0');
@@ -798,7 +842,195 @@ function displayJHAgentParams(cv_params, agent_type) {
         $('#jh_cv_select_file').hide();
     }
 }
+function displayQDAgentParams(cv_params, agent_type) {
+    /**
+     * 应用参数
+     */
+    var recovery_time = cv_params.recovery_time;
 
+    if (recovery_time) {
+        $("input[name='qd_optionsRadios'][value='2']").prop("checked", true);
+        $('#qd_recovery_time').val(recovery_time);
+    } else {
+        $("input[name='qd_optionsRadios'][value='1']").prop("checked", true);
+        $('#qd_recovery_time').val("");
+    }
+    $('#qd_agent_type').val(agent_type);
+
+    if (agent_type.indexOf("Oracle") != -1) {
+        $('#qd_cv_copy_priority').val(cv_params.copy_priority);
+        $('#qd_cv_db_open').val(cv_params.db_open);
+        $('#qd_cv_log_restore').val(cv_params.log_restore);
+        $('#qd_cv_data_path').val(cv_params.data_path);
+
+        $('#qd_cv_orcl').show();
+        $('#qd_cv_mssql').hide();
+        $('#qd_cv_filesystem').hide();
+        $('#qd_cv_select_file').hide();
+    } else if (agent_type.indexOf("File System") != -1) {
+        var overWrite = cv_params.overWrite,
+            destPath = cv_params.destPath,
+            sourcePaths = cv_params.sourcePaths;
+        if (overWrite == "True") {
+            $('input[name="qd_cv_overwrite"]:last').prop("checked", true);
+        } else {
+            $('input[name="qd_cv_overwrite"]:first').prop("checked", true);
+        }
+
+        if (destPath == "same") {
+            $('input[name="qd_cv_path"]:first').prop("checked", true);
+        } else {
+            $('input[name="qd_cv_path"]:last').prop("checked", true);
+            $('#qd_cv_mypath').val(destPath);
+        }
+
+        $('#qd_cv_fs_se_1').empty();
+        for (var i = 0; i < sourcePaths.length; i++) {
+            $('#qd_cv_fs_se_1').append("<option value='" + sourcePaths[i] + "'>" + sourcePaths[i] + "</option>");
+        }
+        // 加载tree
+        try {
+            if (agent_type.indexOf("File System") != -1) {
+                getQDFileTree($('#qd_pri_id').val());
+                if ($('#qd_cvclient_type').val() == 2) { // 目标端
+                    $('#qd_cv_select_file').hide();
+                } else {
+                    $('#qd_cv_select_file').show();
+                }
+            }
+        } catch (e) {
+        }
+
+        $('#qd_cv_orcl').hide();
+        $('#qd_cv_mssql').hide();
+        $('#qd_cv_filesystem').show();
+        $('#qd_cv_select_file').show();
+    } else if (agent_type.indexOf("SQL Server") != -1) {
+        var mssqlOverWrite = cv_params.mssqlOverWrite;
+        if (mssqlOverWrite == "False") {
+            $('#qd_cv_isoverwrite').prop("checked", false);
+        } else {
+            $('#qd_cv_isoverwrite').prop("checked", true);
+        }
+
+        $('#qd_cv_orcl').hide();
+        $('#qd_cv_mssql').show();
+        $('#qd_cv_filesystem').hide();
+        $('#qd_cv_select_file').hide();
+    } else{
+        $('#qd_cv_orcl').hide();
+        $('#qd_cv_mssql').hide();
+        $('#qd_cv_filesystem').hide();
+        $('#qd_cv_select_file').hide();
+    }
+}
+
+
+function getQDFileTree(cv_id) {
+    var setting = {
+        async: {
+            enable: true,
+            url: '../get_file_tree/',
+            autoParam: ["id"],
+            otherParam: { "cv_id": cv_id },
+            dataFilter: filter
+        },
+        check: {
+            enable: true,
+            chkStyle: "checkbox",               //多选
+            chkboxType: { "Y": "s", "N": "ps" }  //不级联父节点选择
+        },
+        view: {
+            showLine: false
+        },
+
+    };
+
+    function filter(treeId, parentNode, childNodes) {
+        if (!childNodes) return null;
+        for (var i = 0, l = childNodes.length; i < l; i++) {
+            childNodes[i].name = childNodes[i].name.replace(/\.n/g, '.');
+        }
+        return childNodes;
+    }
+
+    $.fn.zTree.init($("#qd_cv_fs_tree"), setting);
+}
+
+// 主动流程文件系统
+$('#qd_cv_selectpath').click(function () {
+    $('#qd_cv_fs_se_1').empty();
+    var cv_fs_tree = $.fn.zTree.getZTreeObj("qd_cv_fs_tree");
+    var nodes = cv_fs_tree.getCheckedNodes(true);
+    for (var k = 0, length = nodes.length; k < length; k++) {
+        var halfCheck = nodes[k].getCheckStatus();
+        if (!halfCheck.half) {
+            $("#qd_cv_fs_se_1").append("<option value='" + nodes[k].id + "'>" + nodes[k].id + "</option>");
+        }
+    }
+    if (nodes.length == 0)
+        $("#qd_cv_fs_se_1").append("<option value=''></option>");
+});
+
+$("#qd_cv_recovery_time_redio_group").click(function () {
+    if ($("input[name='qd_optionsRadios']:checked").val() == 2) {
+        $("#static09").modal({ backdrop: "static" });
+        var pri = $("#qd_pri_id").val();
+        var datatable = $("#backup_point").dataTable();
+        datatable.fnClearTable(); //清空数据
+        datatable.fnDestroy();
+        $('#backup_point').dataTable({
+            "bAutoWidth": true,
+            "bProcessing": true,
+            "bSort": false,
+            "ajax": "../../client_cv_get_backup_his?id=" + pri,
+            "columns": [
+                { "data": "jobId" },
+                { "data": "jobType" },
+                { "data": "Level" },
+                { "data": "StartTime" },
+                { "data": "LastTime" },
+                { "data": null },
+            ],
+            "columnDefs": [{
+                "targets": -1,
+                "data": null,
+                "defaultContent": "<button  id='select' title='选择'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-check'></i></button>"
+            }],
+
+            "oLanguage": {
+                "sLengthMenu": "&nbsp;&nbsp;每页显示 _MENU_ 条记录",
+                "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
+                "sInfoEmpty": '',
+                "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
+                "sSearch": "搜索",
+                "oPaginate": {
+                    "sFirst": "首页",
+                    "sPrevious": "前一页",
+                    "sNext": "后一页",
+                    "sLast": "尾页"
+                },
+                "sZeroRecords": "没有检索到数据",
+
+            }
+        });
+        $('#backup_point tbody').on('click', 'button#select', function () {
+            var table = $('#backup_point').DataTable();
+            var data = table.row($(this).parents('tr')).data();
+            $("#qd_recovery_time").val(data.LastTime);
+            $("input[name='qd_optionsRadios'][value='1']").prop("checked", false);
+            $("input[name='qd_optionsRadios'][value='2']").prop("checked", true);
+            $("#browseJobId").val(data.jobId);
+
+            $("#static09").modal("hide");
+
+        });
+    } else {
+        $("#qd_recovery_time").val("");
+    }
+});
+
+// 计划流程文件系统
 $('#jh_cv_selectpath').click(function () {
     $('#jh_cv_fs_se_1').empty();
     var cv_fs_tree = $.fn.zTree.getZTreeObj("jh_cv_fs_tree");
@@ -1089,6 +1321,7 @@ $('#process_schedule_dt tbody').on('click', 'button#delrow', function () {
     }
 });
 $('#process_schedule_dt tbody').on('click', 'button#edit', function () {
+    $('#Commvault_div').hide();
     var table = $('#process_schedule_dt').DataTable();
     var data = table.row($(this).parents('tr')).data();
 
@@ -1130,8 +1363,6 @@ $('#process_schedule_dt tbody').on('click', 'button#edit', function () {
             $('#jh_pri').val(cv_params.pri_name);
             $('#jh_std').val(cv_params.std_id);
 
-            $('#jh_std').val(cv_params.std_id);
-
             $('#Commvault_div').show();
         } else {
             $('#Commvault_div').hide();
@@ -1144,4 +1375,67 @@ $('#process_schedule_dt tbody').on('click', 'button#edit', function () {
 
 $('#static07').on('shown.bs.modal', function () {
     loadScheData();
+});
+
+/**
+ * 启动自主恢复流程
+ */
+$("#confirm").click(function () {
+    var pro_ins_id = $("#pro_ins_id").val();
+    // File System
+    var iscover = $("input[name='qd_cv_isoverwrite']:checked").val();
+    var mypath = "same"
+    if ($("input[name='qd_cv_path']:checked").val() == "2") {
+        mypath = $('#qd_cv_mypath').val()
+    }
+    var selectedfile = ""
+    $("#qd_cv_fs_se_1 option").each(function () {
+        var txt = $(this).val();
+        selectedfile = selectedfile + txt + "*!-!*"
+    });
+    // SQL Server
+    var mssql_iscover = "FALSE"
+    if ($('#qd_cv_isoverwrite').is(':checked')) {
+        mssql_iscover = "TRUE"
+    }
+    // 非邀请流程启动
+    $.ajax({
+        type: "POST",
+        dataType: 'json',
+        url: "../falconstorrun/",
+        data: {
+            pro_ins_id: pro_ins_id,
+            run_person: $("#run_person").val(),
+            run_time: $("#run_time").val(),
+            run_reason: $("#run_reason").val(),
+
+            pri: $("#qd_pri_id").val(),
+            std: $("#qd_std").val(),
+            agent_type: $("#qd_agent_type").val(),
+            recovery_time: $("#qd_recovery_time").val(),
+            browseJobId: $("#browseJobId").val(),
+
+            data_path: $("#qd_data_path").val(),
+            copy_priority: $("#qd_copy_priority").val(),
+            db_open: $("#qd_db_open").val(),
+            log_restore: $("#qd_log_restore").val(),
+
+            // SQL Server
+            mssql_iscover: mssql_iscover,
+
+            // File System
+            iscover: iscover,
+            mypath: mypath,
+            selectedfile: selectedfile,
+        },
+        success: function (data) {
+            if (data["res"] == "新增成功。") {
+                window.location.href = data["data"];
+            } else
+                alert(data["res"]);
+        },
+        error: function (e) {
+            alert("流程启动失败，请于管理员联系。");
+        }
+    });
 });

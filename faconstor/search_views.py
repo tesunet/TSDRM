@@ -399,6 +399,7 @@ def falconstorsearch(request, funid):
 @login_required
 def falconstorsearchdata(request):
     """
+    演练查询
     :param request: starttime, endtime, runperson, runstate
     :return: starttime,endtime,createuser,state,process_id,processrun_id,runreason
     """

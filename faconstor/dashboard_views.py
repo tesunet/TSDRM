@@ -4,8 +4,11 @@ from django.http import Http404, JsonResponse
 from django.contrib.auth.decorators import login_required
 
 from .tasks import *
-from .views import getpagefuns,get_credit_info
+from .views import getpagefuns
 from faconstor.api import SQLApi
+from .public import (
+    get_credit_info
+)
 
 import datetime
 import pythoncom
