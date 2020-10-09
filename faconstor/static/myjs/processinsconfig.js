@@ -1381,61 +1381,70 @@ $('#static07').on('shown.bs.modal', function () {
  * 启动自主恢复流程
  */
 $("#confirm").click(function () {
-    var pro_ins_id = $("#pro_ins_id").val();
-    // File System
-    var iscover = $("input[name='qd_cv_isoverwrite']:checked").val();
-    var mypath = "same"
-    if ($("input[name='qd_cv_path']:checked").val() == "2") {
-        mypath = $('#qd_cv_mypath').val()
-    }
-    var selectedfile = ""
-    $("#qd_cv_fs_se_1 option").each(function () {
-        var txt = $(this).val();
-        selectedfile = selectedfile + txt + "*!-!*"
-    });
-    // SQL Server
-    var mssql_iscover = "FALSE"
-    if ($('#qd_cv_isoverwrite').is(':checked')) {
-        mssql_iscover = "TRUE"
-    }
-    // 非邀请流程启动
-    $.ajax({
-        type: "POST",
-        dataType: 'json',
-        url: "../falconstorrun/",
-        data: {
-            pro_ins_id: pro_ins_id,
-            run_person: $("#run_person").val(),
-            run_time: $("#run_time").val(),
-            run_reason: $("#run_reason").val(),
-
-            pri: $("#qd_pri_id").val(),
-            std: $("#qd_std").val(),
-            agent_type: $("#qd_agent_type").val(),
-            recovery_time: $("#qd_recovery_time").val(),
-            browseJobId: $("#browseJobId").val(),
-
-            data_path: $("#qd_data_path").val(),
-            copy_priority: $("#qd_copy_priority").val(),
-            db_open: $("#qd_db_open").val(),
-            log_restore: $("#qd_log_restore").val(),
-
-            // SQL Server
-            mssql_iscover: mssql_iscover,
-
-            // File System
-            iscover: iscover,
-            mypath: mypath,
-            selectedfile: selectedfile,
-        },
-        success: function (data) {
-            if (data["res"] == "新增成功。") {
-                window.location.href = data["data"];
-            } else
-                alert(data["res"]);
-        },
-        error: function (e) {
-            alert("流程启动失败，请于管理员联系。");
+    if ($("#confirmtext").val() != "确认启动流程") {
+        alert("请在文本框内输入\"确认启动流程\"");
+    } else {
+        var pro_ins_id = $("#pro_ins_id").val();
+        // File System
+        var iscover = $("input[name='qd_cv_isoverwrite']:checked").val();
+        var mypath = "same"
+        if ($("input[name='qd_cv_path']:checked").val() == "2") {
+            mypath = $('#qd_cv_mypath').val()
         }
-    });
+        var selectedfile = ""
+        $("#qd_cv_fs_se_1 option").each(function () {
+            var txt = $(this).val();
+            selectedfile = selectedfile + txt + "*!-!*"
+        });
+        // SQL Server
+        var mssql_iscover = "FALSE"
+        if ($('#qd_cv_isoverwrite').is(':checked')) {
+            mssql_iscover = "TRUE"
+        }
+        // 非邀请流程启动
+        $.ajax({
+            type: "POST",
+            dataType: 'json',
+            url: "../falconstorrun/",
+            data: {
+                pro_ins_id: pro_ins_id,
+                run_person: $("#run_person").val(),
+                run_time: $("#run_time").val(),
+                run_reason: $("#run_reason").val(),
+
+                pri: $("#qd_pri_id").val(),
+                std: $("#qd_std").val(),
+                agent_type: $("#qd_agent_type").val(),
+                recovery_time: $("#qd_recovery_time").val(),
+                browseJobId: $("#browseJobId").val(),
+
+                data_path: $("#qd_data_path").val(),
+                copy_priority: $("#qd_copy_priority").val(),
+                db_open: $("#qd_db_open").val(),
+                log_restore: $("#qd_log_restore").val(),
+
+                // SQL Server
+                mssql_iscover: mssql_iscover,
+
+                // File System
+                iscover: iscover,
+                mypath: mypath,
+                selectedfile: selectedfile,
+            },
+            success: function (data) {
+                if (data["res"] == "新增成功。") {
+                    window.location.href = data["data"];
+                } else
+                    alert(data["res"]);
+            },
+            error: function (e) {
+                alert("流程启动失败，请于管理员联系。");
+            }
+        });
+    }
+});
+
+$('#static10').on("show.bs.modal", function () {
+    $('#confirmtext').val("");
+    $('#run_reason').val("");
 });

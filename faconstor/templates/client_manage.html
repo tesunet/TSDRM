@@ -437,8 +437,6 @@
                                                     </button>
                                                 </div>
                                             </div>
-                                            <div id="cv_processdiv" class="col-md-12" align="center"></div>
-
                                         </div>
                                         <div class="tab-pane fade " id="tab_1_5">
                                             <table class="table table-striped table-bordered table-hover table-checkable order-column" id="cv_restore_his">
@@ -552,62 +550,7 @@
             </div>
         </div>
     </div>
-    <div id="static" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
-                    <h4 class="modal-title">启动流程</h4>
-                    <input hidden id="processid" type="text" name="processid">
-                </div>
-                <div class="panel-body">
 
-                    <form class="bs-example form-horizontal activate-form">{% csrf_token %}
-
-                        <div class="form-body">
-                            <div class="form-group">
-                                <input type="text" hidden id="process_type" value="">
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>启动人</label>
-                                <div class="col-md-10">
-                                    <input id="run_person" type="text" name="run_person" class="form-control "
-                                           placeholder="" value="{{ request.user.userinfo.fullname }}" readonly>
-
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label"><span style="color:red; ">*</span>启动时间</label>
-                                <div class="col-md-10">
-                                    <input id="run_time" type="text" name="run_time" class="form-control" placeholder=""
-                                           readonly>
-                                    <div class="form-control-focus"></div>
-
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-md-2 control-label">启动原因</label>
-                                <div class="col-md-10">
-                                <textarea class="form-control" placeholder="最大限制2500个汉字" rows="6" id="run_reason"
-                                          name="run_reason"></textarea>
-                                    <div class="form-control-focus"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-actions ">
-                            <div class="modal-footer">
-                                <label class=control-label"><span style="color:red; ">*</span>请输入如下文字"确认启动流程":</label>
-                                <input id="confirmtext" type="text" name="confirmtext">
-                                <button type="button" id="confirm" name="confirm" class="btn green">确认</button>
-                                <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
     <div id="static02" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1267,6 +1210,188 @@
         </div>
     </div>
 
+    <div id="static10" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">启动流程</h4>
+                    <input hidden id="pro_ins_id" type="text" name="pro_ins_id">
+                    <input hidden id="browseJobId" type="text" name="browseJobId">
+                </div>
+                <div class="panel-body">
+                    <form class="bs-example form-horizontal activate-form">{% csrf_token %}
+                        <div class="form-body">
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>启动人</label>
+                                <div class="col-md-10">
+                                    <input id="run_person" type="text" name="run_person" class="form-control "
+                                           placeholder="" value="{{ request.user.userinfo.fullname }}" readonly>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label"><span
+                                        style="color:red; ">*</span>启动时间</label>
+                                <div class="col-md-10">
+                                    <input id="run_time" type="text" name="run_time" class="form-control" readonly>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-md-2 control-label">启动原因</label>
+                                <div class="col-md-10">
+                                            <textarea class="form-control" placeholder="最大限制2500个汉字" rows="6"
+                                                      id="run_reason" name="run_reason"></textarea>
+                                    <div class="form-control-focus"></div>
+                                </div>
+                            </div>
+                            <div id="qd_commvault_div" hidden>
+                                <div class="form-group">
+                                    <label class="col-md-2 col-lg-2 control-label"><b>Commvault参数</b></label>
+                                    <div class="col-md-10 col-lg-10">
+                                        <hr style="height:1px;border:none;border-top:1px solid #87cefa;">
+                                    </div>
+                                </div>
+                                <input type="text" id="qd_browse_job_id" name="jqd_browse_job_id" hidden>
+                                <input type="text" id="qd_agent_type" name="qd_agent_type" hidden>
+
+                                <div class="form-group">
+                                    <label class="col-lg-2 control-label">源客户端</label>
+                                    <div class="col-lg-10">
+                                        <input id="qd_pri" type="text" name="qd_pri" class="form-control" readonly>
+                                        <input id="qd_pri_id" type="text" name="qd_pri_id" hidden>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-lg-2 control-label">目标客户端</label>
+                                    <div class="col-md-10">
+                                        <select class="form-control" id="qd_std" name="qd_std">
+                                            {% for cv_client in cv_clients %}
+                                                <option value="{{ cv_client.id }}">{{ cv_client.client_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-md-2 control-label">恢复时间点</label>
+                                    <div class="col-md-10">
+                                        <div class="input-group" id="qd_cv_recovery_time_redio_group">
+                                            <span class="input-group-addon">
+                                                <input type="radio" name="qd_optionsRadios" value="1"
+                                                       checked> 最新时间点
+                                                <input type="radio" name="qd_optionsRadios"
+                                                       value="2">选择时间
+                                            </span>
+                                            <input id="qd_recovery_time" autocomplete="off" type="datetime" name="qd_recovery_time" class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="qd_cv_orcl" hidden>
+                                    <div class="form-group">
+                                        <label class="col-md-2 control-label"><span
+                                                style="color:red; "></span>选择拷贝优先级</label>
+                                        <div class="col-md-10">
+                                            <select name="qd_cv_copy_priority" id="qd_cv_copy_priority" class="form-control">
+                                                <option value="1">主拷贝</option>
+                                                <option value="2">辅助拷贝</option>
+                                            </select>
+                                            <div class="form-control-focus"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-2 control-label"><span
+                                                style="color:red; "></span>是否开启数据库</label>
+                                        <div class="col-md-10">
+                                            <select name="qd_cv_db_open" id="qd_cv_db_open" class="form-control">
+                                                <option value="1">是</option>
+                                                <option value="2">否</option>
+                                            </select>
+                                            <div class="form-control-focus"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-2 control-label"><span
+                                                style="color:red; "></span>是否回滚日志</label>
+                                        <div class="col-md-10">
+                                            <select name="qd_cv_log_restore" id="qd_cv_log_restore" class="form-control">
+                                                <option value="1">是</option>
+                                                <option value="2">否</option>
+                                            </select>
+                                            <div class="form-control-focus"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-2 control-label"><span
+                                                style="color:red; "></span>数据重定向路径</label>
+                                        <div class="col-md-10">
+                                            <input id="qd_cv_data_path" type="text" name="qd_cv_data_path" class="form-control" placeholder="">
+                                            <div class="form-control-focus"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="qd_cv_mssql" hidden>
+                                    <div class="form-group form-md-line-input ">
+                                        <label class="col-md-2 control-label">无条件改写</label>
+                                        <div class="col-md-10">
+                                            <input id="qd_cv_isoverwrite" name="qd_cv_isoverwrite" type="checkbox" value="True" style="width: 20px; height: 20px;"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="qd_cv_filesystem" hidden>
+                                    <div class="form-group">
+                                        <label class="col-md-2 control-label">文件改写</label>
+                                        <div class="col-md-10" style="padding-top:6px">
+                                            <div class="input-group">
+                                                <span>
+                                                    <input type="radio" name="qd_cv_overwrite" value="FALSE" checked> 如果介质上文件较新则改写
+                                                    <input type="radio" name="qd_cv_overwrite" value="TRUE">无条件改写
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="col-md-2 control-label">恢复到</label>
+                                        <div class="col-md-10">
+                                            <div class="input-group">
+                                                <span class="input-group-addon">
+                                                    <input type="radio" name="qd_cv_path" value="1" checked> 相同文件夹
+                                                    <input type="radio" name="qd_cv_path" value="2">指定路径
+                                                </span>
+                                                <input id="qd_cv_mypath" autocomplete="off" type="path" name="qd_cv_mypath" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group" style="padding-top:20px">
+                                        <label class="col-md-2 control-label">恢复目录</label>
+                                        <div class="col-md-10">
+                                            <select multiple="multiple" id="qd_cv_fs_se_1" size="10" class="form-control" style="overflow-y:auto;">
+                                                <option value=''></option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions ">
+                            <div class="modal-footer">
+                                <label class=control-label"><span style="color:red; ">*</span>请输入如下文字"确认启动流程":</label>
+                                <input id="confirmtext" type="text" name="confirmtext">
+                                <span id='qd_cv_select_file' hidden>
+                                    <button type="button" data-toggle="modal" data-target="#qd_cv_fs_model" class="btn green uppercase">重选目录</button>
+                                </span>
+                                <button type="button" data-dismiss="modal" class="btn dark btn-outline">关闭
+                                </button>
+                                <button type="button" id="confirm" name="confirm" class="btn green">确认</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="static09" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog" style="width:900px;">
             <div class="modal-content">
@@ -1328,6 +1453,7 @@
             </div>
         </div>
     </div>
+
     <div id="jh_cv_fs_model" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -1353,6 +1479,33 @@
             </div>
         </div>
     </div>
+
+    <div id="qd_cv_fs_model" class="modal fade" tabindex="-1" data-backdrop="static" data-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true"></button>
+                    <h4 class="modal-title">选择目录</h4>
+                </div>
+                <div style="height:400px;overflow:auto; ">
+                    <div>
+                        <ul id="qd_cv_fs_tree" class="ztree"></ul>
+                    </div>
+
+                    <p>
+                    <p>
+                    <p>
+                </div>
+                <div class="modal-footer">
+                    <button id="qd_cv_selectpath" type="button" data-dismiss="modal"
+                            class="btn green uppercase">确定
+                    </button>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="loading" class="portlet-body">
     </div>
 {% endblock %} {% block script %}

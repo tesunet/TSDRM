@@ -94,11 +94,11 @@ function getProcessInstancedata(host_id, empty = false) {
         "bProcessing": true,
         "ajax": "../get_pro_data/?host_id=" + host_id + "&empty=" + empty,
         "columns": [
-            { "data": "id" },
-            { "data": "name" },
-            { "data": "process_name" },
-            { "data": "associated_name" },
-            { "data": null }
+            {"data": "id"},
+            {"data": "name"},
+            {"data": "process_name"},
+            {"data": "associated_name"},
+            {"data": null}
         ],
         "columnDefs": [{
             "targets": -1,
@@ -107,7 +107,7 @@ function getProcessInstancedata(host_id, empty = false) {
             "render": function (data, type, full) {
                 return "<button  id='edit' title='编辑' data-toggle='modal' data-target='#static07' class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button>" +
                     "<button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button>" +
-                    "<button title='启动'  id='setup' class='btn btn-xs btn-primary' type='button' disabled><i class='fa fa-power-off'></i></button>";
+                    "<button  id='setup' title='启动' data-toggle='modal' data-target='#static10' class='btn btn-xs btn-primary' type='button'><i class='fa fa-power-off'></i></button>";
             },
         }],
         "oLanguage": {
@@ -301,18 +301,64 @@ function getProcessInstancedata(host_id, empty = false) {
             data: {
                 'pro_ins_id': $('#p_id').val(),
             },
-            success: function(data){
+            success: function (data) {
                 var cv_info = data.data;
-                
+
                 try {
                     cv_info = JSON.stringify(cv_info)
-                } catch(e){}
+                } catch (e) {
+                }
 
                 $('#cv_info').val(cv_info);
             }
         });
 
 
+    });
+    $('#pro_config tbody').on('click', 'button#setup', function () {
+        var table = $('#pro_config').DataTable();
+        var data = table.row($(this).parents('tr')).data();
+        $("#qd_std").val('');
+        $("#run_reason").val("");
+        $("#qd_recovery_time").val("");
+        $('#pro_ins_id').val(data.id);
+        // 写入当前时间
+        var myDate = new Date();
+        $("#run_time").val(myDate.toLocaleString());
+        $("input[name='qd_cv_recovery_time_redio_group'][value='1']").prop("checked", true);
+        $("input[name='qd_cv_recovery_time_redio_group'][value='2']").prop("checked", false);
+
+        /**
+         * 如果当前流程实例已经配置成功，加载Commvault主机携带的参数
+         */
+        $.ajax({
+            type: 'POST',
+            dataType: 'JSON',
+            url: '../get_cv_params/',
+            data: {
+                'pro_ins_id': data.id,
+            },
+            success: function (data) {
+                var cv_info = data.data;
+
+                /**
+                 * Commavult
+                 */
+                var cv_params = cv_info.cv_params,
+                    agent_type = cv_info.agent_type,
+                    is_commvault = cv_info.is_commvault;
+                if (is_commvault) {
+                    $('#qd_pri_id').val(cv_params.pri_id);
+                    $('#qd_pri').val(cv_params.pri_name);
+                    $('#qd_std').val(cv_params.std_id);
+
+                    $('#qd_commvault_div').show();
+                } else {
+                    $('#qd_commvault_div').hide();
+                }
+                displayQDAgentParams(cv_params, agent_type, is_commvault);
+            }
+        });
     });
 }
 
@@ -484,9 +530,9 @@ function getClientree() {
                                                 type: "POST",
                                                 url: "../clientdel/",
                                                 data:
-                                                {
-                                                    id: obj.id,
-                                                },
+                                                    {
+                                                        id: obj.id,
+                                                    },
                                                 success: function (data) {
                                                     if (data == 1) {
                                                         inst.delete_node(obj);
@@ -505,13 +551,13 @@ function getClientree() {
 
                         }
                     } : {
-                            "items": {
-                                "create": null,
-                                "rename": null,
-                                "remove": null,
-                                "ccp": null,
-                            }
-                        },
+                        "items": {
+                            "create": null,
+                            "rename": null,
+                            "remove": null,
+                            "ccp": null,
+                        }
+                    },
                     "plugins": ["contextmenu", "dnd", "types", "role"]
                 })
                     .on('move_node.jstree', function (e, data) {
@@ -528,13 +574,13 @@ function getClientree() {
                                     type: "POST",
                                     url: "../client_move/",
                                     data:
-                                    {
-                                        id: data.node.id,
-                                        parent: data.parent,
-                                        old_parent: data.old_parent,
-                                        position: data.position,
-                                        old_position: data.old_position,
-                                    },
+                                        {
+                                            id: data.node.id,
+                                            parent: data.parent,
+                                            old_parent: data.old_parent,
+                                            position: data.position,
+                                            old_position: data.old_position,
+                                        },
                                     success: function (data) {
                                         if (data == "重名") {
                                             alert("目标节点下存在重名。");
@@ -733,29 +779,6 @@ function getClientree() {
 
 //commvault
 function get_cv_detail() {
-    $.ajax({
-        type: "POST",
-        dataType: 'json',
-        url: "../get_cv_process/",
-        data:
-        {
-            id: $("#id").val(),
-        },
-        success: function (data) {
-            //流程
-            var processtext = ""
-            for (var i = 0; i < data["process"].length; i++) {
-                processtext += "<div  class='form-group'><button onclick=\"runCVProcess(" + data["process"][i].process_id + ",'1')\"  type='button' class=' btn  green'>流程:" + data["process"][i].process_name + "</button> ";
-                processtext += "</div>"
-            }
-            $("#cv_processdiv").empty();
-            $("#cv_processdiv").append(processtext);
-        },
-        error: function (e) {
-            ;
-        }
-    });
-
     var table = $('#cv_backup_his').DataTable();
     table.ajax.url("../client_cv_get_backup_his?id=" + $('#cv_id').val()
     ).load();
@@ -855,7 +878,7 @@ function getCvClient() {
         if (utildata[i].utils_manage == $("#cvclient_utils_manage").val()) {
             var clientlist = [];
             for (var j = 0; j < utildata[i].instance_list.length; j++) {
-                var client = { "clientid": utildata[i].instance_list[j].clientid, "clientname": utildata[i].instance_list[j].clientname };
+                var client = {"clientid": utildata[i].instance_list[j].clientid, "clientname": utildata[i].instance_list[j].clientname};
                 if (!inArray(client, clientlist)) {
                     clientlist.push(client);
                 }
@@ -914,13 +937,13 @@ function getFileTree(cv_id) {
             enable: true,
             url: '../get_file_tree/',
             autoParam: ["id"],
-            otherParam: { "cv_id": cv_id },
+            otherParam: {"cv_id": cv_id},
             dataFilter: filter
         },
         check: {
             enable: true,
             chkStyle: "checkbox",               //多选
-            chkboxType: { "Y": "s", "N": "ps" }  //不级联父节点选择
+            chkboxType: {"Y": "s", "N": "ps"}  //不级联父节点选择
         },
         view: {
             showLine: false
@@ -938,19 +961,20 @@ function getFileTree(cv_id) {
 
     $.fn.zTree.init($("#cv_fs_tree"), setting);
 }
+
 function getJHFileTree(cv_id) {
     var setting = {
         async: {
             enable: true,
             url: '../get_file_tree/',
             autoParam: ["id"],
-            otherParam: { "cv_id": cv_id },
+            otherParam: {"cv_id": cv_id},
             dataFilter: filter
         },
         check: {
             enable: true,
             chkStyle: "checkbox",               //多选
-            chkboxType: { "Y": "s", "N": "ps" }  //不级联父节点选择
+            chkboxType: {"Y": "s", "N": "ps"}  //不级联父节点选择
         },
         view: {
             showLine: false
@@ -968,6 +992,204 @@ function getJHFileTree(cv_id) {
 
     $.fn.zTree.init($("#jh_cv_fs_tree"), setting);
 }
+
+function displayJHAgentParams(cv_params, agent_type) {
+    /**
+     * 应用参数
+     */
+    var recovery_time = cv_params.recovery_time;
+
+    if (recovery_time) {
+        $("input[name='jh_optionsRadios'][value='2']").prop("checked", true);
+        $('#jh_recovery_time').val(recovery_time);
+    } else {
+        $("input[name='jh_optionsRadios'][value='1']").prop("checked", true);
+        $('#jh_recovery_time').val("");
+    }
+    $('#jh_agent_type').val(agent_type);
+
+    if (agent_type.indexOf("Oracle") != -1) {
+        $('#jh_cv_copy_priority').val(cv_params.copy_priority);
+        $('#jh_cv_db_open').val(cv_params.db_open);
+        $('#jh_cv_log_restore').val(cv_params.log_restore);
+        $('#jh_cv_data_path').val(cv_params.data_path);
+
+        $('#jh_cv_orcl').show();
+        $('#jh_cv_mssql').hide();
+        $('#jh_cv_filesystem').hide();
+        $('#jh_cv_select_file').hide();
+    } else if (agent_type.indexOf("File System") != -1) {
+        var overWrite = cv_params.overWrite,
+            destPath = cv_params.destPath,
+            sourcePaths = cv_params.sourcePaths;
+        if (overWrite == "True") {
+            $('input[name="jh_cv_overwrite"]:last').prop("checked", true);
+        } else {
+            $('input[name="jh_cv_overwrite"]:first').prop("checked", true);
+        }
+
+        if (destPath == "same") {
+            $('input[name="jh_cv_path"]:first').prop("checked", true);
+        } else {
+            $('input[name="jh_cv_path"]:last').prop("checked", true);
+            $('#jh_cv_mypath').val(destPath);
+        }
+
+        $('#jh_cv_fs_se_1').empty();
+        for (var i = 0; i < sourcePaths.length; i++) {
+            $('#jh_cv_fs_se_1').append("<option value='" + sourcePaths[i] + "'>" + sourcePaths[i] + "</option>");
+        }
+        // 加载tree
+        try {
+            if (agent_type.indexOf("File System") != -1) {
+                getJHFileTree($('#jh_pri_id').val());
+                if ($('#jh_cvclient_type').val() == 2) { // 目标端
+                    $('#jh_cv_select_file').hide();
+                } else {
+                    $('#jh_cv_select_file').show();
+                }
+            }
+        } catch (e) {
+        }
+
+        $('#jh_cv_orcl').hide();
+        $('#jh_cv_mssql').hide();
+        $('#jh_cv_filesystem').show();
+        $('#jh_cv_select_file').show();
+    } else if (agent_type.indexOf("SQL Server") != -1) {
+        var mssqlOverWrite = cv_params.mssqlOverWrite;
+        if (mssqlOverWrite == "False") {
+            $('#jh_cv_isoverwrite').prop("checked", false);
+        } else {
+            $('#jh_cv_isoverwrite').prop("checked", true);
+        }
+
+        $('#jh_cv_orcl').hide();
+        $('#jh_cv_mssql').show();
+        $('#jh_cv_filesystem').hide();
+        $('#jh_cv_select_file').hide();
+    } else {
+        $('#jh_cv_orcl').hide();
+        $('#jh_cv_mssql').hide();
+        $('#jh_cv_filesystem').hide();
+        $('#jh_cv_select_file').hide();
+    }
+}
+
+function displayQDAgentParams(cv_params, agent_type) {
+    /**
+     * 应用参数
+     */
+    var recovery_time = cv_params.recovery_time;
+
+    if (recovery_time) {
+        $("input[name='qd_optionsRadios'][value='2']").prop("checked", true);
+        $('#qd_recovery_time').val(recovery_time);
+    } else {
+        $("input[name='qd_optionsRadios'][value='1']").prop("checked", true);
+        $('#qd_recovery_time').val("");
+    }
+    $('#qd_agent_type').val(agent_type);
+
+    if (agent_type.indexOf("Oracle") != -1) {
+        $('#qd_cv_copy_priority').val(cv_params.copy_priority);
+        $('#qd_cv_db_open').val(cv_params.db_open);
+        $('#qd_cv_log_restore').val(cv_params.log_restore);
+        $('#qd_cv_data_path').val(cv_params.data_path);
+
+        $('#qd_cv_orcl').show();
+        $('#qd_cv_mssql').hide();
+        $('#qd_cv_filesystem').hide();
+        $('#qd_cv_select_file').hide();
+    } else if (agent_type.indexOf("File System") != -1) {
+        var overWrite = cv_params.overWrite,
+            destPath = cv_params.destPath,
+            sourcePaths = cv_params.sourcePaths;
+        if (overWrite == "True") {
+            $('input[name="qd_cv_overwrite"]:last').prop("checked", true);
+        } else {
+            $('input[name="qd_cv_overwrite"]:first').prop("checked", true);
+        }
+
+        if (destPath == "same") {
+            $('input[name="qd_cv_path"]:first').prop("checked", true);
+        } else {
+            $('input[name="qd_cv_path"]:last').prop("checked", true);
+            $('#qd_cv_mypath').val(destPath);
+        }
+
+        $('#qd_cv_fs_se_1').empty();
+        for (var i = 0; i < sourcePaths.length; i++) {
+            $('#qd_cv_fs_se_1').append("<option value='" + sourcePaths[i] + "'>" + sourcePaths[i] + "</option>");
+        }
+        // 加载tree
+        try {
+            if (agent_type.indexOf("File System") != -1) {
+                getQDFileTree($('#qd_pri_id').val());
+                if ($('#qd_cvclient_type').val() == 2) { // 目标端
+                    $('#qd_cv_select_file').hide();
+                } else {
+                    $('#qd_cv_select_file').show();
+                }
+            }
+        } catch (e) {
+        }
+
+        $('#qd_cv_orcl').hide();
+        $('#qd_cv_mssql').hide();
+        $('#qd_cv_filesystem').show();
+        $('#qd_cv_select_file').show();
+    } else if (agent_type.indexOf("SQL Server") != -1) {
+        var mssqlOverWrite = cv_params.mssqlOverWrite;
+        if (mssqlOverWrite == "False") {
+            $('#qd_cv_isoverwrite').prop("checked", false);
+        } else {
+            $('#qd_cv_isoverwrite').prop("checked", true);
+        }
+
+        $('#qd_cv_orcl').hide();
+        $('#qd_cv_mssql').show();
+        $('#qd_cv_filesystem').hide();
+        $('#qd_cv_select_file').hide();
+    } else {
+        $('#qd_cv_orcl').hide();
+        $('#qd_cv_mssql').hide();
+        $('#qd_cv_filesystem').hide();
+        $('#qd_cv_select_file').hide();
+    }
+}
+
+function getQDFileTree(cv_id) {
+    var setting = {
+        async: {
+            enable: true,
+            url: '../get_file_tree/',
+            autoParam: ["id"],
+            otherParam: {"cv_id": cv_id},
+            dataFilter: filter
+        },
+        check: {
+            enable: true,
+            chkStyle: "checkbox",               //多选
+            chkboxType: {"Y": "s", "N": "ps"}  //不级联父节点选择
+        },
+        view: {
+            showLine: false
+        },
+
+    };
+
+    function filter(treeId, parentNode, childNodes) {
+        if (!childNodes) return null;
+        for (var i = 0, l = childNodes.length; i < l; i++) {
+            childNodes[i].name = childNodes[i].name.replace(/\.n/g, '.');
+        }
+        return childNodes;
+    }
+
+    $.fn.zTree.init($("#qd_cv_fs_tree"), setting);
+}
+
 /**
  * 流程模态框
  * @param {*} processid
@@ -977,7 +1199,7 @@ function runCVProcess(processid, process_type) {
     /**
      * 自动化恢复流程
      */
-    $("#static").modal({ backdrop: "static" });
+    $("#static").modal({backdrop: "static"});
     $('#recovery_time').datetimepicker({
         format: 'yyyy-mm-dd hh:ii:ss',
         pickerPosition: 'top-right'
@@ -992,7 +1214,7 @@ function runCVProcess(processid, process_type) {
 
 
 function runprocess(processid, process_type) {
-    $("#static").modal({ backdrop: "static" });
+    $("#static").modal({backdrop: "static"});
     $('#recovery_time').datetimepicker({
         format: 'yyyy-mm-dd hh:ii:ss',
         pickerPosition: 'top-right'
@@ -1029,7 +1251,7 @@ $(document).ready(function () {
                             "text": "<i class='jstree-icon jstree-themeicon fa fa-folder icon-state-warning icon-lg jstree-themeicon-custom'></i>" + $("#node_name").val(),
                             "id": data.nodeid,
                             "type": "NODE",
-                            "data": { "remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val() },
+                            "data": {"remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val()},
                             "icon": false,
                         }, "last", false, false);
                         $("#id").val(data.nodeid)
@@ -1089,7 +1311,7 @@ $(document).ready(function () {
                             "text": $("#host_name").val(),
                             "id": data.nodeid,
                             "type": "CLIENT",
-                            "data": { "remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val() },
+                            "data": {"remark": $("#node_remark").val(), "name": $("#node_name").val(), "pname": $("#pname").val()},
                             "icon": false,
                         }, "last", false, false);
                         $("#id").val(data.nodeid)
@@ -1311,7 +1533,7 @@ $(document).ready(function () {
                         var destinationdata = JSON.parse($("#cvclient_u_destination").val());
                         for (var i = 0; i < destinationdata.length; i++) {
                             if (destinationdata[i].utilid == $("#cvclient_utils_manage").val()) {
-                                var cur_destination = { "name": $("#cvclient_source").find("option:selected").text(), "id": data.cv_id }
+                                var cur_destination = {"name": $("#cvclient_source").find("option:selected").text(), "id": data.cv_id}
                                 if (!inArray(cur_destination, destinationdata[i].destination_list)) {
                                     destinationdata[i].destination_list.push(cur_destination);
                                     $("#cvclient_u_destination").val(JSON.stringify(destinationdata));
@@ -1349,9 +1571,9 @@ $(document).ready(function () {
                 type: "POST",
                 url: "../client_cv_del/",
                 data:
-                {
-                    id: $("#cv_id").val(),
-                },
+                    {
+                        id: $("#cv_id").val(),
+                    },
                 success: function (data) {
                     if (data == 1) {
                         $("#cv_del").hide();
@@ -1396,12 +1618,12 @@ $(document).ready(function () {
         "destroy": true,
         //"ajax": "../../oraclerecoverydata?origin_id=" + origin_id,
         "columns": [
-            { "data": "jobId" },
-            { "data": "jobType" },
-            { "data": "Level" },
-            { "data": "StartTime" },
-            { "data": "LastTime" },
-            { "data": null },
+            {"data": "jobId"},
+            {"data": "jobType"},
+            {"data": "Level"},
+            {"data": "StartTime"},
+            {"data": "LastTime"},
+            {"data": null},
         ],
         "columnDefs": [{
             "targets": -1,
@@ -1448,11 +1670,11 @@ $(document).ready(function () {
         "destroy": true,
         //"ajax": "../../oraclerecoverydata?origin_id=" + origin_id,
         "columns": [
-            { "data": "jobid" },
-            { "data": "jobType" },
-            { "data": "starttime" },
-            { "data": "endtime" },
-            { "data": "jobstatus" }
+            {"data": "jobid"},
+            {"data": "jobType"},
+            {"data": "starttime"},
+            {"data": "endtime"},
+            {"data": "jobstatus"}
         ],
 
         "oLanguage": {
@@ -1983,88 +2205,79 @@ $(document).ready(function () {
         }
     });
 
-    function displayJHAgentParams(cv_params, agent_type) {
-        /**
-         * 应用参数
-         */
-        var recovery_time = cv_params.recovery_time;
-
-        if (recovery_time) {
-            $("input[name='jh_optionsRadios'][value='2']").prop("checked", true);
-            $('#jh_recovery_time').val(recovery_time);
-        } else {
-            $("input[name='jh_optionsRadios'][value='1']").prop("checked", true);
-            $('#jh_recovery_time').val("");
+    // 主动流程文件系统
+    $('#qd_cv_selectpath').click(function () {
+        $('#qd_cv_fs_se_1').empty();
+        var cv_fs_tree = $.fn.zTree.getZTreeObj("qd_cv_fs_tree");
+        var nodes = cv_fs_tree.getCheckedNodes(true);
+        for (var k = 0, length = nodes.length; k < length; k++) {
+            var halfCheck = nodes[k].getCheckStatus();
+            if (!halfCheck.half) {
+                $("#qd_cv_fs_se_1").append("<option value='" + nodes[k].id + "'>" + nodes[k].id + "</option>");
+            }
         }
-        $('#jh_agent_type').val(agent_type);
+        if (nodes.length == 0)
+            $("#qd_cv_fs_se_1").append("<option value=''></option>");
+    });
 
-        if (agent_type.indexOf("Oracle") != -1) {
-            $('#jh_cv_copy_priority').val(cv_params.copy_priority);
-            $('#jh_cv_db_open').val(cv_params.db_open);
-            $('#jh_cv_log_restore').val(cv_params.log_restore);
-            $('#jh_cv_data_path').val(cv_params.data_path);
+    $("#qd_cv_recovery_time_redio_group").click(function () {
+        if ($("input[name='qd_optionsRadios']:checked").val() == 2) {
+            $("#static09").modal({backdrop: "static"});
+            var pri = $("#qd_pri_id").val();
+            var datatable = $("#backup_point").dataTable();
+            datatable.fnClearTable(); //清空数据
+            datatable.fnDestroy();
+            $('#backup_point').dataTable({
+                "bAutoWidth": true,
+                "bProcessing": true,
+                "bSort": false,
+                "ajax": "../../client_cv_get_backup_his?id=" + pri,
+                "columns": [
+                    {"data": "jobId"},
+                    {"data": "jobType"},
+                    {"data": "Level"},
+                    {"data": "StartTime"},
+                    {"data": "LastTime"},
+                    {"data": null},
+                ],
+                "columnDefs": [{
+                    "targets": -1,
+                    "data": null,
+                    "defaultContent": "<button  id='select' title='选择'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-check'></i></button>"
+                }],
 
-            $('#jh_cv_orcl').show();
-            $('#jh_cv_mssql').hide();
-            $('#jh_cv_filesystem').hide();
-            $('#jh_cv_select_file').hide();
-        } else if (agent_type.indexOf("File System") != -1) {
-            var overWrite = cv_params.overWrite,
-                destPath = cv_params.destPath,
-                sourcePaths = cv_params.sourcePaths;
-            if (overWrite == "True") {
-                $('input[name="jh_cv_overwrite"]:last').prop("checked", true);
-            } else {
-                $('input[name="jh_cv_overwrite"]:first').prop("checked", true);
-            }
+                "oLanguage": {
+                    "sLengthMenu": "&nbsp;&nbsp;每页显示 _MENU_ 条记录",
+                    "sInfo": "从 _START_ 到 _END_ /共 _TOTAL_ 条数据",
+                    "sInfoEmpty": '',
+                    "sInfoFiltered": "(从 _MAX_ 条数据中检索)",
+                    "sSearch": "搜索",
+                    "oPaginate": {
+                        "sFirst": "首页",
+                        "sPrevious": "前一页",
+                        "sNext": "后一页",
+                        "sLast": "尾页"
+                    },
+                    "sZeroRecords": "没有检索到数据",
 
-            if (destPath == "same") {
-                $('input[name="jh_cv_path"]:first').prop("checked", true);
-            } else {
-                $('input[name="jh_cv_path"]:last').prop("checked", true);
-                $('#jh_cv_mypath').val(destPath);
-            }
-
-            $('#jh_cv_fs_se_1').empty();
-            for (var i = 0; i < sourcePaths.length; i++) {
-                $('#jh_cv_fs_se_1').append("<option value='" + sourcePaths[i] + "'>" + sourcePaths[i] + "</option>");
-            }
-            // 加载tree
-            try {
-                if (agent_type.indexOf("File System") != -1) {
-                    getJHFileTree($('#jh_pri_id').val());
-                    if ($('#jh_cvclient_type').val() == 2) { // 目标端
-                        $('#jh_cv_select_file').hide();
-                    } else {
-                        $('#jh_cv_select_file').show();
-                    }
                 }
-            } catch (e) {
-            }
+            });
+            $('#backup_point tbody').on('click', 'button#select', function () {
+                var table = $('#backup_point').DataTable();
+                var data = table.row($(this).parents('tr')).data();
+                $("#qd_recovery_time").val(data.LastTime);
+                $("input[name='qd_optionsRadios'][value='1']").prop("checked", false);
+                $("input[name='qd_optionsRadios'][value='2']").prop("checked", true);
+                $("#browseJobId").val(data.jobId);
 
-            $('#jh_cv_orcl').hide();
-            $('#jh_cv_mssql').hide();
-            $('#jh_cv_filesystem').show();
-            $('#jh_cv_select_file').show();
-        } else if (agent_type.indexOf("SQL Server") != -1) {
-            var mssqlOverWrite = cv_params.mssqlOverWrite;
-            if (mssqlOverWrite == "False") {
-                $('#jh_cv_isoverwrite').prop("checked", false);
-            } else {
-                $('#jh_cv_isoverwrite').prop("checked", true);
-            }
+                $("#static09").modal("hide");
 
-            $('#jh_cv_orcl').hide();
-            $('#jh_cv_mssql').show();
-            $('#jh_cv_filesystem').hide();
-            $('#jh_cv_select_file').hide();
+            });
         } else {
-            $('#jh_cv_orcl').hide();
-            $('#jh_cv_mssql').hide();
-            $('#jh_cv_filesystem').hide();
-            $('#jh_cv_select_file').hide();
+            $("#qd_recovery_time").val("");
         }
-    }
+    });
+
 
     $('#jh_cv_selectpath').click(function () {
         $('#jh_cv_fs_se_1').empty();
@@ -2082,7 +2295,7 @@ $(document).ready(function () {
 
     $("#jh_cv_recovery_time_redio_group").click(function () {
         if ($("input[name='jh_optionsRadios']:checked").val() == 2) {
-            $("#static09").modal({ backdrop: "static" });
+            $("#static09").modal({backdrop: "static"});
             var pri = $("#jh_pri_id").val();
             var datatable = $("#backup_point").dataTable();
             datatable.fnClearTable(); //清空数据
@@ -2093,12 +2306,12 @@ $(document).ready(function () {
                 "bSort": false,
                 "ajax": "../../client_cv_get_backup_his?id=" + pri,
                 "columns": [
-                    { "data": "jobId" },
-                    { "data": "jobType" },
-                    { "data": "Level" },
-                    { "data": "StartTime" },
-                    { "data": "LastTime" },
-                    { "data": null },
+                    {"data": "jobId"},
+                    {"data": "jobType"},
+                    {"data": "Level"},
+                    {"data": "StartTime"},
+                    {"data": "LastTime"},
+                    {"data": null},
                 ],
                 "columnDefs": [{
                     "targets": -1,
@@ -2169,26 +2382,26 @@ $(document).ready(function () {
                 per_week: $("#per_week").val(),
                 per_month: $("#per_month").val(),
                 process_schedule_remark: $("#process_schedule_remark").val(),
-    
+
                 /**
                  * Commvault参数
                  */
                 agent_type: $("#jh_agent_type").val(),
-    
+
                 pri: $("#jh_pri_id").val(),
                 pri_name: $("#jh_pri").val(),
                 std: $("#jh_std").val(),
                 recovery_time: $("#jh_recovery_time").val(),
                 browseJobId: $("#jh_browse_job_id").val(),
-    
+
                 data_path: $("#jh_cv_data_path").val(),
                 copy_priority: $("#jh_cv_copy_priority").val(),
                 db_open: $("#jh_cv_db_open").val(),
                 log_restore: $("#jh_cv_log_restore").val(),
-    
+
                 // SQL Server
                 mssql_iscover: mssql_iscover,
-    
+
                 // File System
                 iscover: iscover,
                 mypath: mypath,
@@ -2208,7 +2421,7 @@ $(document).ready(function () {
         });
     });
 
-    function loadScheData(){
+    function loadScheData() {
         if ($.fn.DataTable.isDataTable('#process_schedule_dt')) {
             $('#process_schedule_dt').dataTable().fnDestroy();
         }
@@ -2243,7 +2456,7 @@ $(document).ready(function () {
                     var week_map = {1: "周一", 2: "周二", 3: "周三", 4: "周四", 5: "周五", 6: "周六", 7: "周日"};
                     var per_week = week_map[full.per_week];
                     var per_month = full.per_month;
-        
+
                     if (full.schedule_type == 2) {
                         time += " " + per_week;
                     }
@@ -2296,14 +2509,16 @@ $(document).ready(function () {
                 "sZeroRecords": "没有检索到数据",
             }
         });
-        
+
     }
+
     $('#process_schedule_dt tbody').on('click', 'button#reload', function () {
+        $('#Commvault_div').hide();
         var table = $('#process_schedule_dt').DataTable();
         var data = table.row($(this).parents('tr')).data();
         var confirmInfo = "";
         var status = 0;
-    
+
         if (data.status == true) {
             confirmInfo = "确定要关闭该流程计划？";
             status = 0;
@@ -2311,7 +2526,7 @@ $(document).ready(function () {
             confirmInfo = "确定要启动该流程计划？";
             status = 1;
         }
-    
+
         if (confirm(confirmInfo)) {
             $.ajax({
                 type: "POST",
@@ -2352,18 +2567,18 @@ $(document).ready(function () {
                     alert("删除失败，请于管理员联系。");
                 }
             });
-    
+
         }
     });
     $('#process_schedule_dt tbody').on('click', 'button#edit', function () {
         var table = $('#process_schedule_dt').DataTable();
         var data = table.row($(this).parents('tr')).data();
-    
+
         $("#process_schedule_id").val(data.process_schedule_id);
         $("#process").val(data.process_id);
         $("#process_schedule_name").val(data.process_schedule_name);
         $("#schedule_type").val(data.schedule_type);
-    
+
         if (data.schedule_type == 1) {
             $("#per_week_div").hide();
             $("#per_month_div").hide();
@@ -2378,14 +2593,14 @@ $(document).ready(function () {
             $("#per_week_div").hide();
             $("#per_month_div").show();
         }
-    
-    
+
+
         var per_time = data.hours + ":" + data.minutes;
         $("#per_time").val(per_time).timepicker("setTime", per_time);
         $("#per_week").val(data.per_week != "*" ? data.per_week : "").trigger("change");
         $("#per_month").val(data.per_month != "*" ? data.per_month : "").trigger("change");
         $("#process_schedule_remark").val(data.remark);
-    
+
         /**
          * Commavult
          */
@@ -2397,78 +2612,72 @@ $(document).ready(function () {
                 $('#jh_pri_id').val(cv_params.pri_id);
                 $('#jh_pri').val(cv_params.pri_name);
                 $('#jh_std').val(cv_params.std_id);
-    
+
                 $('#jh_std').val(cv_params.std_id);
-    
+
                 $('#Commvault_div').show();
             } else {
                 $('#Commvault_div').hide();
             }
             displayJHAgentParams(cv_params, agent_type);
-    
+
             // 恢复时间
-    
+
         } catch (e) {
             console.log(e)
         }
     });
-    
-    $('#static07').on('shown.bs.modal', function(){
+
+    $('#static07').on('shown.bs.modal', function () {
         loadScheData();
     });
 
 });
 /**
- * 启动流程
+ * 启动自主恢复流程
  */
 $("#confirm").click(function () {
     if ($("#confirmtext").val() != "确认启动流程") {
         alert("请在文本框内输入\"确认启动流程\"");
     } else {
-        var process_id = $("#processid").val();
+        var pro_ins_id = $("#pro_ins_id").val();
         // File System
-        var iscover = $("input[name='cv_r_overwrite']:checked").val();
+        var iscover = $("input[name='qd_cv_isoverwrite']:checked").val();
         var mypath = "same"
-        if ($("input[name='cv_r_path']:checked").val() == "2") {
-            mypath = $('#cv_r_mypath').val()
+        if ($("input[name='qd_cv_path']:checked").val() == "2") {
+            mypath = $('#qd_cv_mypath').val()
         }
-        var selectedfile = "";
-        $("#cv_r_fs_se_1 option").each(function () {
+        var selectedfile = ""
+        $("#qd_cv_fs_se_1 option").each(function () {
             var txt = $(this).val();
             selectedfile = selectedfile + txt + "*!-!*"
         });
         // SQL Server
         var mssql_iscover = "FALSE"
-        if ($('#cv_r_isoverwrite').is(':checked')) {
+        if ($('#qd_cv_isoverwrite').is(':checked')) {
             mssql_iscover = "TRUE"
-        }
-        // 目标端
-        var std = $('#cv_r_destClient').val();
-        if (std == "self") {
-            std = $("#cv_id").val();
         }
         // 非邀请流程启动
         $.ajax({
             type: "POST",
             dataType: 'json',
             url: "../falconstorrun/",
-            data:
-            {
-                processid: process_id,
+            data: {
+                pro_ins_id: pro_ins_id,
                 run_person: $("#run_person").val(),
                 run_time: $("#run_time").val(),
                 run_reason: $("#run_reason").val(),
 
-                pri: $("#cv_id").val(),
-                std: std,
-                agent_type: $("#cvclient_agentType").val(),
-                recovery_time: $("#cv_r_datetimepicker").val(),
-                browseJobId: $("#cv_r_browseJobId").val(),
+                pri: $("#qd_pri_id").val(),
+                std: $("#qd_std").val(),
+                agent_type: $("#qd_agent_type").val(),
+                recovery_time: $("#qd_recovery_time").val(),
+                browseJobId: $("#browseJobId").val(),
 
-                data_path: $("#cv_r_data_path").val(),
-                copy_priority: $("#cv_r_copy_priority").val(),
-                db_open: $("#cv_r_db_open").val(),
-                log_restore: $("#cv_r_log_restore").val(),
+                data_path: $("#qd_data_path").val(),
+                copy_priority: $("#qd_copy_priority").val(),
+                db_open: $("#qd_db_open").val(),
+                log_restore: $("#qd_log_restore").val(),
 
                 // SQL Server
                 mssql_iscover: mssql_iscover,
@@ -2480,9 +2689,7 @@ $("#confirm").click(function () {
             },
             success: function (data) {
                 if (data["res"] == "新增成功。") {
-                    alert("流程启动成功。");
-                    $("#static").modal("hide");
-                    window.open(data["data"], "_blank");
+                    window.location.href = data["data"];
                 } else
                     alert(data["res"]);
             },
@@ -2493,7 +2700,7 @@ $("#confirm").click(function () {
     }
 });
 
-$('#static').on("show.bs.modal", function () {
+$('#static10').on("show.bs.modal", function () {
     $('#confirmtext').val("");
     $('#run_reason').val("");
 });
