@@ -1352,22 +1352,24 @@ def index(request, funid):
             curren_processrun_info_list.append(current_processrun_dict)
 
     # 系统切换成功率
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
+    all_processes = Process.objects.exclude(state="9").filter(type='Falconstor').filter(pnode__pnode=None)
     process_success_rate_list = []  # 待修改
-    # if all_processes:
-    #     for process in all_processes:
-    #         process_name = process.name
-    #         all_processrun_list = process.processrun_set.filter(Q(state="DONE") | Q(state="STOP"))
-    #         successful_processruns = process.processrun_set.filter(state="DONE")
-    #         current_process_success_rate = "%.0f" % (len(successful_processruns) / len(
-    #             all_processrun_list) * 100) if all_processrun_list and successful_processruns else 0
+    if all_processes:
+        for process in all_processes:
+            process_name = process.name
+            # all_processrun_list = process.processrun_set.filter(Q(state="DONE") | Q(state="STOP"))
+            # successful_processruns = process.processrun_set.filter(state="DONE")
+            all_processrun_list = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).filter(pro_ins__process__id=process.id)
+            successful_processruns = ProcessRun.objects.filter(state="DONE").filter(pro_ins__process__id=process.id)
+            current_process_success_rate = "%.0f" % (len(successful_processruns) / len(
+                all_processrun_list) * 100) if all_processrun_list and successful_processruns else 0
 
-    #         process_dict = {
-    #             "process_name": process_name,
-    #             "current_process_success_rate": current_process_success_rate,
-    #             "color": process.color
-    #         }
-    #         process_success_rate_list.append(process_dict)
+            process_dict = {
+                "process_name": process_name,
+                "current_process_success_rate": current_process_success_rate,
+                "color": process.color
+            }
+            process_success_rate_list.append(process_dict)
 
     # 右上角消息任务
     return render(request, "index.html",
@@ -1381,58 +1383,59 @@ def index(request, funid):
 @login_required
 def get_process_rto(request):
     # 不同流程最近的12次切换RTO
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
+    all_processes = Process.objects.exclude(state="9").filter(type='Falconstor').filter(pnode__pnode=None)  # 飞康的流程
     process_rto_list = [] # 待修改
-    # if all_processes:
-    #     for process in all_processes:
-    #         process_name = process.name
-    #         processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
-    #         current_rto_list = []
-    #         for processrun_rto_obj in processrun_rto_obj_list:
-    #             all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(
-    #                 step__rto_count_in="0").filter(step__pnode=None)
-    #             step_rto = 0
-    #             if all_step_runs:
-    #                 for step_run in all_step_runs:
-    #                     rto = 0
-    #                     end_time = step_run.endtime
-    #                     start_time = step_run.starttime
-    #                     if end_time and start_time:
-    #                         delta_time = (end_time - start_time)
-    #                         rto = delta_time.total_seconds()
+    if all_processes:
+        for process in all_processes:
+            process_name = process.name
+            # processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
+            processrun_rto_obj_list = ProcessRun.objects.filter(state='DONE').filter(pro_ins__process__id=process.id)
+            current_rto_list = []
+            for processrun_rto_obj in processrun_rto_obj_list:
+                all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(
+                    step__rto_count_in="0").filter(step__pnode=None)
+                step_rto = 0
+                if all_step_runs:
+                    for step_run in all_step_runs:
+                        rto = 0
+                        end_time = step_run.endtime
+                        start_time = step_run.starttime
+                        if end_time and start_time:
+                            delta_time = (end_time - start_time)
+                            rto = delta_time.total_seconds()
 
-    #                     step_rto += rto
-    #             # 扣除子级步骤中可能的rto_count_in的时间
-    #             all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
-    #                 step__rto_count_in="0").exclude(
-    #                 step__pnode=None).filter(step__pnode__rto_count_in="1")
-    #             inner_rto_not_count_in = 0
-    #             if all_inner_step_runs:
-    #                 for inner_step_run in all_inner_step_runs:
-    #                     end_time = inner_step_run.endtime
-    #                     start_time = inner_step_run.starttime
-    #                     if end_time and start_time:
-    #                         delta_time = (end_time - start_time)
-    #                         rto = delta_time.total_seconds()
-    #                         inner_rto_not_count_in += rto
-    #             step_rto -= inner_rto_not_count_in
+                        step_rto += rto
+                # 扣除子级步骤中可能的rto_count_in的时间
+                all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
+                    step__rto_count_in="0").exclude(
+                    step__pnode=None).filter(step__pnode__rto_count_in="1")
+                inner_rto_not_count_in = 0
+                if all_inner_step_runs:
+                    for inner_step_run in all_inner_step_runs:
+                        end_time = inner_step_run.endtime
+                        start_time = inner_step_run.starttime
+                        if end_time and start_time:
+                            delta_time = (end_time - start_time)
+                            rto = delta_time.total_seconds()
+                            inner_rto_not_count_in += rto
+                step_rto -= inner_rto_not_count_in
 
-    #             current_rto = float("%.2f" % (step_rto / 60))
+                current_rto = float("%.2f" % (step_rto / 60))
 
-    #             current_rto_list.append(current_rto)
-    #         process_dict = {
-    #             "process_name": process_name,
-    #             "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[
-    #                                                                                            -50:][::-1],
-    #             "color": process.color
-    #         }
-    #         process_rto_list.append(process_dict)
+                current_rto_list.append(current_rto)
+            process_dict = {
+                "process_name": process_name,
+                "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[
+                                                                                               -50:][::-1],
+                "color": process.color
+            }
+            process_rto_list.append(process_dict)
     return JsonResponse({"data": process_rto_list})
 
 
 @login_required
 def get_daily_processrun(request):
-    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).select_related("pro_ins__process").filter(pro_ins__process__pnode__pnode=None)
+    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).select_related("pro_ins__process").filter(pro_ins__process__pnode__pnode=None).filter(pro_ins__process__type='Falconstor')
     process_success_rate_list = []
     if all_processrun_objs:
         for process_run in all_processrun_objs:
@@ -1834,7 +1837,7 @@ def falconstorswitch(request, process_id):
         wrapper_step_list.append(wrapper_step_dict)
 
     # 计划流程
-    plan_process_run = ProcessRun.objects.filter(process_id=process_id, state="PLAN")
+    plan_process_run = ProcessRun.objects.filter(pro_ins__process__id=process_id, state="PLAN")
     if plan_process_run:
         plan_process_run = plan_process_run[0]
         plan_process_run_id = plan_process_run.id
@@ -1874,62 +1877,62 @@ def falconstorswitch(request, process_id):
         "mssqlOverWrite": "",
     }
     agent_type = ""
-    std_id = ""
-    all_steps = Step.objects.exclude(state="9").filter(process_id=process_id)
-    if_break = False
-    for cur_step in all_steps:
-        all_scriptinstances = cur_step.scriptinstance_set.exclude(state="9")
-        for cur_scriptinstance in all_scriptinstances:
-            pri = cur_scriptinstance.primary
-            if pri:
-                agent_type = pri.agentType
-                info = etree.XML(pri.info)
-                params = info.xpath("//param")
-
-                if params:
-                    param = params[0]
-                    std_id = pri.destination.id if pri.destination else ""
-                    cv_params["pri_id"] = pri.id
-                    cv_params["pri_name"] = pri.client_name
-                    cv_params["std_id"] = std_id
-                    # Oracle
-                    cv_params["data_path"] = param.attrib.get("data_path", "")
-                    cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
-                    cv_params["db_open"] = param.attrib.get("db_open", "")
-                    cv_params["log_restore"] = param.attrib.get("log_restore", "")
-                    # File System
-                    cv_params["destPath"] = param.attrib.get("destPath", "")
-                    cv_params["overWrite"] = param.attrib.get("overWrite", "")
-                    cv_params["inPlace"] = param.attrib.get("inPlace", "")
-                    cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
-                    cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
-                    
-                    # SQL Server
-                    cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
-                    
-                if_break = True
-                break
-        if if_break:
-            break
-    
-    cv_clients = CvClient.objects.exclude(state="9").exclude(type=1).values("id", "client_name", "utils__name")
+    # std_id = ""
+    # all_steps = Step.objects.exclude(state="9").filter(process_id=process_id)
+    # if_break = False
+    # for cur_step in all_steps:
+    #     all_scriptinstances = cur_step.scriptinstance_set.exclude(state="9")
+    #     for cur_scriptinstance in all_scriptinstances:
+    #         pri = cur_scriptinstance.primary
+    #         if pri:
+    #             agent_type = pri.agentType
+    #             info = etree.XML(pri.info)
+    #             params = info.xpath("//param")
+    #
+    #             if params:
+    #                 param = params[0]
+    #                 std_id = pri.destination.id if pri.destination else ""
+    #                 cv_params["pri_id"] = pri.id
+    #                 cv_params["pri_name"] = pri.client_name
+    #                 cv_params["std_id"] = std_id
+    #                 # Oracle
+    #                 cv_params["data_path"] = param.attrib.get("data_path", "")
+    #                 cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
+    #                 cv_params["db_open"] = param.attrib.get("db_open", "")
+    #                 cv_params["log_restore"] = param.attrib.get("log_restore", "")
+    #                 # File System
+    #                 cv_params["destPath"] = param.attrib.get("destPath", "")
+    #                 cv_params["overWrite"] = param.attrib.get("overWrite", "")
+    #                 cv_params["inPlace"] = param.attrib.get("inPlace", "")
+    #                 cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
+    #                 cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
+    #
+    #                 # SQL Server
+    #                 cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
+    #
+    #             if_break = True
+    #             break
+    #     if if_break:
+    #         break
+    #
+    # cv_clients = CvClient.objects.exclude(state="9").exclude(type=1).values("id", "client_name", "utils__name")
 
     cv_clients_list = []
-    for cc in cv_clients:
-        if cc["id"] == std_id:
-            cv_clients_list.append({
-                "id": cc["id"],
-                "client_name": cc["client_name"],
-                "utils_name": cc["utils__name"],
-                "selected": "selected"
-            })
-        else:
-            cv_clients_list.append({
-                "id": cc["id"],
-                "client_name": cc["client_name"],
-                "utils_name": cc["utils__name"],
-                "selected": ""
-            })
+    # for cc in cv_clients:
+    #     if cc["id"] == std_id:
+    #         cv_clients_list.append({
+    #             "id": cc["id"],
+    #             "client_name": cc["client_name"],
+    #             "utils_name": cc["utils__name"],
+    #             "selected": "selected"
+    #         })
+    #     else:
+    #         cv_clients_list.append({
+    #             "id": cc["id"],
+    #             "client_name": cc["client_name"],
+    #             "utils_name": cc["utils__name"],
+    #             "selected": ""
+    #         })
 
     # 预案类型
     process_type = ''
@@ -1939,10 +1942,17 @@ def falconstorswitch(request, process_id):
         print(e)
     else:
         process_type = process.type
-    return render(request, 'falconstorswitch.html',
-                    {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                    "wrapper_step_list": wrapper_step_list, "process_id": process_id,  "plan_process_run_id": plan_process_run_id, 
-                    "cv_params": cv_params, "cv_clients": cv_clients_list, "process_type": process_type, "agent_type": agent_type})
+    return render(request, 'falconstorswitch.html', {
+        'username': request.user.userinfo.fullname,
+        "pagefuns": getpagefuns(funid, request=request),
+        "wrapper_step_list": wrapper_step_list,
+        "process_id": process_id,
+        "plan_process_run_id": plan_process_run_id,
+        "cv_params": cv_params,
+        "cv_clients": cv_clients_list,
+        "process_type": process_type,
+        "agent_type": agent_type
+    })
 
 
 @login_required
@@ -1962,35 +1972,33 @@ def falconstorswitchdata(request):
         "CONTINUE": "继续",
         "": "",
     }
-
     try:
-        with connection.cursor() as cursor:
-            exec_sql = """
-            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url, p.type from faconstor_processrun as r 
-            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state != 'REJECT' and r.process_id = {0} order by r.starttime desc;
-            """.format(process_id)
+        process_id = int(process_id)
+    except ValueError:
+        pass
 
-            cursor.execute(exec_sql)
-            rows = cursor.fetchall()
-            for processrun_obj in rows:
-                create_users = processrun_obj[2] if processrun_obj[2] else ""
-                create_user_objs = User.objects.filter(username=create_users)
-                create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
+    all_pruns = ProcessRun.objects.exclude(state__in=['9', 'REJECT']).filter(pro_ins__process__id=process_id).order_by('-starttime')
 
-                result.append({
-                    "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
-                    "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
-                    "createuser": create_user_fullname,
-                    "state": state_dict["{0}".format(processrun_obj[3])] if processrun_obj[3] else "",
-                    "process_id": processrun_obj[4] if processrun_obj[4] else "",
-                    "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
-                    "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
-                    "process_name": processrun_obj[7] if processrun_obj[7] else "",
-                    "process_url": processrun_obj[8] if processrun_obj[8] else "",
-                    "process_type": processrun_obj[9] if processrun_obj[9] else ""
-                })
-    finally:
-        connection.close()
+    for prun in all_pruns:
+        create_user_fullname = ''
+        try:
+            creatuser = User.objects.filter(username=prun.creatuser)
+            create_user_fullname = creatuser.userinfo.fullname if creatuser else ""
+        except:
+            pass
+
+        result.append({
+            "starttime": prun.starttime.strftime('%Y-%m-%d %H:%M:%S') if prun.starttime else "",
+            "endtime": prun.endtime.strftime('%Y-%m-%d %H:%M:%S') if prun.endtime else "",
+            "createuser": create_user_fullname,
+            "state": state_dict.get('{0}'.format(prun.state), ''),
+            "process_id": process_id,
+            "processrun_id": prun.id,
+            "run_reason": prun.run_reason,
+            "process_name": prun.pro_ins.process.name,
+            "process_url": prun.pro_ins.process.url,
+            "process_type": prun.pro_ins.process.type
+        })
 
     return JsonResponse({"data": result})
 

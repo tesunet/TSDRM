@@ -16,6 +16,7 @@ from django.db import connection
 from django.db.models import Q
 from TSDRM import settings
 
+
 def file_iterator(file_name, chunk_size=512):
     with open(file_name, "rb") as f:
         while True:
@@ -413,12 +414,7 @@ def falconstorsearchdata(request):
     end_time = (datetime.datetime.strptime(enddate, '%Y-%m-%d') + datetime.timedelta(days=1) - datetime.timedelta(
         seconds=1)).strftime('%Y-%m-%d %H:%M:%S')
 
-    cursor = connection.cursor()
-
-    exec_sql = """
-    select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-    left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and r.starttime between '{0}' and '{1}' order by r.starttime desc;
-    """.format(start_time, end_time)
+    all_pruns = ProcessRun.objects.exclude(state__in=['9', 'REJECT']).filter(starttime__range=[start_time, end_time]).order_by('-starttime')
 
     if runperson:
         user_info = UserInfo.objects.filter(fullname=runperson)
@@ -427,48 +423,21 @@ def falconstorsearchdata(request):
             runperson = user_info.user.username
         else:
             runperson = ""
-
         if processname != "" and runstate != "":
-            exec_sql = """
-            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and p.name='{0}' and r.state='{1}' and r.creatuser='{2}' and r.starttime between '{3}' and '{4}'  order by r.starttime desc;
-            """.format(processname, runstate, runperson, start_time, end_time)
-
+            all_pruns = all_pruns.filter(Q(pro_ins__process_name=processname) & Q(state=runstate) & Q(creatuser=runperson))
         if processname == "" and runstate != "":
-            exec_sql = """
-            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and r.state='{0}' and r.creatuser='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
-            """.format(runstate, runperson, start_time, end_time)
-
+            all_pruns = all_pruns.filter(Q(state=runstate) & Q(creatuser=runperson))
         if processname != "" and runstate == "":
-            exec_sql = """
-            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and p.name='{0}' and r.creatuser='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
-            """.format(processname, runperson, start_time, end_time)
+            all_pruns = all_pruns.filter(Q(pro_ins__process_name=processname) & Q(creatuser=runperson))
         if processname == "" and runstate == "":
-            exec_sql = """
-            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and r.creatuser='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
-            """.format(runperson, start_time, end_time)
-
+            all_pruns = all_pruns.filter(creatuser=runperson)
     else:
         if processname != "" and runstate != "":
-            exec_sql = """
-            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and p.name='{0}' and r.state='{1}' and r.starttime between '{2}' and '{3}'  order by r.starttime desc;
-            """.format(processname, runstate, start_time, end_time)
-
+            all_pruns = all_pruns.filter(Q(pro_ins__process_name=processname) & Q(state=runstate))
         if processname == "" and runstate != "":
-            exec_sql = """
-            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and r.state='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
-            """.format(runstate, start_time, end_time)
-
+            all_pruns = all_pruns.filter(state=runstate)
         if processname != "" and runstate == "":
-            exec_sql = """
-            select r.starttime, r.endtime, r.creatuser, r.state, r.process_id, r.id, r.run_reason, p.name, p.url from faconstor_processrun as r 
-            left join faconstor_process as p on p.id = r.process_id where r.state != '9' and r.state!='REJECT' and p.name='{0}' and r.starttime between '{1}' and '{2}'  order by r.starttime desc;
-            """.format(processname, start_time, end_time)
+            all_pruns = all_pruns.filter(pro_ins__process_name=processname)
 
     state_dict = {
         "DONE": "已完成",
@@ -483,24 +452,26 @@ def falconstorsearchdata(request):
         "CONTINUE": "继续",
         "": "",
     }
-    cursor.execute(exec_sql)
-    rows = cursor.fetchall()
 
-    for processrun_obj in rows:
-        create_users = processrun_obj[2] if processrun_obj[2] else ""
+    rows = all_pruns.values(
+        'starttime', 'endtime', 'creatuser', 'state', 'pro_ins__process_id', 'id', 'run_reason', 'pro_ins__process__name', 'pro_ins__process__url'
+    )
+
+    for row in rows:
+        create_users = row['creatuser'] if row['creatuser'] else ""
         create_user_objs = User.objects.filter(username=create_users)
         create_user_fullname = create_user_objs[0].userinfo.fullname if create_user_objs else ""
 
         result.append({
-            "starttime": processrun_obj[0].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[0] else "",
-            "endtime": processrun_obj[1].strftime('%Y-%m-%d %H:%M:%S') if processrun_obj[1] else "",
+            "starttime": row['starttime'].strftime('%Y-%m-%d %H:%M:%S') if row['starttime'] else "",
+            "endtime": row['endtime'].strftime('%Y-%m-%d %H:%M:%S') if row['endtime'] else "",
             "createuser": create_user_fullname,
-            "state": state_dict["{0}".format(processrun_obj[3])] if processrun_obj[3] else "",
-            "process_id": processrun_obj[4] if processrun_obj[4] else "",
-            "processrun_id": processrun_obj[5] if processrun_obj[5] else "",
-            "run_reason": processrun_obj[6][:20] if processrun_obj[6] else "",
-            "process_name": processrun_obj[7] if processrun_obj[7] else "",
-            "process_url": processrun_obj[8] if processrun_obj[8] else ""
+            "state": state_dict.get('{0}'.format(row['state']), ''),
+            "process_id": row['pro_ins__process_id'] if row['pro_ins__process_id'] else "",
+            "processrun_id": row['id'] if row['id'] else "",
+            "run_reason": row['run_reason'][:20] if row['run_reason'] else "",
+            "process_name": row['pro_ins__process__name'] if row['pro_ins__process__name'] else "",
+            "process_url": row['pro_ins__process__url'] if row['pro_ins__process__url'] else ""
         })
     return HttpResponse(json.dumps({"data": result}))
 
@@ -531,32 +502,19 @@ def tasksearchdata(request):
     end_time = (datetime.datetime.strptime(enddate, '%Y-%m-%d') + datetime.timedelta(days=1) - datetime.timedelta(
         seconds=1)).strftime('%Y-%m-%d %H:%M:%S')
 
-    cursor = connection.cursor()
-    exec_sql = """
-    select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-    left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type!='INFO' and r.state!='9' and t.starttime between '{0}' and '{1}' order by t.starttime desc;
-    """.format(start_time, end_time)
+    all_ptasks = ProcessTask.objects.exclude(state='9').filter(starttime__range=[start_time, end_time]).order_by('-starttime')
+    s_ptasks = all_ptasks.filter(type='INFO')
 
     if task_type != "" and has_finished != "":
-        exec_sql = """
-        select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-        left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type='{0}' and r.state!='9' and t.state='{1}' and t.starttime between '{2}' and '{3}' order by t.starttime desc;
-        """.format(task_type, has_finished, start_time, end_time)
-
+        s_ptasks = all_ptasks.filter(Q(type=task_type) & Q(state=has_finished))
     if task_type == "" and has_finished != "":
-        exec_sql = """
-        select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-        left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where  t.type!='INFO' and r.state!='9' and t.state='{0}' and t.starttime between '{1}' and '{2}' order by t.starttime desc;
-        """.format(has_finished, start_time, end_time)
-
+        s_ptasks = all_ptasks.filter(Q(type='INFO') & Q(state=has_finished))
     if task_type != "" and has_finished == "":
-        exec_sql = """
-        select t.id, t.content, t.starttime, t.endtime, t.type, t.processrun_id, p.name, p.url, t.state from faconstor_processtask as t 
-        left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where t.type='{0}' and r.state!='9' and t.starttime between '{1}' and '{2}' order by t.starttime desc;
-        """.format(task_type, start_time, end_time)
+        s_ptasks = all_ptasks.filter(type=task_type)
+    rows = s_ptasks.values(
+        'id', 'content', 'starttime', 'endtime', 'type', 'processrun_id', 'processrun__pro_ins__process__name', 'processrun__pro_ins__process__url', 'state'
+    )
 
-    cursor.execute(exec_sql)
-    rows = cursor.fetchall()
     type_dict = {
         "SIGN": "签到",
         "RUN": "操作",
@@ -570,16 +528,15 @@ def tasksearchdata(request):
     }
     for task in rows:
         result.append({
-            "task_id": task[0],
-            "task_content": task[1],
-            "starttime": task[2].strftime('%Y-%m-%d %H:%M:%S') if task[2] else "",
-            "endtime": task[3].strftime('%Y-%m-%d %H:%M:%S') if task[3] else "",
-            "type": type_dict["{0}".format(task[4])] if task[4] in type_dict.keys() else "",
-            "processrun_id": task[5] if task[5] else "",
-            "process_name": task[6] if task[6] else "",
-            "process_url": task[7] if task[7] else "",
-            "has_finished": has_finished_dict[
-                "{0}".format(task[8])] if task[8] in has_finished_dict.keys() else "",
+            "task_id": task['id'],
+            "task_content": task['content'],
+            "starttime": task['starttime'].strftime('%Y-%m-%d %H:%M:%S') if task['starttime'] else "",
+            "endtime": task['endtime'].strftime('%Y-%m-%d %H:%M:%S') if task['endtime'] else "",
+            "type": type_dict["{0}".format(task['type'])] if task['type'] in type_dict.keys() else "",
+            "processrun_id": task['processrun_id'] if task['processrun_id'] else "",
+            "process_name": task['processrun__pro_ins__process__name'] if task['processrun__pro_ins__process__name'] else "",
+            "process_url": task['processrun__pro_ins__process__url'] if task['processrun__pro_ins__process__url'] else "",
+            "has_finished": has_finished_dict["{0}".format(task['state'])] if task['state'] in has_finished_dict.keys() else "",
         })
     return JsonResponse({"data": result})
 
