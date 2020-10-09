@@ -142,14 +142,11 @@ class Script(models.Model):
 class ScriptInstance(models.Model):
     script = models.ForeignKey(Script, blank=True, null=True, verbose_name='源接口')
     step = models.ForeignKey(Step, blank=True, null=True, verbose_name="步骤")
-    primary = models.ForeignKey("CvClient", blank=True, null=True, verbose_name='源端客户端')  # 待删除
-    utils = models.ForeignKey("UtilsManage", blank=True, null=True, verbose_name='工具')  # 待删除
     name = models.CharField("接口实例名称", blank=True, max_length=500)
     remark = models.CharField("接口实例说明", blank=True, max_length=500)
     sort = models.IntegerField("执行顺序", blank=True, null=True)
     params = models.TextField("脚本内容参数", null=True, default="")
     log_address = models.CharField("日志地址", blank=True, null=True, max_length=100)
-    hosts_manage = models.ForeignKey(HostsManage, blank=True, null=True, verbose_name='选择主机')  # 待删除
     state = models.CharField("状态", blank=True, null=True, max_length=20)
     process = models.ForeignKey(Process, null=True, verbose_name="子流程(排错流程)")
     associated_hosts = models.TextField("关联主机", null=True, default="</root>")
@@ -309,8 +306,7 @@ class Origin(models.Model):
 
 class ProcessSchedule(models.Model):
     dj_periodictask = models.OneToOneField(djmodels.PeriodicTask, null=True, verbose_name="定时任务")
-    process = models.ForeignKey(Process, null=True, verbose_name="流程预案")  # 待删除
-    pro_ins = models.ForeignKey(ProcessInstance, null=True, verbose_name="流程预案实例")  
+    pro_ins = models.ForeignKey(ProcessInstance, null=True, verbose_name="流程预案实例")
     name = models.CharField("流程计划名称", blank=True, null=True, max_length=256)
     remark = models.TextField("计划说明", null=True, blank=True)
     state = models.CharField("状态", blank=True, null=True, max_length=20)
