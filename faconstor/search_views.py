@@ -1,20 +1,22 @@
 # 历史查询:演练查询、任务查询、知识库、通讯录
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, Http404, HttpResponse, JsonResponse
-
 from django.contrib.auth.decorators import login_required
-from faconstor.models import *
-import json
-from .views import getpagefuns
 from django.template.response import TemplateResponse
-import datetime
-import os
 from django.http import StreamingHttpResponse
-import sys
-import pdfkit
 from django.db import connection
 from django.db.models import Q
+from django.utils.encoding import escape_uri_path
+
+import json
+import datetime
+import os
+import sys
+import pdfkit
+
 from TSDRM import settings
+from faconstor.models import *
+from .views import getpagefuns
 
 
 def file_iterator(file_name, chunk_size=512):
