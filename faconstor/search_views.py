@@ -17,16 +17,9 @@ import pdfkit
 from TSDRM import settings
 from faconstor.models import *
 from .views import getpagefuns
-
-
-def file_iterator(file_name, chunk_size=512):
-    with open(file_name, "rb") as f:
-        while True:
-            c = f.read(chunk_size)
-            if c:
-                yield c
-            else:
-                break
+from .public import (
+    file_iterator
+)
 
 
 @login_required
@@ -36,7 +29,13 @@ def custom_pdf_report(request):
     wkhtmltopdf安装文件已经在项目中static/process
     """
     processrun_id = request.GET.get("processrunid", "")
-    process_id = request.GET.get("processid", "")
+    pro_ins_id = request.GET.get("pro_ins_id", "")
+    process_id = None
+    try:
+        pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
+        process_id = pro_ins.process.id
+    except:
+        raise Http404()
 
     # 构造数据
     # 1.获取当前流程对象

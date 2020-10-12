@@ -93,7 +93,7 @@ urlpatterns = [
     url(r'^get_error_solved_process/$', get_error_solved_process),
 
     # 切换演练
-    url(r'^falconstorswitch/(?P<process_id>\d+)$', falconstorswitch),
+    url(r'^falconstorswitch/(?P<pro_ins_id>\d+)$', falconstorswitch),
     url(r'^falconstorswitchdata/$', falconstorswitchdata),
     url(r'^falconstorrun/$', falconstorrun),
     url(r'^falconstor/(\d+)/$', falconstor, {'funid': '49'}),
@@ -180,18 +180,10 @@ urlpatterns = [
 
 
     # 流程计划
-    url(r'^process_schedule/$', process_schedule, {'funid': '81'}),
     url(r'^process_schedule_save/$', process_schedule_save),
     url(r'^process_schedule_data/$', process_schedule_data),
     url(r'^change_periodictask/$', change_periodictask),
     url(r'^process_schedule_del/$', process_schedule_del),
-    
-    # # 自主恢复
-    # url(r'^manualrecovery/$', manualrecovery, {'funid': '83'}),
-    # url(r'^manualrecoverydata/$', manualrecoverydata),
-
-    # url(r'^dooraclerecovery/$', dooraclerecovery),
-    # url(r'^oraclerecoverydata/$', oraclerecoverydata),\
 
     # 大屏监控
     url(r'^monitor/$', monitor),

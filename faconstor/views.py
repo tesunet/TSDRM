@@ -30,7 +30,7 @@ from .remote import ServerByPara
 from TSDRM import settings
 from .api import SQLApi
 from .public import (
-    get_credit_info
+    get_credit_info, file_iterator
 )
 
 funlist = []
@@ -469,14 +469,14 @@ def get_walkthrough_index_data(request):
         for processrun in processrunes:
             processrunid.append(processrun.id)
             processrun_id = processrun.id
-            current_processruns = ProcessRun.objects.filter(id=int(processrun_id)).select_related("process")
+            current_processruns = ProcessRun.objects.filter(id=int(processrun_id)).select_related("pro_ins__process")
 
             if current_processruns:
                 current_processrun = current_processruns[0]
 
                 # 当前流程状态
                 c_process_run_state = current_processrun.state
-                name = current_processrun.process.name
+                name = current_processrun.pro_ins.name if current_processrun.pro_ins else ''
                 starttime = current_processrun.starttime
                 endtime = current_processrun.endtime
                 walkthroughstate = current_processrun.walkthroughstate
@@ -484,12 +484,10 @@ def get_walkthrough_index_data(request):
                 state = current_processrun.state
                 percent = 0
 
-                process_id = current_processrun.process_id
+                process_id = current_processrun.pro_ins.process_id if current_processrun.pro_ins else None
                 # 正确顺序的父级Step
-                all_pnode_steps = Step.objects.exclude(state="9").filter(process_id=process_id,
-                                                                         pnode_id=None).exclude(
-                    rto_count_in='0').order_by(
-                    "sort")
+                all_pnode_steps = Step.objects.exclude(state="9").filter(
+                    process_id=process_id, pnode_id=None).exclude(rto_count_in='0').order_by("sort")
                 correct_step_id_list = []
                 if all_pnode_steps:
                     for pnode_step in all_pnode_steps:
@@ -664,7 +662,7 @@ def get_walkthrough_index_data(request):
         for task in tasks:
             taskname = ""
             if task.processrun is not None:
-                taskname = task.processrun.process.name.replace("系统", "")
+                taskname = task.processrun.pro_ins.name.replace("系统", "") if task.processrun.pro_ins else ''
             taskcontent = taskname + task.content.replace("脚本", "").replace("步骤", "")
             isintasks = False
             for oldtask in showtasks:
@@ -834,9 +832,9 @@ def custom_walkthrough_info(walkthrough_id):
         for current_processrun in all_process_runs:
             process_info = {}
 
-            process_id = current_processrun.process.id
+            process_id = current_processrun.pro_ins.process.id if current_processrun.pro_ins else None
             processrun_id = current_processrun.id
-            process_name = current_processrun.process.name if current_processrun else ""
+            process_name = current_processrun.pro_ins.name if current_processrun.pro_ins else ""
             # processrun_time = current_processrun.starttime.strftime("%Y-%m-%d")
             all_process_name += process_name + ","
             # 父级
@@ -1744,9 +1742,19 @@ def get_error_sovled_status(request):
 
 
 @login_required
-def falconstorswitch(request, process_id):
-    all_wrapper_steps = Step.objects.exclude(state="9").filter(process_id=process_id, pnode_id=None).order_by(
-        "sort")
+def falconstorswitch(request, pro_ins_id):
+    process_id = None
+
+    try:
+        pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
+        process_id = pro_ins.process.id
+    except:
+        pass
+
+    all_wrapper_steps = Step.objects.exclude(state="9").filter(
+        process_id=process_id,
+        pnode_id=None
+    ).order_by("sort")
     wrapper_step_list = []
     num_to_char_choices = {
         "1": "一",
@@ -1846,7 +1854,7 @@ def falconstorswitch(request, process_id):
         plan_process_run_id = ""
 
     # 根据url寻找到funid
-    falconstor_url = "/falconstorswitch/{0}".format(process_id)
+    falconstor_url = "/falconstorswitch/{0}".format(pro_ins_id)
 
     c_fun = Fun.objects.filter(url=falconstor_url)
     if c_fun.exists():
@@ -1862,7 +1870,7 @@ def falconstorswitch(request, process_id):
     cv_params = {
         "pri_id": "",
         "pri_name": "",
-        "std_id": "", 
+        "std_id": "",
         # Oracle
         "data_path": "",
         "copy_priority": "",
@@ -1878,62 +1886,87 @@ def falconstorswitch(request, process_id):
         "mssqlOverWrite": "",
     }
     agent_type = ""
-    # std_id = ""
-    # all_steps = Step.objects.exclude(state="9").filter(process_id=process_id)
-    # if_break = False
-    # for cur_step in all_steps:
-    #     all_scriptinstances = cur_step.scriptinstance_set.exclude(state="9")
-    #     for cur_scriptinstance in all_scriptinstances:
-    #         pri = cur_scriptinstance.primary
-    #         if pri:
-    #             agent_type = pri.agentType
-    #             info = etree.XML(pri.info)
-    #             params = info.xpath("//param")
-    #
-    #             if params:
-    #                 param = params[0]
-    #                 std_id = pri.destination.id if pri.destination else ""
-    #                 cv_params["pri_id"] = pri.id
-    #                 cv_params["pri_name"] = pri.client_name
-    #                 cv_params["std_id"] = std_id
-    #                 # Oracle
-    #                 cv_params["data_path"] = param.attrib.get("data_path", "")
-    #                 cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
-    #                 cv_params["db_open"] = param.attrib.get("db_open", "")
-    #                 cv_params["log_restore"] = param.attrib.get("log_restore", "")
-    #                 # File System
-    #                 cv_params["destPath"] = param.attrib.get("destPath", "")
-    #                 cv_params["overWrite"] = param.attrib.get("overWrite", "")
-    #                 cv_params["inPlace"] = param.attrib.get("inPlace", "")
-    #                 cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
-    #                 cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
-    #
-    #                 # SQL Server
-    #                 cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
-    #
-    #             if_break = True
-    #             break
-    #     if if_break:
-    #         break
-    #
-    # cv_clients = CvClient.objects.exclude(state="9").exclude(type=1).values("id", "client_name", "utils__name")
+    std_id = ""
+    cv_params = {
+        "pri_id": "",
+        "pri_name": "",
+        "std_id": "",
+        # Oracle
+        "data_path": "",
+        "copy_priority": "",
+        "db_open": "",
+        "log_restore": "",
+        # File System
+        "destPath": "",
+        "overWrite": "",
+        "inPlace": "",
+        "OSRestore": "",
+        "sourcePaths": "",
+        # SQL Server
+        "mssqlOverWrite": "",
+    }
+    try:
+        pro_ins_id = int(pro_ins_id)
+        pro_ins = ProcessInstance.objects.get(id=pro_ins_id)
+        config_root = etree.XML(pro_ins.config)
+        # HOST -> CVCLIENT -> CV_PARAMS
+        hosts = config_root.xpath('//host')
+        for host in hosts:
+            host_id = host.attrib.get('host_id', '')
+            try:
+                host_id = int(host_id)
+            except:
+                pass
+            cv_clients = CvClient.objects.exclude(state='9').filter(hostsmanage_id=host_id)
+            if cv_clients.exists():
+                is_commvault = 1
+                pri = cv_clients[0]
+                agent_type = pri.agentType
+                std_id = pri.destination.id if pri.destination else ""
+                cv_params["pri_id"] = pri.id
+                cv_params["pri_name"] = pri.client_name
+                cv_params["std_id"] = std_id
+
+                info = etree.XML(pri.info)
+                params = info.xpath("//param")
+
+                if params:
+                    param = params[0]
+                    # Oracle
+                    cv_params["data_path"] = param.attrib.get("data_path", "")
+                    cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
+                    cv_params["db_open"] = param.attrib.get("db_open", "")
+                    cv_params["log_restore"] = param.attrib.get("log_restore", "")
+                    # File System
+                    cv_params["destPath"] = param.attrib.get("destPath", "")
+                    cv_params["overWrite"] = param.attrib.get("overWrite", "")
+                    cv_params["inPlace"] = param.attrib.get("inPlace", "")
+                    cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
+                    cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
+
+                    # SQL Server
+                    cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
+    except:
+        pass
+
+    cv_clients = CvClient.objects.exclude(state="9").exclude(type=1).values("id", "client_name", "utils__name")
 
     cv_clients_list = []
-    # for cc in cv_clients:
-    #     if cc["id"] == std_id:
-    #         cv_clients_list.append({
-    #             "id": cc["id"],
-    #             "client_name": cc["client_name"],
-    #             "utils_name": cc["utils__name"],
-    #             "selected": "selected"
-    #         })
-    #     else:
-    #         cv_clients_list.append({
-    #             "id": cc["id"],
-    #             "client_name": cc["client_name"],
-    #             "utils_name": cc["utils__name"],
-    #             "selected": ""
-    #         })
+    for cc in cv_clients:
+        if cc["id"] == std_id:
+            cv_clients_list.append({
+                "id": cc["id"],
+                "client_name": cc["client_name"],
+                "utils_name": cc["utils__name"],
+                "selected": "selected"
+            })
+        else:
+            cv_clients_list.append({
+                "id": cc["id"],
+                "client_name": cc["client_name"],
+                "utils_name": cc["utils__name"],
+                "selected": ""
+            })
 
     # 预案类型
     process_type = ''
@@ -1947,7 +1980,7 @@ def falconstorswitch(request, process_id):
         'username': request.user.userinfo.fullname,
         "pagefuns": getpagefuns(funid, request=request),
         "wrapper_step_list": wrapper_step_list,
-        "process_id": process_id,
+        "pro_ins_id": pro_ins_id,
         "plan_process_run_id": plan_process_run_id,
         "cv_params": cv_params,
         "cv_clients": cv_clients_list,
@@ -1959,7 +1992,7 @@ def falconstorswitch(request, process_id):
 @login_required
 def falconstorswitchdata(request):
     result = []
-    process_id = request.GET.get("process_id", "")
+    pro_ins_id = request.GET.get("pro_ins_id", "")
     state_dict = {
         "DONE": "已完成",
         "EDIT": "未执行",
@@ -1974,11 +2007,11 @@ def falconstorswitchdata(request):
         "": "",
     }
     try:
-        process_id = int(process_id)
+        pro_ins_id = int(pro_ins_id)
     except ValueError:
         pass
 
-    all_pruns = ProcessRun.objects.exclude(state__in=['9', 'REJECT']).filter(pro_ins__process__id=process_id).order_by('-starttime')
+    all_pruns = ProcessRun.objects.exclude(state__in=['9', 'REJECT']).filter(pro_ins__id=pro_ins_id).order_by('-starttime')
 
     for prun in all_pruns:
         create_user_fullname = ''
@@ -1993,7 +2026,7 @@ def falconstorswitchdata(request):
             "endtime": prun.endtime.strftime('%Y-%m-%d %H:%M:%S') if prun.endtime else "",
             "createuser": create_user_fullname,
             "state": state_dict.get('{0}'.format(prun.state), ''),
-            "process_id": process_id,
+            "pro_ins_id": pro_ins_id,
             "processrun_id": prun.id,
             "run_reason": prun.run_reason,
             "process_name": prun.pro_ins.process.name,
@@ -2284,14 +2317,13 @@ def falconstor_run_invited(request):
 
 @login_required
 def walkthrough(request, funid):
-    processes = Process.objects.exclude(state="9").order_by("sort").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
-    processlist = []
-    for process in processes:
-        processlist.append({"id": process.id, "code": process.code, "name": process.name})
+    pro_inses = ProcessInstance.objects.exclude(state='9').values(
+        'id', 'name'
+    )
 
     return render(request, 'walkthrough.html',
                   {'username': request.user.userinfo.fullname, "pagefuns": getpagefuns(funid, request=request),
-                   "processlist": processlist})
+                   "processlist": pro_inses})
 
 
 @login_required
@@ -2318,8 +2350,9 @@ def walkthroughdata(request):
         processrunes = walkthrough.processrun_set.exclude(state="9").exclude(state='REJECT')
         process_name_list = []
         for processrun in processrunes:
-            processes += str(processrun.process.id) + "^"
-            process_name_list.append(processrun.process.name)
+            if processrun.pro_ins:
+                processes += str(processrun.pro_ins.id) + "^"
+                process_name_list.append(processrun.pro_ins.name)
 
         result.append({
             "starttime": walkthrough.starttime.strftime('%Y-%m-%d %H:%M:%S') if walkthrough.starttime else "",
@@ -2371,18 +2404,21 @@ def walkthroughsave(request):
                             walkthrough.endtime = end_time
                             walkthrough.save()
 
-                            for process_id in processes:
-                                process = Process.objects.filter(id=int(process_id)).exclude(state="9").exclude(
-                                    Q(type=None) | Q(type=""))
+                            for pro_ins_id in processes:
+                                pro_ins = None
+                                try:
+                                    pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
+                                except:
+                                    pass
                                 myprocessrun = ProcessRun()
                                 myprocessrun.walkthrough = walkthrough
-                                myprocessrun.process = process[0]
+                                myprocessrun.pro_ins = pro_ins
                                 myprocessrun.state = "PLAN"
                                 myprocessrun.starttime = start_time
                                 myprocessrun.save()
                                 current_process_run_id = myprocessrun.id
 
-                                mystep = process[0].step_set.exclude(state="9").order_by("sort")
+                                mystep = pro_ins.process.step_set.exclude(state="9").order_by("sort")
                                 for step in mystep:
                                     mysteprun = StepRun()
                                     mysteprun.step = step
@@ -2447,22 +2483,25 @@ def walkthroughsave(request):
                                 processrun.state = '9'
                                 processrun.save()
 
-                        for process_id in processes:
-                            process = Process.objects.filter(id=int(process_id)).exclude(state="9").exclude(
-                                Q(type=None) | Q(type=""))
-                            curprocessrun = ProcessRun.objects.filter(walkthrough=walkthrough,
-                                                                      process=process[0]).exclude(
-                                state__in=["9", "REJECT"])
+                        for pro_ins_id in processes:
+                            pro_ins = None
+                            try:
+                                pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
+                            except:
+                                pass
+                            curprocessrun = ProcessRun.objects.filter(
+                                walkthrough=walkthrough, pro_ins=pro_ins
+                            ).exclude(state__in=["9", "REJECT"])
                             if len(curprocessrun) == 0:
                                 myprocessrun = ProcessRun()
                                 myprocessrun.walkthrough = walkthrough
-                                myprocessrun.process = process[0]
+                                myprocessrun.process = pro_ins
                                 myprocessrun.state = "PLAN"
                                 myprocessrun.starttime = start_time
                                 myprocessrun.save()
                                 current_process_run_id = myprocessrun.id
 
-                                mystep = process[0].step_set.exclude(state="9").order_by("sort")
+                                mystep = pro_ins.step_set.exclude(state="9").order_by("sort")
                                 for step in mystep:
                                     mysteprun = StepRun()
                                     mysteprun.step = step
@@ -4888,47 +4927,39 @@ def origin_del(request):
 
 
 @login_required
-def monitor(request):
+def monitor(request):  # 待修改
     global funlist
     # 最新操作
     alltask = []
 
-    rows = []
-    try:
-        with connection.cursor() as cursor:
-            # Read a single record
-            sql = """select t.starttime, t.content, t.type, t.state, t.logtype, p.name, p.color from faconstor_processtask as t left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where r.state!='9' order by t.starttime desc;"""
-            cursor.execute(sql)
-            rows = cursor.fetchall()
-    finally:
-        connection.close()
+    tasks = ProcessTask.objects.exclude(state='9').order_by('-starttime').values(
+        'starttime', 'content', 'type', 'state', 'logtype', 'processrun__pro_ins__name', 'processrun__pro_ins__process__color'
+    )
 
-    # cursor = connection.cursor()
-    # cursor.execute("""
-    # select t.starttime, t.content, t.type, t.state, t.logtype, p.name, p.color from faconstor_processtask as t left join faconstor_processrun as r on t.processrun_id = r.id left join faconstor_process as p on p.id = r.process_id where r.state!='9' order by t.starttime desc;
-    # """)
-    # rows = cursor.fetchall()
+    for task in tasks:
+        time = task['starttime']
+        content = task['content']
+        task_type = task['type']
+        task_state = task['state']
+        task_logtype = task['logtype']
+        pro_ins_name = task['processrun__pro_ins__name']
+        process_color = task['processrun__pro_ins__process__color']
 
-    if len(rows) > 0:
-        for task in rows:
-            time = task[0]
-            content = task[1]
-            task_type = task[2]
-            task_state = task[3]
-            task_logtype = task[4]
-            process_name = task[5]
-            process_color = task[6]
+        # 图标与颜色
+        current_icon, current_color = custom_c_color(task_type, task_state, task_logtype)
 
-            # 图标与颜色
-            current_icon, current_color = custom_c_color(task_type, task_state, task_logtype)
+        time = custom_time(time)
 
-            time = custom_time(time)
-
-            alltask.append(
-                {"content": content, "time": time, "process_name": process_name, "task_color": current_color,
-                 "task_icon": current_icon, "process_color": process_color})
-            if len(alltask) >= 50:
-                break
+        alltask.append({
+            "content": content,
+            "time": time,
+            "pro_ins_name": pro_ins_name,
+            "task_color": current_color,
+             "task_icon": current_icon,
+            "process_color": process_color
+        })
+        if len(alltask) >= 50:
+            break
     # 成功率，恢复次数，平均RTO，最新切换
     all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
     successful_processruns = ProcessRun.objects.filter(state="DONE")
@@ -4941,7 +4972,7 @@ def monitor(request):
     all_processruns = len(processrun_times_obj) if processrun_times_obj else 0
 
     current_processruns = ProcessRun.objects.exclude(state__in=["DONE", "STOP", "REJECT"]).exclude(
-        state="9").select_related("process")
+        state="9").select_related("pro_ins__process")
     curren_processrun_info_list = []
     state_dict = {
         "DONE": "已完成",
@@ -4957,52 +4988,50 @@ def monitor(request):
     }
 
     process_rate = "0"
-    if current_processruns:
-        for current_processrun in current_processruns:
-            current_processrun_dict = {}
-            start_time_strftime = ""
-            current_delta_time = ""
-            current_step_name = ""
-            current_process_name = ""
-            current_step_index = ""
-            all_steps = []
-            group_name = ""
-            users = ""
-            process_id = current_processrun.process_id
-            current_process_name = current_processrun.process.name
-            start_time = current_processrun.starttime.replace(tzinfo=None)
-            start_time_strftime = start_time.strftime('%Y-%m-%d %H:%M:%S')
-            current_time = datetime.datetime.now()
-            current_delta_time = (current_time - start_time).total_seconds()
-            m, s = divmod(current_delta_time, 60)
-            h, m = divmod(m, 60)
-            current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
+    for current_processrun in current_processruns:
+        current_processrun_dict = {}
+        start_time_strftime = ""
+        current_delta_time = ""
+        current_step_name = ""
+        current_process_name = ""
+        current_step_index = ""
+        all_steps = []
+        group_name = ""
+        users = ""
+        current_process_name = current_processrun.pro_ins.name if current_processrun.pro_ins else ''
+        start_time = current_processrun.starttime.replace(tzinfo=None)
+        start_time_strftime = start_time.strftime('%Y-%m-%d %H:%M:%S')
+        current_time = datetime.datetime.now()
+        current_delta_time = (current_time - start_time).total_seconds()
+        m, s = divmod(current_delta_time, 60)
+        h, m = divmod(m, 60)
+        current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
 
-            current_processrun_id = current_processrun.id
+        current_processrun_id = current_processrun.id
 
-            # 进程url
-            processrun_url = current_processrun.process.url + "/" + str(current_processrun_id)
+        # 进程url
+        processrun_url = '{0}/{1}'.format(current_processrun.pro_ins.process.url, current_processrun_id) if current_processrun.pro_ins else '/'
 
-            # 当前系统任务
-            current_process_task_info = get_c_process_run_tasks(current_processrun.id)
+        # 当前系统任务
+        current_process_task_info = get_c_process_run_tasks(current_processrun.id)
 
-            current_processrun_dict["current_process_run_state"] = state_dict[
-                "{0}".format(current_processrun.state)]
-            current_processrun_dict["current_process_task_info"] = current_process_task_info
-            current_processrun_dict["current_processrun_dict"] = current_processrun_dict
-            current_processrun_dict["start_time_strftime"] = start_time_strftime
-            current_processrun_dict["current_delta_time"] = current_delta_time
-            current_processrun_dict["current_process_name"] = current_process_name
-            current_processrun_dict["current_step_index"] = current_step_index
-            current_processrun_dict["all_steps"] = all_steps
-            current_processrun_dict["process_rate"] = process_rate
-            current_processrun_dict["current_step_name"] = current_step_name
-            current_processrun_dict["group_name"] = group_name
-            current_processrun_dict["users"] = users
-            current_processrun_dict["processrun_url"] = processrun_url
-            current_processrun_dict["processrun_id"] = current_processrun.id
+        current_processrun_dict["current_process_run_state"] = state_dict[
+            "{0}".format(current_processrun.state)]
+        current_processrun_dict["current_process_task_info"] = current_process_task_info
+        current_processrun_dict["current_processrun_dict"] = current_processrun_dict
+        current_processrun_dict["start_time_strftime"] = start_time_strftime
+        current_processrun_dict["current_delta_time"] = current_delta_time
+        current_processrun_dict["current_process_name"] = current_process_name
+        current_processrun_dict["current_step_index"] = current_step_index
+        current_processrun_dict["all_steps"] = all_steps
+        current_processrun_dict["process_rate"] = process_rate
+        current_processrun_dict["current_step_name"] = current_step_name
+        current_processrun_dict["group_name"] = group_name
+        current_processrun_dict["users"] = users
+        current_processrun_dict["processrun_url"] = processrun_url
+        current_processrun_dict["processrun_id"] = current_processrun.id
 
-            curren_processrun_info_list.append(current_processrun_dict)
+        curren_processrun_info_list.append(current_processrun_dict)
 
     all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
 
@@ -5064,7 +5093,7 @@ def get_monitor_data(request):
         "drill_rto": drill_rto
     }
 
-    # 系统演练次数TOP5
+    # 系统演练次数TOP5  待修改
     all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     drill_name = []
     drill_time = []

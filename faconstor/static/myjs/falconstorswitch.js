@@ -17,8 +17,8 @@ $(document).ready(function () {
             "ajax": "../falconstorswitchdata/",
             "fnServerParams": function (aoData) {
                 aoData.push({
-                    name: "process_id",
-                    value: $("#process_id").val()
+                    name: "pro_ins_id",
+                    value: $("#pro_ins_id").val()
                 })
             },
             "columns": [
@@ -30,7 +30,7 @@ $(document).ready(function () {
                 { "data": "run_reason" },
                 { "data": "starttime" },
                 { "data": "endtime" },
-                { "data": "process_id" },
+                { "data": "pro_ins_id" },
                 { "data": "process_url" },
                 { "data": null },
             ],
@@ -50,7 +50,7 @@ $(document).ready(function () {
                 "data": null,
                 "width": "60px",  // 指定列宽；
                 "render": function (data, type, full) {
-                    return "<td><button class='btn btn-xs btn-primary' type='button'><a href='/custom_pdf_report/?processrunid&processid'><i class='fa fa-arrow-circle-down' style='color: white'></i></a></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
+                    return "<td><button class='btn btn-xs btn-primary' type='button'><a href='/custom_pdf_report/?processrunid&pro_ins_id'><i class='fa fa-arrow-circle-down' style='color: white'></i></a></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("pro_ins_id", "pro_ins_id=" + full.pro_ins_id)
                 }
             }],
 
@@ -101,7 +101,7 @@ $(document).ready(function () {
     customProcessDataTable();
 
     $("#confirm").click(function () {
-        var process_id = $("#process_id").val();
+        var pro_ins_id = $("#pro_ins_id").val();
         // File System
         var iscover = $("input[name='overwrite']:checked").val();
         var mypath = "same"
@@ -124,7 +124,7 @@ $(document).ready(function () {
             dataType: 'json',
             url: "../falconstorrun/",
             data: {
-                processid: process_id,
+                pro_ins_id: pro_ins_id,
                 run_person: $("#run_person").val(),
                 run_time: $("#run_time").val(),
                 run_reason: $("#run_reason").val(),
