@@ -1210,10 +1210,10 @@ def index(request, funid):
         task_state = task.state
         task_logtype = task.logtype
 
-        process_name, process_color = '', ''
+        pro_ins_name, process_color = '', ''
 
         try:
-            process_name = task.processrun.pro_ins.process.name
+            pro_ins_name = task.processrun.pro_ins.name
         except AttributeError:
             pass
         try:
@@ -1227,7 +1227,7 @@ def index(request, funid):
         time = custom_time(time)
 
         alltask.append(
-            {"content": content, "time": time, "process_name": process_name, "task_color": current_color,
+            {"content": content, "time": time, "pro_ins_name": pro_ins_name, "task_color": current_color,
                 "task_icon": current_icon, "process_color": process_color})
         if len(alltask) >= 50:
             break
@@ -1352,24 +1352,23 @@ def index(request, funid):
             curren_processrun_info_list.append(current_processrun_dict)
 
     # 系统切换成功率
-    all_processes = Process.objects.exclude(state="9").filter(type='Falconstor').filter(pnode__pnode=None)
-    process_success_rate_list = []  # 待修改
-    if all_processes:
-        for process in all_processes:
-            process_name = process.name
-            # all_processrun_list = process.processrun_set.filter(Q(state="DONE") | Q(state="STOP"))
-            # successful_processruns = process.processrun_set.filter(state="DONE")
-            all_processrun_list = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).filter(pro_ins__process__id=process.id)
-            successful_processruns = ProcessRun.objects.filter(state="DONE").filter(pro_ins__process__id=process.id)
-            current_process_success_rate = "%.0f" % (len(successful_processruns) / len(
-                all_processrun_list) * 100) if all_processrun_list and successful_processruns else 0
+    process_success_rate_list = [] 
 
-            process_dict = {
-                "process_name": process_name,
-                "current_process_success_rate": current_process_success_rate,
-                "color": process.color
-            }
-            process_success_rate_list.append(process_dict)
+    pro_inses = ProcessInstance.objects.exclude(state='9').filter(process__type='Falconstor')
+
+    for pro_ins in pro_inses:
+        pro_ins_name = pro_ins.name
+        all_processrun_list = pro_ins.processrun_set.filter(state__in=['DONE', 'STOP'])
+        successful_processruns = pro_ins.processrun_set.filter(state='DONE')
+        current_process_success_rate = "%.0f" % (len(successful_processruns) / len(
+            all_processrun_list) * 100) if all_processrun_list and successful_processruns else 0
+
+        process_dict = {
+            "pro_ins_name": pro_ins_name,
+            "current_process_success_rate": current_process_success_rate,
+            "color": pro_ins.process.color
+        }
+        process_success_rate_list.append(process_dict)
 
     # 右上角消息任务
     return render(request, "index.html",
@@ -1383,54 +1382,55 @@ def index(request, funid):
 @login_required
 def get_process_rto(request):
     # 不同流程最近的12次切换RTO
-    all_processes = Process.objects.exclude(state="9").filter(type='Falconstor').filter(pnode__pnode=None)  # 飞康的流程
+    pro_inses = ProcessInstance.objects.exclude(state='9').filter(process__type='Falconstor')
     process_rto_list = [] # 待修改
-    if all_processes:
-        for process in all_processes:
-            process_name = process.name
-            # processrun_rto_obj_list = process.processrun_set.filter(state="DONE")
-            processrun_rto_obj_list = ProcessRun.objects.filter(state='DONE').filter(pro_ins__process__id=process.id)
-            current_rto_list = []
-            for processrun_rto_obj in processrun_rto_obj_list:
-                all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(
-                    step__rto_count_in="0").filter(step__pnode=None)
-                step_rto = 0
-                if all_step_runs:
-                    for step_run in all_step_runs:
-                        rto = 0
-                        end_time = step_run.endtime
-                        start_time = step_run.starttime
-                        if end_time and start_time:
-                            delta_time = (end_time - start_time)
-                            rto = delta_time.total_seconds()
 
-                        step_rto += rto
-                # 扣除子级步骤中可能的rto_count_in的时间
-                all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
-                    step__rto_count_in="0").exclude(
-                    step__pnode=None).filter(step__pnode__rto_count_in="1")
-                inner_rto_not_count_in = 0
-                if all_inner_step_runs:
-                    for inner_step_run in all_inner_step_runs:
-                        end_time = inner_step_run.endtime
-                        start_time = inner_step_run.starttime
-                        if end_time and start_time:
-                            delta_time = (end_time - start_time)
-                            rto = delta_time.total_seconds()
-                            inner_rto_not_count_in += rto
-                step_rto -= inner_rto_not_count_in
+    for pro_ins in pro_inses:
+        pro_ins_name = pro_ins.name
+        current_rto_list = []
+        processrun_rto_obj_list = pro_ins.processrun_set.filter(state='DONE')
+        for processrun_rto_obj in processrun_rto_obj_list:
+            all_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").exclude(
+                step__rto_count_in="0").filter(step__pnode=None)
+            step_rto = 0
+            if all_step_runs:
+                for step_run in all_step_runs:
+                    rto = 0
+                    end_time = step_run.endtime
+                    start_time = step_run.starttime
+                    if end_time and start_time:
+                        delta_time = (end_time - start_time)
+                        rto = delta_time.total_seconds()
 
-                current_rto = float("%.2f" % (step_rto / 60))
+                    step_rto += rto
+            # 扣除子级步骤中可能的rto_count_in的时间
+            all_inner_step_runs = processrun_rto_obj.steprun_set.exclude(state="9").filter(
+                step__rto_count_in="0").exclude(
+                step__pnode=None).filter(step__pnode__rto_count_in="1")
+            inner_rto_not_count_in = 0
+            if all_inner_step_runs:
+                for inner_step_run in all_inner_step_runs:
+                    end_time = inner_step_run.endtime
+                    start_time = inner_step_run.starttime
+                    if end_time and start_time:
+                        delta_time = (end_time - start_time)
+                        rto = delta_time.total_seconds()
+                        inner_rto_not_count_in += rto
+            step_rto -= inner_rto_not_count_in
 
-                current_rto_list.append(current_rto)
-            process_dict = {
-                "process_name": process_name,
-                "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[
-                                                                                               -50:][::-1],
-                "color": process.color
-            }
-            process_rto_list.append(process_dict)
-    return JsonResponse({"data": process_rto_list})
+            current_rto = float("%.2f" % (step_rto / 60))
+
+            current_rto_list.append(current_rto)
+        process_dict = {
+            "pro_ins_name": pro_ins_name,
+            "current_rto_list": current_rto_list[::-1] if len(current_rto_list) <= 50 else current_rto_list[-50:][::-1],
+            "color": pro_ins.process.color
+        }
+        process_rto_list.append(process_dict)
+
+    return JsonResponse({
+        "data": process_rto_list
+    })
 
 
 @login_required
@@ -1439,9 +1439,9 @@ def get_daily_processrun(request):
     process_success_rate_list = []
     if all_processrun_objs:
         for process_run in all_processrun_objs:
-            process_name = ''
+            pro_ins_name = ''
             try:
-                process_name = process_run.pro_ins.process.name
+                pro_ins_name = process_run.pro_ins.name
             except AttributeError:
                 pass
             start_time = process_run.starttime
@@ -1456,7 +1456,7 @@ def get_daily_processrun(request):
             processrun_url = "/processindex/" + str(process_run.id) + "?s=true"
 
             process_run_dict = {
-                "process_name": process_name,
+                "pro_ins_name": pro_ins_name,
                 "start_time": start_time,
                 "end_time": end_time,
                 "process_color": process_color,
@@ -1465,11 +1465,12 @@ def get_daily_processrun(request):
                 "invite": "0"
             }
             process_success_rate_list.append(process_run_dict)
+
     all_walkthrough_invited = Walkthrough.objects.filter(state="PLAN")
     if all_walkthrough_invited:
         for walkthrough_invited in all_walkthrough_invited:
             invitations_dict = {
-                "process_name": walkthrough_invited.name,
+                "pro_ins_name": walkthrough_invited.name,
                 "start_time": walkthrough_invited.starttime,
                 "end_time": walkthrough_invited.endtime,
                 "process_color": "red",

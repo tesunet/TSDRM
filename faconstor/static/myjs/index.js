@@ -59,7 +59,7 @@ var Dashboard = function () {
                     }
                     for (var i = 0; i < data.data.length; i++) {
                         chart.addSeries({
-                            "name": data.data[i].process_name,
+                            "name": data.data[i].pro_ins_name,
                             "data": data.data[i].current_rto_list,
                             "color": data.data[i].color,
                         });
@@ -132,7 +132,7 @@ var Dashboard = function () {
                         success: function (data) {
                             var events = [];
                             for (var i = 0; i < data.data.length; i++) {
-                                var title = data.data[i].process_name;
+                                var title = data.data[i].pro_ins_name;
                                 var id = data.data[i].process_run_id;
                                 var start = data.data[i].start_time;
                                 var end = data.data[i].end_time;

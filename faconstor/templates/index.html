@@ -169,7 +169,7 @@
                             </div>
                             {% for process in process_success_rate_list %}
                                 <div class="col-md-1-5" align="center">
-                                    <h4>{{ process.process_name }}</h4>
+                                    <h4>{{ process.pro_ins_name }}</h4>
                                     <input readonly class="knob" data-width="200"
                                            data-fgcolor="{{ process.color }}" data-min="0"
                                            data-displayprevious=true value="{{ process.current_process_success_rate }}">
@@ -218,7 +218,7 @@
                                                     <div class="cont-col2">
                                                         <div class="desc"> {{ task.content }}
                                                             <span class="label label-sm "
-                                                                  style="background-color:{{ task.process_color }};"> {{ task.process_name }}
+                                                                  style="background-color:{{ task.process_color }};"> {{ task.pro_ins_name }}
                                                         </span>
                                                         </div>
                                                     </div>
