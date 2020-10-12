@@ -2090,8 +2090,8 @@ def process_schedule_data(request):
         except ValueError:
             pass
         else:
-            all_process_schedules = ProcessSchedule.objects.filter(pro_ins_id=pro_ins_id).exclude(state="9").select_related("pro_ins", "process", "dj_periodictask",
-                                                                                                                            "dj_periodictask__crontab")
+            all_process_schedules = ProcessSchedule.objects.filter(pro_ins_id=pro_ins_id).exclude(state="9").select_related(
+                "pro_ins__process", "dj_periodictask", "dj_periodictask__crontab")
 
             for process_schedule in all_process_schedules:
                 remark = process_schedule.remark
