@@ -32,7 +32,19 @@
                             </div>
                         </div>
                         <div class="col-md-12">
-
+                            <div class="col-md-6">
+                                <div class="form-group ">
+                                    <label class="col-md-3 control-label">流程类型</label>
+                                    <div class="col-md-7">
+                                        <select class="form-control" id="pro_type" name="pro_type">
+                                            <option selected value="">全部</option>
+                                            <option value="Falconstor">Falconstor</option>
+                                            <option value="Commvault">Commvault</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <!--
                             <div class="col-md-6">
                                 <div class="form-group ">
                                     <label class="col-md-3 control-label">流程名称</label>
@@ -46,6 +58,7 @@
                                     </div>
                                 </div>
                             </div>
+                            -->
                             <div class="col-md-6">
                                 <div class="form-group ">
                                     <label class="col-md-3 control-label">运行状态</label>
@@ -61,6 +74,20 @@
                             </div>
                         </div>
                         <div class="col-md-12">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="col-md-3 control-label">流程实例名称</label>
+                                    <div class="col-md-7">
+                                        <input type="text" id='pro_ins_list_json' name='pro_ins_list_json' value='{{ pro_ins_list_json }}' hidden>
+                                        <select class="form-control" id="pro_ins" name="pro_ins">
+                                            <option selected value="">全部</option>
+                                            {% for pro_ins in pro_ins_list %}
+                                                <option value="{{ pro_ins.pro_ins_id }}">{{ pro_ins.pro_ins_name }} </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="col-md-6">
                                 <div class="form-group ">
                                     <label class="col-md-3 control-label">启动人</label>
@@ -87,7 +114,7 @@
                 <thead>
                 <tr>
                     <th> 任务ID</th>
-                    <th> 流程名称</th>
+                    <th> 流程实例名称</th>
                     <th> 启动人</th>
                     <th> 状态</th>
                     <th> 启动原因</th>

@@ -378,11 +378,15 @@ def falconstorsearch(request, funid):
     nowtime = datetime.datetime.now()
     endtime = nowtime.strftime("%Y-%m-%d")
     starttime = (nowtime - datetime.timedelta(days=30)).strftime("%Y-%m-%d")
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None).order_by('-id')
-    processname_list = []
-    for process in all_processes:
-        processname_list.append(process.name)
 
+    all_pro_ins = ProcessInstance.objects.exclude(state='9')
+    
+    pro_ins_list = [{
+        'pro_type': pro_ins.process.type,
+        'pro_ins_name': pro_ins.name,
+        'pro_ins_id': pro_ins.id,
+    } for pro_ins in all_pro_ins]
+    pro_ins_list_json = json.dumps(pro_ins_list)
     state_dict = {
         "DONE": "已完成",
         "EDIT": "未执行",
@@ -395,7 +399,7 @@ def falconstorsearch(request, funid):
     }
     return render(request, "restore_search.html",
                   {'username': request.user.userinfo.fullname, "starttime": starttime, "endtime": endtime,
-                   "processname_list": processname_list, "state_dict": state_dict,
+                   "pro_ins_list": pro_ins_list, "pro_ins_list_json": pro_ins_list_json, "state_dict": state_dict,
                    "pagefuns": getpagefuns(funid, request=request)})
 
 
@@ -407,7 +411,12 @@ def falconstorsearchdata(request):
     :return: starttime,endtime,createuser,state,process_id,processrun_id,runreason
     """
     result = []
-    processname = request.GET.get('processname', '')
+    pro_ins_id = request.GET.get('pro_ins', '')
+    try:
+        pro_ins_id = int(pro_ins_id)
+    except ValueError:
+        pass
+    pro_type = request.GET.get('pro_type', '')
     runperson = request.GET.get('runperson', '')
     runstate = request.GET.get('runstate', '')
     startdate = request.GET.get('startdate', '')
@@ -418,6 +427,13 @@ def falconstorsearchdata(request):
 
     all_pruns = ProcessRun.objects.exclude(state__in=['9', 'REJECT']).filter(starttime__range=[start_time, end_time]).order_by('-starttime')
 
+    f_condition = {}
+    if pro_type:
+        f_condition['pro_ins__process__type'] = pro_type
+    if runstate:
+        f_condition['state'] = runstate
+    if pro_ins_id:
+        f_condition['pro_ins__id'] = pro_ins_id
     if runperson:
         user_info = UserInfo.objects.filter(fullname=runperson)
         if user_info:
@@ -425,21 +441,10 @@ def falconstorsearchdata(request):
             runperson = user_info.user.username
         else:
             runperson = ""
-        if processname != "" and runstate != "":
-            all_pruns = all_pruns.filter(Q(pro_ins__process_name=processname) & Q(state=runstate) & Q(creatuser=runperson))
-        if processname == "" and runstate != "":
-            all_pruns = all_pruns.filter(Q(state=runstate) & Q(creatuser=runperson))
-        if processname != "" and runstate == "":
-            all_pruns = all_pruns.filter(Q(pro_ins__process_name=processname) & Q(creatuser=runperson))
-        if processname == "" and runstate == "":
-            all_pruns = all_pruns.filter(creatuser=runperson)
-    else:
-        if processname != "" and runstate != "":
-            all_pruns = all_pruns.filter(Q(pro_ins__process_name=processname) & Q(state=runstate))
-        if processname == "" and runstate != "":
-            all_pruns = all_pruns.filter(state=runstate)
-        if processname != "" and runstate == "":
-            all_pruns = all_pruns.filter(pro_ins__process_name=processname)
+
+        f_condition['creatuser'] = runperson
+    if f_condition:
+        all_pruns = all_pruns.filter(**f_condition)
 
     state_dict = {
         "DONE": "已完成",
@@ -514,7 +519,7 @@ def tasksearchdata(request):
     if task_type != "" and has_finished == "":
         s_ptasks = all_ptasks.filter(type=task_type)
     rows = s_ptasks.values(
-        'id', 'content', 'starttime', 'endtime', 'type', 'processrun_id', 'processrun__pro_ins__process__name', 'processrun__pro_ins__process__url', 'state'
+        'id', 'content', 'starttime', 'endtime', 'type', 'processrun_id', 'processrun__pro_ins__name', 'processrun__pro_ins__process__url', 'state'
     )
 
     type_dict = {
@@ -536,7 +541,7 @@ def tasksearchdata(request):
             "endtime": task['endtime'].strftime('%Y-%m-%d %H:%M:%S') if task['endtime'] else "",
             "type": type_dict["{0}".format(task['type'])] if task['type'] in type_dict.keys() else "",
             "processrun_id": task['processrun_id'] if task['processrun_id'] else "",
-            "process_name": task['processrun__pro_ins__process__name'] if task['processrun__pro_ins__process__name'] else "",
+            "pro_ins_name": task['processrun__pro_ins__name'] if task['processrun__pro_ins__name'] else "",
             "process_url": task['processrun__pro_ins__process__url'] if task['processrun__pro_ins__process__url'] else "",
             "has_finished": has_finished_dict["{0}".format(task['state'])] if task['state'] in has_finished_dict.keys() else "",
         })

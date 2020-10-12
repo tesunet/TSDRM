@@ -6,7 +6,7 @@ $(document).ready(function () {
         "ajax": "../tasksearchdata?task_type=" + $('#task_type').val() + "&startdate=" + $('#startdate').val() + "&enddate=" + $('#enddate').val() + "&has_finished=" + $('#has_finished').val(),
         "columns": [
             {"data": "task_id"},
-            {"data": "process_name"},
+            {"data": "pro_ins_name"},
             {"data": "task_content"},
             {"data": "type"},
             {"data": "has_finished"},
