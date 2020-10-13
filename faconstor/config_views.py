@@ -158,7 +158,6 @@ def script_save(request):
 
                     # 判断是否commvault/脚本
                     if save_data["interface_type"] == "Commvault":
-                        scriptsave.hosts_manage_id = None
                         scriptsave.script_text = ""
                         scriptsave.succeedtext = ""
                         scriptsave.commv_interface = save_data["commv_interface"]
@@ -751,7 +750,7 @@ def process_save(request):
                         pass
 
                     select_id = Process.objects.create(**{
-                        'url': '/cv_oracle',
+                        'url': '/falconstor',
                         'name': name,
                         'remark': remark,
                         'sign': sign,
@@ -954,7 +953,6 @@ def processscriptsave(request):
                 "sort": sort,
                 "process_id": error_solved,
                 "remark": script_instance_remark,
-                "hosts_manage_id": None,
                 "associated_hosts": associated_hosts_xml,
             }
         else:
@@ -968,8 +966,6 @@ def processscriptsave(request):
                 "process_id": error_solved,
                 "remark": script_instance_remark,
 
-                "utils_id": None,
-                "primary_id": None,
                 "associated_hosts": associated_hosts_xml,
             }
 

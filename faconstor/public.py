@@ -92,7 +92,7 @@ def content_load_params(script_instance, process_instance):
     :return: 整合参数后脚本内容
     """
     # 1.接口参数：[{"param_name":"SCRIPT","variable_name":"S1","param_value":"SV1","type":"SCRIPT"}]
-    params = literal_eval(script_instance.params)
+    params = literal_eval(script_instance.script.params)
 
     # ScriptInstance.associated_host->ProcessInstance.config->host_id
     associated_host = match_host(script_instance, process_instance)

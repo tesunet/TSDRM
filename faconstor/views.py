@@ -221,6 +221,11 @@ def getpagefuns(funid, request=""):
 @login_required
 def test(request):
     errors = []
+    # script_instance = ScriptInstance.objects.get(id=44)
+    # print(script_instance.params)
+    # process_instance = ProcessInstance.objects.get(id=6)
+    # ret = content_load_params(script_instance, process_instance)
+    # print(ret)
     return render(request, 'test.html',
                   {'username': request.user.userinfo.fullname, "errors": errors})
 
@@ -239,10 +244,15 @@ def processindex(request, processrun_id):
         process_id = c_process_run[0].pro_ins.process_id
     else:
         errors.append('流程不存在。') 
-    return render(request, 'processindex.html',
-                  {'username': request.user.userinfo.fullname, "errors": errors, "processrun_id": processrun_id,
-                   "process_url": process_url, "process_name": process_name, "process_id": process_id,
-                   "s_tag": s_tag})
+    return render(request, 'processindex.html', {
+        'username': request.user.userinfo.fullname,
+        "errors": errors,
+        "processrun_id": processrun_id,
+        "process_url": process_url,
+        "process_name": process_name,
+        "process_id": process_id,
+        "s_tag": s_tag
+    })
 
 
 @login_required
@@ -1352,7 +1362,7 @@ def index(request, funid):
     # 系统切换成功率
     process_success_rate_list = [] 
 
-    pro_inses = ProcessInstance.objects.exclude(state='9').filter(process__type='Falconstor')
+    pro_inses = ProcessInstance.objects.exclude(state='9').filter(process__type='Falconstor', pnode=None)
 
     for pro_ins in pro_inses:
         pro_ins_name = pro_ins.name
@@ -1380,8 +1390,8 @@ def index(request, funid):
 @login_required
 def get_process_rto(request):
     # 不同流程最近的12次切换RTO
-    pro_inses = ProcessInstance.objects.exclude(state='9').filter(process__type='Falconstor')
-    process_rto_list = [] # 待修改
+    pro_inses = ProcessInstance.objects.exclude(state='9').filter(process__type='Falconstor', pnode=None)
+    process_rto_list = []
 
     for pro_ins in pro_inses:
         pro_ins_name = pro_ins.name
@@ -1433,7 +1443,9 @@ def get_process_rto(request):
 
 @login_required
 def get_daily_processrun(request):
-    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).select_related("pro_ins__process").filter(pro_ins__process__pnode__pnode=None).filter(pro_ins__process__type='Falconstor')
+    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP")).filter(
+        pro_ins__process__type='Falconstor', pro_ins__pnode=None
+    ).select_related("pro_ins__process")
     process_success_rate_list = []
     if all_processrun_objs:
         for process_run in all_processrun_objs:
@@ -1630,21 +1642,26 @@ def solve_error(request):
     status = 1
     info = "启动排错流程成功。"
     data = ""
-    sr_id = request.POST.get("script_run_id", "")
+
+    prun_id = request.POST.get("prun_id", "")  # 运行流程ID
+    p_id = request.POST.get("error_solved_id", "")  # 排除预案ID
+
+    # prun -> pro_ins -> MULTI child pro_ins& p_id -> pro_ins
     try:
-        sr_id = int(sr_id)
-        sr = ScriptRun.objects.get(id=sr_id)
+        prun = ProcessRun.objects.get(id=int(prun_id))
+        pro_ins = prun.pro_ins
+        spec_pro_inses = pro_ins.children.exclude(state='9').filter(process_id=int(p_id))
     except Exception as e:
         status = 0
-        info = "启动排错流程失败：{e}。".format(e)
+        info = '排错流程不存在，执行失败:{0}。'.format(e)
     else:
-        si = sr.script
-        error_solved = si.process if si else None
-        if error_solved:
+        if spec_pro_inses.exists():
+            spec_pro_ins = spec_pro_inses[0]
+            process = spec_pro_ins.process
             # 启动排错流程
             # 返回排错流程ID
             # 前端定时获取该进程状态
-            running_process = ProcessRun.objects.filter(pro_ins=error_solved, state__in=["RUN"])
+            running_process = ProcessRun.objects.filter(pro_ins=spec_pro_ins, state__in=["RUN"])
             if running_process.exists():
                 myprocesstask = ProcessTask()
                 myprocesstask.starttime = datetime.datetime.now()
@@ -1657,15 +1674,15 @@ def solve_error(request):
             else:
                 myprocessrun = ProcessRun()
                 myprocessrun.creatuser = request.user.username
-                myprocessrun.pro_ins = error_solved
+                myprocessrun.pro_ins = spec_pro_ins
                 myprocessrun.starttime = datetime.datetime.now()
                 myprocessrun.state = "RUN"
-                process_type = error_solved.type
+                process_type = process.type
                 if process_type.upper() == "COMMVAULT":
                     cv_restore_params_save(myprocessrun)
 
                 myprocessrun.save()
-                mystep = error_solved.step_set.exclude(state="9")
+                mystep = process.step_set.exclude(state="9")
                 if not mystep.exists():
                     myprocesstask = ProcessTask()
                     myprocesstask.starttime = datetime.datetime.now()
@@ -1673,7 +1690,7 @@ def solve_error(request):
                     myprocesstask.logtype = "END"
                     myprocesstask.state = "0"
                     myprocesstask.processrun = myprocessrun
-                    myprocesstask.content = "排错流程({0})不存在可运行步骤。".format(error_solved.name)
+                    myprocesstask.content = "排错流程({0})不存在可运行步骤。".format(spec_pro_ins.name)
                     myprocesstask.save()
                 else:
                     for step in mystep:
@@ -1697,14 +1714,11 @@ def solve_error(request):
                     myprocesstask.type = "INFO"
                     myprocesstask.logtype = "START"
                     myprocesstask.state = "1"
-                    myprocesstask.content = "排错流程({0})已启动。".format(error_solved.name)
+                    myprocesstask.content = "排错流程({0})已启动。".format(spec_pro_ins.name)
                     myprocesstask.save()
 
                     exec_process.delay(myprocessrun.id)
                     data = myprocessrun.id
-        else:
-            status = 0
-            info = "启动排错流程失败：无排错流程。"
 
     return JsonResponse({
         "status": status,
@@ -3341,7 +3355,7 @@ def get_current_scriptinfo(request):
             "pri": pri_name,
             "std": std_name,
             "interface_type": script.interface_type,
-            "error_solved": script_instance.process_id,
+            "error_solved": script_instance.process_id,  # 是否有排错流程
         }
     except Exception as e:
         status = 0
@@ -5054,14 +5068,16 @@ def get_monitor_data(request):
         else:
             today_datetime = today_datetime - datetime.timedelta(days=i)
         today_drills = ProcessRun.objects.exclude(state__in=["RUN", "REJECT", "9", "STOP"]).filter(
-            starttime__startswith=today_datetime.date()
+            starttime__startswith=today_datetime.date(),
+            pro_ins__pnode=None
         )
         drill_day.append("{0:%m-%d}".format(today_datetime.date()))
         drill_times.append(len(today_drills))
 
         # 平均RTO趋势
         cur_client_succeed_process = ProcessRun.objects.filter(state="DONE").filter(
-            starttime__startswith=today_datetime.date()
+            starttime__startswith=today_datetime.date(),
+            pro_ins__pnode=None
         )
 
         if cur_client_succeed_process:
@@ -5091,9 +5107,8 @@ def get_monitor_data(request):
         "drill_rto": drill_rto
     }
 
-    pro_inses = ProcessInstance.objects.exclude(state='9')
-    # 系统演练次数TOP5  待修改
-    all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
+    pro_inses = ProcessInstance.objects.exclude(state='9').filter(pnode=None)
+    # 系统演练次数TOP5
     drill_name = []
     drill_time = []
     for pro_ins in pro_inses:
@@ -5120,8 +5135,8 @@ def get_monitor_data(request):
     }
     # print(drill_top_time)
     # 演练成功率
-    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="ERROR") | Q(state='STOP'))
-    successful_processruns = ProcessRun.objects.filter(state="DONE")
+    all_processrun_objs = ProcessRun.objects.filter(state__in=['DONE', 'ERROR', 'STOP'], pro_ins__pnode=None)
+    successful_processruns = ProcessRun.objects.filter(state="DONE", pro_ins__pnode=None)
 
     success_rate = "%.0f" % (len(successful_processruns) / len(
         all_processrun_objs) * 100) if all_processrun_objs and successful_processruns else 0

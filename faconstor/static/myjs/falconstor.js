@@ -638,7 +638,10 @@ if (App.isAngularJsApp() === false) {
                                 $.ajax({
                                     url: "/get_current_scriptinfo/",
                                     type: "post",
-                                    data: {"steprunid": steprunid, "scriptrun_id": scriptrun_id},
+                                    data: {
+                                        "steprunid": steprunid,
+                                        "scriptrun_id": scriptrun_id
+                                    },
                                     success: function (data) {
                                         if (data.status==1){
                                             if (data.data.interface_type == "Commvault") {
@@ -668,6 +671,7 @@ if (App.isAngularJsApp() === false) {
                                             
                                             // 排错流程
                                             if(data.data["error_solved"]){
+                                                $('#error_solved_id').val(data.data["error_solved"]);
                                                 $("#solve_error").show();
                                             } else {
                                                 $("#solve_error").hide();
@@ -871,8 +875,8 @@ if (App.isAngularJsApp() === false) {
                 url: "../../solve_error/",
                 data:
                     {
-                        process: $('#process').val(),
-                        script_run_id: $('#script_button').val(),
+                        prun_id: $('#process').val(),  // 运行流程ID
+                        error_solved_id: $('#error_solved_id').val(),   // 排错流程ID
                     },
                 success: function (data) {
                     if (data["status"] == 1) {
