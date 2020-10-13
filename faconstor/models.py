@@ -97,6 +97,7 @@ class ProcessInstance(models.Model):
     """
     流程实例
     """
+    pnode = models.ForeignKey('self', blank=True, null=True, related_name='children', verbose_name='父节点')
     process = models.ForeignKey(Process, blank=True, null=True, verbose_name="预案")
     name = models.CharField("流程实例名称", blank=True, max_length=128)
     config = models.TextField("流程参数/主机参数", default="</root>", null=True)
