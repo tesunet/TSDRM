@@ -1239,9 +1239,9 @@ def index(request, funid):
             break
 
     # 成功率，恢复次数，平均RTO，最新切换
-    all_processrun_objs = ProcessRun.objects.filter(Q(state="DONE") | Q(state="STOP"))
-    successful_processruns = ProcessRun.objects.filter(state="DONE")
-    processrun_times_obj = ProcessRun.objects.exclude(state__in=["RUN", "REJECT"]).exclude(state="9")
+    all_processrun_objs = ProcessRun.objects.filter(state__in=['DONE', 'STOP'], pro_ins__pnode=None).exclude(state="9")
+    successful_processruns = ProcessRun.objects.filter(state="DONE", pro_ins__pnode=None).exclude(state="9")
+    processrun_times_obj = ProcessRun.objects.exclude(state__in=["RUN", "REJECT"], pro_ins__pnode=None).exclude(state="9")
 
     success_rate = "%.0f" % (len(successful_processruns) / len(
         all_processrun_objs) * 100) if all_processrun_objs and successful_processruns else 0
@@ -1287,8 +1287,9 @@ def index(request, funid):
         average_rto = "00时00分00秒"
 
     # 正在切换:start_time, delta_time, current_step, current_operator， current_process_name, all_steps
-    current_processruns = ProcessRun.objects.exclude(state__in=["PLAN", "DONE", "STOP", "REJECT"]).exclude(
-        state="9").select_related("pro_ins__process")
+    current_processruns = ProcessRun.objects.exclude(
+        state__in=["PLAN", "DONE", "STOP", "REJECT"]
+    ).exclude(state="9").filter(pro_ins__pnode=None).select_related("pro_ins__process")
     curren_processrun_info_list = []
     state_dict = {
         "DONE": "已完成",
@@ -1305,57 +1306,54 @@ def index(request, funid):
     }
 
     process_rate = "0"
-    if current_processruns:
-        for current_processrun in current_processruns:
-            current_processrun_dict = {}
-            start_time_strftime = ""
-            current_delta_time = ""
-            current_step_name = ""
-            current_process_name = ""
-            current_step_index = ""
-            all_steps = []
-            group_name = ""
-            users = ""
-            try:
-                current_process_name = current_processrun.pro_ins.process.name
-            except AttributeError:
-                pass
-            start_time = current_processrun.starttime.replace(tzinfo=None)
-            start_time_strftime = start_time.strftime('%Y-%m-%d %H:%M:%S')
-            current_time = datetime.datetime.now()
-            current_delta_time = (current_time - start_time).total_seconds()
-            m, s = divmod(current_delta_time, 60)
-            h, m = divmod(m, 60)
-            current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
+    for current_processrun in current_processruns:
+        current_processrun_dict = {}
+        current_step_name = ""
+        current_process_name = ""
+        current_step_index = ""
+        all_steps = []
+        group_name = ""
+        users = ""
+        try:
+            current_process_name = current_processrun.pro_ins.name
+        except AttributeError:
+            pass
+        start_time = current_processrun.starttime.replace(tzinfo=None)
+        start_time_strftime = start_time.strftime('%Y-%m-%d %H:%M:%S')
+        current_time = datetime.datetime.now()
+        current_delta_time = (current_time - start_time).total_seconds()
+        m, s = divmod(current_delta_time, 60)
+        h, m = divmod(m, 60)
+        current_delta_time = "%d时%02d分%02d秒" % (h, m, s)
 
-            current_processrun_id = current_processrun.id
+        current_processrun_id = current_processrun.id
 
-            # 进程url
-            processrun_url = '/'
-            try:
-                processrun_url = current_processrun.pro_ins.process.url + "/" + str(current_processrun_id)
-            except:
-                pass
-            # 当前系统任务
-            current_process_task_info = get_c_process_run_tasks(current_processrun.id)
+        # 进程url
+        processrun_url = '/'
+        try:
+            processrun_url = current_processrun.pro_ins.process.url + "/" + str(current_processrun_id)
+        except:
+            pass
+        # 当前系统任务
+        current_process_task_info = get_c_process_run_tasks(current_processrun.id)
 
-            current_processrun_dict["current_process_run_state"] = state_dict[
-                "{0}".format(current_processrun.state)]
-            current_processrun_dict["current_process_task_info"] = current_process_task_info
-            current_processrun_dict["current_processrun_dict"] = current_processrun_dict
-            current_processrun_dict["start_time_strftime"] = start_time_strftime
-            current_processrun_dict["current_delta_time"] = current_delta_time
-            current_processrun_dict["current_process_name"] = current_process_name
-            current_processrun_dict["current_step_index"] = current_step_index
-            current_processrun_dict["all_steps"] = all_steps
-            current_processrun_dict["process_rate"] = process_rate
-            current_processrun_dict["current_step_name"] = current_step_name
-            current_processrun_dict["group_name"] = group_name
-            current_processrun_dict["users"] = users
-            current_processrun_dict["processrun_url"] = processrun_url
-            current_processrun_dict["processrun_id"] = current_processrun.id
+        current_processrun_dict["current_process_run_state"] = state_dict[
+            "{0}".format(current_processrun.state)]
+        current_processrun_dict["current_process_task_info"] = current_process_task_info
+        current_processrun_dict["current_processrun_dict"] = current_processrun_dict
+        current_processrun_dict["start_time_strftime"] = start_time_strftime
+        current_processrun_dict["current_delta_time"] = current_delta_time
+        current_processrun_dict["current_process_name"] = current_process_name
+        current_processrun_dict["current_step_index"] = current_step_index
+        current_processrun_dict["all_steps"] = all_steps
+        current_processrun_dict["process_rate"] = process_rate
+        current_processrun_dict["current_step_name"] = current_step_name
+        current_processrun_dict["group_name"] = group_name
+        current_processrun_dict["users"] = users
+        current_processrun_dict["processrun_url"] = processrun_url
+        current_processrun_dict["processrun_id"] = current_processrun.id
 
-            curren_processrun_info_list.append(current_processrun_dict)
+        curren_processrun_info_list.append(current_processrun_dict)
 
     # 系统切换成功率
     process_success_rate_list = [] 
@@ -5059,7 +5057,6 @@ def get_monitor_data(request):
         "drill_name": drill_name[:5][::-1] if len(drill_name[::-1]) > 5 else drill_name,
         "drill_time": drill_time[:5][::-1] if len(drill_time[::-1]) > 5 else drill_time
     }
-    # print(drill_top_time)
     # 演练成功率
     all_processrun_objs = ProcessRun.objects.filter(state__in=['DONE', 'ERROR', 'STOP'], pro_ins__pnode=None)
     successful_processruns = ProcessRun.objects.filter(state="DONE", pro_ins__pnode=None)
@@ -5070,8 +5067,9 @@ def get_monitor_data(request):
 
     # 演练日志
     task_list = []
-    all_process_tasks = ProcessTask.objects.filter(logtype__in=["ERROR", "STOP", "END", "START"]).order_by(
-        "-starttime").select_related("processrun", "processrun__pro_ins")
+    all_process_tasks = ProcessTask.objects.filter(
+        logtype__in=["ERROR", "STOP", "END", "START"]
+    ).order_by("-starttime").select_related("processrun", "processrun__pro_ins")
     for num, process_task in enumerate(all_process_tasks):
         if num == 50:
             break
@@ -5080,6 +5078,8 @@ def get_monitor_data(request):
             pro_ins_name = process_task.processrun.pro_ins.name
         except:
             pass
+        if process_task.walkthrough:    # 如果是多流程演练计划，使用演练计划名称
+            pro_ins_name = process_task.walkthrough.name
 
         task_list.append({
             "pro_ins_name": pro_ins_name,
