@@ -1644,7 +1644,7 @@ def solve_error(request):
             # 启动排错流程
             # 返回排错流程ID
             # 前端定时获取该进程状态
-            running_process = ProcessRun.objects.filter(process=error_solved, state__in=["RUN"])
+            running_process = ProcessRun.objects.filter(pro_ins=error_solved, state__in=["RUN"])
             if running_process.exists():
                 myprocesstask = ProcessTask()
                 myprocesstask.starttime = datetime.datetime.now()
@@ -1652,12 +1652,12 @@ def solve_error(request):
                 myprocesstask.logtype = "END"
                 myprocesstask.state = "0"
                 myprocesstask.processrun = running_process[0]
-                myprocesstask.content = "排错流程({0})已运行。".format(running_process[0].process.name)
+                myprocesstask.content = "排错流程({0})已运行。".format(running_process[0].pro_ins.name)
                 myprocesstask.save()
             else:
                 myprocessrun = ProcessRun()
                 myprocessrun.creatuser = request.user.username
-                myprocessrun.process = error_solved
+                myprocessrun.pro_ins = error_solved
                 myprocessrun.starttime = datetime.datetime.now()
                 myprocessrun.state = "RUN"
                 process_type = error_solved.type
@@ -2764,7 +2764,7 @@ def getrunsetps(request):
     if request.method == 'POST':
         processresult = {}
         result = []
-        process_name = ""
+        pro_ins_name = ""
         process_state = ""
         process_starttime = ""
         process_endtime = ""
@@ -2774,7 +2774,7 @@ def getrunsetps(request):
         processrun = int(processrun)
         processruns = ProcessRun.objects.exclude(state="9").filter(id=processrun)
         if len(processruns) > 0:
-            process_name = processruns[0].pro_ins.process.name
+            pro_ins_name = processruns[0].pro_ins.name
             process_state = processruns[0].state
             process_note = processruns[0].note
             try:
@@ -2806,7 +2806,7 @@ def getrunsetps(request):
 
             processresult["current_process_task_info"] = current_process_task_info
             processresult["step"] = result
-            processresult["process_name"] = process_name
+            processresult["pro_ins_name"] = pro_ins_name
             processresult["process_state"] = process_state
             processresult["process_starttime"] = process_starttime
             processresult["process_endtime"] = process_endtime
@@ -3294,7 +3294,7 @@ def get_current_scriptinfo(request):
         script = script_instance.script
         steprun = scriptrun.steprun
         processrun = steprun.processrun
-        pri = script_instance.primary
+        pro_ins = processrun.pro_ins
 
         state_dict = {
             "DONE": "已完成",
@@ -3308,21 +3308,17 @@ def get_current_scriptinfo(request):
         starttime = '{0:%Y-%m-%d %H:%M:%S}'.format(scriptrun.starttime) if scriptrun.starttime else ""
         endtime = '{0:%Y-%m-%d %H:%M:%S}'.format(scriptrun.endtime) if scriptrun.endtime else ""
 
-        # 目标客户端
-        cur_info = processrun.info
-        std_name = ""
-        try:
-            cur_info = etree.XML(cur_info)
-        except Exception:
-            pass
-        else:
-            std_id = cur_info.xpath("//param")[0].attrib.get("std_id")
-            try:
-                std = CvClient.objects.get(id=int(std_id))
-            except Exception:
-                pass
-            else:
-                std_name = std.client_name
+        # 源客户端名称/目标客户端名称/主机IP(*)
+        #   @param: 接口实例、流程实例
+        #   @return: 主机对象 -> 源客户端 -> 目标客户端
+        c_host = match_host(script_instance, pro_ins)
+        c_host_ip = c_host.host_ip
+        pris = c_host.cvclient_set.exclude(state='9')
+        pri_name, std_name = '', ''
+        if pris.exists():
+            pri_name = pris[0].client_name
+            std = pris[0].destination
+            std_name = std.client_name if std else ''
 
         # 状态
         state = ""
@@ -3334,7 +3330,7 @@ def get_current_scriptinfo(request):
         data = {
             "processrunstate": processrun.state,
             "code": script.code,
-            "ip": script_instance.hosts_manage.host_ip if script_instance.hosts_manage else "",
+            "ip": c_host_ip,
             "state": state,
             "starttime": starttime,
             "endtime": endtime,
@@ -3342,7 +3338,7 @@ def get_current_scriptinfo(request):
             "explain": scriptrun.explain,
             "step_id_from_script": steprun.step_id,
             "show_log_btn": "1" if script_instance.log_address else "0",
-            "pri": pri.client_name if pri else "",
+            "pri": pri_name,
             "std": std_name,
             "interface_type": script.interface_type,
             "error_solved": script_instance.process_id,
@@ -5058,13 +5054,15 @@ def get_monitor_data(request):
         else:
             today_datetime = today_datetime - datetime.timedelta(days=i)
         today_drills = ProcessRun.objects.exclude(state__in=["RUN", "REJECT", "9", "STOP"]).filter(
-            starttime__startswith=today_datetime.date())
+            starttime__startswith=today_datetime.date()
+        )
         drill_day.append("{0:%m-%d}".format(today_datetime.date()))
         drill_times.append(len(today_drills))
 
         # 平均RTO趋势
         cur_client_succeed_process = ProcessRun.objects.filter(state="DONE").filter(
-            starttime__startswith=today_datetime.date())
+            starttime__startswith=today_datetime.date()
+        )
 
         if cur_client_succeed_process:
             rto_sum_seconds = 0
@@ -5093,26 +5091,27 @@ def get_monitor_data(request):
         "drill_rto": drill_rto
     }
 
+    pro_inses = ProcessInstance.objects.exclude(state='9')
     # 系统演练次数TOP5  待修改
     all_process = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
     drill_name = []
     drill_time = []
-    for process in all_process:
-        process_runs = process.processrun_set.exclude(state__in=["RUN", "REJECT", "9", "STOP"])
+    for pro_ins in pro_inses:
+        process_runs = pro_ins.processrun_set.exclude(state__in=["RUN", "REJECT", "9", "STOP"])
         cur_drill_time = len(process_runs)
 
         if drill_time:
             for dt in drill_time:
                 dt_index = drill_time.index(dt)
                 if cur_drill_time > dt:
-                    drill_name.insert(dt_index, process.name)
+                    drill_name.insert(dt_index, pro_ins.name)
                     drill_time.insert(dt_index, cur_drill_time)
                     break
             else:
-                drill_name.append(process.name)
+                drill_name.append(pro_ins.name)
                 drill_time.append(cur_drill_time)
         else:
-            drill_name.append(process.name)
+            drill_name.append(pro_ins.name)
             drill_time.append(cur_drill_time)
 
     drill_top_time = {
@@ -5131,28 +5130,29 @@ def get_monitor_data(request):
     # 演练日志
     task_list = []
     all_process_tasks = ProcessTask.objects.filter(logtype__in=["ERROR", "STOP", "END", "START"]).order_by(
-        "-starttime").select_related("processrun", "processrun__process")
+        "-starttime").select_related("processrun", "processrun__pro_ins")
     for num, process_task in enumerate(all_process_tasks):
         if num == 50:
             break
-        process_name = ""
+        pro_ins_name = ""
         try:
-            process_name = process_task.processrun.process.name
+            pro_ins_name = process_task.processrun.pro_ins.name
         except:
             pass
 
         task_list.append({
-            "process_name": process_name,
+            "pro_ins_name": pro_ins_name,
             "start_time": "{0: %Y-%m-%d %H:%M:%S}".format(process_task.starttime) if process_task.starttime else "",
             "content": process_task.content
         })
     # 今日作业
     running_job, success_job, error_job, stop_job = 0, 0, 0, 0
-    all_processes = Process.objects.exclude(state="9").exclude(Q(type=None) | Q(type="")).filter(pnode__pnode=None)
+
     has_run_process = 0
-    for process in all_processes:
-        process_run = process.processrun_set.exclude(state__in=["9", "REJECT"]).filter(
-            starttime__startswith=datetime.datetime.now().date())
+    for pro_ins in pro_inses:
+        process_run = pro_ins.processrun_set.exclude(state__in=["9", "REJECT"]).filter(
+            starttime__startswith=datetime.datetime.now().date()
+        )
         if process_run.exists():
             has_run_process += 1
 
@@ -5175,17 +5175,17 @@ def get_monitor_data(request):
     not_running = 0
     try:
         # 未启动
-        not_running = len(all_processes) - running_job - success_job - error_job - stop_job
+        not_running = len(pro_inses) - running_job - success_job - error_job - stop_job
     except:
         pass
 
     # 演练监控
     drill_monitor = []
 
-    for process in all_processes:
-        today_process_run = process.processrun_set.exclude(state__in=["9", "REJECT"]).filter(
-            starttime__startswith=datetime.datetime.now().date())
-
+    for pro_ins in pro_inses:
+        today_process_run = pro_ins.processrun_set.exclude(state__in=["9", "REJECT"]).filter(
+            starttime__startswith=datetime.datetime.now().date()
+        )
         if today_process_run:
             today_process_run = today_process_run.last()
             done_step_run = today_process_run.steprun_set.filter(state="DONE")
@@ -5200,7 +5200,7 @@ def get_monitor_data(request):
             # 策略时间
             cur_schedule = ""
             try:
-                process_schedule = ProcessSchedule.objects.filter(process=process).exclude(state="9")
+                process_schedule = ProcessSchedule.objects.filter(pro_ins=pro_ins).exclude(state="9")
                 if process_schedule.exists():
                     cur_schedule_hour = process_schedule[0].dj_periodictask.crontab.hour
                     cur_schedule_minute = process_schedule[0].dj_periodictask.crontab.minute
@@ -5209,7 +5209,7 @@ def get_monitor_data(request):
                 pass
 
             drill_monitor.append({
-                "process_name": process.name,
+                "pro_ins_name": pro_ins.name,
                 "state": today_process_run.state,
                 "schedule_time": cur_schedule,
                 "start_time": "{0:%Y-%m-%d %H:%M:%S}".format(
@@ -5222,7 +5222,7 @@ def get_monitor_data(request):
             # 策略时间
             cur_schedule = ""
             try:
-                process_schedule = ProcessSchedule.objects.filter(process=process).exclude(state="9")
+                process_schedule = ProcessSchedule.objects.filter(pro_ins=pro_ins).exclude(state="9")
                 if process_schedule.exists():
                     cur_schedule_hour = process_schedule[0].dj_periodictask.crontab.hour
                     cur_schedule_minute = process_schedule[0].dj_periodictask.crontab.minute
@@ -5230,7 +5230,7 @@ def get_monitor_data(request):
             except:
                 pass
             drill_monitor.append({
-                "process_name": process.name,
+                "pro_ins_name": pro_ins.name,
                 "state": "未演练",
                 "schedule_time": cur_schedule,
                 "start_time": "",
@@ -5240,10 +5240,10 @@ def get_monitor_data(request):
 
     # 待处理异常
     error_processrun_list = []
-    error_processrun = ProcessRun.objects.filter(state="ERROR").select_related("process").order_by("-starttime")
+    error_processrun = ProcessRun.objects.filter(state="ERROR").select_related("pro_ins").order_by("-starttime")
     for epr in error_processrun:
         error_processrun_list.append({
-            "process_name": epr.process.name,
+            "pro_ins_name": epr.pro_ins.name,
             "start_time": "{0:%Y-%m-%d %H:%M:%S}".format(epr.starttime) if epr.starttime else "",
             "processrun_url": "/falconstor/{processrun_id}/".format(processrun_id=epr.id)
         })

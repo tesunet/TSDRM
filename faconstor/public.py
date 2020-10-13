@@ -100,8 +100,13 @@ def content_load_params(script_instance, process_instance):
         # 2.主机参数
         host_params = get_params(associated_host.config, add_type='HOST')
         params.extend(host_params)
-        # 3.流程参数
-        pro_ins_params = get_params(process_instance.config, add_type="PROCESS")
+        # 3.流程参数(*)
+        #   排错流程配置使用主流程配置
+        p_ins_config = process_instance.config
+        if process_instance.pnode:
+            p_ins_config = process_instance.pnode.config
+
+        pro_ins_params = get_params(p_ins_config, add_type="PROCESS")
         params.extend(pro_ins_params)
         # 4.特定主机参数
         # 特定参数 -> HostsManage CvClient 表字段
@@ -164,9 +169,10 @@ def content_load_params(script_instance, process_instance):
 def match_host(script_instance, process_instance):
     """
     接口实例中关联主机uuid匹配，从流程实例中匹配出HostsManage对象
+    附：排错流程实例使用主流程实例的config
     @param script_instance:
     @param process_instance:
-    :return:
+    :return: associated_host
     """
     associated_host = None
     try:
@@ -179,7 +185,11 @@ def match_host(script_instance, process_instance):
             # 从pro_ins.config匹配对应的HOST_ID
             associated_host_id = None
 
-            config_root = etree.XML(process_instance.config)
+            config = process_instance.config
+            if process_instance.pnode:  # 排错流程实例使用主流程实例的配置
+                config = process_instance.pnode.config
+
+            config_root = etree.XML(config)
             config_els = config_root.xpath('//host')
             for config_el in config_els:
                 if associated_host_uuid == config_el.attrib.get('host_uuid', '') and associated_host_uuid:

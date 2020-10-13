@@ -3,8 +3,8 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect, Http404, HttpResponse, JsonResponse
 from django.db.models import Max
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from ast import literal_eval
+from django.db import transaction
+
 
 from .tasks import *
 from .views import getpagefuns
@@ -17,6 +17,8 @@ import json
 import datetime
 import pythoncom
 from lxml import etree
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from ast import literal_eval
 
 pythoncom.CoInitialize()
 import wmi
@@ -1107,13 +1109,37 @@ def pro_save(request):
                 status = 0
                 info = "预案未选择。"
             else:
+                # 创建排错流程实例
+                def set_troubleshoot_pro_ins(process_id, p_id):
+                    """
+                    @process_id{int}: 主流程ID
+                    @p_id{int}: 主流程实例ID
+                    return troubleshoot_pro_ins_list{list}
+                    """
+                    troubleshoot_pro_ins_list = []
+                    try:
+                        pros = Process.objects.get(id=process_id)
+                    except:
+                        raise Exception('PROCESS DOES NOT EXIST')
+                    else:
+                        troubleshoot_pros = pros.children.exclude(state='9')
+                        for troubleshoot_pro in troubleshoot_pros:
+                            troubleshoot_pro_ins_id = ProcessInstance.objects.create(**{
+                                "name": '{0}的排错流程'.format(pro_ins),
+                                "process_id": troubleshoot_pro.id,
+                                "pnode_id": p_id,
+                            }).id
+                            troubleshoot_pro_ins_list.append(troubleshoot_pro_ins_id)
+                    return troubleshoot_pro_ins_list
                 if p_id == 0:
                     try:
-                        p_id = ProcessInstance.objects.create(**{
-                            "name": pro_ins,
-                            "process_id": pros_id,
-                            "config": config_xml,
-                        }).id
+                        with transaction.atomic():
+                            p_id = ProcessInstance.objects.create(**{
+                                "name": pro_ins,
+                                "process_id": pros_id,
+                                "config": config_xml,
+                            }).id
+                            set_troubleshoot_pro_ins(pros_id, p_id)
                     except:
                         status = 0
                         info = "新增失败。"
@@ -1162,7 +1188,7 @@ def get_pro_data(request):
     empty = request.GET.get("empty", "false")
 
     if empty == "false":
-        p_inss = ProcessInstance.objects.exclude(state="9")
+        p_inss = ProcessInstance.objects.exclude(state="9").filter(pnode=None)
         for p_ins in p_inss:
             # 判断host_id是否相同，且仅有一台
             is_same_host = False

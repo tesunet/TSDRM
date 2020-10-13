@@ -31,12 +31,16 @@ function getProcessDetail(id, node_type) {
                     if (data.processtype == "1") {
                         $('#processtype').append('<option value="1">主流程</option>');
                         $('#processtype_div').show();
+                        $('#is_troubleshoot_div').show();
                     } else {
-                        $('#processtype').append('<option value="2">回切流程</option>');
+                        // $('#processtype').append('<option value="2">回切流程</option>');
                         $('#processtype').append('<option value="3">排错流程</option>');
                         $('#processtype_div').hide();
+                        $('#is_troubleshoot_div').hide();
                     }
                     $("#processtype").val(data.processtype);
+
+
                     // 动态参数
                     $('#param_se').empty();
                     var variable_param_list = data.variable_param_list;
@@ -53,11 +57,12 @@ function getProcessDetail(id, node_type) {
                     $('#associated_hosts').val(JSON.stringify(hosts_list));
                 }
                 if (node_type == "NODE") {
-                    $("#node_pname").val(data.pname)
-                    $("#node_name").val(data.process_name)
-                    $("#node_remark").val(data.remark)
-                    $("#processdiv").hide()
-                    $("#nodediv").show()
+                    $("#node_pname").val(data.pname);
+                    $("#node_name").val(data.process_name);
+                    $("#node_remark").val(data.remark);
+                    $("#processdiv").hide();
+                    $("#nodediv").show();
+                    $('#is_troubleshoot_div').hide();
                 }
             }
         }
@@ -121,6 +126,8 @@ function getProcessTree() {
                                         $("#processdiv").hide();
                                         $("#nodediv").show();
                                         $("#node_save").show();
+
+                                        $('#is_troubleshoot_div').hide();
                                     }
                                 }
                             },
@@ -134,10 +141,12 @@ function getProcessTree() {
                                     } else {
                                         $("#processtype").empty()
                                         if (obj.type == "PROCESS") {
-                                            $('#processtype').append('<option selected value="2">回切流程</option>');
+                                            // $('#processtype').append('<option selected value="2">回切流程</option>');
                                             $('#processtype').append('<option value="3">排错流程</option>');
+                                            $('#is_troubleshoot_div').hide();
                                         } else {
                                             $('#processtype').append('<option value="1" selected>主流程</option>');
+                                            $('#is_troubleshoot_div').show();
                                         }
 
                                         $("#form_div").show();
@@ -158,6 +167,7 @@ function getProcessTree() {
                                         $("#process_color").val("");
                                         $("#type").val("");
                                         $('#param_se').empty();
+                                        $('#hosts_se').empty();
                                     }
                                 }
                             },
@@ -597,3 +607,11 @@ $('#params_save').click(function () {
 $('#p_edit').click(function () {
     window.open("/processconfig/?process_id=" + $('#id').val());
 });
+
+/**
+ * 排错流程
+ */
+$('#processtype').change(function () {
+
+});
+

@@ -785,7 +785,7 @@ $('#save').click(function () {
             group: $("#group").val(),
             rto_count_in: $("#rto_count_in").val(),
             new: $("#new").val(),
-            process_id: $("#process option:selected").val(),
+            process_id: $("#process").val(),
             remark: $("#remark").val(),
             force_exec: $("#force_exec").val()
         },

@@ -295,7 +295,7 @@ $(document).ready(function () {
                 }
 
                 $("#drill_monitor").append('<tr>\n' +
-                    '    <td> ' + data.drill_monitor[i].process_name + '</td>\n' +
+                    '    <td> ' + data.drill_monitor[i].pro_ins_name + '</td>\n' +
                     '    <td><span class="label label-sm ' + status_label + '"> ' + status_name + ' </span></td>\n' +
                     '    <td> ' + data.drill_monitor[i].schedule_time + '</td>\n' +
                     '    <td> ' + data.drill_monitor[i].start_time + '</td>\n' +
@@ -309,7 +309,7 @@ $(document).ready(function () {
             for (var i = 0; i < data.task_list.length; i++) {
                 var drill_log_class = i % 2 ? ' class="bg"' : '';
                 $("#drill_log").append('<li ' + drill_log_class + '>\n' +
-                    '    <p class="fl"><b>' + data.task_list[i].process_name + '</b><br>\n' +
+                    '    <p class="fl"><b>' + data.task_list[i].pro_ins_name + '</b><br>\n' +
                     '        ' + data.task_list[i].content + '<br>\n' +
                     '    </p>\n' +
                     '    <p class="fr pt17">' + data.task_list[i].start_time + '</p>\n' +
@@ -330,7 +330,7 @@ $(document).ready(function () {
                     var error_processrun_class = i % 2 ? ' class="bg"' : '';
 
                     $("#error_process").append('<li ' + error_processrun_class + '>\n' +
-                        '    <p class="fl"><a style="text-decoration: none;" target="_blank" href="' + data.error_processrun[i].processrun_url + '"><b>' + data.error_processrun[i].process_name + '</b></a></p>\n' +
+                        '    <p class="fl"><a style="text-decoration: none;" target="_blank" href="' + data.error_processrun[i].processrun_url + '"><b>' + data.error_processrun[i].pro_ins_name + '</b></a></p>\n' +
                         '    <p class="fr pt17">' + data.error_processrun[i].start_time + '</p>\n' +
                         '</li>');
                 }

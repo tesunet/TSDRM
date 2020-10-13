@@ -735,56 +735,58 @@ def process_save(request):
                     hosts_node.attrib["name"] = ah["hosts_name"]
             hosts_xml_config = etree.tounicode(hosts_root)
 
+            if processtype != '1':  # 排错流程
+                xml_config, hosts_xml_config = '', ''
+
             if id == 0:
                 try:
-                    processsave = Process()
-                    processsave.url = '/cv_oracler'
-                    processsave.name = name
-                    processsave.remark = remark
-                    processsave.sign = sign
-                    processsave.rto = rto if rto else None
-                    processsave.rpo = rpo if rpo else None
-                    processsave.sort = sort if sort else None
-                    processsave.color = color
-                    processsave.type = type
-                    processsave.processtype = processtype
-                    processsave.hosts_id = cv_client if cv_client else None
-                    processsave.config = xml_config
-                    processsave.associated_hosts = hosts_xml_config
-                    processsave.pnode_id = pid
-
                     # 排序
                     sort = 1
                     try:
                         max_sort = Process.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
-                            max_sort=Max('sort', distinct=True))["max_sort"]
+                            max_sort=Max('sort', distinct=True)
+                        )["max_sort"]
                         sort = max_sort + 1
                     except:
                         pass
-                    processsave.sort = sort
 
-                    processsave.save()
-                    select_id = processsave.id
+                    select_id = Process.objects.create(**{
+                        'url': '/cv_oracle',
+                        'name': name,
+                        'remark': remark,
+                        'sign': sign,
+                        'rto': rto if rto else None,
+                        'rpo': rpo if rpo else None,
+                        'sort': sort if sort else None,
+                        'color': color,
+                        'type': type,
+                        'processtype': processtype,
+                        'hosts_id': cv_client if cv_client else None,
+                        'config': xml_config,
+                        'associated_hosts': hosts_xml_config,
+                        'pnode_id': pid,
+                    }).id
                 except Exception as e:
                     info = "保存失败：{0}".format(e)
                     status = 0
             else:
                 try:
-                    processsave = Process.objects.get(id=id)
-                    processsave.name = name
-                    processsave.remark = remark
-                    processsave.sign = sign
-                    processsave.rto = rto if rto else None
-                    processsave.rpo = rpo if rpo else None
-                    processsave.sort = sort if sort else None
-                    processsave.color = color
-                    processsave.type = type
-                    processsave.processtype = processtype
-                    processsave.hosts_id = cv_client if cv_client else None
-                    processsave.config = xml_config
-                    processsave.associated_hosts = hosts_xml_config
-                    processsave.save()
-                    select_id = processsave.id
+                    processsave = Process.objects.filter(id=id)
+                    processsave.update(**{
+                        'name': name,
+                        'remark': remark,
+                        'sign': sign,
+                        'rto': rto if rto else None,
+                        'rpo': rpo if rpo else None,
+                        'sort': sort if sort else None,
+                        'color': color,
+                        'type': type,
+                        'processtype': processtype,
+                        'hosts_id': cv_client if cv_client else None,
+                        'config': xml_config,
+                        'associated_hosts': hosts_xml_config,
+                    })
+                    select_id = id
                 except Exception as e:
                     info = "保存失败：{0}".format(e)
                     status = 0
@@ -819,10 +821,15 @@ def process_del(request):
 @login_required
 def processconfig(request, funid):
     process_id = request.GET.get("process_id", "")
+
+    # 附：排错流程的主机
     hosts_list = []
     try:
         process_id = int(process_id)
         cur_process = Process.objects.get(id=process_id)
+        if cur_process.processtype == '3':  # 排错流程: 使用主流程主机
+            cur_process = cur_process.pnode
+
         # 主机选项
         associated_hosts = etree.XML(cur_process.associated_hosts)
         hosts = associated_hosts.xpath("//host")
@@ -1059,8 +1066,6 @@ def get_script_data(request):
             "params": "",
             "log_address": script_instance.log_address,
             "host_id": host_id,
-            "primary_id": script_instance.primary_id,
-            "utils_id": script_instance.utils_id
         }
 
     return JsonResponse({

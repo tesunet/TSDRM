@@ -256,7 +256,7 @@ if (App.isAngularJsApp() === false) {
                     $("#refresh").show();
                     $("#show_result").hide();
                     $("#process_run_id").val($("#process").val());
-                    $("#process_name").html(data["process_name"] + "&nbsp&nbsp <button id='show_tasks' type='button' style='background-color: #1d89cf'><i class='fa fa-cogs'></i></button>");
+                    $("#pro_ins_name").html(data["pro_ins_name"] + "&nbsp&nbsp <button id='show_tasks' type='button' style='background-color: #1d89cf'><i class='fa fa-cogs'></i></button>");
                     $("#process_starttime").val(data["process_starttime"]);
                     $("#process_endtime").val(data["process_endtime"]);
                     $("#process_note").val(data["process_note"]);
