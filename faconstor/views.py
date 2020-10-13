@@ -30,7 +30,7 @@ from .remote import ServerByPara
 from TSDRM import settings
 from .api import SQLApi
 from .public import (
-    get_credit_info, file_iterator
+    get_credit_info, file_iterator, get_params_from_pro_ins
 )
 
 funlist = []
@@ -651,7 +651,7 @@ def get_walkthrough_index_data(request):
                     cur_processruns.append({
                         "processrun_id": processrun_id,
                         "process_id": process_id,
-                        "processurl": current_processrun.process.url,
+                        "processurl": current_processrun.pro_ins.process.url,
                         "name": name,
                         "starttime": starttime.strftime('%Y-%m-%d %H:%M:%S') if starttime else "",
                         "rtoendtime": rtoendtime,
@@ -710,11 +710,11 @@ def walkthrough_run_invited(request):
 
     walkthrough_id = request.POST.get('walkthrough_id', '')
 
-    current_walkthrough_run = Walkthrough.objects.filter(id=walkthrough_id)
-
-    if current_walkthrough_run:
-        current_walkthrough_run = current_walkthrough_run[0]
-
+    try:
+        current_walkthrough_run = Walkthrough.objects.get(id=int(walkthrough_id))
+    except:
+        result["res"] = '演练启动异常，请联系客服。'
+    else:
         if current_walkthrough_run.state == "RUN":
             result["res"] = '请勿重复启动该演练。'
         else:
@@ -725,13 +725,13 @@ def walkthrough_run_invited(request):
                 current_process_run.state = "RUN"
                 current_process_run.walkthroughstate = "RUN"
 
-                process_type = current_process_run.process.type
+                process_type = current_process_run.pro_ins.process.type
                 if process_type.upper() == "COMMVAULT":
                     cv_restore_params_save(current_process_run)
 
                 current_process_run.save()
 
-                process = Process.objects.filter(id=current_process_run.process_id).exclude(state="9").exclude(
+                process = Process.objects.filter(id=current_process_run.pro_ins.process_id).exclude(state="9").exclude(
                     Q(type=None) | Q(type=""))
 
                 allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
@@ -793,8 +793,6 @@ def walkthrough_run_invited(request):
                 result["res"] = "启动成功。"
             else:
                 result["res"] = '演练启动异常，该演练未选择任何演练系统。'
-    else:
-        result["res"] = '演练启动异常，请联系客服。'
 
     return HttpResponse(json.dumps(result))
 
@@ -1881,87 +1879,7 @@ def falconstorswitch(request, pro_ins_id):
     # 2.所有客户端ID与名称
     # 3.Oracle恢复需要的参数
     # pri, std, data_path, copy_priority, db_open, log_restore
-    cv_params = {
-        "pri_id": "",
-        "pri_name": "",
-        "std_id": "",
-        # Oracle
-        "data_path": "",
-        "copy_priority": "",
-        "db_open": "",
-        "log_restore": "",
-        # File System
-        "destPath": "",
-        "overWrite": "",
-        "inPlace": "",
-        "OSRestore": "",
-        "sourcePaths": "",
-        # SQL Server
-        "mssqlOverWrite": "",
-    }
-    agent_type = ""
-    std_id = ""
-    cv_params = {
-        "pri_id": "",
-        "pri_name": "",
-        "std_id": "",
-        # Oracle
-        "data_path": "",
-        "copy_priority": "",
-        "db_open": "",
-        "log_restore": "",
-        # File System
-        "destPath": "",
-        "overWrite": "",
-        "inPlace": "",
-        "OSRestore": "",
-        "sourcePaths": "",
-        # SQL Server
-        "mssqlOverWrite": "",
-    }
-    try:
-        pro_ins_id = int(pro_ins_id)
-        pro_ins = ProcessInstance.objects.get(id=pro_ins_id)
-        config_root = etree.XML(pro_ins.config)
-        # HOST -> CVCLIENT -> CV_PARAMS
-        hosts = config_root.xpath('//host')
-        for host in hosts:
-            host_id = host.attrib.get('host_id', '')
-            try:
-                host_id = int(host_id)
-            except:
-                pass
-            cv_clients = CvClient.objects.exclude(state='9').filter(hostsmanage_id=host_id)
-            if cv_clients.exists():
-                is_commvault = 1
-                pri = cv_clients[0]
-                agent_type = pri.agentType
-                std_id = pri.destination.id if pri.destination else ""
-                cv_params["pri_id"] = pri.id
-                cv_params["pri_name"] = pri.client_name
-                cv_params["std_id"] = std_id
-
-                info = etree.XML(pri.info)
-                params = info.xpath("//param")
-
-                if params:
-                    param = params[0]
-                    # Oracle
-                    cv_params["data_path"] = param.attrib.get("data_path", "")
-                    cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
-                    cv_params["db_open"] = param.attrib.get("db_open", "")
-                    cv_params["log_restore"] = param.attrib.get("log_restore", "")
-                    # File System
-                    cv_params["destPath"] = param.attrib.get("destPath", "")
-                    cv_params["overWrite"] = param.attrib.get("overWrite", "")
-                    cv_params["inPlace"] = param.attrib.get("inPlace", "")
-                    cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
-                    cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
-
-                    # SQL Server
-                    cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
-    except:
-        pass
+    agent_type, std_id, cv_params = get_params_from_pro_ins(pro_ins_id)
 
     cv_clients = CvClient.objects.exclude(state="9").exclude(type=1).values("id", "client_name", "utils__name")
 
@@ -2331,7 +2249,7 @@ def falconstor_run_invited(request):
 
 @login_required
 def walkthrough(request, funid):
-    pro_inses = ProcessInstance.objects.exclude(state='9').values(
+    pro_inses = ProcessInstance.objects.exclude(state='9').filter(pnode=None).values(
         'id', 'name'
     )
 
@@ -2398,177 +2316,185 @@ def walkthroughsave(request):
         id = int(id)
     except:
         raise Http404()
-    # 准备流程PLAN
-    if name:
-        if processes:
-            if start_time:
-                if end_time:
-                    if id == 0:
-                        walkthrough = Walkthrough.objects.filter(state__in=["PLAN", "RUN", "ERROR"])
-                        if (len(walkthrough) > 0):
-                            result["res"] = '演练计划创建失败，已经存在演练计划，务必先完成该计划。'
-                        else:
-                            walkthrough = Walkthrough()
-                            walkthrough.name = name
-                            walkthrough.createtime = datetime.datetime.now()
-                            walkthrough.creatuser = request.user.username
-                            walkthrough.state = "PLAN"
-                            walkthrough.purpose = purpose
-                            walkthrough.starttime = start_time
-                            walkthrough.endtime = end_time
-                            walkthrough.save()
 
-                            for pro_ins_id in processes:
-                                pro_ins = None
-                                try:
-                                    pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
-                                except:
-                                    pass
-                                myprocessrun = ProcessRun()
-                                myprocessrun.walkthrough = walkthrough
-                                myprocessrun.pro_ins = pro_ins
-                                myprocessrun.state = "PLAN"
-                                myprocessrun.starttime = start_time
-                                myprocessrun.save()
-                                current_process_run_id = myprocessrun.id
-
-                                mystep = pro_ins.process.step_set.exclude(state="9").order_by("sort")
-                                for step in mystep:
-                                    mysteprun = StepRun()
-                                    mysteprun.step = step
-                                    mysteprun.processrun = myprocessrun
-                                    mysteprun.state = "EDIT"
-                                    mysteprun.save()
-
-                                    myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
-                                    for script in myscript:
-                                        myscriptrun = ScriptRun()
-                                        myscriptrun.script = script
-                                        myscriptrun.steprun = mysteprun
-                                        myscriptrun.state = "EDIT"
-                                        myscriptrun.save()
-
-                                    myverifyitems = step.verifyitems_set.exclude(state="9")
-                                    for verifyitems in myverifyitems:
-                                        myverifyitemsrun = VerifyItemsRun()
-                                        myverifyitemsrun.verify_items = verifyitems
-                                        myverifyitemsrun.steprun = mysteprun
-                                        myverifyitemsrun.save()
-
-                                # 生成邀请任务信息
-                                myprocesstask = ProcessTask()
-                                myprocesstask.processrun_id = current_process_run_id
-                                myprocesstask.starttime = datetime.datetime.now()
-                                myprocesstask.senduser = request.user.username
-                                myprocesstask.type = "INFO"
-                                myprocesstask.logtype = "PLAN"
-                                myprocesstask.state = "1"
-                                myprocesstask.content = "创建流程计划。"
-                                myprocesstask.save()
-
-                            mywalkthroughtask = ProcessTask()
-                            mywalkthroughtask.walkthrough = walkthrough
-                            mywalkthroughtask.starttime = datetime.datetime.now()
-                            mywalkthroughtask.senduser = request.user.username
-                            mywalkthroughtask.type = "INFO"
-                            mywalkthroughtask.logtype = "PLAN"
-                            mywalkthroughtask.state = "1"
-                            mywalkthroughtask.content = "创建演练计划。"
-                            mywalkthroughtask.save()
-
-                            result["data"] = walkthrough.id
-                            result["res"] = "演练计划保存成功，待开启流程。"
-                    else:
-                        walkthrough = Walkthrough.objects.get(id=id)
-                        walkthrough.name = name
-                        walkthrough.createtime = datetime.datetime.now()
-                        walkthrough.creatuser = request.user.username
-                        walkthrough.state = "PLAN"
-                        walkthrough.purpose = purpose
-                        walkthrough.starttime = start_time
-                        walkthrough.endtime = end_time
-                        walkthrough.save()
-
-                        processruns = ProcessRun.objects.filter(walkthrough=walkthrough).exclude(
-                            state__in=["9", "REJECT"])
-                        for processrun in processruns:
-                            id = str(processrun.id)
-                            if id not in processes:
-                                processrun.state = '9'
-                                processrun.save()
-
-                        for pro_ins_id in processes:
-                            pro_ins = None
-                            try:
-                                pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
-                            except:
-                                pass
-                            curprocessrun = ProcessRun.objects.filter(
-                                walkthrough=walkthrough, pro_ins=pro_ins
-                            ).exclude(state__in=["9", "REJECT"])
-                            if len(curprocessrun) == 0:
-                                myprocessrun = ProcessRun()
-                                myprocessrun.walkthrough = walkthrough
-                                myprocessrun.process = pro_ins
-                                myprocessrun.state = "PLAN"
-                                myprocessrun.starttime = start_time
-                                myprocessrun.save()
-                                current_process_run_id = myprocessrun.id
-
-                                mystep = pro_ins.step_set.exclude(state="9").order_by("sort")
-                                for step in mystep:
-                                    mysteprun = StepRun()
-                                    mysteprun.step = step
-                                    mysteprun.processrun = myprocessrun
-                                    mysteprun.state = "EDIT"
-                                    mysteprun.save()
-
-                                    myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
-                                    for script in myscript:
-                                        myscriptrun = ScriptRun()
-                                        myscriptrun.script = script
-                                        myscriptrun.steprun = mysteprun
-                                        myscriptrun.state = "EDIT"
-                                        myscriptrun.save()
-
-                                    myverifyitems = step.verifyitems_set.exclude(state="9")
-                                    for verifyitems in myverifyitems:
-                                        myverifyitemsrun = VerifyItemsRun()
-                                        myverifyitemsrun.verify_items = verifyitems
-                                        myverifyitemsrun.steprun = mysteprun
-                                        myverifyitemsrun.save()
-
-                                # 生成邀请任务信息
-                                myprocesstask = ProcessTask()
-                                myprocesstask.processrun_id = current_process_run_id
-                                myprocesstask.starttime = datetime.datetime.now()
-                                myprocesstask.senduser = request.user.username
-                                myprocesstask.type = "INFO"
-                                myprocesstask.logtype = "PLAN"
-                                myprocesstask.state = "1"
-                                myprocesstask.content = "创建流程计划。"
-                                myprocesstask.save()
-
-                        mywalkthroughtask = ProcessTask()
-                        mywalkthroughtask.walkthrough = walkthrough
-                        mywalkthroughtask.starttime = datetime.datetime.now()
-                        mywalkthroughtask.senduser = request.user.username
-                        mywalkthroughtask.type = "INFO"
-                        mywalkthroughtask.logtype = "PLAN"
-                        mywalkthroughtask.state = "1"
-                        mywalkthroughtask.content = "创建演练计划。"
-                        mywalkthroughtask.save()
-
-                        result["data"] = walkthrough.id
-                        result["res"] = "演练计划保存成功，待开启流程。"
-                else:
-                    result["res"] = "演练结束时间必须填写！"
-            else:
-                result["res"] = "演练开始时间必须填写！"
-        else:
-            result["res"] = "必须选择演练系统填写！"
-    else:
+    if not name:
         result["res"] = "演练清楚必须填写！"
+    elif not processes:
+        result["res"] = "必须选择演练系统填写！"
+    elif not start_time:
+        result["res"] = "演练开始时间必须填写！"
+    elif not end_time:
+        result["res"] = "演练结束时间必须填写！"
+    else:
+        if id == 0:
+            walkthrough = Walkthrough.objects.filter(state__in=["PLAN", "RUN", "ERROR"])
+            if (len(walkthrough) > 0):
+                result["res"] = '演练计划创建失败，已经存在演练计划，务必先完成该计划。'
+            else:
+                walkthrough = Walkthrough()
+                walkthrough.name = name
+                walkthrough.createtime = datetime.datetime.now()
+                walkthrough.creatuser = request.user.username
+                walkthrough.state = "PLAN"
+                walkthrough.purpose = purpose
+                walkthrough.starttime = start_time
+                walkthrough.endtime = end_time
+                walkthrough.save()
+
+                for pro_ins_id in processes:
+                    pro_ins = None
+                    try:
+                        pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
+                    except:
+                        pass
+                    myprocessrun = ProcessRun()
+                    myprocessrun.walkthrough = walkthrough
+                    myprocessrun.pro_ins = pro_ins
+                    myprocessrun.state = "PLAN"
+                    myprocessrun.starttime = start_time
+
+                    _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
+                    config = custom_cv_params(**cv_params)
+
+                    myprocessrun.info = config
+                    myprocessrun.save()
+                    current_process_run_id = myprocessrun.id
+
+                    mystep = pro_ins.process.step_set.exclude(state="9").order_by("sort")
+                    for step in mystep:
+                        mysteprun = StepRun()
+                        mysteprun.step = step
+                        mysteprun.processrun = myprocessrun
+                        mysteprun.state = "EDIT"
+                        mysteprun.save()
+
+                        myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
+                        for script in myscript:
+                            myscriptrun = ScriptRun()
+                            myscriptrun.script = script
+                            myscriptrun.steprun = mysteprun
+                            myscriptrun.state = "EDIT"
+                            myscriptrun.save()
+
+                        myverifyitems = step.verifyitems_set.exclude(state="9")
+                        for verifyitems in myverifyitems:
+                            myverifyitemsrun = VerifyItemsRun()
+                            myverifyitemsrun.verify_items = verifyitems
+                            myverifyitemsrun.steprun = mysteprun
+                            myverifyitemsrun.save()
+
+                    # 生成邀请任务信息
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun_id = current_process_run_id
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.senduser = request.user.username
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "PLAN"
+                    myprocesstask.state = "1"
+                    myprocesstask.content = "创建流程计划。"
+                    myprocesstask.save()
+
+                mywalkthroughtask = ProcessTask()
+                mywalkthroughtask.walkthrough = walkthrough
+                mywalkthroughtask.starttime = datetime.datetime.now()
+                mywalkthroughtask.senduser = request.user.username
+                mywalkthroughtask.type = "INFO"
+                mywalkthroughtask.logtype = "PLAN"
+                mywalkthroughtask.state = "1"
+                mywalkthroughtask.content = "创建演练计划。"
+                mywalkthroughtask.save()
+
+                result["data"] = walkthrough.id
+                result["res"] = "演练计划保存成功，待开启流程。"
+        else:
+            walkthrough = Walkthrough.objects.get(id=id)
+            walkthrough.name = name
+            walkthrough.createtime = datetime.datetime.now()
+            walkthrough.creatuser = request.user.username
+            walkthrough.state = "PLAN"
+            walkthrough.purpose = purpose
+            walkthrough.starttime = start_time
+            walkthrough.endtime = end_time
+            walkthrough.save()
+
+            processruns = ProcessRun.objects.filter(walkthrough=walkthrough).exclude(
+                state__in=["9", "REJECT"])
+            for processrun in processruns:
+                id = str(processrun.id)
+                if id not in processes:
+                    processrun.state = '9'
+                    processrun.save()
+
+            for pro_ins_id in processes:
+                pro_ins = None
+                try:
+                    pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
+                except:
+                    pass
+                curprocessrun = ProcessRun.objects.filter(
+                    walkthrough=walkthrough, pro_ins=pro_ins
+                ).exclude(state__in=["9", "REJECT"])
+                if len(curprocessrun) == 0:
+                    myprocessrun = ProcessRun()
+                    myprocessrun.walkthrough = walkthrough
+                    myprocessrun.pro_ins = pro_ins
+                    myprocessrun.state = "PLAN"
+                    myprocessrun.starttime = start_time
+
+                    _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
+                    config = custom_cv_params(**cv_params)
+
+                    myprocessrun.info = config
+
+                    myprocessrun.save()
+                    current_process_run_id = myprocessrun.id
+
+                    mystep = pro_ins.process.step_set.exclude(state="9").order_by("sort")
+                    for step in mystep:
+                        mysteprun = StepRun()
+                        mysteprun.step = step
+                        mysteprun.processrun = myprocessrun
+                        mysteprun.state = "EDIT"
+                        mysteprun.save()
+
+                        myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
+                        for script in myscript:
+                            myscriptrun = ScriptRun()
+                            myscriptrun.script = script
+                            myscriptrun.steprun = mysteprun
+                            myscriptrun.state = "EDIT"
+                            myscriptrun.save()
+
+                        myverifyitems = step.verifyitems_set.exclude(state="9")
+                        for verifyitems in myverifyitems:
+                            myverifyitemsrun = VerifyItemsRun()
+                            myverifyitemsrun.verify_items = verifyitems
+                            myverifyitemsrun.steprun = mysteprun
+                            myverifyitemsrun.save()
+
+                    # 生成邀请任务信息
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun_id = current_process_run_id
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.senduser = request.user.username
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "PLAN"
+                    myprocesstask.state = "1"
+                    myprocesstask.content = "创建流程计划。"
+                    myprocesstask.save()
+
+            mywalkthroughtask = ProcessTask()
+            mywalkthroughtask.walkthrough = walkthrough
+            mywalkthroughtask.starttime = datetime.datetime.now()
+            mywalkthroughtask.senduser = request.user.username
+            mywalkthroughtask.type = "INFO"
+            mywalkthroughtask.logtype = "PLAN"
+            mywalkthroughtask.state = "1"
+            mywalkthroughtask.content = "创建演练计划。"
+            mywalkthroughtask.save()
+
+            result["data"] = walkthrough.id
+            result["res"] = "演练计划保存成功，待开启流程。"
 
     return JsonResponse(result)
 

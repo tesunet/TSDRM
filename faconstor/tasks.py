@@ -415,7 +415,7 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                         try:
                             with open(local_file, "w") as f:
                                 # 处理脚本内容
-                                script_text = content_load_params(script_instance, pro_ins)  # 待修改
+                                script_text = content_load_params(script_instance, pro_ins)
                                 f.write(script_text)
                         except FileNotFoundError as e:
                             scriptrun.runlog = "Linux脚本写入本地失败。"  # 写入错误类型

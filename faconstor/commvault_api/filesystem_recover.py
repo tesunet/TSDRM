@@ -4098,11 +4098,11 @@ def run(pri, std, instance, processrun_id):
         sourcePaths="['\\F:\\$RECYCLE.BIN\\', '\\F:\\app\\']" 
         inPlace="False" OSRestore="False" destPath=""/></root>
         """
-        logger.info('传入参数： {overWrite} {restoreTime} {destPath} {sourcePaths} {OSRestore} {inPlace}'.format(**{
-            "overWrite": overWrite, "restoreTime": processrun.recover_time,
-            "destPath": destPath, "sourcePaths": sourceItemlist, "OSRestore": OSRestore,
-            "inPlace": inPlace
-        }))
+        # logger.info('传入参数： {overWrite} {restoreTime} {destPath} {sourcePaths} {OSRestore} {inPlace}'.format(**{
+        #     "overWrite": overWrite, "restoreTime": processrun.recover_time,
+        #     "destPath": destPath, "sourcePaths": sourceItemlist, "OSRestore": OSRestore,
+        #     "inPlace": inPlace
+        # }))
 
         jobId = cvAPI.restoreFSBackupset(pri_name, std_name, instance, {
             "overWrite": overWrite, "restoreTime": processrun.recover_time,

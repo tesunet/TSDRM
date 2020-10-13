@@ -1,10 +1,9 @@
 import re
 from ast import literal_eval
 from lxml import etree
-from .models import (
-    HostsManage
-)
 import base64
+
+from .models import *
 
 
 def get_params(config, add_type=None):
@@ -92,7 +91,7 @@ def content_load_params(script_instance, process_instance):
     :return: 整合参数后脚本内容
     """
     # 1.接口参数：[{"param_name":"SCRIPT","variable_name":"S1","param_value":"SV1","type":"SCRIPT"}]
-    params = literal_eval(script_instance.script.params)
+    params = literal_eval(script_instance.params)
 
     # ScriptInstance.associated_host->ProcessInstance.config->host_id
     associated_host = match_host(script_instance, process_instance)
@@ -305,3 +304,78 @@ def file_iterator(file_name, chunk_size=512):
                 yield c
             else:
                 break
+
+
+def get_params_from_pro_ins(pro_ins_id):
+    """
+    从流程实例获取Commvault恢复所需参数
+    @param pro_ins_id:
+    :return: agent_type, std_id, cv_params
+    """
+    # 1.流程配置中源端ID与名称,以及默认源端关联的终端ID
+    # 2.所有客户端ID与名称
+    # 3.Oracle恢复需要的参数
+    # pri, std, data_path, copy_priority, db_open, log_restore
+    cv_params = {
+        "pri_id": "",
+        "pri_name": "",
+        "std_id": "",
+        # Oracle
+        "data_path": "",
+        "copy_priority": "",
+        "db_open": "",
+        "log_restore": "",
+        # File System
+        "destPath": "",
+        "overWrite": "",
+        "inPlace": "",
+        "OSRestore": "",
+        "sourcePaths": "",
+        # SQL Server
+        "mssqlOverWrite": "",
+    }
+    agent_type = ""
+    std_id = ""
+    try:
+        pro_ins_id = int(pro_ins_id)
+        pro_ins = ProcessInstance.objects.get(id=pro_ins_id)
+        config_root = etree.XML(pro_ins.config)
+        # HOST -> CVCLIENT -> CV_PARAMS
+        hosts = config_root.xpath('//host')
+        for host in hosts:
+            host_id = host.attrib.get('host_id', '')
+            try:
+                host_id = int(host_id)
+            except:
+                pass
+            cv_clients = CvClient.objects.exclude(state='9').filter(hostsmanage_id=host_id)
+            if cv_clients.exists():
+                pri = cv_clients[0]
+                agent_type = pri.agentType
+                std_id = pri.destination.id if pri.destination else ""
+                cv_params["pri_id"] = pri.id
+                cv_params["pri_name"] = pri.client_name
+                cv_params["std_id"] = std_id
+
+                info = etree.XML(pri.info)
+                params = info.xpath("//param")
+
+                if params:
+                    param = params[0]
+                    # Oracle
+                    cv_params["data_path"] = param.attrib.get("data_path", "")
+                    cv_params["copy_priority"] = param.attrib.get("copy_priority", "")
+                    cv_params["db_open"] = param.attrib.get("db_open", "")
+                    cv_params["log_restore"] = param.attrib.get("log_restore", "")
+                    # File System
+                    cv_params["destPath"] = param.attrib.get("destPath", "")
+                    cv_params["overWrite"] = param.attrib.get("overWrite", "")
+                    cv_params["inPlace"] = param.attrib.get("inPlace", "")
+                    cv_params["OSRestore"] = param.attrib.get("OSRestore", "")
+                    cv_params["sourcePaths"] = literal_eval(param.attrib.get("sourcePaths", "[]"))
+
+                    # SQL Server
+                    cv_params["mssqlOverWrite"] = param.attrib.get("mssqlOverWrite", "")
+    except:
+        pass
+    return agent_type, std_id, cv_params
