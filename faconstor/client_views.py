@@ -10,7 +10,7 @@ from .tasks import *
 from .views import getpagefuns
 from faconstor.api import SQLApi
 from .public import (
-    get_params, get_credit_info
+    get_params, get_credit_info, is_ipv4
 )
 import json
 
@@ -517,95 +517,95 @@ def client_client_save(request):
         ret = 0
         info = "网络错误。"
     else:
-        if host_ip.strip():
-            if host_name.strip():
-                if host_os.strip():
-                    if username.strip():
-                        if password.strip():
-                            # 主机参数
-                            root = etree.Element("root")
-
-                            if config:
-                                config = json.loads(config)
-                                # 动态参数
-                                for c_config in config:
-                                    param_node = etree.SubElement(root, "param")
-                                    param_node.attrib["param_name"] = c_config["param_name"].strip()
-                                    param_node.attrib["variable_name"] = c_config["variable_name"].strip()
-                                    param_node.attrib["param_value"] = c_config["param_value"].strip()
-                            config = etree.tounicode(root)
-
-                            # 新增
-                            if id == 0:
-                                # 判断主机是否已经存在
-                                check_host_manage = HostsManage.objects.exclude(state="9").filter(host_name=host_name)
-                                if check_host_manage.exists():
-                                    ret = 0
-                                    info = "主机已经存在，请勿重复添加。"
-                                else:
-                                    try:
-                                        cur_host_manage = HostsManage()
-                                        cur_host_manage.pnode_id = pid
-                                        cur_host_manage.nodetype = "CLIENT"
-                                        cur_host_manage.host_ip = host_ip
-                                        cur_host_manage.host_name = host_name
-                                        cur_host_manage.os = host_os
-                                        cur_host_manage.username = username
-                                        cur_host_manage.password = password
-                                        cur_host_manage.config = config
-                                        cur_host_manage.remark = remark
-                                        # 排序
-                                        sort = 1
-                                        try:
-                                            max_sort = \
-                                                HostsManage.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
-                                                    max_sort=Max('sort', distinct=True))["max_sort"]
-                                            sort = max_sort + 1
-                                        except:
-                                            pass
-                                        cur_host_manage.sort = sort
-
-                                        cur_host_manage.save()
-                                        id = cur_host_manage.id
-                                    except:
-                                        ret = 0
-                                        info = "服务器异常。"
-                                    else:
-                                        ret = 1
-                                        info = "主机信息新增成功。"
-                            else:
-                                # 修改
-                                try:
-                                    cur_host_manage = HostsManage.objects.get(id=id)
-                                    cur_host_manage.host_ip = host_ip
-                                    cur_host_manage.host_name = host_name
-                                    cur_host_manage.os = host_os
-                                    cur_host_manage.username = username
-                                    cur_host_manage.password = password
-                                    cur_host_manage.config = config
-                                    cur_host_manage.remark = remark
-                                    cur_host_manage.save()
-
-                                    ret = 1
-                                    info = "主机信息修改成功。"
-                                except:
-                                    ret = 0
-                                    info = "服务器异常。"
-                        else:
-                            ret = 0
-                            info = "密码未填写。"
-                    else:
-                        ret = 0
-                        info = "用户名未填写。"
-                else:
-                    ret = 0
-                    info = "系统未选择。"
-            else:
-                ret = 0
-                info = "主机名称不能为空。"
-        else:
+        if not host_ip:
             ret = 0
-            info = "主机IP未填写。"
+            info = "主机IP不能为空!"
+        elif not is_ipv4(host_ip):
+            ret = 0
+            info = "主机IP不符合IPV4格式!"
+        elif not host_name:
+            ret = 0
+            info = "主机名称不能为空。"
+        elif not host_os:
+            ret = 0
+            info = "系统未选择。"
+        elif not username:
+            ret = 0
+            info = "用户名未填写。"
+        elif not password:
+            ret = 0
+            info = "密码未填写。"
+        else:
+            # 主机参数
+            root = etree.Element("root")
+
+            if config:
+                config = json.loads(config)
+                # 动态参数
+                for c_config in config:
+                    param_node = etree.SubElement(root, "param")
+                    param_node.attrib["param_name"] = c_config["param_name"].strip()
+                    param_node.attrib["variable_name"] = c_config["variable_name"].strip()
+                    param_node.attrib["param_value"] = c_config["param_value"].strip()
+            config = etree.tounicode(root)
+
+            # 新增
+            if id == 0:
+                # 判断主机是否已经存在
+                check_host_manage = HostsManage.objects.exclude(state="9").filter(host_name=host_name)
+                if check_host_manage.exists():
+                    ret = 0
+                    info = "主机已经存在，请勿重复添加。"
+                else:
+                    try:
+                        cur_host_manage = HostsManage()
+                        cur_host_manage.pnode_id = pid
+                        cur_host_manage.nodetype = "CLIENT"
+                        cur_host_manage.host_ip = host_ip
+                        cur_host_manage.host_name = host_name
+                        cur_host_manage.os = host_os
+                        cur_host_manage.username = username
+                        cur_host_manage.password = password
+                        cur_host_manage.config = config
+                        cur_host_manage.remark = remark
+                        # 排序
+                        sort = 1
+                        try:
+                            max_sort = \
+                                HostsManage.objects.exclude(state="9").filter(pnode_id=pid).aggregate(
+                                    max_sort=Max('sort', distinct=True))["max_sort"]
+                            sort = max_sort + 1
+                        except:
+                            pass
+                        cur_host_manage.sort = sort
+
+                        cur_host_manage.save()
+                        id = cur_host_manage.id
+                    except:
+                        ret = 0
+                        info = "服务器异常。"
+                    else:
+                        ret = 1
+                        info = "主机信息新增成功。"
+            else:
+                # 修改
+                try:
+                    cur_host_manage = HostsManage.objects.get(id=id)
+                    cur_host_manage.host_ip = host_ip
+                    cur_host_manage.host_name = host_name
+                    cur_host_manage.os = host_os
+                    cur_host_manage.username = username
+                    cur_host_manage.password = password
+                    cur_host_manage.config = config
+                    cur_host_manage.remark = remark
+                    cur_host_manage.save()
+
+                    ret = 1
+                    info = "主机信息修改成功。"
+                except:
+                    ret = 0
+                    info = "服务器异常。"
+                        
     return JsonResponse({
         "ret": ret,
         "info": info,

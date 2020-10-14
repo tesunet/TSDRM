@@ -104,8 +104,8 @@ class ServerByPara(object):
             print("连接服务器失败")
             return {
                 "exec_tag": 1,
-                "data": "连接服务器失败 {0}".format(e),
-                "log": "连接服务器失败",
+                "data": "连接服务器({0})失败 {1}".format(self.host, e),
+                "log": "连接服务器({0})失败 {1}".format(self.host, e),
             }
         try:
             stdin, stdout, stderr = self.client.exec_command(self.cmd, get_pty=True, timeout=15 * 60)
@@ -238,8 +238,7 @@ if __name__ == '__main__':
     # print(cmd)  # sed -i 's/\r$//' /tmp/drm/954/tmp_script_6486.sh&&/tmp/drm/954/tmp_script_6486.sh
     # server_obj = ServerByPara(r"echo 中文>C:\Users\Administrator\Desktop\test.bat",
     #                           "192.168.100.154", "administrator", "tesunet@2017", "Windows")
-    server_obj = ServerByPara(r"ls",
-                              "192.168.225.146", "root", "123456", "Linux")
+    server_obj = ServerByPara(r"ls", "192.168.1.152", "root", "Tesunet@2020", "Linux")
     # server_obj = ServerByPara(r"echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好';echo '你好你好你好你好你好你好你好'", "192.168.184.66", "root","password", "Linux")
 
     server_obj.run("")

@@ -3250,14 +3250,15 @@ def get_current_scriptinfo(request):
         # 源客户端名称/目标客户端名称/主机IP(*)
         #   @param: 接口实例、流程实例
         #   @return: 主机对象 -> 源客户端 -> 目标客户端
+        pri_name, std_name, c_host_ip = '', '', ''
         c_host = match_host(script_instance, pro_ins)
-        c_host_ip = c_host.host_ip
-        pris = c_host.cvclient_set.exclude(state='9')
-        pri_name, std_name = '', ''
-        if pris.exists():
-            pri_name = pris[0].client_name
-            std = pris[0].destination
-            std_name = std.client_name if std else ''
+        if c_host:
+            c_host_ip = c_host.host_ip
+            pris = c_host.cvclient_set.exclude(state='9')
+            if pris.exists():
+                pri_name = pris[0].client_name
+                std = pris[0].destination
+                std_name = std.client_name if std else ''
 
         # 状态
         state = ""

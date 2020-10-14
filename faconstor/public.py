@@ -379,3 +379,18 @@ def get_params_from_pro_ins(pro_ins_id):
     except:
         pass
     return agent_type, std_id, cv_params
+
+
+def is_ipv4(ip):
+    """
+    检查ip是否合法
+    @param ip{str}: ip地址
+    @return legal{bool}: True 合法 False 不合法
+    """
+    legal = True
+
+    try:
+        assert len([x for x in ip.split(".") if int(x) < 255]) == 4
+    except:
+        legal = False
+    return legal

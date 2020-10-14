@@ -8,6 +8,8 @@ import subprocess
 import logging
 import uuid
 from lxml import etree
+import socket
+
 from django.db.models import Q
 
 from faconstor.models import *
@@ -53,89 +55,6 @@ def get_disk_space_crond():
 
 
 @shared_task
-def exec_script(steprunid, username, fullname):
-    """
-    执行当前步骤在指定系统下的所有脚本
-    """
-    end_step_tag = True
-    steprun = StepRun.objects.filter(id=steprunid)
-    steprun = steprun[0]
-    scriptruns = steprun.scriptrun_set.exclude(Q(state__in=("9", "DONE", "IGNORE")) | Q(result=0))
-    for script_run in scriptruns:
-        script_instance = script_run.script_instance
-        script = script_instance.script
-        script_run.starttime = datetime.datetime.now()
-        script_run.result = ""
-        script_run.state = "RUN"
-        script_run.save()
-        # 执行脚本内容
-        # cmd = r"{0}".format(script.script.scriptpath + script.script.filename)
-        cmd = r"{0}".format(script.script_text)
-
-        # HostsManage
-        cur_host_manage = script_instance.hosts_manage
-        ip = cur_host_manage.host_ip
-        username = cur_host_manage.username
-        password = cur_host_manage.password
-        script_type = cur_host_manage.type
-
-        system_tag = ""
-        if script_type == "SSH":
-            system_tag = "Linux"
-        if script_type == "BAT":
-            system_tag = "Windows"
-        rm_obj = remote.ServerByPara(cmd, ip, username, password, system_tag)  # 服务器系统从视图中传入
-        result = rm_obj.run(script.succeedtext)
-
-        script_run.endtime = datetime.datetime.now()
-        script_run.result = result["exec_tag"]
-        script_run.explain = result['data']
-
-        # 处理脚本执行失败问题
-        if result["exec_tag"] == 1:
-            script_run.runlog = result['log']
-            script_run.explain = result['data']
-
-            end_step_tag = False
-            script_run.state = "ERROR"
-            steprun.state = "ERROR"
-            script_run.save()
-            steprun.save()
-            break
-        script_run.state = "DONE"
-        script_run.save()
-
-    if end_step_tag:
-        steprun.state = "DONE"
-        steprun.save()
-
-        task = steprun.processtask_set.filter(state="0")
-        if len(task) > 0:
-            task[0].endtime = datetime.datetime.now()
-            task[0].state = "1"
-            task[0].operator = username
-            task[0].save()
-
-            nextstep = steprun.step.next.exclude(state="9")
-            if len(nextstep) > 0:
-                nextsteprun = nextstep[0].steprun_set.exclude(state="9").filter(processrun=steprun.processrun)
-                if len(nextsteprun) > 0:
-                    mysteprun = nextsteprun[0]
-                    myprocesstask = ProcessTask()
-                    myprocesstask.processrun = steprun.processrun
-                    myprocesstask.steprun = mysteprun
-                    myprocesstask.starttime = datetime.datetime.now()
-                    myprocesstask.senduser = username
-                    myprocesstask.receiveuser = username
-                    myprocesstask.type = "RUN"
-                    myprocesstask.state = "0"
-                    myprocesstask.content = steprun.processrun.DataSet.clientName + "的" + steprun.processrun.process.name + "流程进行到“" + \
-                                            nextstep[
-                                                0].name + "”，请" + fullname + "处理。"
-                    myprocesstask.save()
-
-
-@shared_task
 def force_exec_script(processrunid):
     try:
         processrunid = int(processrunid)
@@ -161,12 +80,25 @@ def force_exec_script(processrunid):
                     script_run.state = "RUN"
                     script_run.save()
 
-                    # HostsManage
-                    cur_host_manage = script_instance.hosts_manage
-                    ip = cur_host_manage.host_ip
-                    username = cur_host_manage.username
-                    password = cur_host_manage.password
-                    system_tag = cur_host_manage.os
+                    script_instance = script_run.script
+                    # HostsManage CvClient
+                    associated_host = match_host(script_instance, pro_ins)
+
+                    ip, username, password, system_tag = '', '', '', ''
+                    if not associated_host:  # 主机不存在
+                        script_run.runlog = '该脚本没有对应的主机!'
+                        script_run.explain = '该脚本没有对应的主机!'
+                        print("当前脚本执行失败,结束任务!")
+                        script_run.state = "ERROR"
+                        script_run.save()
+                        steprun.state = "ERROR"
+                        steprun.save()
+                        return
+                    else:
+                        ip = associated_host.host_ip
+                        username = associated_host.username
+                        password = associated_host.password
+                        system_tag = associated_host.os
 
                     if system_tag == "Linux":
                         ###########################
@@ -384,7 +316,7 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                         ip = associated_host.host_ip
                         username = associated_host.username
                         password = associated_host.password
-
+                    logger.info('{0} {1} {2}'.format(ip, username, password))
                     system_tag = script.interface_type
 
                     if system_tag == "Linux":
@@ -440,7 +372,7 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                             ssh = paramiko.Transport((ip, 22))
                             ssh.connect(username=username, password=password)
                             sftp = paramiko.SFTPClient.from_transport(ssh)
-                        except paramiko.ssh_exception.SSHException as e:
+                        except (paramiko.ssh_exception.SSHException, socket.gaierror) as e:
                             scriptrun.runlog = "连接服务器失败。"  # 写入错误类型
                             scriptrun.explain = "连接服务器失败：{0}。".format(e)  # 写入错误类型
                             scriptrun.state = "ERROR"

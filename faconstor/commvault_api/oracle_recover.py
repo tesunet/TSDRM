@@ -2825,7 +2825,6 @@ class CV_Backupset(CV_Client):
         db_open = operator["db_open"]
         restoreTime = operator["restoreTime"]
         log_restore = operator["log_restore"]
-
         if str(log_restore) == '1':
             log_restore = 'true'
         else:
