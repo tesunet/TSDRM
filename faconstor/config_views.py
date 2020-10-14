@@ -1,5 +1,5 @@
 # 流程配置：场景配置、流程配置、流程计划、工具管理、接口管理
-from django.db import reset_queries
+from django.db import transaction
 from django.shortcuts import render
 from django.http import HttpResponseRedirect, Http404, HttpResponse, JsonResponse
 from ast import literal_eval
@@ -1906,41 +1906,56 @@ def process_schedule_save(request):
 
                 # 新增
                 if process_schedule_id == 0:
-                    cur_crontab_schedule = CrontabSchedule()
-                    cur_crontab_schedule.hour = hour
-                    cur_crontab_schedule.minute = minute
-                    cur_crontab_schedule.day_of_week = per_week if per_week else "*"
-                    cur_crontab_schedule.day_of_month = per_month if per_month else "*"
+                    try:
+                        with transaction.atomic():
+                            cur_crontab_schedule = CrontabSchedule()
+                            cur_crontab_schedule.hour = hour
+                            cur_crontab_schedule.minute = minute
+                            cur_crontab_schedule.day_of_week = per_week if per_week else "*"
+                            cur_crontab_schedule.day_of_month = per_month if per_month else "*"
 
-                    cur_crontab_schedule.save()
-                    cur_crontab_schedule_id = cur_crontab_schedule.id
+                            cur_crontab_schedule.save()
+                            cur_crontab_schedule_id = cur_crontab_schedule.id
 
-                    # 启动定时任务
-                    cur_periodictask = PeriodicTask()
-                    cur_periodictask.crontab_id = cur_crontab_schedule_id
-                    cur_periodictask.name = uuid.uuid1()
-                    # 默认关闭
-                    cur_periodictask.enabled = 0
-                    # 任务名称
-                    cur_periodictask.task = "faconstor.tasks.create_process_run"
-                    cur_periodictask.kwargs = json.dumps({
-                        'cur_process': cur_process.id,
-                        'creatuser': request.user.username,
-                        'cv_params': cv_params,
-                        "agent_type": agent_type,
-                    })
-                    cur_periodictask.save()
-                    cur_periodictask_id = cur_periodictask.id
+                            # 启动定时任务
+                            cur_periodictask = PeriodicTask()
+                            cur_periodictask.crontab_id = cur_crontab_schedule_id
+                            cur_periodictask.name = uuid.uuid1()
+                            # 默认关闭
+                            cur_periodictask.enabled = 0
+                            # 任务名称
+                            cur_periodictask.task = "faconstor.tasks.create_process_run"
+                            # cur_periodictask.kwargs = json.dumps({
+                            #     'cur_process': cur_process.id,
+                            #     'creatuser': request.user.username,
+                            #     'cv_params': cv_params,
+                            #     "agent_type": agent_type,
+                            # })
+                            cur_periodictask.save()
+                            cur_periodictask_id = cur_periodictask.id
 
-                    ps = ProcessSchedule()
-                    ps.dj_periodictask_id = cur_periodictask_id
-                    ps.pro_ins = cur_process
-                    ps.name = process_schedule_name
-                    ps.remark = process_schedule_remark
-                    ps.schedule_type = schedule_type
-                    ps.save()
-                    ret = 1
-                    info = "保存成功。"
+                            ps = ProcessSchedule()
+                            ps.dj_periodictask_id = cur_periodictask_id
+                            ps.pro_ins = cur_process
+                            ps.name = process_schedule_name
+                            ps.remark = process_schedule_remark
+                            ps.schedule_type = schedule_type
+                            ps.save()
+
+                            cur_periodictask.kwargs = json.dumps({
+                                'cur_process': cur_process.id,
+                                'creatuser': request.user.username,
+                                'cv_params': cv_params,
+                                "agent_type": agent_type,
+                                'schedule_id': ps.id,
+                            })
+                            cur_periodictask.save()
+                    except:
+                        ret = 0
+                        info = '保存失败。'
+                    else:
+                        ret = 1
+                        info = "保存成功。"
                 else:
                     # 修改
                     try:
@@ -1958,32 +1973,46 @@ def process_schedule_save(request):
                             ret = 0
                             info = "定时任务不存在。"
                         else:
-                            cur_crontab_schedule = cur_periodictask.crontab
-                            cur_crontab_schedule.hour = hour
-                            cur_crontab_schedule.minute = minute
-                            cur_crontab_schedule.day_of_week = per_week if per_week else "*"
-                            cur_crontab_schedule.day_of_month = per_month if per_month else "*"
-                            cur_crontab_schedule.save()
-                            # 刷新定时器状态
-                            cur_periodictask.task = "faconstor.tasks.create_process_run"
-                            cur_periodictask.kwargs = json.dumps({
-                                'cur_process': cur_process.id,
-                                'creatuser': request.user.username,
-                                'cv_params': cv_params,
-                                "agent_type": agent_type,
-                            })
-                            cur_periodictask_status = cur_periodictask.enabled
-                            cur_periodictask.enabled = cur_periodictask_status
-                            cur_periodictask.save()
+                            try:
+                                with transaction.atomic():
+                                    cur_crontab_schedule = cur_periodictask.crontab
+                                    cur_crontab_schedule.hour = hour
+                                    cur_crontab_schedule.minute = minute
+                                    cur_crontab_schedule.day_of_week = per_week if per_week else "*"
+                                    cur_crontab_schedule.day_of_month = per_month if per_month else "*"
+                                    cur_crontab_schedule.save()
+                                    # 刷新定时器状态
+                                    cur_periodictask.task = "faconstor.tasks.create_process_run"
+                                    # cur_periodictask.kwargs = json.dumps({
+                                    #     'cur_process': cur_process.id,
+                                    #     'creatuser': request.user.username,
+                                    #     'cv_params': cv_params,
+                                    #     "agent_type": agent_type,
+                                    # })
+                                    cur_periodictask_status = cur_periodictask.enabled
+                                    cur_periodictask.enabled = cur_periodictask_status
+                                    cur_periodictask.save()
 
-                            ps.pro_ins = cur_process
-                            ps.name = process_schedule_name
-                            ps.remark = process_schedule_remark
-                            ps.schedule_type = schedule_type
+                                    ps.pro_ins = cur_process
+                                    ps.name = process_schedule_name
+                                    ps.remark = process_schedule_remark
+                                    ps.schedule_type = schedule_type
+                                    ps.save()
 
-                            ps.save()
-                            ret = 1
-                            info = "保存成功。"
+                                    cur_periodictask.kwargs = json.dumps({
+                                        'cur_process': cur_process.id,
+                                        'creatuser': request.user.username,
+                                        'cv_params': cv_params,
+                                        "agent_type": agent_type,
+                                        'schedule_id': ps.id,
+                                    })
+                                    cur_periodictask.save()
+                            except:
+                                ret = 0
+                                info = '保存失败。'
+                            else:
+                                ret = 1
+                                info = "保存成功。"
         return JsonResponse({
             "ret": ret,
             "info": info

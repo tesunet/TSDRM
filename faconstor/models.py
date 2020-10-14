@@ -166,6 +166,7 @@ class Walkthrough(models.Model):
 
 class ProcessRun(models.Model):
     pro_ins = models.ForeignKey(ProcessInstance, null=True, verbose_name='流程实例')
+    schedule = models.ForeignKey('ProcessSchedule', null=True, verbose_name='计划流程')
     walkthrough = models.ForeignKey(Walkthrough, blank=True, null=True)
     starttime = models.DateTimeField("开始时间", blank=True, null=True)
     endtime = models.DateTimeField("结束时间", blank=True, null=True)

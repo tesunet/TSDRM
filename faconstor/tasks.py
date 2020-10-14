@@ -1030,16 +1030,17 @@ def create_process_run(*args, **kwargs):
     # exec_process.delay(processrunid)
     # data_path/target/origin/
     try:
-        process_id = int(kwargs["cur_process"])
+        pro_ins_id = int(kwargs["cur_process"])
     except ValueError as e:
         pass
     else:
         try:
-            cur_process = Process.objects.get(id=process_id)
+            pro_ins = ProcessInstance.objects.get(id=pro_ins_id)
         except Process.DoesNotExist as e:
             print(e)
         else:
-            running_process = ProcessRun.objects.filter(process=cur_process, state__in=["RUN"])
+            cur_process = pro_ins.process
+            running_process = pro_ins.processrun_set.filter(state__in=["RUN"])
             if running_process.exists():
                 myprocesstask = ProcessTask()
                 myprocesstask.starttime = datetime.datetime.now()
@@ -1051,11 +1052,19 @@ def create_process_run(*args, **kwargs):
                 myprocesstask.save()
             else:
                 myprocessrun = ProcessRun()
+
+                # 流程计划ID
+                schedule_id = None
+                try:
+                    schedule_id = int(kwargs.get('schedule_id', ''))
+                except:
+                    pass
+                myprocessrun.schedule_id = schedule_id
                 myprocessrun.creatuser = kwargs["creatuser"]
-                myprocessrun.process = cur_process
+                myprocessrun.pro_ins = pro_ins
                 myprocessrun.starttime = datetime.datetime.now()
                 myprocessrun.state = "RUN"
-                process_type = myprocessrun.process.type
+                process_type = myprocessrun.pro_ins.process.type
                 if process_type.upper() == "COMMVAULT":
                     # 传入的客户端参数
                     cv_params = kwargs.get("cv_params", {})
