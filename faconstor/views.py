@@ -1102,6 +1102,7 @@ def custom_c_color(task_type, task_state, task_logtype):
     :param task_logtype:
     :return: current_icon, current_color
     """
+    current_icon, current_color = '', ''
     if task_type == "ERROR":
         current_icon = "fa fa-exclamation-triangle"
         if task_state == "0":
@@ -5069,7 +5070,7 @@ def get_monitor_data(request):
     task_list = []
     all_process_tasks = ProcessTask.objects.filter(
         logtype__in=["ERROR", "STOP", "END", "START"]
-    ).order_by("-starttime").select_related("processrun", "processrun__pro_ins")
+    ).exclude(state='9').order_by("-starttime").select_related("processrun", "processrun__pro_ins")
     for num, process_task in enumerate(all_process_tasks):
         if num == 50:
             break
@@ -5184,7 +5185,7 @@ def get_monitor_data(request):
     error_processrun = ProcessRun.objects.filter(state="ERROR").select_related("pro_ins").order_by("-starttime")
     for epr in error_processrun:
         error_processrun_list.append({
-            "pro_ins_name": epr.pro_ins.name,
+            "pro_ins_name": epr.pro_ins.name if epr.pro_ins else '',
             "start_time": "{0:%Y-%m-%d %H:%M:%S}".format(epr.starttime) if epr.starttime else "",
             "processrun_url": "/falconstor/{processrun_id}/".format(processrun_id=epr.id)
         })

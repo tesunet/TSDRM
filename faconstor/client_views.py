@@ -956,19 +956,47 @@ def client_cv_recovery(request):
 
 @login_required
 def client_cv_get_restore_his(request):
-    id = request.GET.get('id', '')
-
+    """
+    本地恢复记录
+    @param host_id{str}:主机ID
+    """
+    host_id = request.GET.get('host_id', '')
     result = []
-    try:
-        id = int(id)
-        cvclient = CvClient.objects.get(id=id)
-        utils_manage = cvclient.utils
-        _, sqlserver_credit = get_credit_info(utils_manage.content)
-        dm = SQLApi.CVApi(sqlserver_credit)
-        result = dm.get_all_restore_job_list(cvclient.client_name, cvclient.agentType, cvclient.instanceName)
-        dm.close()
-    except Exception as e:
-        print(e)
+    state_dict = {
+        "DONE": "已完成",
+        "EDIT": "未执行",
+        "RUN": "执行中",
+        "ERROR": "执行失败",
+        "IGNORE": "忽略",
+        "STOP": "终止",
+        "PLAN": "计划",
+        "REJECT": "取消",
+        "SIGN": "签到",
+        "CONTINUE": "继续",
+        "": "",
+    }
+    pruns = ProcessRun.objects.exclude(state='9').filter(pro_ins__pnode=None).order_by('-starttime')
+    for prun in pruns:
+        pro_ins = prun.pro_ins
+
+        try:
+            associated_host_root = etree.XML(pro_ins.config)
+        except:
+            pass
+        else:
+            associated_host_els = associated_host_root.xpath('//host')
+            for ah in associated_host_els:
+                associated_host_id = ah.attrib.get('host_id', '')
+
+                if host_id == associated_host_id and host_id:
+                    result.append({
+                        'jobid': prun.id,
+                        'jobType': '恢复',
+                        'starttime': '{0:%Y-%m-%d %H:%M:%S}'.format(prun.starttime) if prun.starttime else '',
+                        'endtime': '{0:%Y-%m-%d %H:%M:%S}'.format(prun.endtime) if prun.endtime else '',
+                        'jobstatus': state_dict.get(prun.state, ''),
+                    })
+                    break
     return JsonResponse({"data": result})
 
 
