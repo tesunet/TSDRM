@@ -1661,60 +1661,61 @@ def solve_error(request):
             # 前端定时获取该进程状态
             running_process = ProcessRun.objects.filter(pro_ins=spec_pro_ins, state__in=["RUN"])
             if running_process.exists():
-                myprocesstask = ProcessTask()
-                myprocesstask.starttime = datetime.datetime.now()
-                myprocesstask.type = "INFO"
-                myprocesstask.logtype = "END"
-                myprocesstask.state = "0"
-                myprocesstask.processrun = running_process[0]
-                myprocesstask.content = "排错流程({0})已运行。".format(running_process[0].pro_ins.name)
-                myprocesstask.save()
+                ProcessRun.objects.create(**{
+                    'starttime': datetime.datetime.now(),
+                    'type': 'INFO',
+                    'logtype': 'END',
+                    'state': '0',
+                    'processrun': running_process[0],
+                    'content': "排错流程({0})已运行。".format(running_process[0].pro_ins.name),
+                })
             else:
-                myprocessrun = ProcessRun()
-                myprocessrun.creatuser = request.user.username
-                myprocessrun.pro_ins = spec_pro_ins
-                myprocessrun.starttime = datetime.datetime.now()
-                myprocessrun.state = "RUN"
                 process_type = process.type
+
+                myprocessrun = ProcessRun.objects.create(**{
+                    'creatuser': request.user.username,
+                    'pro_ins': spec_pro_ins,
+                    'starttime': datetime.datetime.now(),
+                    'state': 'RUN',
+                })
+
                 if process_type.upper() == "COMMVAULT":
                     cv_restore_params_save(myprocessrun)
 
-                myprocessrun.save()
                 mystep = process.step_set.exclude(state="9")
                 if not mystep.exists():
-                    myprocesstask = ProcessTask()
-                    myprocesstask.starttime = datetime.datetime.now()
-                    myprocesstask.type = "INFO"
-                    myprocesstask.logtype = "END"
-                    myprocesstask.state = "0"
-                    myprocesstask.processrun = myprocessrun
-                    myprocesstask.content = "排错流程({0})不存在可运行步骤。".format(spec_pro_ins.name)
-                    myprocesstask.save()
+                    ProcessTask.objects.create(**{
+                        'starttime': datetime.datetime.now(),
+                        'type': 'INFO',
+                        'logtype': 'END',
+                        'state': '0',
+                        'processrun': myprocessrun,
+                        'content': '排错流程({0})不存在可运行步骤。'.format(spec_pro_ins.name),
+                    })
                 else:
                     for step in mystep:
-                        mysteprun = StepRun()
-                        mysteprun.step = step
-                        mysteprun.processrun = myprocessrun
-                        mysteprun.state = "EDIT"
-                        mysteprun.save()
+                        mysteprun = StepRun.objects.create(**{
+                            'step': step,
+                            'processrun': myprocessrun,
+                            'state': 'EDIT',
+                        })
 
                         myscript = step.scriptinstance_set.exclude(state="9")
                         for script in myscript:
-                            myscriptrun = ScriptRun()
-                            myscriptrun.script = script
-                            myscriptrun.steprun = mysteprun
-                            myscriptrun.state = "EDIT"
-                            myscriptrun.save()
-
-                    myprocesstask = ProcessTask()
-                    myprocesstask.processrun = myprocessrun
-                    myprocesstask.starttime = datetime.datetime.now()
-                    myprocesstask.type = "INFO"
-                    myprocesstask.logtype = "START"
-                    myprocesstask.state = "1"
-                    myprocesstask.content = "排错流程({0})已启动。".format(spec_pro_ins.name)
-                    myprocesstask.save()
-
+                            ScriptRun.objects.create(**{
+                                'script': script,
+                                'steprun': mysteprun,
+                                'state': 'EDIT',
+                            })
+                    
+                    ProcessTask.objects.create(**{
+                        'processrun': myprocessrun,
+                        'starttime': datetime.datetime.now(),
+                        'type': 'INFO',
+                        'logtype': 'START',
+                        'state': '1',
+                        'content': '排错流程({0})已启动。'.format(spec_pro_ins.name),
+                    })
                     exec_process.delay(myprocessrun.id)
                     data = myprocessrun.id
 
