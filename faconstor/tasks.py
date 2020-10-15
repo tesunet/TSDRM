@@ -18,7 +18,7 @@ from TSDRM import settings
 from .api import SQLApi
 from .CVApi import *
 from .public import (
-    content_load_params, match_host
+    content_load_params, match_host, get_credit_info
 )
 logger = logging.getLogger('tasks')
 
@@ -30,7 +30,6 @@ def get_disk_space_crond():
         工具ID MediaID 可用容量、保留空间、总容量、取数时间
         
     """
-    from .views import get_credit_info
     commvaul_utils = UtilsManage.objects.exclude(state="9").filter(util_type="Commvault")
     point_tag = uuid.uuid1()
     for cu in commvaul_utils:
@@ -504,7 +503,6 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                                 # Oracle恢复出错                      #
                                 #######################################
                                 recover_error = "无"
-                                from .views import get_credit_info
 
                                 try:
                                     _, sqlserver_credit = get_credit_info(utils_content)
@@ -582,7 +580,6 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
                         if "RMAN Script execution failed  with error [RMAN-03002" in result['data']:
                             # 终止commvault作业
                             if recover_job_id != '':
-                                from .views import get_credit_info
                                 try:
                                     commvault_credit, _ = get_credit_info(utils_content)
                                     cvToken = CV_RestApi_Token()
@@ -790,7 +787,6 @@ def exec_process(processrunid, if_repeat=False):
                 copy_priority = info.xpath("//param")[0].attrib.get("copy_priority")
 
                 # nextSCN-1
-                from .views import get_credit_info
                 _, sqlserver_credit = get_credit_info(utils_content)
 
                 dm = SQLApi.CVApi(sqlserver_credit)
