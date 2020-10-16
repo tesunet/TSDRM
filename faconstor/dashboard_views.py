@@ -444,8 +444,9 @@ def get_framework(request):
             mas = []
 
             # 先判断网络
-            netresult = ping(commvault_credit["webaddr"])
-            if netresult is not None:
+            # netresult = ping(commvault_credit["webaddr"])
+            # if netresult is not None:
+            try:
                 commserve["net"] = "正常"
                 # 网络正常时取数据库信息
                 commserve["dbname"] = sqlserver_credit["SQLServerDataBase"]
@@ -511,7 +512,7 @@ def get_framework(request):
                 else:
                     commserve["apiconnect"] = "中断"
 
-            else:
+            except:
                 commserve["net"] = "中断"
 
             frameworkdata["commserve"] = commserve

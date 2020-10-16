@@ -297,7 +297,7 @@ function customTree() {
                                             url: "../del_step/",
                                             data: {
                                                 id: obj.id,
-                                                process_id: $("#process option:selected").val(),
+                                                process_id: $("#process").val(),
                                             },
                                             success: function (data) {
                                                 if (data == 1) {
@@ -337,7 +337,7 @@ function customTree() {
                                     old_parent: data.old_parent,
                                     position: data.position,
                                     old_position: data.old_position,
-                                    process_id: $("#process option:selected").val(),
+                                    process_id: $("#process").val(),
                                 },
                                 success: function (data) {
                                     var selectid = $("#id").val();
@@ -740,7 +740,7 @@ $('#verify_items_save').click(function () {
         dataType: 'json',
         url: "../../verify_items_save/",
         data: {
-            processid: $("#process option:selected").val(),
+            processid: $("#process").val(),
             id: $("#verify_id").val(),
             name: $("#verify_name").val(),
             step_id: $("#id").val(),
