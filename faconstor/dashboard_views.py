@@ -9,13 +9,13 @@ from faconstor.api import SQLApi
 from .public import (
     get_credit_info
 )
+from .remote import ServerByPara
 
 import datetime
 import pythoncom
 from ping3 import ping
 from collections import OrderedDict
-import cx_Oracle
-import pymysql
+import re
 
 pythoncom.CoInitialize()
 import wmi
@@ -903,6 +903,87 @@ def get_ma_disk_space(request):
         "status": status,
         "info": info,
         "data": data
+    })
+
+
+@login_required
+def get_falconstor_space(request):
+    """
+    获取飞康磁盘使用情况
+    """
+    status = 1
+    info = ''
+    data = {}
+    # 获取飞康账户
+    server = ''
+    username = ''
+    password = ''
+    falconstor_credits = UtilsManage.objects.exclude(state='9').filter(util_type='Falconstor')
+    if falconstor_credits.exists():
+        falconstor_credit = falconstor_credits[0]
+        credit = get_credit_info(falconstor_credit.content, util_type="FALCONSTOR")
+        server = credit.get('falconstor_webaddr', '')
+        username = credit.get('falconstor_hostusernm', '')
+        password = credit.get('falconstor_hostpasswd', '')
+
+    # 执行shell命令
+    get_dev_cmd = "iscli getpdevinfo --server-name={server} --server-username={username} --server-password={password}".format(**{
+        'server': server,
+        'username': username,
+        'password': password,
+    })
+    print(get_dev_cmd)
+
+    # server_obj = ServerByPara(get_dev_cmd, "192.168.1.152", "root", "Tesunet@2020", "Linux")
+    # result = server_obj.run("")
+    # 正则匹配出磁盘空间
+    result = """
+    IPStor Server: FS-CDPVA
+    Device Name     ACSL    First Sector Last Sector    Size(MS)
+    ------------------------------------------------------------------
+    VMware: Virtual disk
+    VMware: Virtual disk
+    VMware: Virtual disk
+
+    Total Allocated Space: 548,194 MB
+    
+    Available Physical Devices:
+
+    Device Name     ACSL    First Sector Last Sector    Size(MS)
+    ------------------------------------------------------------------
+    VMware: Virtual disk
+    VMware: Virtual disk
+    VMware: Virtual disk
+
+    Total Available Space: 270,992 MB
+
+    Command: getpdevinfo executed successfully.
+    """
+    dev_com = re.compile(r"Total Allocated Space:(.+)MB.*?Total Available Space:(.+)MB")
+    ret = dev_com.findall(result.replace('\r\n', '').replace('\n', ''))
+    if ret:
+        try:
+            allocated_space, available_space = ret[0]
+            allocated_space = round(int(allocated_space.replace(',', ''))/1000, 2)
+            available_space = round(int(available_space.replace(',', ''))/1000, 2)
+        except Exception as e:
+            status = 0
+            info = 'error!'
+        else:
+            total_space = round((allocated_space + available_space), 2)
+            data = {
+                'total_space': total_space,
+                'available_space': available_space,
+                'available_percent': 100*allocated_space/total_space if total_space else 0
+            }
+    else:
+        status = 0
+        info = 'error!'
+
+    return JsonResponse({
+        'status': status,
+        'info': info,
+        'data': data
     })
 
 

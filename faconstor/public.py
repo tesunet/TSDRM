@@ -221,7 +221,11 @@ def get_credit_info(content, util_type="COMMVAULT"):
         'KvmPasswd': '',
         'SystemType': '',
     }
-
+    falconstor_credit = {
+        'falconstor_webaddr': '',
+        'falconstor_hostusernm': '',
+        'falconstor_hostpasswd': '',
+    }
     try:
         doc = etree.XML(content)
         if util_type == 'COMMVAULT':
@@ -291,7 +295,21 @@ def get_credit_info(content, util_type="COMMVAULT"):
             except:
                 pass
             return kvm_credit
-
+        elif util_type == "FALCONSTOR":
+            try:
+                falconstor_credit['falconstor_webaddr'] = doc.xpath('//falconstor_webaddr/text()')[0]
+            except:
+                pass
+            try:
+                falconstor_credit['falconstor_hostusernm'] = doc.xpath('//falconstor_hostusernm/text()')[0]
+            except:
+                pass
+            try:
+                falconstor_credit['falconstor_hostpasswd'] = base64.b64decode(
+                    doc.xpath('//falconstor_hostpasswd/text()')[0]).decode()
+            except:
+                pass
+            return falconstor_credit
     except Exception as e:
         print(e)
 

@@ -66,16 +66,25 @@ $(document).ready(function () {
         $('#code').val(data.code);
         $('#name').val(data.name);
         $('#util_type').val(data.util_type);
-        $('#webaddr').val(data.commvault_credit.webaddr);
-        $('#port').val(data.commvault_credit.port);
-        $('#hostusernm').val(data.commvault_credit.hostusername);
-        $('#hostpasswd').val(data.commvault_credit.hostpasswd);
-        $('#usernm').val(data.commvault_credit.username);
-        $('#passwd').val(data.commvault_credit.passwd);
-        $('#SQLServerHost').val(data.sqlserver_credit.SQLServerHost);
-        $('#SQLServerUser').val(data.sqlserver_credit.SQLServerUser);
-        $('#SQLServerPasswd').val(data.sqlserver_credit.SQLServerPasswd);
-        $('#SQLServerDataBase').val(data.sqlserver_credit.SQLServerDataBase);
+
+        if (data.util_type == 'Commvault'){
+            $('#webaddr').val(data.commvault_credit.webaddr);
+            $('#port').val(data.commvault_credit.port);
+            $('#hostusernm').val(data.commvault_credit.hostusername);
+            $('#hostpasswd').val(data.commvault_credit.hostpasswd);
+            $('#usernm').val(data.commvault_credit.username);
+            $('#passwd').val(data.commvault_credit.passwd);
+            $('#SQLServerHost').val(data.sqlserver_credit.SQLServerHost);
+            $('#SQLServerUser').val(data.sqlserver_credit.SQLServerUser);
+            $('#SQLServerPasswd').val(data.sqlserver_credit.SQLServerPasswd);
+            $('#SQLServerDataBase').val(data.sqlserver_credit.SQLServerDataBase);
+        }
+        if (data.util_type == 'Falconstor'){
+            $('#falconstor_webaddr').val(data.falconstor_credit.falconstor_webaddr);
+            $('#falconstor_hostusernm').val(data.falconstor_credit.falconstor_hostusernm);
+            $('#falconstor_hostpasswd').val(data.falconstor_credit.falconstor_hostpasswd);
+    
+        }
 
         displayCreditDiv(data.util_type);
     });
@@ -114,8 +123,10 @@ $(document).ready(function () {
     function displayCreditDiv(util_type){
         if (util_type.toUpperCase() == 'COMMVAULT'){
             $('#credit_div').show();
+            $('#falconstor_server_div').hide();
         } else {
             $('#credit_div').hide();
+            $('#falconstor_server_div').show();
         }
     }
 });

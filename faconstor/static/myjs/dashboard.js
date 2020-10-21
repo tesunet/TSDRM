@@ -385,6 +385,35 @@ $(document).ready(function () {
         });
     }
     getBackupSpace($("#util").val());
+
+    (function getFalconstorCapacity(){
+        $('#loading5').show();
+        $('#falconstor_space_div').hide();
+        $.ajax({
+            type: 'POST',
+            dataType: 'JSON',
+            url: '../get_falconstor_space/',
+            data:{},
+            success: function (data) {
+                $('#loading5').hide();
+                $('#falconstor_space_div').show();
+                var status = data.status,
+                    info = data.info,
+                    data = data.data;
+                if (status){
+                    var total_space = data.total_space,
+                    available_space = data.available_space,
+                    available_percent = data.available_percent;
+                
+                    $('#available_percent').val(available_percent.toFixed(0)).trigger('change');
+                    $('#falconstor_space').text(available_space + " GB/" + total_space + " GB");
+                } else {
+                    $('#available_percent').val(0).trigger('change');
+                    $('#falconstor_space').text(info);
+                }
+            }
+        })
+    })();
 });
 
 

@@ -2197,7 +2197,15 @@ def util_manage_data(request):
                 'util_type': um.util_type,
                 'kvm_credit': kvm_credit
             })
-
+        elif um.util_type.upper() == 'FALCONSTOR':
+            falconstor_credit = get_credit_info(um.content, um.util_type.upper())
+            util_manage_list.append({
+                'id': um.id,
+                'code': um.code,
+                'name': um.name,
+                'util_type': um.util_type,
+                'falconstor_credit': falconstor_credit
+            })
     return JsonResponse({"data": util_manage_list})
 
 
@@ -2228,6 +2236,10 @@ def util_manage_save(request):
     KvmUser = request.POST.get('KvmUser', '')
     KvmPasswd = request.POST.get('KvmPasswd', '')
     SystemType = request.POST.get('SystemType', '')
+
+    falconstor_webaddr = request.POST.get('falconstor_webaddr', '')
+    falconstor_hostusernm = request.POST.get('falconstor_hostusernm', '')
+    falconstor_hostpasswd = request.POST.get('falconstor_hostpasswd', '')
 
     credit = ''
 
@@ -2288,6 +2300,18 @@ def util_manage_save(request):
                     "KvmPasswd": base64.b64encode(KvmPasswd.encode()).decode(),
                     "SystemType": SystemType
                 })
+            elif util_type.strip().upper() == 'FALCONSTOR':
+                credit = """<?xml version="1.0" ?>
+                    <vendor>
+                        <falconstor_webaddr>{falconstor_webaddr}</falconstor_webaddr>
+                        <falconstor_hostusernm>{falconstor_hostusernm}</falconstor_hostusernm>
+                        <falconstor_hostpasswd>{falconstor_hostpasswd}</falconstor_hostpasswd>
+                    </vendor>""".format(**{
+                    "falconstor_webaddr": falconstor_webaddr,
+                    "falconstor_hostusernm": falconstor_hostusernm,
+                    "falconstor_hostpasswd": base64.b64encode(falconstor_hostpasswd.encode()).decode(),
+                })
+
             try:
                 cur_util_manage = UtilsManage.objects.filter(id=util_manage_id)
                 if cur_util_manage.exists():
