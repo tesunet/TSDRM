@@ -344,12 +344,13 @@ def get_params_from_pro_ins(pro_ins_id):
         hosts = config_root.xpath('//host')
         for host in hosts:
             host_id = host.attrib.get('host_id', '')
+            host_uuid = host.attrib.get('host_uuid', '')
             try:
                 host_id = int(host_id)
             except:
                 pass
             cv_clients = CvClient.objects.exclude(state='9').filter(hostsmanage_id=host_id)
-            if cv_clients.exists():
+            if cv_clients.exists() and is_commvault_script(host_uuid):
                 pri = cv_clients[0]
                 agent_type = pri.agentType
                 std_id = pri.destination.id if pri.destination else ""
@@ -394,3 +395,28 @@ def is_ipv4(ip):
     except:
         legal = False
     return legal
+
+
+def is_commvault_script(host_uuid):
+    """
+    判断接口实例对应的接口是否为commvault类型
+    @param host_uuid{str}:
+    @return status{bool}:
+    """
+    status = False
+    script_instances = ScriptInstance.objects.exclude(state='9')
+    for script_ins in script_instances:
+        try:
+            associated_root = etree.XML(script_ins.associated_hosts)
+        except:
+            pass
+        else:
+            associated_hosts = associated_root.xpath('//host')
+            for associated_host in associated_hosts:
+                id = associated_host.attrib.get('id', '')
+                if host_uuid == id and script_ins.script.interface_type == "Commvault":
+                    status = True
+                    break
+    return status
+
+

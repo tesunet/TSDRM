@@ -10,7 +10,7 @@ from .tasks import *
 from .views import getpagefuns
 from faconstor.api import SQLApi
 from .public import (
-    get_params, get_credit_info, is_ipv4
+    get_params, get_credit_info, is_commvault_script, is_ipv4
 )
 import json
 
@@ -1151,13 +1151,24 @@ def pro_save(request):
                         raise Exception('PROCESS DOES NOT EXIST')
                     else:
                         troubleshoot_pros = pros.children.exclude(state='9')
+
                         for troubleshoot_pro in troubleshoot_pros:
-                            troubleshoot_pro_ins_id = ProcessInstance.objects.create(**{
-                                "name": '{0}的排错流程'.format(pro_ins),
-                                "process_id": troubleshoot_pro.id,
-                                "pnode_id": p_id,
-                            }).id
-                            troubleshoot_pro_ins_list.append(troubleshoot_pro_ins_id)
+                            # 判断排错流程对应的实例是否存在，存在则更新
+                            pre_troubleshoot_pro_ins = troubleshoot_pro.processinstance_set.exclude(state='9')
+                            if pre_troubleshoot_pro_ins.exists():
+                                pre_troubleshoot_pro_ins.update(**{
+                                    "name": '{0}的排错流程'.format(pro_ins),
+                                    "process_id": troubleshoot_pro.id,
+                                    "pnode_id": p_id,
+                                })
+                                troubleshoot_pro_ins_id = troubleshoot_pro.id
+                            else:
+                                troubleshoot_pro_ins_id = ProcessInstance.objects.create(**{
+                                    "name": '{0}的排错流程'.format(pro_ins),
+                                    "process_id": troubleshoot_pro.id,
+                                    "pnode_id": p_id,
+                                }).id
+                                troubleshoot_pro_ins_list.append(troubleshoot_pro_ins_id)
                     return troubleshoot_pro_ins_list
                 if p_id == 0:
                     try:
@@ -1168,7 +1179,7 @@ def pro_save(request):
                                 "config": config_xml,
                             }).id
                             set_troubleshoot_pro_ins(pros_id, p_id)
-                    except:
+                    except Exception as e:
                         status = 0
                         info = "新增失败。"
                 else:
@@ -1178,7 +1189,8 @@ def pro_save(request):
                             "process_id": pros_id,
                             "config": config_xml,
                         })
-                    except:
+                        set_troubleshoot_pro_ins(pros_id, p_id)
+                    except Exception as e:
                         status = 0
                         info = "修改失败。"
 
@@ -1407,12 +1419,14 @@ def get_cv_params(request):
         hosts = config_root.xpath('//host')
         for host in hosts:
             host_id = host.attrib.get('host_id', '')
+            host_uuid = host.attrib.get('host_uuid', '')
             try:
                 host_id = int(host_id)
             except:
                 pass
             cv_clients = CvClient.objects.exclude(state='9').filter(hostsmanage_id=host_id)
-            if cv_clients.exists():
+            # 判断主机所在脚本实例对应的脚本是commvault类型
+            if cv_clients.exists() and is_commvault_script(host_uuid):
                 is_commvault = 1
                 pri = cv_clients[0]
                 agent_type = pri.agentType

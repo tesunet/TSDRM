@@ -728,7 +728,9 @@ def walkthrough_run_invited(request):
 
                 process_type = current_process_run.pro_ins.process.type
                 if process_type.upper() == "COMMVAULT":
-                    cv_restore_params_save(current_process_run)
+                    _, _, cv_params = get_params_from_pro_ins(current_process_run.pro_ins.id)
+                    config = custom_cv_params(**cv_params)
+                    current_process_run.info = config
 
                 current_process_run.save()
 
@@ -1643,7 +1645,6 @@ def solve_error(request):
 
     prun_id = request.POST.get("prun_id", "")  # 运行流程ID
     p_id = request.POST.get("error_solved_id", "")  # 排除预案ID
-
     # prun -> pro_ins -> MULTI child pro_ins& p_id -> pro_ins
     try:
         prun = ProcessRun.objects.get(id=int(prun_id))
@@ -1680,7 +1681,10 @@ def solve_error(request):
                 })
 
                 if process_type.upper() == "COMMVAULT":
-                    cv_restore_params_save(myprocessrun)
+                    _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
+                    config = custom_cv_params(**cv_params)
+                    myprocessrun.info = config
+                    myprocessrun.save()
 
                 mystep = process.step_set.exclude(state="9")
                 if not mystep.exists():
@@ -1716,6 +1720,7 @@ def solve_error(request):
                         'state': '1',
                         'content': '排错流程({0})已启动。'.format(spec_pro_ins.name),
                     })
+                    print('成功执行排错流程{0}'.format(myprocessrun.id))
                     exec_process.delay(myprocessrun.id)
                     data = myprocessrun.id
 
@@ -2354,10 +2359,11 @@ def walkthroughsave(request):
                     myprocessrun.state = "PLAN"
                     myprocessrun.starttime = start_time
 
-                    _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
-                    config = custom_cv_params(**cv_params)
+                    if myprocessrun.pro_ins.process.type.upper() == 'COMMVAULT':
+                        _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
+                        config = custom_cv_params(**cv_params)
+                        myprocessrun.info = config
 
-                    myprocessrun.info = config
                     myprocessrun.save()
                     current_process_run_id = myprocessrun.id
 
@@ -2442,10 +2448,10 @@ def walkthroughsave(request):
                     myprocessrun.state = "PLAN"
                     myprocessrun.starttime = start_time
 
-                    _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
-                    config = custom_cv_params(**cv_params)
-
-                    myprocessrun.info = config
+                    if myprocessrun.pro_ins.process.type.upper() == 'COMMVAULT':
+                        _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
+                        config = custom_cv_params(**cv_params)
+                        myprocessrun.info = config
 
                     myprocessrun.save()
                     current_process_run_id = myprocessrun.id
