@@ -673,6 +673,11 @@ if (App.isAngularJsApp() === false) {
                                             if(data.data["error_solved"]){
                                                 $('#error_solved_id').val(data.data["error_solved"]);
                                                 $("#solve_error").show();
+                                                if ($('#process_state').val() != "错误"){
+                                                    $("#solve_error").prop('disabled', true);
+                                                } else {
+                                                    $("#solve_error").prop('disabled', false);
+                                                }
                                             } else {
                                                 $("#solve_error").hide();
                                             }
