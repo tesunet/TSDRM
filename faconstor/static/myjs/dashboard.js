@@ -402,11 +402,11 @@ $(document).ready(function () {
                     data = data.data;
                 if (status){
                     var total_space = data.total_space,
-                    available_space = data.available_space,
+                    allocated_space = data.allocated_space,
                     available_percent = data.available_percent;
                 
                     $('#available_percent').val(available_percent.toFixed(0)).trigger('change');
-                    $('#falconstor_space').text(available_space + " GB/" + total_space + " GB");
+                    $('#falconstor_space').text(allocated_space + " GB/" + total_space + " GB");
                 } else {
                     $('#available_percent').val(0).trigger('change');
                     $('#falconstor_space').text(info);

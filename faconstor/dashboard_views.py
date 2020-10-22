@@ -927,15 +927,20 @@ def get_falconstor_space(request):
         password = credit.get('falconstor_hostpasswd', '')
 
     # 执行shell命令
-    get_dev_cmd = "iscli getpdevinfo --server-name={server} --server-username={username} --server-password={password}".format(**{
+    get_dev_cmd = "/usr/local/ipstor/bin/iscli getpdevinfo --server-name={server} --server-username={username} --server-password={password}".format(**{
         'server': server,
         'username': username,
         'password': password,
     })
-    print(get_dev_cmd)
-
-    # server_obj = ServerByPara(get_dev_cmd, "192.168.1.152", "root", "Tesunet@2020", "Linux")
-    # result = server_obj.run("")
+    result = ""
+    try:
+        server_obj = ServerByPara(r"echo {1}>{0}&&chod +x {0}&&{0}".format("/tmp/get_dev_info.sh", get_dev_cmd), server, username, password, "Linux")
+        ret = server_obj.run("")
+        exec_tag = ret["exec_tag"]
+        if exec_tag == 0:
+            result = ret["data"]
+    except:
+        pass
     # 正则匹配出磁盘空间
     result = """
     IPStor Server: FS-CDPVA
@@ -959,13 +964,13 @@ def get_falconstor_space(request):
 
     Command: getpdevinfo executed successfully.
     """
-    dev_com = re.compile(r"Total Allocated Space:(.+)MB.*?Total Available Space:(.+)MB")
+    dev_com = re.compile(r"Total Allocated Space:(.+?)MB.*?Total Available Space:(.+?)MB")
     ret = dev_com.findall(result.replace('\r\n', '').replace('\n', ''))
     if ret:
         try:
             allocated_space, available_space = ret[0]
-            allocated_space = round(int(allocated_space.replace(',', ''))/1000, 2)
-            available_space = round(int(available_space.replace(',', ''))/1000, 2)
+            allocated_space = round(int(allocated_space.replace(',', ''))/1000/1000, 2)
+            available_space = round(int(available_space.replace(',', ''))/1000/1000, 2)
         except Exception as e:
             status = 0
             info = 'error!'
@@ -973,7 +978,7 @@ def get_falconstor_space(request):
             total_space = round((allocated_space + available_space), 2)
             data = {
                 'total_space': total_space,
-                'available_space': available_space,
+                'allocated_space': allocated_space,
                 'available_percent': 100*allocated_space/total_space if total_space else 0
             }
     else:
