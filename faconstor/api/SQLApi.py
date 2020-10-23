@@ -773,8 +773,13 @@ class CVApi(DataMonitor):
             self.execute(update_sql)
 
     def get_clients_info(self, selected_clients=[]):
-        clients_sql = """SELECT [ClientId],[Client],[NetworkInterface],[OS [Version]]],[Hardware],[GalaxyRelease],[InstallTime]
-        FROM [commserv].[dbo].[CommCellClientConfig] where ClientStatus='installed'"""
+        clients_sql = """SELECT cccc.[ClientId],cccc.[Client],cccc.[NetworkInterface],cccc.[OS [Version]]],cccc.[Hardware],cccc.[GalaxyRelease],cccc.[InstallTime]
+        FROM [commserv].[dbo].[CommCellClientConfig] AS cccc
+        WHERE cccc.ClientStatus='installed'
+
+        AND EXISTS(SELECT jobid FROM commserv.dbo.CommCellBackupInfo WHERE cccc.Client=clientname)
+        AND EXISTS(SELECT scheduleId FROM commserv.dbo.CommCellBkScheduleForSubclients WHERE clientname=cccc.Client)
+        """
         ret = self.fetch_all(clients_sql)
         client_list = []
         automatic_clients = self.get_automatic_clients()
@@ -808,13 +813,18 @@ class CVApi(DataMonitor):
             "Completed w/ one or more warnings": "已完成，但有一个或多个警告", "Success": "成功","PartialSuccess":"部分完成"
         }
 
-        backup_status_sql = """SELECT clientname, idataagent, instance, backupset, subclient, startdate, jobstatus, jobid
-        FROM commserv.dbo.CommCellBackupInfo
-        ORDER BY startdate DESC
+        backup_status_sql = """SELECT ccbi.clientname, ccbi.idataagent, ccbi.instance, ccbi.backupset, ccbi.subclient, ccbi.startdate, ccbi.jobstatus, ccbi.jobid
+        FROM commserv.dbo.CommCellBackupInfo AS ccbi
+
+        WHERE EXISTS(SELECT jobid FROM commserv.dbo.CommCellBackupInfo WHERE ccbi.clientname=clientname AND ccbi.idataagent=idataagent) 
+        AND EXISTS(SELECT scheduleId FROM commserv.dbo.CommCellBkScheduleForSubclients WHERE clientname=ccbi.clientname AND idaagent=ccbi.idataagent)
+
+        ORDER BY ccbi.startdate DESC
         """
 
         backup_status = self.fetch_all(backup_status_sql)
         duplicated_subclients, client_list = self.get_duplicated_subclients()
+
         aux_copy = self.get_duplicated_aux_copy()
 
         backup_status_list = []
@@ -912,6 +922,10 @@ class CVApi(DataMonitor):
         FROM (SELECT clientname, idataagent, instance, backupset, subclient FROM commserv.dbo.CommCellSubClientConfig WHERE backupset!='Indexing BackupSet' AND subclient !='(command line)') AS ccscc
         LEFT JOIN CommServ.dbo.CommCellVMBackupInfo AS ccvbi ON ccvbi.virtualizationclient=ccscc.clientname AND ccvbi.backupset=ccscc.backupset AND ccvbi.subclient=ccscc.subclient
         LEFT JOIN commserv.dbo.CommCellClientFSFilters AS cccff ON cccff.clientname=ccscc.clientname AND cccff.idataagent=ccscc.idataagent AND cccff.backupset=ccscc.backupset AND cccff.subclient=ccscc.subclient AND cccff.subclientstatus='valid'
+
+        WHERE EXISTS(SELECT jobid FROM commserv.dbo.CommCellBackupInfo WHERE ccscc.clientname=clientname AND ccscc.idataagent=idataagent) 
+        AND EXISTS(SELECT scheduleId FROM commserv.dbo.CommCellBkScheduleForSubclients WHERE clientname=ccscc.clientname AND idaagent=ccscc.idataagent)
+        
         ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC
         """
 
@@ -1023,6 +1037,10 @@ class CVApi(DataMonitor):
         FROM (SELECT clientname, idataagent, instance, backupset, subclient FROM commserv.dbo.CommCellSubClientConfig WHERE backupset!='Indexing BackupSet' AND subclient !='(command line)') AS ccscc
         LEFT JOIN commserv.dbo.CommCellClientConfig AS cccc ON ccscc.clientname=cccc.Client AND cccc.ClientStatus='installed'
         LEFT JOIN commserv.dbo.CommCellStoragePolicy AS ccsp ON ccsp.clientname=ccscc.clientname AND ccsp.idataagent=ccscc.idataagent AND ccsp.backupset=ccscc.backupset AND ccsp.subclient=ccscc.subclient AND ccsp.hardwarecompress!='Unknown'
+
+        WHERE EXISTS(SELECT jobid FROM commserv.dbo.CommCellBackupInfo WHERE ccscc.clientname=clientname AND ccscc.idataagent=idataagent) 
+        AND EXISTS(SELECT scheduleId FROM commserv.dbo.CommCellBkScheduleForSubclients WHERE clientname=ccscc.clientname AND idaagent=ccscc.idataagent)
+
         ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC
         """
         ret = self.fetch_all(storage_policy_sql)
@@ -1097,6 +1115,10 @@ class CVApi(DataMonitor):
         ccsfs.schedinterval,ccsfs.schedbackupday,ccsfs.schednextbackuptime,ccsfs.schednextbackuptime
         FROM (SELECT clientname, idataagent, instance, backupset, subclient FROM commserv.dbo.CommCellSubClientConfig WHERE backupset!='Indexing BackupSet' AND subclient !='(command line)') AS ccscc
         LEFT JOIN commserv.dbo.CommCellBkScheduleForSubclients AS ccsfs ON ccsfs.clientname=ccscc.clientname AND ccsfs.instance=ccscc.instance AND ccsfs.idaagent=ccscc.idataagent AND ccsfs.backupset=ccscc.backupset AND ccsfs.subclient=ccscc.subclient
+
+        WHERE EXISTS(SELECT jobid FROM commserv.dbo.CommCellBackupInfo WHERE ccscc.clientname=clientname AND ccscc.idataagent=idataagent) 
+        AND EXISTS(SELECT scheduleId FROM commserv.dbo.CommCellBkScheduleForSubclients WHERE clientname=ccscc.clientname AND idaagent=ccscc.idataagent)
+
         ORDER BY ccscc.clientname DESC, ccscc.idataagent DESC, ccscc.instance DESC, ccscc.backupset DESC, ccscc.subclient DESC, ccsfs.scheduePolicy DESC, ccsfs.schedbackuptype DESC
         """
         ret = self.fetch_all(schedule_policy_sql)
@@ -1678,7 +1700,7 @@ class CVApi(DataMonitor):
         FROM [commserv].[dbo].[CommCellSubClientConfig] 
         WHERE [backupset]!='Indexing BackupSet' AND [subclient]!='(command line)' {0}
         ORDER BY [clientname] DESC, [idataagent] DESC, [instance] DESC, [backupset] DESC, [subclient] DESC""".format(
-            "AND [clientname] IN {0}".format(tuple(client_list)) if client_list else ""
+            "AND [clientname] IN ({0})".format(str(client_list)[1:-1]) if client_list else ""
         )
 
         ret = self.fetch_all(subclient_sql)
