@@ -227,6 +227,16 @@ def test(request):
     # process_instance = ProcessInstance.objects.get(id=6)
     # ret = content_load_params(script_instance, process_instance)
     # print(ret)
+    # from .data_migrate import DataMigrate
+    # credit = {
+    # "host": "127.0.0.1",
+    # "user": "root",
+    # "passwd": "Passw0rD",
+    # "db": "pre",
+    # }
+
+    # m = DataMigrate(credit)
+    # m.migrate()
     return render(request, 'test.html',
                   {'username': request.user.userinfo.fullname, "errors": errors})
 
