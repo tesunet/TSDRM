@@ -39,6 +39,40 @@
                 float: left;
             }
         }
+
+        /* 七等分 */
+        .col-xs-1-7, .col-sm-1-7, .col-md-1-7, .col-lg-1-7 {
+            min-height: 1px;
+            padding-left: 15px;
+            padding-right: 15px;
+            position: relative;
+        }
+
+        .col-xs-1-7 {
+            width: 14.23%;
+            float: left;
+        }
+
+        @media (min-width: 768px) {
+            .col-sm-1-7 {
+                width: 14.23%;
+                float: left;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .col-md-1-7 {
+                width: 14.23%;
+                float: left;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .col-lg-1-7 {
+                width: 14.23%;
+                float: left;
+            }
+        }
     </style>
 
     <section class="scrollable wrapper">
@@ -168,9 +202,9 @@
                                       style="font-size:16px">切换成功率</span>
                             </div>
                             {% for process in process_success_rate_list %}
-                                <div class="col-md-1-5" align="center">
+                                <div class="col-md-1-7" align="center">
                                     <h4>{{ process.pro_ins_name }}</h4>
-                                    <input readonly class="knob" data-width="200"
+                                    <input readonly class="knob" data-width="150"
                                            data-fgcolor="{{ process.color }}" data-min="0"
                                            data-displayprevious=true value="{{ process.current_process_success_rate }}">
                                 </div>
