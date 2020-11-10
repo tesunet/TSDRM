@@ -168,6 +168,8 @@ function getProcessTree() {
                                         $("#type").val("");
                                         $('#param_se').empty();
                                         $('#hosts_se').empty();
+                                        $('#associated_hosts').val("");
+                                        $('#config').val("");
                                     }
                                 }
                             },
