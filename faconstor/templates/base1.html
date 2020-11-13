@@ -173,12 +173,12 @@
                                 <ul class="nav nav-main" data-ride="collapse">
                                     {% for  fun in pagefuns.pagefuns %}
                                         <li style="font-size:16px" class="{% if fun.isselected %}active{% endif %} ">
-                                            <a href="{{ fun.url }}" class="auto">
+                                            <a {% if fun.new_window == "1" %}href="javascript:void(0);" onclick="window.open('{{ fun.url }}')"{% else %}href="{{ fun.url }}"{% endif %} class="auto">
                                                 {% if fun.child %}
                                                     <span class="pull-right text-muted">
-                              <i class="i i-circle-sm-o text"></i>
-                              <i class="i i-circle-sm text-active"></i>
-                            </span>
+                                                      <i class="i i-circle-sm-o text"></i>
+                                                      <i class="i i-circle-sm text-active"></i>
+                                                </span>
                                                 {% endif %}
                                                 <i style="font-size:16px" class="{{ fun.icon }}">
                                                 </i>
@@ -188,12 +188,12 @@
                                                 <ul class="nav dk">
                                                     {% for  fun1 in fun.child %}
                                                         <li class=" {% if fun1.isselected %}active{% endif %}">
-                                                            <a href="{{ fun1.url }}" class="auto">
+                                                            <a {% if fun1.new_window == "1" %}href="javascript:void(0);" onclick="window.open('{{ fun1.url }}')"{% else %}href="{{ fun1.url }}"{% endif %} class="auto">
                                                                 {% if fun1.child %}
                                                                     <span class="pull-right text-muted">
-                                      <i class="i i-circle-sm-o text"></i>
-                                      <i class="i i-circle-sm text-active"></i>
-                                    </span>
+                                                                      <i class="i i-circle-sm-o text"></i>
+                                                                      <i class="i i-circle-sm text-active"></i>
+                                                                    </span>
                                                                 {% endif %}
                                                                 <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ fun1.name }}</span>
                                                             </a>
@@ -201,12 +201,12 @@
                                                                 <ul class="nav dk">
                                                                     {% for  fun2 in fun1.child %}
                                                                         <li class=" {% if fun2.isselected %}active{% endif %}">
-                                                                            <a href="{{ fun2.url }}" class="auto">
+                                                                         <a {% if fun2.new_window == "1" %}href="javascript:void(0);" onclick="window.open('{{ fun2.url }}')"{% else %}href="{{ fun2.url }}"{% endif %} class="auto">
                                                                                 {% if fun2.child %}
                                                                                     <span class="pull-right text-muted">
-                                              <i class="i i-circle-sm-o text"></i>
-                                              <i class="i i-circle-sm text-active"></i>
-                                            </span>
+                                                                                  <i class="i i-circle-sm-o text"></i>
+                                                                                  <i class="i i-circle-sm text-active"></i>
+                                                                                </span>
                                                                                 {% endif %}
                                                                                 <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ fun2.name }}</span>
                                                                             </a>

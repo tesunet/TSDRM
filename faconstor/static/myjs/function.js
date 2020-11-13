@@ -1,4 +1,4 @@
-function getFunctionDetail(id, node_type){
+function getFunctionDetail(id, node_type) {
     $.ajax({
         type: "POST",
         dataType: "JSON",
@@ -10,7 +10,7 @@ function getFunctionDetail(id, node_type){
             var status = data.status,
                 info = data.info,
                 data = data.data;
-            if (status == 0){
+            if (status == 0) {
                 alert(info);
             } else {
                 $("#title").text(data.name);
@@ -22,9 +22,14 @@ function getFunctionDetail(id, node_type){
                     $("#url").val(data.url);
                     $("#icon").val(data.icon);
                     $('input:radio[name=radio2]')[0].checked = true;
+                    $('#visited_url_div').show();
+                    $('#new_window_div').show();
+                    $('#new_window').val(data.new_window);
                 }
                 if (node_type == "node") {
                     $('input:radio[name=radio2]')[1].checked = true;
+                    $('#visited_url_div').hide();
+                    $('#new_window_div').hide();
                 }
                 changeType(node_type);
             }
@@ -33,7 +38,7 @@ function getFunctionDetail(id, node_type){
 }
 
 
-function getFunctiontTree(){
+function getFunctiontTree() {
     $.ajax({
         type: "POST",
         dataType: "json",
@@ -43,9 +48,9 @@ function getFunctiontTree(){
         },
         success: function (data) {
             var status = data.status,
-            info = data.info,
-            data = data.data;
-            if (status == 0){
+                info = data.info,
+                data = data.data;
+            if (status == 0) {
                 alert(info);
             } else {
                 $('#tree_2').jstree({
@@ -77,8 +82,7 @@ function getFunctiontTree(){
                                         obj = inst.get_node(data.reference);
                                     if (obj.type == "fun") {
                                         alert("无法在功能下新建节点或功能。");
-                                    }
-                                    else {
+                                    } else {
                                         $('input:radio[name=radio2]')[0].checked = true;
                                         $("#title").text("新建")
                                         $("#id").val("0")
@@ -88,6 +92,8 @@ function getFunctiontTree(){
                                         $("#url").val("")
                                         $("#icon").val("")
                                         $("#save").show()
+                                        $("#visited_url_div").show();
+                                        $("#new_window_div").show();
                                     }
                                 }
                             },
@@ -111,8 +117,7 @@ function getFunctiontTree(){
                                                     if (data == 1) {
                                                         inst.delete_node(obj);
                                                         alert("删除成功！");
-                                                    }
-                                                    else
+                                                    } else
                                                         alert("删除失败，请于管理员联系。");
                                                 },
                                                 error: function (e) {
@@ -123,7 +128,7 @@ function getFunctiontTree(){
                                     }
                                 }
                             },
-                
+
                         }
                     },
                     "plugins": ["contextmenu", "dnd", "types", "role"]
@@ -133,13 +138,11 @@ function getFunctiontTree(){
                         if (data.old_parent == "#") {
                             alert("根节点禁止移动。");
                             location.reload()
-                        }
-                        else {
+                        } else {
                             if (data.parent == "#") {
                                 alert("禁止新建根节点。");
                                 location.reload()
-                            }
-                            else {
+                            } else {
                                 $.ajax({
                                     type: "POST",
                                     url: "../funmove/",
@@ -155,8 +158,7 @@ function getFunctiontTree(){
                                         if (data == "类型") {
                                             alert("不能移动至功能下。");
                                             location.reload()
-                                        }
-                                        else {
+                                        } else {
                                             var selectid = $("#id").val()
                                             if (selectid == moveid) {
                                                 var res = data.split('^')
@@ -170,8 +172,8 @@ function getFunctiontTree(){
                                         location.reload()
                                     }
                                 });
-                
-                
+
+
                             }
                         }
                     })
@@ -182,7 +184,7 @@ function getFunctiontTree(){
                         if (node.parent == "#") {
                             $("#save").hide();
                             $("#formdiv").hide();
-                        } else{
+                        } else {
                             $("#formdiv").show();
                             $("#save").show();
                             getFunctionDetail(node.id, node.type);
@@ -195,9 +197,9 @@ function getFunctiontTree(){
 
 getFunctiontTree();
 
-$('#save').click(function(){
+$('#save').click(function () {
     var save_type = "";
-    if ($('input:radio[name=radio2]')[0].checked == true){
+    if ($('input:radio[name=radio2]')[0].checked == true) {
         save_type = "fun";
     } else {
         save_type = "node";
@@ -207,11 +209,11 @@ $('#save').click(function(){
         dataType: "JSON",
         url: "../fun_save/",
         data: $('#fun_form').serialize(),
-        success: function(data){
+        success: function (data) {
             var status = data.status,
                 info = data.info,
                 select_id = data.data;
-            if (status == 1){
+            if (status == 1) {
                 if ($("#id").val() == "0") {
                     $('#tree_2').jstree('create_node', $("#pid").val(), {
                         "text": $("#name").val(),
@@ -222,8 +224,7 @@ $('#save').click(function(){
                     $("#id").val(select_id)
                     $('#tree_2').jstree('deselect_all');
                     $('#tree_2').jstree('select_node', $("#id").val(), true);
-                }
-                else {
+                } else {
                     var curnode = $('#tree_2').jstree('get_node', $("#id").val());
                     var name = $('#name').val();
                     var newtext = curnode.text.replace(curnode.text, name);
@@ -233,19 +234,24 @@ $('#save').click(function(){
                     $('#tree_2').jstree('set_text', $("#id").val(), newtext);
                     $('#title').text(newtext);
                 }
-            }   
+            }
             alert(info);
         }
     })
 });
 
-function changeType(mytype){
-    if (mytype == "fun"){
+function changeType(mytype) {
+    if (mytype == "fun") {
         $('input:radio[name=radio2]')[0].checked = true;
+        $('#visited_url_div').show();
+        $('#new_window_div').show();
     }
-    if (mytype == "node"){
+    if (mytype == "node") {
         $('input:radio[name=radio2]')[1].checked = true;
+        $('#visited_url_div').hide();
+        $('#new_window_div').hide();
     }
 }
+
 changeType($('#mytype').val());
 

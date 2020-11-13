@@ -13,6 +13,7 @@ class Fun(models.Model):
     type = models.CharField("类型", blank=True, null=True, max_length=20)
     url = models.CharField("地址", blank=True, null=True, max_length=500)
     icon = models.CharField("图标", blank=True, null=True, max_length=100)
+    if_new_wd = models.CharField("是否新窗口打开", null=True, blank="0", max_length=20)
 
 
 class Group(models.Model):

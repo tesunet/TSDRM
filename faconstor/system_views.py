@@ -899,7 +899,7 @@ def get_fun_node(parent, selectid):
         node["text"] = child.name
         node["id"] = child.id
         node["type"] = child.type
-        node["data"] = {"name": child.name, "pname": parent.name}
+        node["data"] = {"name": child.name, "pname": parent.name, "new_window": child.if_new_wd}
         node["children"] = get_fun_node(child, selectid)
         try:
             if int(selectid) == child.id:
@@ -925,7 +925,7 @@ def get_fun_tree(request):
                 root["text"] = rootnode.name
                 root["id"] = rootnode.id
                 root["type"] = "node"
-                root["data"] = {"url": rootnode.url, "icon": rootnode.icon, "pname": "无"}
+                root["data"] = {"url": rootnode.url, "icon": rootnode.icon, "pname": "无", "new_window": rootnode.if_new_wd}
                 try:
                     if int(select_id) == rootnode.id:
                         root["state"] = {"opened": True, "selected": True}
@@ -937,7 +937,7 @@ def get_fun_tree(request):
                 data.append(root)
     except Exception as e:
         status = 0
-        info = "获取流程树失败。"
+        info = "获取流程树失败:{0}。".format(e)
     return JsonResponse({
         "status": status,
         "data": data,
@@ -964,7 +964,8 @@ def get_fun_detail(request):
             "name": cur_fun.name,
             "pname": cur_fun.pnode.name if cur_fun.pnode else "",
             "url": cur_fun.url, 
-            "icon": cur_fun.icon, 
+            "icon": cur_fun.icon,
+            "new_window": cur_fun.if_new_wd if cur_fun.if_new_wd else "0",
         }
 
     return JsonResponse({
@@ -985,6 +986,7 @@ def fun_save(request):
     mytype = request.POST.get('radio2')
     url = request.POST.get('url')
     icon = request.POST.get('icon')
+    new_window = request.POST.get('new_window')
     try:
         id = int(id)
     except:
@@ -1019,6 +1021,7 @@ def fun_save(request):
                     funsave.type = mytype
                     funsave.url = url
                     funsave.icon = icon
+                    funsave.if_new_wd = new_window
                     funsave.sort = sort if sort else None
                     funsave.save()
                     id = funsave.id
@@ -1032,6 +1035,7 @@ def fun_save(request):
                         funsave.type = mytype
                         funsave.url = url
                         funsave.icon = icon
+                        funsave.if_new_wd = new_window
                         funsave.save()
             except Exception as e:
                 print(e)

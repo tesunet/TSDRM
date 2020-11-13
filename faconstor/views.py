@@ -66,13 +66,23 @@ def childfun(myfun, funid):
             if str(fun.id) == funid:
                 isselected = True
                 pisselected = True
-                mychildfun.append(
-                    {"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon, "isselected": isselected,
-                     "child": []})
+                # mychildfun.append(
+                #     {"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon, "isselected": isselected,
+                #      "child": []})
+                mychildfun.append({
+                    "id": fun.id, "name": fun.name, "url": fun.url,
+                    "icon": fun.icon, "isselected": isselected,
+                    "child": [], "new_window": fun.if_new_wd,
+                })
             else:
                 returnfuns = childfun(fun, funid)
-                mychildfun.append({"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon,
-                                   'isselected': returnfuns["isselected"], "child": returnfuns["fun"]})
+                # mychildfun.append({"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon,
+                #                    'isselected': returnfuns["isselected"], "child": returnfuns["fun"]})
+                mychildfun.append({
+                    "id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon,
+                    "isselected": returnfuns["isselected"], "child": returnfuns["fun"],
+                    "new_window": fun.if_new_wd,
+                })
                 if returnfuns["isselected"]:
                     pisselected = returnfuns["isselected"]
     return {"fun": mychildfun, "isselected": pisselected}
@@ -141,13 +151,23 @@ def getpagefuns(funid, request=""):
             isselected = False
             if str(fun.id) == funid:
                 isselected = True
-                pagefuns.append(
-                    {"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon, "isselected": isselected,
-                     "child": []})
+                # pagefuns.append(
+                #     {"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon, "isselected": isselected,
+                #      "child": []})
+                pagefuns.append({
+                    "id": fun.id, "name": fun.name, "url": fun.url,
+                    "icon": fun.icon, "isselected": isselected,
+                    "child": [], "new_window": fun.if_new_wd,
+                })
             else:
                 returnfuns = childfun(fun, funid)
-                pagefuns.append({"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon,
-                                 "isselected": returnfuns["isselected"], "child": returnfuns["fun"]})
+                # pagefuns.append({"id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon,
+                #                  "isselected": returnfuns["isselected"], "child": returnfuns["fun"]})
+                pagefuns.append({
+                    "id": fun.id, "name": fun.name, "url": fun.url, "icon": fun.icon,
+                    "isselected": returnfuns["isselected"], "child": returnfuns["fun"],
+                    "new_window": fun.if_new_wd,
+                })
     curfun = Fun.objects.filter(id=int(funid))
     if len(curfun) > 0:
         myurl = curfun[0].url
@@ -1221,25 +1241,18 @@ def index(request, funid):
     funlist = sorted(funlist, key=lambda fun: fun.sort)
     # 最新操作
     alltask = []
-    p_tasks = ProcessTask.objects.exclude(state='9').exclude(processrun__pro_ins__process__state='9').select_related('processrun__pro_ins__process').order_by('-starttime')
+    p_tasks = ProcessTask.objects.exclude(state='9').exclude(processrun__pro_ins__state='9').order_by('-starttime').values(
+        "starttime", "content", "type", "state", "logtype", "processrun__pro_ins__name", "processrun__pro_ins__process__color"
+    )
 
     for task in p_tasks:
-        time = task.starttime
-        content = task.content
-        task_type = task.type
-        task_state = task.state
-        task_logtype = task.logtype
-
-        pro_ins_name, process_color = '', ''
-
-        try:
-            pro_ins_name = task.processrun.pro_ins.name
-        except AttributeError:
-            pass
-        try:
-            process_color = task.processrun.pro_ins.process.color
-        except AttributeError:
-            pass
+        time = task["starttime"]
+        content = task["content"]
+        task_type = task["type"]
+        task_state = task["state"]
+        task_logtype = task["logtype"]
+        pro_ins_name = task["processrun__pro_ins__name"]
+        process_color = task["processrun__pro_ins__process__color"]
 
         # 图标与颜色
         current_icon, current_color = custom_c_color(task_type, task_state, task_logtype)
