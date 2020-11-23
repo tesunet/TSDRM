@@ -50,7 +50,7 @@ $(document).ready(function () {
                 "data": null,
                 "width": "40px",
                 "mRender": function (full) {
-                    if(full.jobfailedreason != '')
+                    if(full.jobfailedreason != '' && full.jobfailedreason !=null )
                         return "<button  id='edit' title='详情' data-toggle='modal'  data-target='#static1'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button>"
                     else
                         return ""
@@ -84,6 +84,7 @@ $(document).ready(function () {
         $("#idataagent").val(data.idataagent);
         $("#enddate").val(data.enddate);
         $("#jobfailedreason").val(data.jobfailedreason);
+
     });
 
 
@@ -211,7 +212,7 @@ function get_jobbytype() {
             url: "../get_jobbytype/",
             data: {
                 util:$('#util').val(),
-                startdat:$('#starttime').val(),
+                startdate:$('#starttime').val(),
                 enddate:$('#endtime').val(),
                 clientid:$('#clientid').val(),
                 jobstatus:$('#jobstatus').val(),

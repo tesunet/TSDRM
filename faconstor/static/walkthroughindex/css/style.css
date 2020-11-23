@@ -228,6 +228,7 @@ input {
     font-size: 25px;
     letter-spacing:4px;
     color: #e8e8e8 !important;
+    margin-top: -10px;
 }
 .processname {
     width: 304px;
@@ -242,6 +243,7 @@ input {
     font-size: 25px;
     letter-spacing:4px;
     color: #e8e8e8 !important;
+    margin-top: -10px;
 }
 .processname2 {
     width: 304px;
@@ -256,6 +258,7 @@ input {
     font-size: 25px;
     letter-spacing:4px;
     color: #e8e8e8 !important;
+    margin-top: -10px;
 }
 
 
