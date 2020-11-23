@@ -933,11 +933,11 @@ input {
 }
 /*结束*/
 .end_pic{
-    width:1250px;
+    width:1600px;
     position: absolute;
     text-align: center;
     top:250px;
-    left: 275px;
+    left: 100px;
 }
 .endtext {
     font-size: 90px;
@@ -947,43 +947,46 @@ input {
 .endprocess {
     float: left;
     margin: 230px 0 0 0;
-    width:250px;
+    width: 220px;
     height: 350px;
     background: url(../images/end1.gif) no-repeat;
+    background-size: 98%;
 }
 .endprocess h3 {
 
     font-size: 25px;
     letter-spacing:4px;
-    margin: 160px 0 0 50px;
+    margin: 160px 0 0 0;
     color: #e8e8e8 !important;
 }
 .endprocess2 {
     float: left;
     margin: 230px 0 0 0;
-    width:250px;
+    width:220px;
     height: 350px;
     background: url(../images/end2.gif) no-repeat;
+    background-size: 98%;
 }
 .endprocess2 h3 {
 
     font-size: 25px;
     letter-spacing:4px;
-    margin: 160px 0 0 50px;
+    margin: 160px 0 0 0;
     color: #e8e8e8 !important;
 }
 .endprocess3 {
     float: left;
     margin: 230px 0 0 0;
-    width:250px;
+    width:220px;
     height: 350px;
     background: url(../images/end3.png) no-repeat;
+    background-size: 98%;
 }
 .endprocess3 h3 {
 
     font-size: 25px;
     letter-spacing:4px;
-    margin: 160px 0 0 50px;
+    margin: 160px 0 0 0;
     color: #e8e8e8 !important;
 }
 .endprocessimg img{
