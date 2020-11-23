@@ -217,7 +217,7 @@ input {
 }
 .processname1 {
     width: 304px;
-    height: 70px;
+    height: 40px;
     margin: 0px 0 0 37px;
     padding-top: 31px;
     padding-left: 90px;
@@ -231,7 +231,7 @@ input {
 }
 .processname {
     width: 304px;
-    height: 70px;
+    height: 40px;
     margin: 0px 0 0 37px;
     padding-top: 31px;
     padding-left: 90px;
@@ -245,7 +245,7 @@ input {
 }
 .processname2 {
     width: 304px;
-    height: 70px;
+    height: 40px;
     margin: 0px 0 0 37px;
     padding-top: 31px;
     padding-left: 90px;
@@ -463,7 +463,7 @@ input {
     position: absolute;
     background: url(../images/loading.gif) no-repeat;
     /*background-size: 90px 70px;*/
-    /*height: 70px;*/
+    /*height: 40px;*/
     /*width: 90px;*/
     background-size: 180px 140px;
     height: 140px;
