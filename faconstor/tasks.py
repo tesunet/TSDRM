@@ -254,6 +254,8 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
     pro_ins = processrun.pro_ins
     process = pro_ins.process
     if processrun.state == "RUN" or processrun.state == "ERROR":
+        p_state = processrun.state
+
         # 将错误流程改成RUN
         processrun.state = "RUN"
         processrun.save()
@@ -651,7 +653,7 @@ def runstep(steprun, if_repeat=False, processrun_params={}):
         if len(nextstep) > 0:
             # 演练中，后续步骤不计入RTO时，自动开启下一流程
             if processrun.walkthrough is not None and nextstep[
-                0].rto_count_in == "0" and processrun.walkthroughstate != "DONE":
+                0].rto_count_in == "0" and processrun.walkthroughstate != "DONE" and p_state != "ERROR":
                 processrun.walkthroughstate = "DONE"
                 processrun.save()
                 current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
@@ -951,56 +953,64 @@ def exec_process(processrunid, if_repeat=False, is_schedule=False):
         # 演练中，当前一流程结束时，启动下一流程
         if curwalkthroughstate is not None:
             if curwalkthroughstate != "DONE":
-                current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
+                current_process_runs = processrun.walkthrough.processrun_set.all()
+                w_current_process_run = processrun.walkthrough.processrun_set.filter(state="PLAN")
+
+                current_process_run = None
+                for pr in current_process_runs:
+                    if pr.id > processrun.id:
+                        current_process_run = pr
+                        break
+
                 if current_process_run:
-                    current_process_run = current_process_run[0]
-                    current_process_run.starttime = datetime.datetime.now()
-                    current_process_run.state = "RUN"
-                    current_process_run.walkthroughstate = "RUN"
-                    current_process_run.save()
+                    if current_process_run == "PLAN" and processrun.state not in ["ERROR", "STOP"]:
+                        current_process_run.starttime = datetime.datetime.now()
+                        current_process_run.state = "RUN"
+                        current_process_run.walkthroughstate = "RUN"
+                        current_process_run.save()
 
-                    allgroup = process.step_set.exclude(state="9").exclude(
-                        Q(group="") | Q(group=None)
-                    ).values("group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+                        allgroup = process.step_set.exclude(state="9").exclude(
+                            Q(group="") | Q(group=None)
+                        ).values("group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                    if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
-                        # 将当前流程改成SIGN
-                        c_process_run_id = current_process_run.id
-                        c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
-                        if c_process_run:
-                            c_process_run = c_process_run[0]
-                            c_process_run.state = "SIGN"
-                            c_process_run.save()
-                        for group in allgroup:
-                            try:
-                                signgroup = Group.objects.get(id=int(group["group"]))
-                                groupname = signgroup.name
+                        if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                            # 将当前流程改成SIGN
+                            c_process_run_id = current_process_run.id
+                            c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                            if c_process_run:
+                                c_process_run = c_process_run[0]
+                                c_process_run.state = "SIGN"
+                                c_process_run.save()
+                            for group in allgroup:
+                                try:
+                                    signgroup = Group.objects.get(id=int(group["group"]))
+                                    groupname = signgroup.name
 
+                                    ProcessTask.objects.create(**{
+                                        'processrun': current_process_run,
+                                        'starttime': datetime.datetime.now(),
+                                        'senduser': 'admin',
+                                        'receiveauth': group["group"],
+                                        'type': 'SIGN',
+                                        'state': '0',
+                                        'content': '流程即将启动，请' + groupname + '签到。',
+                                    })
+                                except:
+                                    pass
+                        else:
+                            prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
+                            if len(prosssigns) <= 0:
                                 ProcessTask.objects.create(**{
                                     'processrun': current_process_run,
                                     'starttime': datetime.datetime.now(),
+                                    'type': 'INFO',
+                                    'logtype': 'START',
+                                    'state': '1',
                                     'senduser': 'admin',
-                                    'receiveauth': group["group"],
-                                    'type': 'SIGN',
-                                    'state': '0',
-                                    'content': '流程即将启动，请' + groupname + '签到。',
+                                    'content': '流程启动。',
                                 })
-                            except:
-                                pass
-                    else:
-                        prosssigns = ProcessTask.objects.filter(processrun=current_process_run, state="0")
-                        if len(prosssigns) <= 0:
-                            ProcessTask.objects.create(**{
-                                'processrun': current_process_run,
-                                'starttime': datetime.datetime.now(),
-                                'type': 'INFO',
-                                'logtype': 'START',
-                                'state': '1',
-                                'senduser': 'admin',
-                                'content': '流程启动。',
-                            })
-                            exec_process.delay(current_process_run.id)
-                else:
+                                exec_process.delay(current_process_run.id)
+                if not w_current_process_run:
                     walkthrough = processrun.walkthrough
                     walkthrough.state = "DONE"
                     walkthrough.endtime = datetime.datetime.now()
