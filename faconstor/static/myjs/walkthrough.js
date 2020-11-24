@@ -34,13 +34,16 @@ $(document).ready(function () {
             }, {
                 "targets": -1,  // 指定最后一列添加按钮；
                 "data": null,
-                "width": "100px",  // 指定列宽；
+                "width": "120px",  // 指定列宽；
                 "render": function (data, type, full) {
                     var cat_button = ""
                     if (full.state == "已完成" || full.state == "终止") {
                         cat_button = "<button class='btn btn-xs btn-primary' type='button' data-toggle='modal' data-target='#static02' title='查看' id='cat'><i class='fa fa-eye' style='color: white'></i></a></button>"
                     } else {
                         cat_button = "<button class='btn btn-xs btn-primary' type='button' data-toggle='modal' data-target='#static02' title='查看' id='cat' disabled><i class='fa fa-eye' style='color: white'></i></a></button>"
+                        if (full.state == "执行中"){
+                            cat_button = "<button class='btn btn-xs btn-primary' type='button' data-toggle='modal' data-target='#static02' title='查看' id='cat' disabled><i class='fa fa-eye' style='color: white'></i></a></button><button title='终止'  id='stop_walkthrough' class='btn btn-xs btn-danger' type='button'><i class='fa fa-power-off'></i></button>"
+                        }
                     }
                     return "<td><button  id='edit' title='编辑' data-toggle='modal'  data-target='#static01'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button>" + cat_button + "<button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>"
                     // return "<td><button  id='edit' title='编辑' data-toggle='modal'  data-target='#static01'  class='btn btn-xs btn-primary' type='button'><i class='fa fa-edit'></i></button><button class='btn btn-xs btn-primary' type='button'><a href='/custom_pdf_report/?processrunid&processid'><i class='fa fa-arrow-circle-down' style='color: white'></i></a></button><button title='删除'  id='delrow' class='btn btn-xs btn-primary' type='button'><i class='fa fa-trash-o'></i></button></td>".replace("processrunid", "processrunid=" + full.processrun_id).replace("processid", "processid=" + full.process_id)
@@ -223,6 +226,29 @@ $(document).ready(function () {
                     $("a#download").attr("href", "/walkthrough_pdf/?walkthrough_id=" + walkthrough_id)
                 },
             });
+        });
+        $('#sample_1 tbody').on('click', 'button#stop_walkthrough', function () {
+            if (confirm("是否终止本次演练?")){
+                var table = $('#sample_1').DataTable();
+                var data = table.row($(this).parents('tr')).data();
+                var walkthrough_id = data.walkthrough_id;
+                $.ajax({
+                    type: "POST",
+                    url: "../../stop_walkthrough/",
+                    data:
+                    {
+                        walkthrough_id: walkthrough_id
+                    },
+                    success: function (data) {
+                        var status = data.status,
+                            info = data.info;
+                        if (status=="1"){
+                            table.ajax.reload();
+                        }
+                        alert(info)
+                    },
+                });
+            }
         });
     }
 

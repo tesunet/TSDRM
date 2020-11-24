@@ -1781,6 +1781,30 @@ def get_error_sovled_status(request):
     })
 
 
+@login_required
+def stop_walkthrough(request):
+    walkthrough_id = request.POST.get("walkthrough_id", "")
+    status = 1
+    info = "终止本次演练成功"
+    try:
+        walkthrough_id = int(walkthrough_id)
+
+        w = Walkthrough.objects.get(id=walkthrough_id)
+        w.state = "STOP"
+        w.save()
+        print(w.processrun_set.values("id"))
+        w.processrun_set.exclude(state="DONE").update(**{
+            "state": "STOP"
+        })
+    except Exception as e:
+        status = 0
+        info = "终止本次演练失败{0}".format(e)
+
+    return JsonResponse({
+        "status": status,
+        "info": info
+    })
+
 
 @login_required
 def falconstorswitch(request, pro_ins_id):

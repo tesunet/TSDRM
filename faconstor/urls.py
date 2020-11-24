@@ -113,6 +113,8 @@ urlpatterns = [
 
     url(r'^solve_error/$', solve_error),
     url(r'^get_error_sovled_status/$', get_error_sovled_status),
+
+    url(r'^stop_walkthrough/$', stop_walkthrough),
     # 演练报告
     url(r'^walkthrough_pdf/$', walkthrough_pdf),
     url(r'^get_walkthrough_info/$', get_walkthrough_info),
