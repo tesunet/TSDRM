@@ -679,6 +679,12 @@ def get_walkthrough_index_data(request):
                     if current_processrun.state == "SIGN":
                         rtostate = "DONE"
                         rtoendtime = current_processrun.starttime.strftime('%Y-%m-%d %H:%M:%S')
+
+                    if name.startswith("*"):
+                        name_l = name.split("*")
+                        if len(name_l) > 1:
+                            name = name_l[1]
+
                     cur_processruns.append({
                         "processrun_id": processrun_id,
                         "process_id": process_id,
@@ -710,6 +716,11 @@ def get_walkthrough_index_data(request):
                 if taskcontent == oldtask["taskcontent"]:
                     isintasks = True
             if not isintasks:
+                if taskcontent.startswith("*"):
+                    taskcontent_l = taskcontent.split("*")
+                    if len(taskcontent_l) > 1:
+                        taskcontent = taskcontent_l[1]
+
                 showtasks.append({
                     "taskid": task.id,
                     "taskname": taskname,
@@ -2382,86 +2393,86 @@ def walkthroughsave(request):
         result["res"] = "演练结束时间必须填写！"
     else:
         if id == 0:
-            walkthrough = Walkthrough.objects.filter(state__in=["PLAN", "RUN", "ERROR"])
-            if (len(walkthrough) > 0):
-                result["res"] = '演练计划创建失败，已经存在演练计划，务必先完成该计划。'
-            else:
-                walkthrough = Walkthrough()
-                walkthrough.name = name
-                walkthrough.createtime = datetime.datetime.now()
-                walkthrough.creatuser = request.user.username
-                walkthrough.state = "PLAN"
-                walkthrough.purpose = purpose
-                walkthrough.starttime = start_time
-                walkthrough.endtime = end_time
-                walkthrough.save()
+            # walkthrough = Walkthrough.objects.filter(state__in=["PLAN", "RUN", "ERROR"])
+            # if (len(walkthrough) > 0):
+            #     result["res"] = '演练计划创建失败，已经存在演练计划，务必先完成该计划。'
+            # else:
+            walkthrough = Walkthrough()
+            walkthrough.name = name
+            walkthrough.createtime = datetime.datetime.now()
+            walkthrough.creatuser = request.user.username
+            walkthrough.state = "PLAN"
+            walkthrough.purpose = purpose
+            walkthrough.starttime = start_time
+            walkthrough.endtime = end_time
+            walkthrough.save()
 
-                for pro_ins_id in processes:
-                    pro_ins = None
-                    try:
-                        pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
-                    except:
-                        pass
-                    myprocessrun = ProcessRun()
-                    myprocessrun.walkthrough = walkthrough
-                    myprocessrun.pro_ins = pro_ins
-                    myprocessrun.state = "PLAN"
-                    myprocessrun.starttime = start_time
+            for pro_ins_id in processes:
+                pro_ins = None
+                try:
+                    pro_ins = ProcessInstance.objects.get(id=int(pro_ins_id))
+                except:
+                    pass
+                myprocessrun = ProcessRun()
+                myprocessrun.walkthrough = walkthrough
+                myprocessrun.pro_ins = pro_ins
+                myprocessrun.state = "PLAN"
+                myprocessrun.starttime = start_time
 
-                    if myprocessrun.pro_ins.process.type.upper() == 'COMMVAULT':
-                        _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
-                        config = custom_cv_params(**cv_params)
-                        myprocessrun.info = config
+                if myprocessrun.pro_ins.process.type.upper() == 'COMMVAULT':
+                    _, _, cv_params = get_params_from_pro_ins(pro_ins.id)
+                    config = custom_cv_params(**cv_params)
+                    myprocessrun.info = config
 
-                    myprocessrun.save()
-                    current_process_run_id = myprocessrun.id
+                myprocessrun.save()
+                current_process_run_id = myprocessrun.id
 
-                    mystep = pro_ins.process.step_set.exclude(state="9").order_by("sort")
-                    for step in mystep:
-                        mysteprun = StepRun()
-                        mysteprun.step = step
-                        mysteprun.processrun = myprocessrun
-                        mysteprun.state = "EDIT"
-                        mysteprun.save()
+                mystep = pro_ins.process.step_set.exclude(state="9").order_by("sort")
+                for step in mystep:
+                    mysteprun = StepRun()
+                    mysteprun.step = step
+                    mysteprun.processrun = myprocessrun
+                    mysteprun.state = "EDIT"
+                    mysteprun.save()
 
-                        myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
-                        for script in myscript:
-                            myscriptrun = ScriptRun()
-                            myscriptrun.script = script
-                            myscriptrun.steprun = mysteprun
-                            myscriptrun.state = "EDIT"
-                            myscriptrun.save()
+                    myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
+                    for script in myscript:
+                        myscriptrun = ScriptRun()
+                        myscriptrun.script = script
+                        myscriptrun.steprun = mysteprun
+                        myscriptrun.state = "EDIT"
+                        myscriptrun.save()
 
-                        myverifyitems = step.verifyitems_set.exclude(state="9")
-                        for verifyitems in myverifyitems:
-                            myverifyitemsrun = VerifyItemsRun()
-                            myverifyitemsrun.verify_items = verifyitems
-                            myverifyitemsrun.steprun = mysteprun
-                            myverifyitemsrun.save()
+                    myverifyitems = step.verifyitems_set.exclude(state="9")
+                    for verifyitems in myverifyitems:
+                        myverifyitemsrun = VerifyItemsRun()
+                        myverifyitemsrun.verify_items = verifyitems
+                        myverifyitemsrun.steprun = mysteprun
+                        myverifyitemsrun.save()
 
-                    # 生成邀请任务信息
-                    myprocesstask = ProcessTask()
-                    myprocesstask.processrun_id = current_process_run_id
-                    myprocesstask.starttime = datetime.datetime.now()
-                    myprocesstask.senduser = request.user.username
-                    myprocesstask.type = "INFO"
-                    myprocesstask.logtype = "PLAN"
-                    myprocesstask.state = "1"
-                    myprocesstask.content = "创建流程计划。"
-                    myprocesstask.save()
+                # 生成邀请任务信息
+                myprocesstask = ProcessTask()
+                myprocesstask.processrun_id = current_process_run_id
+                myprocesstask.starttime = datetime.datetime.now()
+                myprocesstask.senduser = request.user.username
+                myprocesstask.type = "INFO"
+                myprocesstask.logtype = "PLAN"
+                myprocesstask.state = "1"
+                myprocesstask.content = "创建流程计划。"
+                myprocesstask.save()
 
-                mywalkthroughtask = ProcessTask()
-                mywalkthroughtask.walkthrough = walkthrough
-                mywalkthroughtask.starttime = datetime.datetime.now()
-                mywalkthroughtask.senduser = request.user.username
-                mywalkthroughtask.type = "INFO"
-                mywalkthroughtask.logtype = "PLAN"
-                mywalkthroughtask.state = "1"
-                mywalkthroughtask.content = "创建演练计划。"
-                mywalkthroughtask.save()
+            mywalkthroughtask = ProcessTask()
+            mywalkthroughtask.walkthrough = walkthrough
+            mywalkthroughtask.starttime = datetime.datetime.now()
+            mywalkthroughtask.senduser = request.user.username
+            mywalkthroughtask.type = "INFO"
+            mywalkthroughtask.logtype = "PLAN"
+            mywalkthroughtask.state = "1"
+            mywalkthroughtask.content = "创建演练计划。"
+            mywalkthroughtask.save()
 
-                result["data"] = walkthrough.id
-                result["res"] = "演练计划保存成功，待开启流程。"
+            result["data"] = walkthrough.id
+            result["res"] = "演练计划保存成功，待开启流程。"
         else:
             walkthrough = Walkthrough.objects.get(id=id)
             walkthrough.name = name

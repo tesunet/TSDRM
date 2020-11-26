@@ -573,6 +573,12 @@ var util = {
                                 sounds.push("step_3");
                             if (curStep.name == "环境验证")
                                 sounds.push("step_4");
+
+                            // 演练
+                            if (curStep.name == "灾备环境初始化")
+                                sounds.push("step_5");
+                            if (curStep.name == "环境验证")
+                                sounds.push("step_8");
                         }
                     }
                     //流程结束
