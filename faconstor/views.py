@@ -31,7 +31,7 @@ from .remote import ServerByPara
 from TSDRM import settings
 from .api import SQLApi
 from .public import (
-    get_credit_info, file_iterator, get_params_from_pro_ins
+    get_credit_info, file_iterator, get_params_from_pro_ins,revoke_p_task,is_p_task_exists
 )
 
 funlist = []
@@ -1788,11 +1788,13 @@ def stop_walkthrough(request):
     info = "终止本次演练成功"
     try:
         walkthrough_id = int(walkthrough_id)
-
         w = Walkthrough.objects.get(id=walkthrough_id)
+
+        prs = w.processrun_set.exclude(state="DONE")
+        for pr in prs:
+            revoke_p_task(pr.id)
         w.state = "STOP"
         w.save()
-        print(w.processrun_set.values("id"))
         w.processrun_set.exclude(state="DONE").update(**{
             "state": "STOP"
         })
@@ -3024,60 +3026,34 @@ def set_error_state(temp_request, process_run_id, task_content):
 def revoke_current_task(request):
     process_run_id = request.POST.get("process_run_id", "")
     abnormal = request.POST.get("abnormal", "")
-    task_url = "http://127.0.0.1:5555/api/tasks"
 
     try:
         process_run_id = int(process_run_id)
     except:
         return JsonResponse({"data": "流程不存在。"})
 
-    try:
-        task_json_info = requests.get(task_url).text
-    except:
-        return JsonResponse({"data": "终端未启动flower异步任务监控！"})
-
-    task_dict_info = json.loads(task_json_info)
-    task_id = ""
-
-    for key, value in task_dict_info.items():
-        try:
-            task_process_id = int(value["args"][1:-1])
-        except:
-            task_process_id = ""
-        # 终止指定流程的异步任务
-        if value["state"] in ["STARTED", "SUCCESS"] and task_process_id == process_run_id:
-            task_id = key
-            break
-
     # abnormal 对异步任务进行的类型判断
     #   1.手动终止异步任务
     #   2.手动终止异步任务，但不修改流程状态
     #   0.被动终止异步任务：celery-flower检测不到异步任务，但是流程还在跑
-
     if abnormal in ["1", "2"]:
-        stop_url = "http://127.0.0.1:5555/api/task/revoke/{0}?terminate=true".format(task_id)
-        response = requests.post(stop_url)
-        task_content = "异步任务被自主关闭。"
-
-        # 终止任务
-        if task_id:
+        ret = revoke_p_task(process_run_id)
+        if ret == 1:
+            task_content = "异步任务被自主关闭"
             # "1"修改状态  "2"表示强制终止流程时终止异步任务，不改变STOP状态为ERROR
             if abnormal == "1":
                 # 修改当前步骤/脚本/流程的状态为ERROR
                 set_error_state(request, process_run_id, task_content)
             return JsonResponse({"data": task_content})
-
+        elif ret == 2:
+            return JsonResponse({"data": "异步任务中止失败"})
         else:
             return JsonResponse({"data": "当前任务不存在"})
-
     else:
         task_content = "异步任务异常关闭。"
-
-        # 终止任务
-        if not task_id:
+        if not is_p_task_exists(process_run_id):
             # 修改当前步骤/脚本/流程的状态为ERROR
             set_error_state(request, process_run_id, task_content)
-
             return JsonResponse({"data": task_content})
         else:
             return JsonResponse({"data": "异步任务未出现异常"})
@@ -3382,103 +3358,107 @@ def stop_current_process(request):
     current_process_run = ProcessRun.objects.exclude(state="9").filter(id=process_run_id)
     if current_process_run:
         current_process_run = current_process_run[0]
+        ret = revoke_p_task(current_process_run.id)
+        if ret == 1:
+            all_current_step_runs = current_process_run.steprun_set.filter(Q(state="RUN") | Q(state="CONFIRM")).exclude(
+                state="9")
+            if all_current_step_runs:
+                for all_current_step_run in all_current_step_runs:
+                    all_current_step_run.state = "EDIT"
+                    all_current_step_run.save()
+                    all_scripts_from_current_step = all_current_step_run.scriptrun_set.filter(state="RUN").exclude(
+                        state="9")
+                    if all_scripts_from_current_step:
+                        for script in all_scripts_from_current_step:
+                            script.state = "EDIT"
+                            script.save()
 
-        all_current_step_runs = current_process_run.steprun_set.filter(Q(state="RUN") | Q(state="CONFIRM")).exclude(
-            state="9")
-        if all_current_step_runs:
-            for all_current_step_run in all_current_step_runs:
-                all_current_step_run.state = "EDIT"
-                all_current_step_run.save()
-                all_scripts_from_current_step = all_current_step_run.scriptrun_set.filter(state="RUN").exclude(
-                    state="9")
-                if all_scripts_from_current_step:
-                    for script in all_scripts_from_current_step:
-                        script.state = "EDIT"
-                        script.save()
+            current_process_run.state = "STOP"
+            current_process_run.endtime = datetime.datetime.now()
+            current_process_run.note = process_note
+            current_process_run.save()
 
-        current_process_run.state = "STOP"
-        current_process_run.endtime = datetime.datetime.now()
-        current_process_run.note = process_note
-        current_process_run.save()
+            all_tasks_ever = current_process_run.processtask_set.filter(state="0")
+            if all_tasks_ever:
+                for task in all_tasks_ever:
+                    task.endtime = datetime.datetime.now()
+                    task.state = "1"
+                    task.save()
 
-        all_tasks_ever = current_process_run.processtask_set.filter(state="0")
-        if all_tasks_ever:
-            for task in all_tasks_ever:
-                task.endtime = datetime.datetime.now()
-                task.state = "1"
-                task.save()
+            myprocesstask = ProcessTask()
+            myprocesstask.processrun_id = process_run_id
+            myprocesstask.starttime = datetime.datetime.now()
+            myprocesstask.senduser = request.user.username
+            myprocesstask.type = "INFO"
+            myprocesstask.logtype = "STOP"
+            myprocesstask.state = "1"
+            myprocesstask.content = "流程被终止。"
+            myprocesstask.save()
 
-        myprocesstask = ProcessTask()
-        myprocesstask.processrun_id = process_run_id
-        myprocesstask.starttime = datetime.datetime.now()
-        myprocesstask.senduser = request.user.username
-        myprocesstask.type = "INFO"
-        myprocesstask.logtype = "STOP"
-        myprocesstask.state = "1"
-        myprocesstask.content = "流程被终止。"
-        myprocesstask.save()
+            ######################
+            # 执行强制执行的脚本    #
+            ######################
+            force_exec_script.delay(process_run_id)
+            if current_process_run.walkthrough is not None:
+                if current_process_run.walkthroughstate != "DONE":
+                    next_process_run = current_process_run.walkthrough.processrun_set.filter(state="PLAN")  # 这里待修改
+                    if next_process_run:
+                        next_process_run = next_process_run[0]
+                        next_process_run.starttime = datetime.datetime.now()
+                        next_process_run.state = "RUN"
+                        next_process_run.walkthroughstate = "RUN"
+                        next_process_run.DataSet_id = 89
+                        next_process_run.save()
 
-        ######################
-        # 执行强制执行的脚本  #
-        ######################
-        force_exec_script.delay(process_run_id)
-        if current_process_run.walkthrough is not None:
-            if current_process_run.walkthrough != "DONE":
-                next_process_run = current_process_run.walkthrough.processrun_set.filter(state="PLAN")
-                if next_process_run:
-                    next_process_run = next_process_run[0]
-                    next_process_run.starttime = datetime.datetime.now()
-                    next_process_run.state = "RUN"
-                    next_process_run.walkthroughstate = "RUN"
-                    next_process_run.DataSet_id = 89
-                    next_process_run.save()
+                        # process = Process.objects.filter(id=next_process_run.process_id).exclude(state="9").exclude(
+                        #     Q(type=None) | Q(type=""))
+                        process = Process.objects.filter(id=next_process_run.pro_ins.process_id).exclude(state="9").exclude(
+                            Q(type=None) | Q(type=""))
+                        allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                            "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
 
-                    process = Process.objects.filter(id=next_process_run.process_id).exclude(state="9").exclude(
-                        Q(type=None) | Q(type=""))
+                        if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                            # 将当前流程改成SIGN
+                            c_process_run_id = next_process_run.id
+                            c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                            if c_process_run:
+                                c_process_run = c_process_run[0]
+                                c_process_run.state = "SIGN"
+                                c_process_run.walkthroughstate = "RUN"
+                                c_process_run.save()
+                            for group in allgroup:
+                                try:
+                                    signgroup = Group.objects.get(id=int(group["group"]))
+                                    groupname = signgroup.name
+                                    myprocesstask = ProcessTask()
+                                    myprocesstask.processrun = next_process_run
+                                    myprocesstask.starttime = datetime.datetime.now()
+                                    myprocesstask.senduser = request.user.username
+                                    myprocesstask.receiveauth = group["group"]
+                                    myprocesstask.type = "SIGN"
+                                    myprocesstask.state = "0"
+                                    myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                    myprocesstask.save()
+                                except:
+                                    pass
 
-                    allgroup = process[0].step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-                        "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
-
-                    if process[0].sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
-                        # 将当前流程改成SIGN
-                        c_process_run_id = next_process_run.id
-                        c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
-                        if c_process_run:
-                            c_process_run = c_process_run[0]
-                            c_process_run.state = "SIGN"
-                            c_process_run.walkthroughstate = "RUN"
-                            c_process_run.save()
-                        for group in allgroup:
-                            try:
-                                signgroup = Group.objects.get(id=int(group["group"]))
-                                groupname = signgroup.name
+                        else:
+                            prosssigns = ProcessTask.objects.filter(processrun=next_process_run, state="0")
+                            if len(prosssigns) <= 0:
                                 myprocesstask = ProcessTask()
                                 myprocesstask.processrun = next_process_run
                                 myprocesstask.starttime = datetime.datetime.now()
+                                myprocesstask.type = "INFO"
+                                myprocesstask.logtype = "START"
+                                myprocesstask.state = "1"
                                 myprocesstask.senduser = request.user.username
-                                myprocesstask.receiveauth = group["group"]
-                                myprocesstask.type = "SIGN"
-                                myprocesstask.state = "0"
-                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                                myprocesstask.content = "流程启动。"
                                 myprocesstask.save()
-                            except:
-                                pass
+                                print("奇怪吗？")
+                                exec_process.delay(next_process_run.id)
 
-                    else:
-                        prosssigns = ProcessTask.objects.filter(processrun=next_process_run, state="0")
-                        if len(prosssigns) <= 0:
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = next_process_run
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.type = "INFO"
-                            myprocesstask.logtype = "START"
-                            myprocesstask.state = "1"
-                            myprocesstask.senduser = request.user.username
-                            myprocesstask.content = "流程启动。"
-                            myprocesstask.save()
-
-                            exec_process.delay(next_process_run.id)
-
+        if ret == 2:
+            return JsonResponse({"data": "流程任务终止失败。"})
         return JsonResponse({"data": "流程已经被终止，将强制执行部分脚本。"})
     else:
         return JsonResponse({"data": "终止流程异常，请联系客服"})

@@ -4,6 +4,7 @@
     }
     return true;
 }
+
 var csrfToken = $("[name='csrfmiddlewaretoken']").val();
 var walkthrough_state = "",
     refresh = true,
@@ -15,7 +16,7 @@ var walkthrough_state = "",
     end = false;
 var allState = ['run', 'done', 'error', 'stop', 'confirm', 'edit'];
 
-var oldwalkthroughinfo ={}
+var oldwalkthroughinfo = {}
 
 // add...
 // var audioSecurePlay = function (audio) {
@@ -39,6 +40,7 @@ var util = {
     request: function () {
         if (soundrefresh) {
             if (refresh) {
+                console.log("kela")
                 $.ajax({
                     url: '/get_walkthrough_index_data/', //这里面是请求的接口地址
                     //url: '/static/processindex/data.json', //这里面是请求的接口地址
@@ -53,7 +55,7 @@ var util = {
                         console.log("run...")
                         util.makeHtml(data);
                         util.playsound(data);
-                        oldwalkthroughinfo=data;
+                        oldwalkthroughinfo = data;
                     },
                     // error: function(xhr) {
                     //     alert('网络错误')
@@ -69,8 +71,9 @@ var util = {
         if (!isEmptyObject(oldwalkthroughinfo)) {
             oldshowtasks = oldwalkthroughinfo.showtasks;
         }
-        util.makeCommand(walkthroughindexdata.showtasks,oldshowtasks);
+        util.makeCommand(walkthroughindexdata.showtasks, oldshowtasks);
         // 判断是否为计划
+        console.log(walkthrough_state)
         var myAudio = document.getElementById('audio2');
         if (walkthrough_state === "PLAN") {
             $(".walkthrough_run").hide();
@@ -93,8 +96,7 @@ var util = {
             var myAudio = document.getElementById('audio2');
             myAudio.loop = true;
             myAudio.volume = 0.05;
-            // audioSecurePlay(myAudio);
-            myAudio.play();
+            myAudio.play()
         }
 
         if (headerTitle === '') {
@@ -125,10 +127,9 @@ var util = {
             if (data.state != "DONE")
                 curstate = ""
 
-            if (data.walkthroughstate == "DONE"){
+            if (data.walkthroughstate == "DONE") {
                 $(".progress_list").append("<div class=\"processname1\"><h3>" + data.name + "</h3> </div>");
-            }
-            else if (data.walkthroughstate == "RUN")
+            } else if (data.walkthroughstate == "RUN")
                 $(".progress_list").append("<div class=\"processname\"><h3>" + data.name + "</h3> </div>");
             else
                 $(".progress_list").append("<div class=\"processname2\"><h3>" + data.name + "</h3> </div>");
@@ -330,7 +331,7 @@ var util = {
     makeCommand: function (showtasks, oldshowtasks) {
         var console = $(".console");
         console.html("")
-        if (oldshowtasks.length>0) {
+        if (oldshowtasks.length > 0) {
             var showtext = ""
             for (var i = 0; i < showtasks.length; i++) {
                 var isshow = false;
@@ -519,7 +520,7 @@ var util = {
     playsound: function (walkthroughindexdata) {
         var sounds = []
         oldwalkthroughindexdata = oldwalkthroughinfo;
-        if (!isEmptyObject(oldwalkthroughindexdata)){
+        if (!isEmptyObject(oldwalkthroughindexdata)) {
             for (var processnum = 0; processnum < walkthroughindexdata.processruns.length; processnum++) {
                 //流程播报
                 curprocess = walkthroughindexdata.processruns[processnum];

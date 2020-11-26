@@ -231,7 +231,6 @@ urlpatterns = [
     url(r'^get_jobbackupsize_daily/$', get_jobbackupsize_daily),
     url(r'^get_jobbytype/$', get_jobbytype),
 
-    
     # 客户端管理
     url(r'^client_manage/$', client_manage, {'funid': '71'}),
     url(r'^get_client_tree/$', get_client_tree),
