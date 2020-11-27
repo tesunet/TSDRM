@@ -101,6 +101,7 @@ urlpatterns = [
     url(r'^falconstor_run_invited/$', falconstor_run_invited),
     url(r'^fill_with_invitation/$', fill_with_invitation),
     url(r'^save_modify_invitation/$', save_modify_invitation),
+    url(r'^get_pro_status/$', get_pro_status),
 
     url(r'^walkthrough/$', walkthrough, {"funid": "69"}),
     url(r'^walkthroughdata/$', walkthroughdata),

@@ -22,17 +22,17 @@ $(document).ready(function () {
                 })
             },
             "columns": [
-                { "data": "processrun_id" },
-                { "data": "process_name" },
-                { "data": "process_type" },
-                { "data": "createuser" },
-                { "data": "state" },
-                { "data": "run_reason" },
-                { "data": "starttime" },
-                { "data": "endtime" },
-                { "data": "pro_ins_id" },
-                { "data": "process_url" },
-                { "data": null },
+                {"data": "processrun_id"},
+                {"data": "process_name"},
+                {"data": "process_type"},
+                {"data": "createuser"},
+                {"data": "state"},
+                {"data": "run_reason"},
+                {"data": "starttime"},
+                {"data": "endtime"},
+                {"data": "pro_ins_id"},
+                {"data": "process_url"},
+                {"data": null},
             ],
             "columnDefs": [{
                 "targets": 1,
@@ -79,9 +79,9 @@ $(document).ready(function () {
                     type: "POST",
                     url: "../../delete_current_process_run/",
                     data:
-                    {
-                        processrun_id: data.processrun_id
-                    },
+                        {
+                            processrun_id: data.processrun_id
+                        },
                     success: function (data) {
                         if (data == 1) {
                             table.ajax.reload();
@@ -118,41 +118,70 @@ $(document).ready(function () {
         if ($('#isoverwrite').is(':checked')) {
             mssql_iscover = "TRUE"
         }
-        // 非邀请流程启动
+
+        function processRun() {
+            // 非邀请流程启动
+            $.ajax({
+                type: "POST",
+                dataType: 'json',
+                url: "../falconstorrun/",
+                data: {
+                    pro_ins_id: pro_ins_id,
+                    run_person: $("#run_person").val(),
+                    run_time: $("#run_time").val(),
+                    run_reason: $("#run_reason").val(),
+
+                    pri: $("#pri").val(),
+                    std: $("#std").val(),
+                    agent_type: $("#agent_type").val(),
+                    recovery_time: $("#recovery_time").val(),
+                    browseJobId: $("#browseJobId").val(),
+
+                    data_path: $("#data_path").val(),
+                    copy_priority: $("#copy_priority").val(),
+                    db_open: $("#db_open").val(),
+                    log_restore: $("#log_restore").val(),
+
+                    // SQL Server
+                    mssql_iscover: mssql_iscover,
+
+                    // File System
+                    iscover: iscover,
+                    mypath: mypath,
+                    selectedfile: selectedfile,
+                },
+                success: function (data) {
+                    if (data["res"] == "新增成功。") {
+                        window.location.href = data["data"];
+                    } else
+                        alert(data["res"]);
+                },
+                error: function (e) {
+                    alert("流程启动失败，请于管理员联系。");
+                }
+            });
+        }
+
+        // 以往流程是否启用
         $.ajax({
             type: "POST",
             dataType: 'json',
-            url: "../falconstorrun/",
+            url: "../get_pro_status/",
             data: {
                 pro_ins_id: pro_ins_id,
-                run_person: $("#run_person").val(),
-                run_time: $("#run_time").val(),
-                run_reason: $("#run_reason").val(),
-
-                pri: $("#pri").val(),
-                std: $("#std").val(),
-                agent_type: $("#agent_type").val(),
-                recovery_time: $("#recovery_time").val(),
-                browseJobId: $("#browseJobId").val(),
-
-                data_path: $("#data_path").val(),
-                copy_priority: $("#copy_priority").val(),
-                db_open: $("#db_open").val(),
-                log_restore: $("#log_restore").val(),
-
-                // SQL Server
-                mssql_iscover: mssql_iscover,
-
-                // File System
-                iscover: iscover,
-                mypath: mypath,
-                selectedfile: selectedfile,
             },
             success: function (data) {
-                if (data["res"] == "新增成功。") {
-                    window.location.href = data["data"];
-                } else
-                    alert(data["res"]);
+                var status = data.status,
+                    info = data.info;
+                if (status == 1){
+                    if (confirm(info)){
+                        processRun();
+                    }
+                } else if (status == 2){
+                    processRun();
+                } else {
+                    alert(info);
+                }
             },
             error: function (e) {
                 alert("流程启动失败，请于管理员联系。");
@@ -162,7 +191,7 @@ $(document).ready(function () {
 
 
     $("#run").click(function () {
-        $("#static").modal({ backdrop: "static" });
+        $("#static").modal({backdrop: "static"});
         $('#recovery_time').datetimepicker({
             format: 'yyyy-mm-dd hh:ii:ss',
             pickerPosition: 'top-right'
@@ -175,7 +204,7 @@ $(document).ready(function () {
 
     $("#recovery_time_redio_group").click(function () {
         if ($("input[name='recovery_time_redio']:checked").val() == 2) {
-            $("#static04").modal({ backdrop: "static" });
+            $("#static04").modal({backdrop: "static"});
             var pri = $("#pri").val();
             var datatable = $("#backup_point").dataTable();
             datatable.fnClearTable(); //清空数据
@@ -186,12 +215,12 @@ $(document).ready(function () {
                 "bSort": false,
                 "ajax": "../../client_cv_get_backup_his?id=" + pri,
                 "columns": [
-                    { "data": "jobId" },
-                    { "data": "jobType" },
-                    { "data": "Level" },
-                    { "data": "StartTime" },
-                    { "data": "LastTime" },
-                    { "data": null },
+                    {"data": "jobId"},
+                    {"data": "jobType"},
+                    {"data": "Level"},
+                    {"data": "StartTime"},
+                    {"data": "LastTime"},
+                    {"data": null},
                 ],
                 "columnDefs": [{
                     "targets": -1,
@@ -255,19 +284,20 @@ $(document).ready(function () {
                 enable: true,
                 url: '../get_file_tree/',
                 autoParam: ["id"],
-                otherParam: { "cv_id": cv_id },
+                otherParam: {"cv_id": cv_id},
                 dataFilter: filter
             },
             check: {
                 enable: true,
                 chkStyle: "checkbox",               //多选
-                chkboxType: { "Y": "s", "N": "ps" }  //不级联父节点选择
+                chkboxType: {"Y": "s", "N": "ps"}  //不级联父节点选择
             },
             view: {
                 showLine: false
             },
 
         };
+
         function filter(treeId, parentNode, childNodes) {
             if (!childNodes) return null;
             for (var i = 0, l = childNodes.length; i < l; i++) {
@@ -275,6 +305,7 @@ $(document).ready(function () {
             }
             return childNodes;
         }
+
         $.fn.zTree.init($("#fs_tree"), setting);
     }
     // 选中文件

@@ -4002,6 +4002,43 @@ def save_modify_invitation(request):
 
 
 @login_required
+def get_pro_status(request):
+    """
+    获取以往流程状态
+    @return status{int}: 1 获取成功 0 获取失败 2 获取成功，并且可直接执行流程
+    """
+    status = 1
+    info = ""
+    pro_ins_id = request.POST.get("pro_ins_id", "")
+    try:
+        pro_ins_id = int(pro_ins_id)
+    except ValueError as e:
+        status = 0
+        info = "获取流程状态失败:{0}".format(e)
+    else:
+        pro_runs = ProcessRun.objects.exclude(state="").filter(state__in=["ERROR", "RUN"]).filter(pro_ins_id=pro_ins_id)
+        err_n = 0
+        run_n = 0
+        for pro_run in pro_runs:
+            if pro_run.state == "ERROR":
+                err_n += 1
+            if pro_run.state == "RUN":
+                run_n += 1
+        err_info = "{0}套错误流程".format(err_n) if err_n else ""
+        run_info = "{0}套运行流程".format(run_n) if run_n else ""
+        if all([err_n, run_n]):
+            err_info += ","
+        if not any([err_n, run_n]):
+            status = 2
+        else:
+            info = "目前有{0}{1}存在,是否坚持启动当前流程?".format(err_info, run_info)
+    return JsonResponse({
+        "status": status,
+        "info": info,
+    })
+
+
+@login_required
 def fill_with_invitation(request):
     plan_process_run_id = request.POST.get("plan_process_run_id", "")
     current_invitation = Invitation.objects.filter(process_run_id=plan_process_run_id)
