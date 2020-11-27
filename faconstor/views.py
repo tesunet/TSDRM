@@ -680,8 +680,8 @@ def get_walkthrough_index_data(request):
                         rtostate = "DONE"
                         rtoendtime = current_processrun.starttime.strftime('%Y-%m-%d %H:%M:%S')
 
-                    if name.startswith("*"):
-                        name_l = name.split("*")
+                    if name.startswith("_"):
+                        name_l = name.split("_")
                         if len(name_l) > 1:
                             name = name_l[1]
 
@@ -716,8 +716,8 @@ def get_walkthrough_index_data(request):
                 if taskcontent == oldtask["taskcontent"]:
                     isintasks = True
             if not isintasks:
-                if taskcontent.startswith("*"):
-                    taskcontent_l = taskcontent.split("*")
+                if taskcontent.startswith("_"):
+                    taskcontent_l = taskcontent.split("_")
                     if len(taskcontent_l) > 1:
                         taskcontent = taskcontent_l[1]
 
@@ -2067,7 +2067,7 @@ def falconstorrun(request):
     except:
         result["res"] = '流程启动失败，该流程不存在。'
     else:
-        running_process = ProcessRun.objects.filter(pro_ins=pro_ins, state__in=["RUN", "ERROR"])
+        running_process = ProcessRun.objects.filter(pro_ins=pro_ins, state__in=["RUN"])
         if running_process.exists():
             result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
         else:
