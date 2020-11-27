@@ -577,8 +577,11 @@ var util = {
                             // 演练
                             if (curStep.name == "灾备环境初始化")
                                 sounds.push("step_5");
-                            if (curStep.name == "环境验证")
-                                sounds.push("step_8");
+                            if (curStep.name == "功能验证")
+                                sounds.push("step_6");
+                            if (curStep.name =="启动成功"){
+                                sounds.push("step_7_" + curprocess.process_id)
+                            }
                         }
                     }
                     //流程结束
@@ -596,7 +599,10 @@ var util = {
             if (curwalkthroughstate == "DONE" && curwalkthroughstate != oldwalkthroughstate) {
                 sounds.push("walkthroughend");
             }
-            util.playmp3(sounds);
+            setTimeout(function () {
+                util.playmp3(sounds);
+            }, 2*1000)
+            // util.playmp3(sounds);
         }
     },
     playmp3: function (soundslist) {
