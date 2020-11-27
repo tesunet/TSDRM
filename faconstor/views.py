@@ -2067,171 +2067,171 @@ def falconstorrun(request):
     except:
         result["res"] = '流程启动失败，该流程不存在。'
     else:
-        running_process = ProcessRun.objects.filter(pro_ins=pro_ins, state__in=["RUN"])
-        if running_process.exists():
-            result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
-        else:
-            planning_process = ProcessRun.objects.filter(pro_ins=pro_ins, state="PLAN")
-            if planning_process.exists():
-                result["res"] = '流程启动失败，计划流程未执行，务必先完成计划流程。'
+        # running_process = ProcessRun.objects.filter(pro_ins=pro_ins, state__in=["RUN"])
+        # if running_process.exists():
+        #     result["res"] = '流程启动失败，该流程正在进行中，请勿重复启动。'
+        # else:
+        #     planning_process = ProcessRun.objects.filter(pro_ins=pro_ins, state="PLAN")
+        #     if planning_process.exists():
+        #         result["res"] = '流程启动失败，计划流程未执行，务必先完成计划流程。'
+        #     else:
+        process = pro_ins.process
+        myprocessrun = ProcessRun()
+        myprocessrun.pro_ins = pro_ins
+        myprocessrun.starttime = datetime.datetime.now()
+        myprocessrun.creatuser = request.user.username
+        myprocessrun.run_reason = run_reason
+        myprocessrun.recover_time = datetime.datetime.strptime(
+            recovery_time, "%Y-%m-%d %H:%M:%S"
+        ) if recovery_time else None
+        myprocessrun.state = "RUN"
+        if process.type.upper() == 'COMMVAULT':
+            try:
+                pri = int(pri)
+            except Exception:
+                return JsonResponse({"res": "流程步骤中未添加Commvault接口，导致源客户端未空。"})
+
+            try:
+                std = int(std)
+            except:
+                return JsonResponse({"res": "目标客户端未选择。"})
+
+            if "Oracle" in agent_type:
+                try:
+                    copy_priority = int(copy_priority)
+                except ValueError as e:
+                    copy_priority = 1
+                try:
+                    db_open = int(db_open)
+                except ValueError as e:
+                    db_open = 1
+                try:
+                    log_restore = int(log_restore)
+                except ValueError as e:
+                    log_restore = 1
+                cv_params = {
+                    "pri_id": str(pri),
+                    "std_id": str(std),
+                    "browse_job_id": str(browseJobId),
+
+                    "copy_priority": str(copy_priority),
+                    "db_open": str(db_open),
+                    "log_restore": str(log_restore),
+                    "data_path": data_path
+                }
+            elif "File System" in agent_type:
+                inPlace = True
+                if mypath != "same":
+                    inPlace = False
+                overWrite = False
+                if iscover == "TRUE":
+                    overWrite = True
+
+                sourceItemlist = selectedfile.split("*!-!*")
+                for sourceItem in sourceItemlist:
+                    if sourceItem == "":
+                        sourceItemlist.remove(sourceItem)
+                cv_params = {
+                    "pri_id": str(pri),
+                    "std_id": str(std),
+                    "browse_job_id": str(browseJobId),
+
+                    "overWrite": overWrite,
+                    "inPlace": inPlace,
+                    "destPath": mypath,
+                    "sourcePaths": sourceItemlist,
+                    "OSRestore": False
+                }
+            elif "SQL Server" in agent_type:
+                mssqlOverWrite = False
+                if mssql_iscover == "TRUE":
+                    mssqlOverWrite = True
+                cv_params = {
+                    "pri_id": str(pri),
+                    "std_id": str(std),
+                    "browse_job_id": str(browseJobId),
+
+                    "mssqlOverWrite": mssqlOverWrite,
+                }
             else:
-                process = pro_ins.process
-                myprocessrun = ProcessRun()
-                myprocessrun.pro_ins = pro_ins
-                myprocessrun.starttime = datetime.datetime.now()
-                myprocessrun.creatuser = request.user.username
-                myprocessrun.run_reason = run_reason
-                myprocessrun.recover_time = datetime.datetime.strptime(
-                    recovery_time, "%Y-%m-%d %H:%M:%S"
-                ) if recovery_time else None
-                myprocessrun.state = "RUN"
-                if process.type.upper() == 'COMMVAULT':
-                    try:
-                        pri = int(pri)
-                    except Exception:
-                        return JsonResponse({"res": "流程步骤中未添加Commvault接口，导致源客户端未空。"})
+                return JsonResponse({"res": "其他应用正在开发中"})
 
+            config = custom_cv_params(**cv_params)
+            myprocessrun.info = config
+
+        myprocessrun.save()
+        mystep = process.step_set.exclude(state="9").order_by("sort")
+        if not mystep.exists():
+            result["res"] = '流程启动失败，没有找到可用步骤。'
+        else:
+            for step in mystep:
+                mysteprun = StepRun()
+                mysteprun.step = step
+                mysteprun.processrun = myprocessrun
+                mysteprun.state = "EDIT"
+                mysteprun.save()
+
+                myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
+                for script in myscript:
+                    myscriptrun = ScriptRun()
+                    myscriptrun.script = script
+                    myscriptrun.steprun = mysteprun
+                    myscriptrun.state = "EDIT"
+                    myscriptrun.save()
+
+                myverifyitems = step.verifyitems_set.exclude(state="9")
+                for verifyitems in myverifyitems:
+                    myverifyitemsrun = VerifyItemsRun()
+                    myverifyitemsrun.verify_items = verifyitems
+                    myverifyitemsrun.steprun = mysteprun
+                    myverifyitemsrun.save()
+
+            allgroup = process.step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
+                "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
+
+            if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
+                # 将当前流程改成SIGN
+                c_process_run_id = myprocessrun.id
+                c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
+                if c_process_run:
+                    c_process_run = c_process_run[0]
+                    c_process_run.state = "SIGN"
+                    c_process_run.save()
+
+                for group in allgroup:
                     try:
-                        std = int(std)
+                        signgroup = Group.objects.get(id=int(group["group"]))
+                        groupname = signgroup.name
+                        myprocesstask = ProcessTask()
+                        myprocesstask.processrun = myprocessrun
+                        myprocesstask.starttime = datetime.datetime.now()
+                        myprocesstask.senduser = request.user.username
+                        myprocesstask.receiveauth = group["group"]
+                        myprocesstask.type = "SIGN"
+                        myprocesstask.state = "0"
+                        myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
+                        myprocesstask.save()
                     except:
-                        return JsonResponse({"res": "目标客户端未选择。"})
-                    
-                    if "Oracle" in agent_type:
-                        try:
-                            copy_priority = int(copy_priority)
-                        except ValueError as e:
-                            copy_priority = 1
-                        try:
-                            db_open = int(db_open)
-                        except ValueError as e:
-                            db_open = 1
-                        try:
-                            log_restore = int(log_restore)
-                        except ValueError as e:
-                            log_restore = 1
-                        cv_params = {
-                            "pri_id": str(pri),
-                            "std_id": str(std),
-                            "browse_job_id": str(browseJobId),
-                            
-                            "copy_priority": str(copy_priority),
-                            "db_open": str(db_open),
-                            "log_restore": str(log_restore),
-                            "data_path": data_path
-                        }
-                    elif "File System" in agent_type:
-                        inPlace = True
-                        if mypath != "same":
-                            inPlace = False
-                        overWrite = False
-                        if iscover == "TRUE":
-                            overWrite = True
-                        
-                        sourceItemlist = selectedfile.split("*!-!*")
-                        for sourceItem in sourceItemlist:
-                            if sourceItem == "":
-                                sourceItemlist.remove(sourceItem)
-                        cv_params = {
-                            "pri_id": str(pri),
-                            "std_id": str(std),
-                            "browse_job_id": str(browseJobId),
-                            
-                            "overWrite": overWrite,
-                            "inPlace": inPlace,
-                            "destPath": mypath,
-                            "sourcePaths": sourceItemlist,
-                            "OSRestore": False
-                        }
-                    elif "SQL Server" in agent_type:
-                        mssqlOverWrite = False
-                        if mssql_iscover == "TRUE":
-                            mssqlOverWrite = True
-                        cv_params = {
-                            "pri_id": str(pri),
-                            "std_id": str(std),
-                            "browse_job_id": str(browseJobId),
-                            
-                            "mssqlOverWrite": mssqlOverWrite,
-                        }
-                    else:
-                        return JsonResponse({"res": "其他应用正在开发中"})
-                    
-                    config = custom_cv_params(**cv_params)
-                    myprocessrun.info = config
+                        pass
+                result["res"] = "新增成功。"
+                result["data"] = "/"
 
-                myprocessrun.save()
-                mystep = process.step_set.exclude(state="9").order_by("sort")
-                if not mystep.exists():
-                    result["res"] = '流程启动失败，没有找到可用步骤。'
-                else:
-                    for step in mystep:
-                        mysteprun = StepRun()
-                        mysteprun.step = step
-                        mysteprun.processrun = myprocessrun
-                        mysteprun.state = "EDIT"
-                        mysteprun.save()
+            else:
+                prosssigns = ProcessTask.objects.filter(processrun=myprocessrun, state="0")
+                if len(prosssigns) <= 0:
+                    myprocesstask = ProcessTask()
+                    myprocesstask.processrun = myprocessrun
+                    myprocesstask.starttime = datetime.datetime.now()
+                    myprocesstask.type = "INFO"
+                    myprocesstask.logtype = "START"
+                    myprocesstask.state = "1"
+                    myprocesstask.senduser = request.user.username
+                    myprocesstask.content = "流程启动。"
+                    myprocesstask.save()
 
-                        myscript = step.scriptinstance_set.exclude(state="9").order_by("sort")
-                        for script in myscript:
-                            myscriptrun = ScriptRun()
-                            myscriptrun.script = script
-                            myscriptrun.steprun = mysteprun
-                            myscriptrun.state = "EDIT"
-                            myscriptrun.save()
-
-                        myverifyitems = step.verifyitems_set.exclude(state="9")
-                        for verifyitems in myverifyitems:
-                            myverifyitemsrun = VerifyItemsRun()
-                            myverifyitemsrun.verify_items = verifyitems
-                            myverifyitemsrun.steprun = mysteprun
-                            myverifyitemsrun.save()
-
-                    allgroup = process.step_set.exclude(state="9").exclude(Q(group="") | Q(group=None)).values(
-                        "group").distinct()  # 过滤出需要签字的组,但一个对象只发送一次task
-
-                    if process.sign == "1" and len(allgroup) > 0:  # 如果流程需要签字,发送签字tasks
-                        # 将当前流程改成SIGN
-                        c_process_run_id = myprocessrun.id
-                        c_process_run = ProcessRun.objects.filter(id=c_process_run_id)
-                        if c_process_run:
-                            c_process_run = c_process_run[0]
-                            c_process_run.state = "SIGN"
-                            c_process_run.save()
-
-                        for group in allgroup:
-                            try:
-                                signgroup = Group.objects.get(id=int(group["group"]))
-                                groupname = signgroup.name
-                                myprocesstask = ProcessTask()
-                                myprocesstask.processrun = myprocessrun
-                                myprocesstask.starttime = datetime.datetime.now()
-                                myprocesstask.senduser = request.user.username
-                                myprocesstask.receiveauth = group["group"]
-                                myprocesstask.type = "SIGN"
-                                myprocesstask.state = "0"
-                                myprocesstask.content = "流程即将启动”，请" + groupname + "签到。"
-                                myprocesstask.save()
-                            except:
-                                pass
-                        result["res"] = "新增成功。"
-                        result["data"] = "/"
-
-                    else:
-                        prosssigns = ProcessTask.objects.filter(processrun=myprocessrun, state="0")
-                        if len(prosssigns) <= 0:
-                            myprocesstask = ProcessTask()
-                            myprocesstask.processrun = myprocessrun
-                            myprocesstask.starttime = datetime.datetime.now()
-                            myprocesstask.type = "INFO"
-                            myprocesstask.logtype = "START"
-                            myprocesstask.state = "1"
-                            myprocesstask.senduser = request.user.username
-                            myprocesstask.content = "流程启动。"
-                            myprocesstask.save()
-
-                            exec_process.delay(myprocessrun.id)
-                            result["res"] = "新增成功。"
-                            result["data"] = "/processindex/" + str(myprocessrun.id)
+                    exec_process.delay(myprocessrun.id)
+                    result["res"] = "新增成功。"
+                    result["data"] = "/processindex/" + str(myprocessrun.id)
     
     return JsonResponse(result)
 
